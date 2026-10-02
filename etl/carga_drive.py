@@ -474,4 +474,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except SystemExit:
+        raise
+    except Exception as ex:  # noqa: BLE001
+        # o log do GitHub Actions é público: nunca imprimir traceback, que pode citar valores das planilhas
+        log(f'falha inesperada ({type(ex).__name__}); nada foi gravado')
+        sys.exit(1)

@@ -9,3 +9,11 @@ real.json
 .env
 .env.*
 supabase/.temp/
+*.xls
+*.ods
+*.tsv
+*.pkl
+*.parquet
+*.zip
+__pycache__/
+*.pyc

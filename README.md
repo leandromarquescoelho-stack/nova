@@ -69,5 +69,6 @@ Segredos do repositório (Settings > Secrets and variables > Actions):
 
 ## Segurança
 
+- Regra do projeto: planilhas e qualquer dado da empresa ficam só na pasta do Google Drive (e na pasta do projeto no Claude). Aqui fica apenas código. A carga lê as planilhas na memória de uma máquina temporária do GitHub Actions, grava no Supabase e não salva nem imprime nenhum dado; os logs mostram só contagens.
 - Este repositório é público. Não suba planilhas, exportações nem a chave de serviço (`service_role`). O `.gitignore` já bloqueia os formatos mais comuns.
 - A chave que aparece no `index.html` é a chave pública (publishable) do Supabase, feita para ficar no navegador. Quem protege os dados são as regras de acesso do banco.
