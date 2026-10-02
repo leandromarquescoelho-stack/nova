@@ -803,6 +803,9 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
           <span class="badge-dot"></span>
         </button>
         <div class="avatar" id="userAvatar" title="Perfil">RM</div>
+        <button class="tbtn icon-only" id="changePassBtn" title="Trocar senha" aria-label="Trocar senha">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="15" r="4" stroke="currentColor" stroke-width="2"/><path d="M11 12l9-9M17 6l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
         <button class="tbtn icon-only" id="logoutBtn" title="Sair" aria-label="Sair">
           <svg viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 17l5-5-5-5M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -3325,26 +3328,55 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 });
 
 /* convite ou "esqueci minha senha": pede a nova senha antes de entrar */
-function askNewPassword(user){
+/* define nova senha: no link de convite/redefinição (mode "link") ou pelo botão "Trocar senha" já logado (mode "troca") */
+var passMode = null, passUser = null;
+function askNewPassword(user, mode){
+  passMode = mode || 'link'; passUser = user;
+  document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginForm').style.display = 'none';
   var f = document.getElementById('setPassForm');
   f.style.display = '';
-  var perr = document.getElementById('setPassError');
-  f.addEventListener('submit', async function(e){
-    e.preventDefault();
-    perr.textContent = '';
-    var a = document.getElementById('newPass').value, b = document.getElementById('newPass2').value;
-    if(a.length < 8){ perr.textContent = 'A senha precisa ter pelo menos 8 caracteres.'; return; }
-    if(a !== b){ perr.textContent = 'As senhas não são iguais.'; return; }
-    var sb = f.querySelector('.login-btn'); sb.disabled = true; sb.textContent = 'Salvando…';
-    var res = await supa.auth.updateUser({password: a});
-    if(res.error){ perr.textContent = 'Não foi possível salvar a senha. Peça um novo convite ao BI.'; sb.disabled = false; sb.textContent = 'Salvar e entrar'; return; }
-    try{ history.replaceState(null, '', window.location.pathname); }catch(ex){}
-    f.style.display = 'none';
-    document.getElementById('loginForm').style.display = '';
-    await enter(user);
-  });
+  f.querySelector('.login-btn').textContent = passMode === 'troca' ? 'Salvar nova senha' : 'Salvar e entrar';
+  document.getElementById('newPass').value = ''; document.getElementById('newPass2').value = '';
+  document.getElementById('setPassError').textContent = '';
 }
+document.getElementById('setPassForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var f = this, perr = document.getElementById('setPassError');
+  perr.textContent = '';
+  var a = document.getElementById('newPass').value, b = document.getElementById('newPass2').value;
+  if(a.length < 8){ perr.textContent = 'A senha precisa ter pelo menos 8 caracteres.'; return; }
+  if(a !== b){ perr.textContent = 'As senhas não são iguais.'; return; }
+  var sb = f.querySelector('.login-btn'), label = sb.textContent; sb.disabled = true; sb.textContent = 'Salvando…';
+  var res = await supa.auth.updateUser({password: a});
+  sb.disabled = false; sb.textContent = label;
+  if(res.error){
+    perr.textContent = /different|same/i.test(res.error.message||'') ? 'A nova senha precisa ser diferente da atual.' : 'Não foi possível salvar a senha. Tente de novo ou contate o BI.';
+    return;
+  }
+  try{ history.replaceState(null, '', window.location.pathname); }catch(ex){}
+  f.style.display = 'none';
+  document.getElementById('loginForm').style.display = '';
+  if(passMode === 'troca'){
+    document.getElementById('loginScreen').style.display = 'none';
+    alert('Senha alterada.');
+  } else {
+    await enter(passUser);
+  }
+});
+document.getElementById('changePassBtn').addEventListener('click', async function(){
+  var sess = await supa.auth.getSession();
+  var user = sess && sess.data && sess.data.session && sess.data.session.user;
+  if(user) askNewPassword(user, 'troca');
+});
+// cancelar a troca: Esc volta ao painel
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && passMode === 'troca' && document.getElementById('setPassForm').style.display !== 'none'){
+    document.getElementById('setPassForm').style.display = 'none';
+    document.getElementById('loginForm').style.display = '';
+    document.getElementById('loginScreen').style.display = 'none';
+  }
+});
 
 document.getElementById('forgotBtn').addEventListener('click', async function(){
   errEl.textContent = '';
@@ -3361,7 +3393,7 @@ document.getElementById('forgotBtn').addEventListener('click', async function(){
   try{
     var sess = await supa.auth.getSession();
     var user = sess && sess.data && sess.data.session && sess.data.session.user;
-    if(user && LINK_TYPE) askNewPassword(user);
+    if(user && LINK_TYPE) askNewPassword(user, 'link');
     else if(user) await enter(user);
   } catch(ex){ /* fica na tela de login */ }
 })();
