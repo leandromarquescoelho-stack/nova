@@ -45,7 +45,27 @@ Para os links dos e-mails abrirem o painel, o Supabase precisa ter este site con
 
 ## Atualizar os dados
 
-Os dados atuais são uma foto até 25/09/2026, gerada a partir de `vendas.xlsb` e `estoque.xlsb`. Para atualizar, carregue as novas linhas nas tabelas `bi_*` pelo SQL Editor do Supabase (ou por um processo de carga com a chave de serviço, que nunca deve ir para este repositório).
+Todos os números do painel vêm do Supabase. O banco é atualizado pelas planilhas de uma pasta do Google Drive:
+
+1. Salve ou substitua as planilhas (vendas, estoque e, se houver, metas) na pasta do Drive.
+2. A cada 30 minutos o workflow **Carga Google Drive -> Supabase** (`.github/workflows/carga-drive.yml`) confere a pasta. Se alguma planilha tiver data de modificação nova, ele roda `etl/carga_drive.py`, recalcula as tabelas `bi_*` e grava tudo numa única transação. Se nada mudou, não faz nada.
+3. No painel, o canto superior mostra "Dados até … · carga de …" e o botão **Atualizar** busca a carga nova.
+
+Para rodar na hora: Actions > Carga Google Drive -> Supabase > Run workflow (marque "Recarregar" para forçar).
+
+Onde fica cada coisa:
+
+- Os nomes das planilhas e das colunas ficam no banco, em `bi_config` chave `mapa_colunas`, e não no código.
+- O histórico de cada carga (arquivo, data de modificação, status, erro) fica em `bi_carga_controle`, visível só para o administrador do banco.
+- Se uma carga falhar, o painel continua com a carga anterior.
+
+Segredos do repositório (Settings > Secrets and variables > Actions):
+
+| Segredo | O que é |
+|---|---|
+| `GDRIVE_FOLDER_ID` | id da pasta do Drive (o trecho depois de `/folders/` no link) |
+| `GOOGLE_SA_JSON` | chave JSON de uma conta de serviço do Google Cloud com a Drive API ativada; a pasta deve ser compartilhada com o e-mail dessa conta como Leitor |
+| `SUPABASE_DB_URL` | Supabase > Connect > Session pooler (URI com a senha do banco) |
 
 ## Segurança
 
