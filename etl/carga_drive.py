@@ -37,6 +37,7 @@ PADROES = {
     'meses_estoque_min': 1.5,    # estoque mínimo = venda média mensal x 1,5
     'limite_critico': 0.5,       # estoque < 50% do mínimo = crítico; < 100% = atenção
     'nome_formato': '{sku} - {descricao}',
+    'meta_fator': None,          # sem planilha de metas: meta = média mensal x fator (a carga inicial usou 1,12)
 }
 
 
@@ -229,7 +230,7 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
         if 'parado' in e:
             sim = {normaliza(x) for x in cfg.get('estoque', {}).get('valores_parado', ['S', 'SIM', 'TRUE', '1', 'X'])}
             e['parado'] = texto(e['parado']).map(lambda x: normaliza(x) in sim if isinstance(x, str) else False)
-            agg['parado'] = 'all'
+            agg['parado'] = 'any'  # parado em qualquer loja
         est = e.groupby('sku').agg(agg)
 
     n_meses = max(1, len(meses))
@@ -244,13 +245,14 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
         if sub.empty:
             return 0.0, 0.0, None, False
         dias = sub['dias_sem_giro'].min() if 'dias_sem_giro' in sub and len(skus) == 1 else None
-        parado = bool(sub['parado'].all()) if 'parado' in sub and len(skus) == 1 else False
+        parado = bool(sub['parado'].any()) if 'parado' in sub and len(skus) == 1 else False
         return float(sub['est_fis'].sum()), float(sub['est_custo'].sum()), (None if dias is None or pd.isna(dias) else float(dias)), parado
 
     def linha(id_, nome, at, skus, bucket_count=None):
         t = tot.loc[skus].sum()
         fis, custo_est, dias, parado = est_de(skus)
-        est_min = round(float(t['qtd']) / n_meses * regras['meses_estoque_min'], 1)
+        # mínimo por SKU (arredondado) somado; no item "Outros" é a soma dos SKUs da cauda
+        est_min = round(sum(round(float(q) / n_meses * regras['meses_estoque_min'], 1) for q in tot.loc[skus, 'qtd']), 1)
         return {
             'id': id_, 'nome': nome, **at,
             'fat': round(float(t['fat']), 2), 'qtd': round(float(t['qtd']), 3),
@@ -268,7 +270,8 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
         at = {a: (None if pd.isna(attrs[a].get(sku)) else attrs[a].get(sku)) for a in attrs}
         desc = at.pop('descricao') or ''
         nome = regras['nome_formato'].format(sku=sku, descricao=desc).strip(' -')
-        at['origem'] = at['origem'] or 'N/D'
+        for k in ('marca', 'categoria', 'montadora', 'origem'):
+            at[k] = at[k] or 'N/D'
         produtos.append(linha(sku, nome, at, [sku]))
 
     # cauda longa: um item "Outros" por loja principal
@@ -280,7 +283,7 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
             canal = principal(sub.assign(_k=1), '_k', 'canal')
             at = {'marca': 'Diversas', 'categoria': 'Outros', 'montadora': 'Diversas', 'loja': loja,
                   'vendedor': 'Diversos', 'canal': canal.iloc[0] if len(canal) else None, 'origem': 'Diversas'}
-            id_ = 'OUTROS_' + re.sub(r'[^A-Z0-9]+', '_', normaliza(loja)).strip('_')
+            id_ = 'OUTROS_' + re.sub(r'\W+', '_', normaliza(loja)).strip('_')
             nome = f'Outros itens — {loja} (cauda longa · {len(skus)} SKUs)'
             produtos.append(linha(id_, nome, at, skus, bucket_count=len(skus)))
 
@@ -304,6 +307,13 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
             loja_info[l] = {'fisica': 'COMMERCE' not in normaliza(canal_loja.get(l, ''))}
 
     metas_out = None
+    if metas is None and regras.get('meta_fator'):
+        # sem planilha de metas: meta = venda média mensal atribuída ao vendedor x fator
+        soma = {}
+        for p in produtos:
+            if not p['is_bucket'] and p['vendedor']:
+                soma[p['vendedor']] = soma.get(p['vendedor'], 0.0) + p['fat']
+        metas_out = [{'vendedor': k, 'meta': round(x / n_meses * regras['meta_fator'], 2)} for k, x in sorted(soma.items())]
     if metas is not None:
         m = metas.copy()
         m['vendedor'] = texto(m['vendedor'])
