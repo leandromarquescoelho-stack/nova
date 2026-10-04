@@ -1,6 +1,6 @@
-"""Carga Google Drive -> Supabase do painel Nova Chevrolet BI.
+"""Carga OneDrive/SharePoint (ou Google Drive) -> Supabase do painel Nova Chevrolet BI.
 
-Lê as planilhas da pasta do Drive, recalcula as tabelas bi_* e grava tudo no banco
+Lê as planilhas da pasta, recalcula as tabelas bi_* e grava tudo no banco
 numa única transação (quem estiver usando o painel continua vendo a carga anterior
 até o fim). Só processa quando a data de modificação de alguma planilha mudou.
 
@@ -9,9 +9,12 @@ ficam no próprio banco (bi_config.mapa_colunas) e os logs só mostram contagens
 porque os logs do GitHub Actions deste repositório são públicos.
 
 Variáveis de ambiente (segredos do GitHub):
-  GDRIVE_FOLDER_ID   id da pasta do Drive
-  GOOGLE_SA_JSON     JSON da conta de serviço do Google com acesso de leitura à pasta
   SUPABASE_DB_URL    string de conexão Postgres do Supabase (usuário postgres)
+  OneDrive / SharePoint corporativo (Microsoft Graph, aplicativo do Entra ID):
+    MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET
+    ONEDRIVE_LINK      link de compartilhamento da pasta (só pessoas da organização)
+  ou Google Drive:
+    GDRIVE_FOLDER_ID, GOOGLE_SA_JSON
 
 Uso local para teste: python carga_drive.py --pasta-local ./planilhas --simular
 """
@@ -87,6 +90,56 @@ class FonteDrive:
             _, done = dl.next_chunk()
         buf.seek(0)
         return nome, buf
+
+
+class FonteOneDrive:
+    """Pasta do OneDrive/SharePoint corporativo via Microsoft Graph, com aplicativo do Entra ID
+    (permissão de aplicativo Sites.Selected liberada só para o site da pasta, ou Files.Read.All)."""
+    GRAPH = 'https://graph.microsoft.com/v1.0'
+
+    def __init__(self, tenant, client_id, secret, link):
+        import base64
+        import requests
+        self.http = requests.Session()
+        r = self.http.post(f'https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token', data={
+            'grant_type': 'client_credentials', 'client_id': client_id, 'client_secret': secret,
+            'scope': 'https://graph.microsoft.com/.default'}, timeout=60)
+        if r.status_code != 200:
+            raise SystemExit(f'Microsoft: falha na autenticação do aplicativo (HTTP {r.status_code}).')
+        self.http.headers['Authorization'] = 'Bearer ' + r.json()['access_token']
+        # link de compartilhamento -> pasta (driveId + itemId)
+        cod = 'u!' + base64.urlsafe_b64encode(link.strip().encode()).decode().rstrip('=')
+        pasta = self._get(f'{self.GRAPH}/shares/{cod}/driveItem')
+        if 'folder' not in pasta:
+            raise SystemExit('ONEDRIVE_LINK não aponta para uma pasta.')
+        self.drive_id = pasta['parentReference']['driveId']
+        self.pasta_id = pasta['id']
+
+    def _get(self, url):
+        r = self.http.get(url, timeout=120)
+        if r.status_code != 200:
+            raise SystemExit(f'Microsoft Graph: acesso negado ou pasta não encontrada (HTTP {r.status_code}).')
+        return r.json()
+
+    def listar(self):
+        url = (f'{self.GRAPH}/drives/{self.drive_id}/items/{self.pasta_id}/children'
+               '?$select=id,name,file,lastModifiedDateTime&$top=200')
+        out = []
+        while url:
+            d = self._get(url)
+            for f in d.get('value', []):
+                if 'file' in f and f['name'].lower().endswith(EXTENSOES):
+                    out.append({'id': f['id'], 'nome': f['name'], 'mime': '',
+                                'modificado': f['lastModifiedDateTime'],
+                                'md5': (f['file'].get('hashes') or {}).get('quickXorHash')})
+            url = d.get('@odata.nextLink')
+        return out
+
+    def baixar(self, arq):
+        r = self.http.get(f"{self.GRAPH}/drives/{self.drive_id}/items/{arq['id']}/content", timeout=600)
+        if r.status_code != 200:
+            raise SystemExit(f'Microsoft Graph: falha ao baixar planilha (HTTP {r.status_code}).')
+        return arq['nome'], io.BytesIO(r.content)
 
 
 class FonteLocal:
@@ -426,7 +479,13 @@ def main():
         conn = psycopg.connect(db_url, autocommit=True)  # gravar() abre a própria transação
         mapa, loja_info = ler_config(conn.cursor())
 
-    fonte = FonteLocal(a.pasta_local) if a.pasta_local else FonteDrive(os.environ['GDRIVE_FOLDER_ID'], os.environ['GOOGLE_SA_JSON'])
+    if a.pasta_local:
+        fonte = FonteLocal(a.pasta_local)
+    elif os.environ.get('ONEDRIVE_LINK'):
+        fonte = FonteOneDrive(os.environ['MS_TENANT_ID'], os.environ['MS_CLIENT_ID'],
+                              os.environ['MS_CLIENT_SECRET'], os.environ['ONEDRIVE_LINK'])
+    else:
+        fonte = FonteDrive(os.environ['GDRIVE_FOLDER_ID'], os.environ['GOOGLE_SA_JSON'])
     arquivos = fonte.listar()
     log(f'{len(arquivos)} planilha(s) na pasta')
 

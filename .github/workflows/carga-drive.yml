@@ -1,6 +1,6 @@
-name: Carga Google Drive -> Supabase
+name: Carga planilhas -> Supabase
 
-# Confere a pasta do Drive a cada 30 minutos e só recarrega o banco quando
+# Confere a pasta do OneDrive corporativo (ou Google Drive) a cada 30 minutos e só recarrega o banco quando
 # alguma planilha tiver data de modificação nova. Também pode ser disparado à mão.
 on:
   schedule:
@@ -30,9 +30,16 @@ jobs:
           GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
           GOOGLE_SA_JSON: ${{ secrets.GOOGLE_SA_JSON }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          ONEDRIVE_LINK: ${{ secrets.ONEDRIVE_LINK }}
         run: |
-          if [ -z "$GDRIVE_FOLDER_ID" ] || [ -z "$GOOGLE_SA_JSON" ] || [ -z "$SUPABASE_DB_URL" ]; then
-            echo "Segredos GDRIVE_FOLDER_ID / GOOGLE_SA_JSON / SUPABASE_DB_URL ainda não configurados; nada a fazer."
+          onedrive=false; gdrive=false
+          if [ -n "$MS_TENANT_ID" ] && [ -n "$MS_CLIENT_ID" ] && [ -n "$MS_CLIENT_SECRET" ] && [ -n "$ONEDRIVE_LINK" ]; then onedrive=true; fi
+          if [ -n "$GDRIVE_FOLDER_ID" ] && [ -n "$GOOGLE_SA_JSON" ]; then gdrive=true; fi
+          if [ -z "$SUPABASE_DB_URL" ] || { [ "$onedrive" = false ] && [ "$gdrive" = false ]; }; then
+            echo "Segredos da pasta (OneDrive ou Google Drive) e do Supabase ainda não configurados; nada a fazer."
             echo "ok=false" >> "$GITHUB_OUTPUT"
           else
             echo "ok=true" >> "$GITHUB_OUTPUT"
@@ -58,4 +65,8 @@ jobs:
           GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
           GOOGLE_SA_JSON: ${{ secrets.GOOGLE_SA_JSON }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          ONEDRIVE_LINK: ${{ secrets.ONEDRIVE_LINK }}
         run: python etl/carga_drive.py ${{ inputs.forcar && '--forcar' || '' }}

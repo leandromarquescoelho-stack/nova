@@ -45,13 +45,13 @@ Para os links dos e-mails abrirem o painel, o Supabase precisa ter este site con
 
 ## Atualizar os dados
 
-Todos os números do painel vêm do Supabase. O banco é atualizado pelas planilhas de uma pasta do Google Drive:
+Todos os números do painel vêm do Supabase. O banco é atualizado pelas planilhas de uma pasta do OneDrive corporativo (Microsoft 365). O Google Drive continua suportado como alternativa.
 
-1. Salve ou substitua as planilhas (vendas, estoque e, se houver, metas) na pasta do Drive.
-2. A cada 30 minutos o workflow **Carga Google Drive -> Supabase** (`.github/workflows/carga-drive.yml`) confere a pasta. Se alguma planilha tiver data de modificação nova, ele roda `etl/carga_drive.py`, recalcula as tabelas `bi_*` e grava tudo numa única transação. Se nada mudou, não faz nada.
-3. No painel, o canto superior mostra "Dados até … · carga de …" e o botão **Atualizar** busca a carga nova.
+1. Salve ou substitua as planilhas (nome contendo "vendas", "estoque" e, se houver, "metas") na pasta.
+2. A cada 30 minutos o workflow **Carga planilhas -> Supabase** (`.github/workflows/carga-drive.yml`) confere a pasta. Se alguma planilha tiver data de modificação nova, ele roda `etl/carga_drive.py`, recalcula as tabelas `bi_*` e grava tudo numa única transação. Se nada mudou, não faz nada.
+3. No painel, o topo mostra "Dados até … · carga de …" e o botão **Atualizar** busca a carga nova.
 
-Para rodar na hora: Actions > Carga Google Drive -> Supabase > Run workflow (marque "Recarregar" para forçar).
+Para rodar na hora: Actions > Carga planilhas -> Supabase > Run workflow (marque "Recarregar" para forçar).
 
 Onde fica cada coisa:
 
@@ -59,16 +59,31 @@ Onde fica cada coisa:
 - O histórico de cada carga (arquivo, data de modificação, status, erro) fica em `bi_carga_controle`, visível só para o administrador do banco.
 - Se uma carga falhar, o painel continua com a carga anterior.
 
+### Acesso à pasta do OneDrive (feito uma vez pelo TI)
+
+A carga entra com um aplicativo do Entra ID (sem usuário e senha de ninguém) e só lê.
+
+1. Entra ID > Registros de aplicativo > Novo registro: nome "Nova BI - carga", conta só desta organização.
+2. Permissões de API > Microsoft Graph > **Permissões de aplicativo** > `Sites.Selected` > Conceder consentimento do administrador.
+3. Liberar leitura só no site onde a pasta está (o OneDrive do dono da pasta também é um site). Pelo Graph: `POST /sites/{site-id}/permissions` com `{"roles":["read"],"grantedToIdentities":[{"application":{"id":"<client id>","displayName":"Nova BI - carga"}}]}`.
+   Se a política da empresa não usar `Sites.Selected`, a alternativa é `Files.Read.All` (lê todos os arquivos do tenant, menos restrito).
+4. Certificados e segredos > Novo segredo do cliente. Copiar o valor na hora.
+5. Na pasta do OneDrive: Compartilhar > "Pessoas da sua organização" > Copiar link.
+
 Segredos do repositório (Settings > Secrets and variables > Actions):
 
 | Segredo | O que é |
 |---|---|
-| `GDRIVE_FOLDER_ID` | id da pasta do Drive (o trecho depois de `/folders/` no link) |
-| `GOOGLE_SA_JSON` | chave JSON de uma conta de serviço do Google Cloud com a Drive API ativada; a pasta deve ser compartilhada com o e-mail dessa conta como Leitor |
+| `MS_TENANT_ID` | ID do diretório (tenant) do Entra ID |
+| `MS_CLIENT_ID` | ID do aplicativo (cliente) |
+| `MS_CLIENT_SECRET` | valor do segredo do cliente (vence; renovar antes da data) |
+| `ONEDRIVE_LINK` | link da pasta, do passo 5 |
 | `SUPABASE_DB_URL` | Supabase > Connect > Session pooler (URI com a senha do banco) |
+
+Alternativa Google Drive: `GDRIVE_FOLDER_ID` e `GOOGLE_SA_JSON` (conta de serviço com leitura na pasta) no lugar dos quatro segredos da Microsoft.
 
 ## Segurança
 
-- Regra do projeto: planilhas e qualquer dado da empresa ficam só na pasta do Google Drive (e na pasta do projeto no Claude). Aqui fica apenas código. A carga lê as planilhas na memória de uma máquina temporária do GitHub Actions, grava no Supabase e não salva nem imprime nenhum dado; os logs mostram só contagens.
+- Regra do projeto: planilhas e qualquer dado da empresa ficam só na pasta do OneDrive corporativo (e na pasta do projeto no Claude). Aqui fica apenas código. A carga lê as planilhas na memória de uma máquina temporária do GitHub Actions, grava no Supabase e não salva nem imprime nenhum dado; os logs mostram só contagens.
 - Este repositório é público. Não suba planilhas, exportações nem a chave de serviço (`service_role`). O `.gitignore` já bloqueia os formatos mais comuns.
 - A chave que aparece no `index.html` é a chave pública (publishable) do Supabase, feita para ficar no navegador. Quem protege os dados são as regras de acesso do banco.
