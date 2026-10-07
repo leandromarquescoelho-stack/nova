@@ -59,6 +59,16 @@ Onde fica cada coisa:
 - O histórico de cada carga (arquivo, data de modificação, status, erro) fica em `bi_carga_controle`, visível só para o administrador do banco.
 - Se uma carga falhar, o painel continua com a carga anterior.
 
+### Opção simples: links das planilhas cadastrados no banco
+
+Em vez do aplicativo do TI, a carga pode baixar cada planilha por um link "Qualquer pessoa" do OneDrive, guardado na tabela `bi_fonte` do Supabase (nunca no código nem no GitHub).
+
+1. No OneDrive, em cada planilha (vendas, estoque e, se houver, metas): Compartilhar > "Qualquer pessoa com o link" > **Pode exibir** > Copiar link. Para atualizar, substitua o arquivo mantendo o mesmo nome; assim o link continua o mesmo.
+2. No Supabase: Table Editor > `bi_fonte` > Insert row, com `papel` = `vendas` (ou `estoque`, `metas`) e `link` = o link copiado.
+3. No GitHub, só o segredo `SUPABASE_DB_URL` é necessário.
+
+A tabela `bi_fonte` não é visível para os usuários do painel. Cuidado: quem tiver o link baixa a planilha, então não envie o link por e-mail ou chat. Para cortar o acesso, desative o link no OneDrive (Gerenciar acesso) e cadastre um novo.
+
 ### Acesso à pasta do OneDrive (feito uma vez pelo TI)
 
 A carga entra com um aplicativo do Entra ID (sem usuário e senha de ninguém) e só lê.

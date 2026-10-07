@@ -13,6 +13,7 @@ Variáveis de ambiente (segredos do GitHub):
   OneDrive / SharePoint corporativo (Microsoft Graph, aplicativo do Entra ID):
     MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET
     ONEDRIVE_LINK      link de compartilhamento da pasta (só pessoas da organização)
+  ou links "qualquer pessoa" cadastrados na tabela bi_fonte (só precisa de SUPABASE_DB_URL)
   ou Google Drive:
     GDRIVE_FOLDER_ID, GOOGLE_SA_JSON
 
@@ -140,6 +141,65 @@ class FonteOneDrive:
         if r.status_code != 200:
             raise SystemExit(f'Microsoft Graph: falha ao baixar planilha (HTTP {r.status_code}).')
         return arq['nome'], io.BytesIO(r.content)
+
+
+class FonteLinks:
+    """Links "qualquer pessoa" de cada planilha, cadastrados na tabela bi_fonte do banco
+    (fora do código). O link nunca aparece no log."""
+
+    def __init__(self, links):
+        import requests
+        self.http = requests.Session()
+        self.links = links  # {papel: link}
+        self.cache = {}
+
+    @staticmethod
+    def url_download(link):
+        from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+        u = urlsplit(link.strip())
+        if 'sharepoint.com' in u.netloc or 'onedrive' in u.netloc or '1drv.ms' in u.netloc:
+            q = [(k, v) for k, v in parse_qsl(u.query) if k != 'download'] + [('download', '1')]
+            return urlunsplit((u.scheme, u.netloc, u.path, urlencode(q), ''))
+        return link.strip()
+
+    def _abrir(self, papel):
+        r = self.http.get(self.url_download(self.links[papel]), stream=True, timeout=600, allow_redirects=True)
+        if r.status_code != 200:
+            raise SystemExit(f'link de {papel}: download recusado (HTTP {r.status_code}); o link pode ter expirado.')
+        if 'text/html' in r.headers.get('Content-Type', ''):
+            r.close()
+            raise SystemExit(f'link de {papel}: abre uma página em vez do arquivo (a empresa pode bloquear links "qualquer pessoa").')
+        return r
+
+    def listar(self):
+        import hashlib
+        from email.utils import parsedate_to_datetime
+        out = []
+        for papel in self.links:
+            r = self._abrir(papel)
+            cd = r.headers.get('Content-Disposition', '')
+            m = re.search(r"filename\*?=(?:UTF-8'')?\"?([^\";]+)", cd)
+            ext = os.path.splitext(m.group(1))[1].lower() if m else ''
+            nome = papel + (ext if ext in EXTENSOES else '.xlsb')
+            lm, etag = r.headers.get('Last-Modified'), r.headers.get('ETag')
+            if lm or etag:
+                r.close()  # só os cabeçalhos: baixa de verdade só se mudou
+                modificado = parsedate_to_datetime(lm).isoformat() if lm else datetime.now(timezone.utc).isoformat()
+                chave = 'etag:' + etag.strip('"') if etag else None
+            else:  # sem cabeçalhos de versão: baixa e compara o conteúdo
+                dados = r.content
+                self.cache[papel] = dados
+                modificado = datetime.now(timezone.utc).isoformat()
+                chave = 'sha256:' + hashlib.sha256(dados).hexdigest()
+            out.append({'id': 'link:' + papel, 'nome': nome, 'mime': '', 'modificado': modificado, 'md5': chave})
+        return out
+
+    def baixar(self, arq):
+        papel = arq['id'].split(':', 1)[1]
+        dados = self.cache.get(papel)
+        if dados is None:
+            dados = self._abrir(papel).content
+        return arq['nome'], io.BytesIO(dados)
 
 
 class FonteLocal:
@@ -392,6 +452,10 @@ def ler_config(cur):
 
 
 def ja_carregado(cur, arq):
+    if arq['id'].startswith('link:') and arq.get('md5'):  # link: compara a versão (ETag/conteúdo)
+        cur.execute("""select 1 from public.bi_carga_controle
+                       where arquivo_id = %s and md5 = %s and status = 'ok' limit 1""", (arq['id'], arq['md5']))
+        return cur.fetchone() is not None
     cur.execute("""select 1 from public.bi_carga_controle
                    where arquivo_id = %s and modificado_em >= %s and status = 'ok' limit 1""",
                 (arq['id'], arq['modificado']))
@@ -479,13 +543,23 @@ def main():
         conn = psycopg.connect(db_url, autocommit=True)  # gravar() abre a própria transação
         mapa, loja_info = ler_config(conn.cursor())
 
+    links = {}
+    if conn is not None:
+        cur = conn.cursor()
+        cur.execute("select papel, link from public.bi_fonte where ativo and coalesce(link, '') <> ''")
+        links = dict(cur.fetchall())
     if a.pasta_local:
         fonte = FonteLocal(a.pasta_local)
+    elif links:
+        fonte = FonteLinks(links)
     elif os.environ.get('ONEDRIVE_LINK'):
         fonte = FonteOneDrive(os.environ['MS_TENANT_ID'], os.environ['MS_CLIENT_ID'],
                               os.environ['MS_CLIENT_SECRET'], os.environ['ONEDRIVE_LINK'])
-    else:
+    elif os.environ.get('GDRIVE_FOLDER_ID'):
         fonte = FonteDrive(os.environ['GDRIVE_FOLDER_ID'], os.environ['GOOGLE_SA_JSON'])
+    else:
+        log('nenhuma fonte cadastrada (tabela bi_fonte vazia); nada a fazer')
+        return
     arquivos = fonte.listar()
     log(f'{len(arquivos)} planilha(s) na pasta')
 

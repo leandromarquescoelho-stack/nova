@@ -38,8 +38,9 @@ jobs:
           onedrive=false; gdrive=false
           if [ -n "$MS_TENANT_ID" ] && [ -n "$MS_CLIENT_ID" ] && [ -n "$MS_CLIENT_SECRET" ] && [ -n "$ONEDRIVE_LINK" ]; then onedrive=true; fi
           if [ -n "$GDRIVE_FOLDER_ID" ] && [ -n "$GOOGLE_SA_JSON" ]; then gdrive=true; fi
-          if [ -z "$SUPABASE_DB_URL" ] || { [ "$onedrive" = false ] && [ "$gdrive" = false ]; }; then
-            echo "Segredos da pasta (OneDrive ou Google Drive) e do Supabase ainda não configurados; nada a fazer."
+          # os links das planilhas podem estar na tabela bi_fonte do banco: basta o SUPABASE_DB_URL
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "Segredo SUPABASE_DB_URL ainda não configurado; nada a fazer."
             echo "ok=false" >> "$GITHUB_OUTPUT"
           else
             echo "ok=true" >> "$GITHUB_OUTPUT"
