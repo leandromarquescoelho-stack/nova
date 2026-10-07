@@ -64,10 +64,10 @@ Onde fica cada coisa:
 Em vez do aplicativo do TI, a carga pode baixar cada planilha por um link "Qualquer pessoa" do OneDrive, guardado na tabela `bi_fonte` do Supabase (nunca no código nem no GitHub).
 
 1. No OneDrive, em cada planilha (vendas, estoque e, se houver, metas): Compartilhar > "Qualquer pessoa com o link" > **Pode exibir** > Copiar link. Para atualizar, substitua o arquivo mantendo o mesmo nome; assim o link continua o mesmo.
-2. No Supabase: Table Editor > `bi_fonte` > Insert row, com `papel` = `vendas` (ou `estoque`, `metas`) e `link` = o link copiado.
+2. No painel, entre com um usuário de perfil **BI** e abra **Links das planilhas** no menu. Cole o link de cada planilha e salve. A mesma tela mostra o histórico das últimas cargas.
 3. No GitHub, só o segredo `SUPABASE_DB_URL` é necessário.
 
-A tabela `bi_fonte` não é visível para os usuários do painel. Cuidado: quem tiver o link baixa a planilha, então não envie o link por e-mail ou chat. Para cortar o acesso, desative o link no OneDrive (Gerenciar acesso) e cadastre um novo.
+Os links ficam na tabela `bi_fonte`, que só o perfil BI lê e altera (regra no banco); na tela o link salvo aparece abreviado. Cuidado: quem tiver o link baixa a planilha, então não envie o link por e-mail ou chat. Para cortar o acesso, desative o link no OneDrive (Gerenciar acesso) e cadastre um novo.
 
 ### Acesso à pasta do OneDrive (feito uma vez pelo TI)
 
