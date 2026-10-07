@@ -754,6 +754,9 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
       <div class="nav-item" data-view="usuarios" style="display:none;">
         <span class="ico">&#128273;</span><span class="label">Usuários</span><span class="tip">Usuários</span>
       </div>
+      <div class="nav-item" data-view="fontes" style="display:none;">
+        <span class="ico">&#128279;</span><span class="label">Links das planilhas</span><span class="tip">Links das planilhas</span>
+      </div>
     </nav>
 
     <div class="sidebar-foot">
@@ -1120,6 +1123,22 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
           <div><h2>Usuários cadastrados</h2><div class="psub">Edite o papel, loja/vendedor ou desative o acesso</div></div>
         </div>
         <div id="usersTableWrap" class="table-scroll"></div>
+      </div>
+      </section>
+
+      <section class="view-panel" data-view-panel="fontes" style="display:none;">
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Links das planilhas</h2><div class="psub">Link "Qualquer pessoa com o link · Pode exibir" do OneDrive. A carga confere a cada 30 minutos e só recarrega quando o arquivo muda.</div></div>
+        </div>
+        <div id="fontesWrap" class="table-scroll"></div>
+        <div class="psub" style="margin-top:10px;">Por segurança o link salvo aparece abreviado. Para trocar, cole o novo link e salve. Para atualizar os dados, substitua o arquivo no OneDrive mantendo o mesmo nome; assim o link continua valendo.</div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>Últimas cargas</h2><div class="psub">Histórico do processo de carga</div></div>
+        </div>
+        <div id="cargasWrap" class="table-scroll"></div>
       </div>
       </section>
 
@@ -2744,7 +2763,8 @@ function bindEvents(){
     estoque:{title:'Estoque', sub:'Saúde do estoque, alertas e giro'},
     produtos:{title:'Produtos', sub:'Curva ABC e catálogo detalhado'},
     vendedores:{title:'Vendedores', sub:'Performance e consultoria comparativa'},
-    usuarios:{title:'Usuários', sub:'Gestão de acessos ao painel (somente BI)'}
+    usuarios:{title:'Usuários', sub:'Gestão de acessos ao painel (somente BI)'},
+    fontes:{title:'Links das planilhas', sub:'Origem dos dados da carga (somente BI)'}
   };
   function switchView(view){
     state.currentView = view;
@@ -2760,6 +2780,7 @@ function bindEvents(){
     document.getElementById('viewSub').textContent = meta.sub;
     if(view==='vendedores'){ renderVendConsult(); }
     if(view==='usuarios'){ renderUsersAdmin(); }
+    if(view==='fontes'){ renderFontesAdmin(); }
     document.getElementById('app').removeAttribute('data-sidebar-mobile');
     document.getElementById('overlay').classList.remove('show');
   }
@@ -3052,6 +3073,98 @@ async function renderUsersAdmin(){
     });
   });
 }
+/* ---------- links das planilhas (tabela bi_fonte; RLS: só perfil BI) ---------- */
+var FONTE_PAPEIS = [
+  {papel:'vendas', rotulo:'Vendas', obrig:true},
+  {papel:'estoque', rotulo:'Estoque', obrig:true},
+  {papel:'metas', rotulo:'Metas (opcional)', obrig:false}
+];
+function abreviarLink(link){
+  if(!link) return '';
+  try{
+    var u = new URL(link);
+    var fim = (u.pathname + u.search).slice(-6);
+    return u.host + '/…' + fim;
+  } catch(e){ return link.slice(0,12) + '…'; }
+}
+function validarLink(link){
+  var u;
+  try{ u = new URL(link); } catch(e){ return 'Link inválido.'; }
+  if(u.protocol !== 'https:') return 'O link precisa começar com https://';
+  if(!/sharepoint\.com$|onedrive\.live\.com$|1drv\.ms$/i.test(u.host)) return 'Use um link do OneDrive / SharePoint.';
+  if(/\/:f:\//.test(u.pathname)) return 'Esse é o link de uma pasta. Compartilhe cada planilha (arquivo) separadamente.';
+  return '';
+}
+function fmtDataHora(iso){
+  if(!iso) return '—';
+  var d = new Date(iso);
+  if(isNaN(d.getTime())) return '—';
+  return fmtDateShort(iso)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+async function renderFontesAdmin(){
+  var wrap = document.getElementById('fontesWrap');
+  var cw = document.getElementById('cargasWrap');
+  if(!wrap) return;
+  wrap.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:8px 2px;">Carregando…</div>';
+  var res = await supa.from('bi_fonte').select('papel,link,ativo,atualizado_em');
+  if(res.error){ wrap.innerHTML = '<div class="login-error">Erro ao carregar os links: '+escapeHtml(res.error.message)+'</div>'; return; }
+  var atual = {}; (res.data||[]).forEach(function(r){ atual[r.papel] = r; });
+  var rows = FONTE_PAPEIS.map(function(f){
+    var r = atual[f.papel];
+    return '<tr data-papel="'+f.papel+'">'+
+      '<td><b>'+f.rotulo+'</b></td>'+
+      '<td class="f-atual" style="font-family:\'JetBrains Mono\',monospace; font-size:12px;">'+(r ? escapeHtml(abreviarLink(r.link)) : '<span style="color:var(--text-muted);">não cadastrado</span>')+'</td>'+
+      '<td><input type="url" class="u-edit f-link" placeholder="'+(r?'Cole um novo link para trocar':'Cole o link da planilha')+'" style="width:320px;" autocomplete="off"></td>'+
+      '<td style="text-align:center;"><input type="checkbox" class="u-edit f-ativo" '+(!r || r.ativo ? 'checked' : '')+'></td>'+
+      '<td>'+(r ? fmtDataHora(r.atualizado_em) : '—')+'</td>'+
+      '<td style="white-space:nowrap;"><button class="tbtn f-save" type="button">Salvar</button> '+
+        (r ? '<button class="tbtn f-del" type="button" title="Remover link">Remover</button>' : '')+'</td>'+
+      '<td class="f-msg" style="font-size:12px;"></td>'+
+      '</tr>';
+  }).join('');
+  wrap.innerHTML = '<table class="data-table users-table"><thead><tr><th>Planilha</th><th>Link salvo</th><th>Novo link</th><th>Ativo</th><th>Atualizado em</th><th></th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+  Array.prototype.forEach.call(wrap.querySelectorAll('tr[data-papel]'), function(tr){
+    var papel = tr.getAttribute('data-papel');
+    var msg = tr.querySelector('.f-msg');
+    function aviso(t, ok){ msg.textContent = t; msg.style.color = ok ? 'var(--success, #1a7f37)' : 'var(--danger, #c62828)'; }
+    tr.querySelector('.f-save').addEventListener('click', async function(){
+      var btn = this;
+      var link = tr.querySelector('.f-link').value.trim();
+      var ativo = tr.querySelector('.f-ativo').checked;
+      var existe = !!atual[papel];
+      if(!link && !existe){ aviso('Cole o link antes de salvar.'); return; }
+      if(link){ var erro = validarLink(link); if(erro){ aviso(erro); return; } }
+      btn.disabled = true; btn.textContent = 'Salvando…';
+      var r = link
+        ? await supa.from('bi_fonte').upsert({papel: papel, link: link, ativo: ativo}, {onConflict: 'papel'})
+        : await supa.from('bi_fonte').update({ativo: ativo}).eq('papel', papel);
+      btn.disabled = false; btn.textContent = 'Salvar';
+      if(r.error){ aviso('Erro ao salvar: '+r.error.message); return; }
+      toast('Link de '+papel+' salvo.');
+      renderFontesAdmin();
+    });
+    var del = tr.querySelector('.f-del');
+    if(del) del.addEventListener('click', async function(){
+      if(!window.confirm('Remover o link de '+papel+'? A carga deixa de usar essa planilha.')) return;
+      var r = await supa.from('bi_fonte').delete().eq('papel', papel);
+      if(r.error){ aviso('Erro ao remover: '+r.error.message); return; }
+      toast('Link de '+papel+' removido.');
+      renderFontesAdmin();
+    });
+  });
+  if(!cw) return;
+  var c = await supa.from('bi_carga_controle').select('arquivo_nome,status,linhas,mensagem,iniciado_em,concluido_em').order('id', {ascending:false}).limit(12);
+  if(c.error){ cw.innerHTML = '<div class="login-error">Erro ao carregar o histórico: '+escapeHtml(c.error.message)+'</div>'; return; }
+  var ST = {ok:'OK', erro:'Erro', processando:'Processando', ignorado:'Ignorado'};
+  var linhas = (c.data||[]).map(function(x){
+    return '<tr><td>'+fmtDataHora(x.concluido_em || x.iniciado_em)+'</td><td>'+escapeHtml(x.arquivo_nome)+'</td>'+
+      '<td><b style="color:'+(x.status==='erro'?'var(--danger, #c62828)':'inherit')+';">'+(ST[x.status]||x.status)+'</b></td>'+
+      '<td>'+(x.linhas!=null ? fmtUn(x.linhas) : '—')+'</td><td style="font-size:12px;">'+escapeHtml(x.mensagem||'')+'</td></tr>';
+  }).join('');
+  cw.innerHTML = '<table class="data-table users-table"><thead><tr><th>Quando</th><th>Arquivo</th><th>Status</th><th>Linhas</th><th>Mensagem</th></tr></thead><tbody>'+
+    (linhas || '<tr><td colspan="5" style="color:var(--text-muted);">Nenhuma carga registrada ainda.</td></tr>')+'</tbody></table>';
+}
+
 var uiRoleEl = document.getElementById('uiRole');
 if(uiRoleEl){
   uiRoleEl.addEventListener('change', function(){
@@ -3126,8 +3239,12 @@ function doLogin(u){
   else badge.textContent = u.perfil+' · todas as lojas do canal';
   if(u.escopo.tipo==='loja') state.regiao = [u.escopo.loja]; else state.regiao = [];
   if(u.escopo.tipo==='vendedor') state.vendedor = [u.escopo.vendedor]; else state.vendedor = [];
-  var usuariosNav = document.querySelector('.nav-item[data-view="usuarios"]');
-  if(usuariosNav) usuariosNav.style.display = (CURRENT_PROFILE && CURRENT_PROFILE.role==='bi') ? '' : 'none';
+  var ehBI = !!(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi');
+  ['usuarios','fontes'].forEach(function(v){
+    var nav = document.querySelector('.nav-item[data-view="'+v+'"]');
+    if(nav) nav.style.display = ehBI ? '' : 'none';
+  });
+  if(!ehBI && (state.currentView==='usuarios' || state.currentView==='fontes')) switchView('dashboard');
   if(appBooted){ initFilterSelects(); state.page=1; renderAll(false); }
   else { appBooted = true; bootApp(); }
   var regiaoGroup = document.getElementById('fcheck-regiao');
