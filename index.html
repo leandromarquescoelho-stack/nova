@@ -238,6 +238,10 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .kpi-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:18px;}
 @media (max-width:1400px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
 @media (max-width:720px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+#kpiGrid{grid-template-columns:repeat(7,minmax(0,1fr));}
+@media (max-width:1400px){#kpiGrid{grid-template-columns:repeat(4,minmax(0,1fr));}}
+@media (max-width:720px){#kpiGrid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+#kpiGrid .kvalue{font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .kpi-card{
   background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);
   padding:14px 15px; box-shadow:var(--shadow-card); position:relative; overflow:hidden;
@@ -285,6 +289,7 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;}
 .grid-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;}
 @media (max-width:1100px){ .grid-main,.grid-2,.grid-3{ grid-template-columns:1fr; } }
+.grid-main>*,.grid-2>*,.grid-3>*{ min-width:0; }
 
 .panel{
   background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
@@ -332,7 +337,7 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .scroll-limit::-webkit-scrollbar-thumb{ background:var(--surface-3); border-radius:6px; }
 .scroll-limit::-webkit-scrollbar-thumb:hover{ background:var(--text-muted); }
 .scroll-limit{ scrollbar-width:thin; scrollbar-color:var(--surface-3) transparent; }
-.barlist-row{display:grid; grid-template-columns:120px 1fr 74px; align-items:center; gap:10px; cursor:default;}
+.barlist-row{display:grid; grid-template-columns:120px minmax(40px,1fr) 118px; align-items:center; gap:10px; cursor:default;}
 .barlist-row .bl-label{font-size:12px; color:var(--text-2); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .barlist-row .bl-track{height:9px; border-radius:5px; background:var(--surface-3); overflow:hidden; position:relative;}
 .barlist-row .bl-fill{height:100%; border-radius:5px; background:linear-gradient(90deg, var(--accent-2), var(--accent)); transition:width .5s cubic-bezier(.4,0,.2,1);}
@@ -655,6 +660,31 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .fcheck-search::placeholder{ color:var(--text-muted); }
 .fcheck-item.fcheck-hidden{ display:none; }
 .scroll-limit-sm{ max-height:132px; overflow-y:auto; }
+.note-muted{ font-size:11px; color:var(--text-muted); margin-top:10px; line-height:1.6; }
+/* ---- mês em andamento ---- */
+.mtd-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+@media (max-width:1100px){ .mtd-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.mtd-box{ background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px 13px; min-width:0; }
+.mtd-box .l{ font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+.mtd-box .v{ font-family:'Sora',sans-serif; font-size:19px; font-weight:700; margin-top:5px; }
+.mtd-box .s{ font-size:11.5px; color:var(--text-2); margin-top:4px; line-height:1.5; }
+.mtd-bar{ position:relative; height:8px; border-radius:6px; background:var(--surface-3); margin-top:14px; overflow:hidden; }
+.mtd-bar i{ position:absolute; left:0; top:0; bottom:0; border-radius:6px; }
+/* ---- legenda de canais / barras empilhadas ---- */
+.leg-row{ display:flex; flex-wrap:wrap; gap:12px; font-size:11px; color:var(--text-2); margin-top:8px; }
+.leg-row i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+/* ---- mapa de calor ---- */
+.heat{ width:100%; border-collapse:separate; border-spacing:3px; font-size:11px; }
+.heat th{ color:var(--text-muted); font-weight:700; text-align:center; padding:4px 2px; white-space:nowrap; }
+.heat th.rl{ text-align:left; }
+.heat td{ text-align:center; padding:7px 4px; border-radius:5px; font-family:'JetBrains Mono',monospace; color:var(--text); white-space:nowrap; }
+.heat td.rl{ text-align:left; font-family:inherit; font-weight:700; color:var(--text-2); background:none; }
+.heat td.tot{ background:none; color:var(--text-2); }
+/* ---- qualidade do cadastro ---- */
+.dq-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12px; }
+.dq-row:last-child{ border-bottom:none; }
+.dq-row .n{ color:var(--text-2); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dq-row .v{ font-family:'JetBrains Mono',monospace; white-space:nowrap; }
 .scroll-limit-sm::-webkit-scrollbar{ width:6px; }
 .scroll-limit-sm::-webkit-scrollbar-track{ background:transparent; }
 .scroll-limit-sm::-webkit-scrollbar-thumb{ background:var(--surface-3); border-radius:6px; }
@@ -899,6 +929,16 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
       <!-- ---- KPIs ---- -->
       <div class="kpi-grid" id="kpiGrid"></div>
 
+      <!-- ---- mês em andamento: acumulado do mês, comparação e projeção ---- -->
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2 id="mtdTitle">Mês em andamento</h2><div class="psub" id="mtdSub">Acumulado do mês vs. mesmos dias do mês anterior &middot; projeção para o fechamento</div></div>
+        </div>
+        <div class="mtd-grid" id="mtdGrid"></div>
+        <div class="mtd-bar" id="mtdBar"></div>
+        <p class="note-muted" id="mtdNota"></p>
+      </div>
+
       <!-- ---- insights automáticos: achados gerados a partir dos filtros/período atuais ---- -->
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
@@ -953,6 +993,15 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
           <div class="barlist scroll-limit" id="catList"></div>
         </div>
       </div>
+
+      <!-- ---- evolução mensal por canal + margem ---- -->
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal &middot; linha = margem bruta %</div></div>
+        </div>
+        <div class="chart-wrap"><div id="monthChart"></div></div>
+        <div class="leg-row" id="monthLegend"></div>
+      </div>
       </section>
 
       <!-- ============ VENDAS ============ -->
@@ -960,13 +1009,16 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
       <div class="grid-2">
         <div class="panel">
           <div class="panel-head">
-            <div><h2>Vendas por Loja / Canal</h2><div class="psub">Lojas físicas e marketplaces &middot; faturamento no período</div></div>
+            <div><h2>Vendas por Loja / Canal</h2><div class="psub">Lojas físicas e marketplaces (🛒) &middot; faturamento no período</div></div>
           </div>
           <div class="barlist scroll-limit" id="lojaList"></div>
+          <h3 class="dh" style="margin-top:14px;">Canais</h3>
+          <div class="barlist" id="canalList"></div>
+          <p class="note-muted" id="lojaFonte"></p>
         </div>
         <div class="panel">
           <div class="panel-head">
-            <div><h2>Top Produtos</h2><div class="psub">Ranking por faturamento no período &middot; role para ver mais</div></div>
+            <div><h2>Top Produtos</h2><div class="psub">Ranking por faturamento no período &middot; tendência = últimos 7 dias vs. 7 anteriores</div></div>
           </div>
           <div id="topProducts" class="scroll-limit"></div>
         </div>
@@ -982,6 +1034,14 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
           <div class="barlist scroll-limit" id="modelList"></div>
         </div>
       </div>
+
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Loja &times; mês</h2><div class="psub">Faturamento mensal de cada loja &middot; cor mais forte = mês mais alto daquela loja</div></div>
+        </div>
+        <div class="table-scroll"><div id="heatLoja"></div></div>
+        <p class="note-muted" id="heatNota"></p>
+      </div>
       </section>
 
       <!-- ============ ESTOQUE ============ -->
@@ -989,7 +1049,7 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
       <div class="grid-2">
         <div class="panel">
           <div class="panel-head">
-            <div><h2>Saúde do Estoque</h2><div class="psub">Distribuição por nível de cobertura</div></div>
+            <div><h2>Saúde do Estoque</h2><div class="psub">Produtos por nível de cobertura em relação ao estoque mínimo</div></div>
           </div>
           <div class="stock-donut-wrap">
             <div id="stockDonut"></div>
@@ -1018,7 +1078,7 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
       <section class="view-panel" data-view-panel="produtos" style="display:none;">
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Curva ABC</h2><div class="psub">Concentração de faturamento por produto</div></div>
+          <div><h2>Curva ABC</h2><div class="psub">Concentração de faturamento entre os produtos detalhados (cauda longa fora)</div></div>
         </div>
         <div class="abc-chips" id="abcChips"></div>
         <div class="chart-wrap">
@@ -1077,9 +1137,10 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
       <section class="view-panel" data-view-panel="vendedores" style="display:none;">
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Performance de Vendedores</h2><div class="psub">Faturamento &middot; atingimento de meta (meta estimada)</div></div>
+          <div><h2>Performance de Vendedores</h2><div class="psub">Faturamento &middot; margem &middot; atingimento de meta (meta estimada)</div></div>
         </div>
         <div id="sellerList" class="scroll-limit"></div>
+        <p class="note-muted" id="sellerFonte"></p>
       </div>
 
       <div class="panel" style="margin-bottom:14px;">
@@ -1088,6 +1149,16 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
           <select class="fsel" id="vendConsultSelect" style="min-width:220px;"></select>
         </div>
         <div id="vendConsultBody"></div>
+      </div>
+
+      <div class="panel" style="margin-bottom:14px;" id="dqPanel">
+        <div class="panel-head">
+          <div><h2>Qualidade do cadastro de vendedor</h2><div class="psub">Vendas sem vendedor ou lançadas em nomes que não são pessoas &middot; período selecionado</div></div>
+        </div>
+        <div class="grid-2" style="margin-bottom:0;">
+          <div><h3 class="dh">Sem vendedor, por loja</h3><div id="dqLoja"></div></div>
+          <div><h3 class="dh">Nomes que não parecem vendedores</h3><div id="dqNomes"></div></div>
+        </div>
       </div>
       </section>
 
@@ -1214,6 +1285,7 @@ var dayWeightQtd = companyDaily.map(function(r,i){ var mi=monthIndexOfDay[i]; re
    produto pelos dias daquele mês, seguindo a mesma curva diária real da empresa (dia bom
    para a empresa = dia bom para o produto) — por construção, a soma diária de todos os
    produtos bate exatamente com o faturamento/quantidade reais da empresa em cada dia. */
+var MESES_EFETIVOS = REAL.mesesEfetivos || REAL.months.length;
 var PRODUCTS = REAL.products.map(function(rp){
   var dailyFat = new Array(N_DAYS);
   var dailyQtd = new Array(N_DAYS);
@@ -1225,8 +1297,8 @@ var PRODUCTS = REAL.products.map(function(rp){
   var precoUnit = rp.qtd>0 ? rp.fat/rp.qtd : 0;
   var estAtual = rp.estFis||0;
   var estMinCalc = rp.estMin||0;
-  // giro anualizado estimado = (qtd vendida/mês * 12) / estoque atual
-  var giro = estAtual>0 ? ((rp.qtd/Math.max(1,REAL.months.length))*12)/estAtual : (rp.qtd>0 ? 24 : 0);
+  // giro anualizado estimado = (qtd vendida/mês * 12) / estoque atual — mês em andamento conta só os dias já vendidos
+  var giro = estAtual>0 ? ((rp.qtd/Math.max(1,MESES_EFETIVOS))*12)/estAtual : (rp.qtd>0 ? 24 : 0);
   giro = Math.max(0, Math.min(30, Math.round(giro*10)/10));
   var custo = rp.custo||0;
   var lb = (rp.lb!==undefined && rp.lb!==null) ? rp.lb : (rp.fat - custo);
@@ -1238,7 +1310,8 @@ var PRODUCTS = REAL.products.map(function(rp){
     precoUnit: Math.round(precoUnit*100)/100,
     estoqueAtual: Math.round(estAtual), estoqueMin: Math.max(1, Math.round(estMinCalc)),
     giro: giro,
-    diasSemGiro: rp.diasSemGiro, parado: !!rp.parado, isBucket: !!rp.isBucket,
+    diasSemGiro: rp.diasSemGiro, parado: !!rp.parado, isBucket: !!rp.isBucket, bucketCount: rp.bucketCount||0,
+    estCusto: rp.estCusto||0,
     fat: rp.fat||0, qtd: rp.qtd||0, custo: custo, lb: lb, margemPct: margemPct,
     mfat: rp.mfat, mqtd: rp.mqtd,
     dailyFat: dailyFat, dailyQtd: dailyQtd
@@ -1246,12 +1319,60 @@ var PRODUCTS = REAL.products.map(function(rp){
 });
 var ALL_PRODUCTS = PRODUCTS; // referência completa (pré-escopo de acesso), usada só p/ montar o login
 
+/* ---------- resumo real mês x loja x canal x vendedor ----------
+   Os produtos carregam 1 loja/vendedor "principal" por SKU (simplificação p/ filtros cruzados).
+   Para lojas, canais e vendedores os totais corretos vêm do resumo: cada mês é distribuído
+   pelos dias com a mesma curva diária da empresa, então qualquer período bate com o restante do painel. */
+var SEM_VENDEDOR = 'SEM VENDEDOR';
+var RESUMO = (REAL.resumo||[]).map(function(r){
+  return {mi: REAL.months.indexOf(r.mes), loja:r.loja||'SEM LOJA', canal:r.canal||'N/D', vendedor:r.vendedor||SEM_VENDEDOR,
+    fat:r.fat, qtd:r.qtd, custo:r.custo, lb:r.lb, skus:r.skus};
+}).filter(function(r){ return r.mi>=0; });
+var HAS_RESUMO = RESUMO.length>0;
+// fração de cada mês que cai dentro do intervalo de dias [s,e] (pela curva diária real)
+function monthFractions(s,e){
+  var ff = new Array(REAL.months.length).fill(0), fq = new Array(REAL.months.length).fill(0);
+  for(var i=Math.max(0,s); i<=e && i<N_DAYS; i++){ var mi=monthIndexOfDay[i]; if(mi>=0){ ff[mi]+=dayWeightFat[i]; fq[mi]+=dayWeightQtd[i]; } }
+  return {fat:ff, qtd:fq};
+}
+// filtros que o resumo suporta (loja, canal, vendedor); os demais (marca, categoria...) só existem por SKU
+function productOnlyFiltersActive(){
+  return !!(state.marca.length || state.categoria.length || state.modelo.length || state.origem.length || state.status.length || state.soParados);
+}
+function resumoRows(opts){
+  opts = opts||{};
+  return RESUMO.filter(function(r){
+    if(!inArr(state.regiao, r.loja)) return false;
+    if(!inArr(state.canal, r.canal)) return false;
+    if(!opts.ignoreVendedor && !inArr(state.vendedor, r.vendedor)) return false;
+    return true;
+  });
+}
+// agrega o resumo por uma chave no intervalo [s,e]; retorna {chave:{fat,qtd,lb,custo}}
+function resumoAgg(rows, keyFn, s, e){
+  var fr = monthFractions(s,e), out = {};
+  rows.forEach(function(r){
+    var k = keyFn(r); var wf = fr.fat[r.mi], wq = fr.qtd[r.mi];
+    if(!wf && !wq) return;
+    var o = out[k] || (out[k] = {fat:0, qtd:0, lb:0, custo:0});
+    o.fat += r.fat*wf; o.qtd += r.qtd*wq; o.lb += r.lb*wf; o.custo += r.custo*wf;
+  });
+  return out;
+}
+// série diária de faturamento de um conjunto de linhas do resumo
+function resumoDaily(rows){
+  var mt = new Array(REAL.months.length).fill(0);
+  rows.forEach(function(r){ mt[r.mi]+=r.fat; });
+  return monthIndexOfDay.map(function(mi,i){ return mi>=0 ? mt[mi]*dayWeightFat[i] : 0; });
+}
+function isPessoa(nome){ return nome && nome!==SEM_VENDEDOR && nome!=='Diversos'; }
+
 var LOJA_INFO = REAL.lojaInfo; // {loja: {fisica:bool}}
 var PHYSICAL_LOJAS = REAL.dims.lojas.filter(function(l){ return LOJA_INFO[l] && LOJA_INFO[l].fisica; });
 var MARKET_LOJAS = REAL.dims.lojas.filter(function(l){ return LOJA_INFO[l] && !LOJA_INFO[l].fisica; });
 
 // dimensões dos filtros — recalculadas após o escopo de acesso ser aplicado (ver recomputeDims)
-var CATEGORIES, BRANDS, MODELS, SELLERS, REGIONS, CANAIS, ORIGENS, SELLER_META_ALL, SELLER_META;
+var CATEGORIES, BRANDS, MODELS, SELLERS, VEND_PESSOAS, REGIONS, CANAIS, ORIGENS, SELLER_META_ALL, SELLER_META;
 function slug(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,''); }
 function recomputeDims(){
   CATEGORIES = uniqSorted(PRODUCTS, 'categoria');
@@ -1261,8 +1382,12 @@ function recomputeDims(){
   REGIONS = uniqSorted(PRODUCTS, 'regiao');
   CANAIS = uniqSorted(PRODUCTS, 'canal').filter(function(v){ return v!=='Diversos'; });
   ORIGENS = uniqSorted(PRODUCTS, 'origem').filter(function(v){ return v!=='Diversas'; });
+  // vendedores "de verdade" para ranking/consultoria: todos com venda real no resumo (não só os "principais" de algum SKU)
+  var vs = {}; SELLERS.forEach(function(v){ if(isPessoa(v)) vs[v]=true; });
+  RESUMO.forEach(function(r){ if(isPessoa(r.vendedor)) vs[r.vendedor]=true; });
+  VEND_PESSOAS = Object.keys(vs).sort();
   SELLER_META = {};
-  SELLERS.forEach(function(s){ if(REAL.sellerMeta[s]!==undefined) SELLER_META[s]=REAL.sellerMeta[s]; });
+  VEND_PESSOAS.forEach(function(s){ if(REAL.sellerMeta[s]!==undefined) SELLER_META[s]=REAL.sellerMeta[s]; });
 }
 function uniqSorted(list, key){
   var seen = {}; var out = [];
@@ -1384,6 +1509,8 @@ function periodRange(key){
   return {start:start,end:end,prevStart:prevStart,prevEnd:prevEnd};
 }
 
+// meta é mensal: proporcional aos dias corridos do período
+function metaFator(pr){ var a=DAYS[Math.max(0,pr.start)], b=DAYS[Math.max(0,pr.end)]; return Math.max(1, Math.round((b-a)/86400000)+1)/30.4375; }
 function sumRange(arr,s,e){ var t=0; for(var i=s;i<=e && i<arr.length;i++){ if(i>=0) t+=arr[i]; } return t; }
 
 /* ============================================================
@@ -1403,6 +1530,23 @@ function matchesFilters(p){
   return true;
 }
 function filteredProducts(){ return PRODUCTS.filter(matchesFilters); }
+function salesFromResumo(){ return HAS_RESUMO && !productOnlyFiltersActive(); }
+// série diária do recorte: pelo resumo real quando só há filtros de loja/canal/vendedor; senão pelos SKUs
+function salesDaily(){
+  var fat = new Array(N_DAYS).fill(0), qtd = new Array(N_DAYS).fill(0), lb = new Array(N_DAYS).fill(0);
+  if(salesFromResumo()){
+    var mf = new Array(REAL.months.length).fill(0), mq = mf.slice(), ml = mf.slice();
+    resumoRows().forEach(function(r){ mf[r.mi]+=r.fat; mq[r.mi]+=r.qtd; ml[r.mi]+=r.lb; });
+    for(var i=0;i<N_DAYS;i++){ var mi=monthIndexOfDay[i]; if(mi<0) continue;
+      fat[i]=mf[mi]*dayWeightFat[i]; qtd[i]=mq[mi]*dayWeightQtd[i]; lb[i]=ml[mi]*dayWeightFat[i]; }
+    return {fat:fat, qtd:qtd, lb:lb};
+  }
+  filteredProducts().forEach(function(p){
+    var m = p.margemPct/100;
+    for(var i=0;i<N_DAYS;i++){ fat[i]+=p.dailyFat[i]; qtd[i]+=p.dailyQtd[i]; lb[i]+=p.dailyFat[i]*m; }
+  });
+  return {fat:fat, qtd:qtd, lb:lb};
+}
 
 /* ============================================================
    TOASTS
@@ -1462,29 +1606,28 @@ function sparklineSVG(values, w, h, color, fill){
 function computeKpis(){
   var prods = filteredProducts();
   var pr = periodRange(state.globalPeriod);
-  var fat=0, prevFat=0, qtd=0, prevQtd=0, estTotal=0, giroSum=0, giroW=0, critCount=0;
+  var sd = salesDaily();
+  var fat=sumRange(sd.fat, pr.start, pr.end), prevFat=sumRange(sd.fat, pr.prevStart, pr.prevEnd);
+  var qtd=sumRange(sd.qtd, pr.start, pr.end), prevQtd=sumRange(sd.qtd, pr.prevStart, pr.prevEnd);
+  var lb=sumRange(sd.lb, pr.start, pr.end), prevLb=sumRange(sd.lb, pr.prevStart, pr.prevEnd);
+  var estTotal=0, estValor=0, giroSum=0, giroW=0, critCount=0;
   prods.forEach(function(p){
-    fat += sumRange(p.dailyFat, pr.start, pr.end);
-    prevFat += sumRange(p.dailyFat, pr.prevStart, pr.prevEnd);
-    qtd += sumRange(p.dailyQtd, pr.start, pr.end);
-    prevQtd += sumRange(p.dailyQtd, pr.prevStart, pr.prevEnd);
-    estTotal += p.estoqueAtual;
+    estTotal += p.estoqueAtual; estValor += p.estCusto;
     giroSum += p.giro * Math.max(1,p.estoqueAtual); giroW += Math.max(1,p.estoqueAtual);
     var st = stockStatus(p);
-    if(st==='critico' || st==='zerado') critCount++;
+    if(!p.isBucket && (st==='critico' || st==='zerado')) critCount++;
   });
   var ticket = qtd>0 ? fat/qtd : 0;
   var prevTicket = prevQtd>0 ? prevFat/prevQtd : 0;
   var giroMedio = giroW>0 ? giroSum/giroW : 0;
 
-  var last14 = [];
-  for(var i=TODAY_IDX-13;i<=TODAY_IDX;i++){ var s=0; prods.forEach(function(p){ s+= (i>=0? p.dailyFat[i]:0); }); last14.push(s); }
-  var last14Qtd = [];
-  for(var j=TODAY_IDX-13;j<=TODAY_IDX;j++){ var s2=0; prods.forEach(function(p){ s2+= (j>=0? p.dailyQtd[j]:0); }); last14Qtd.push(s2); }
+  var last14 = sd.fat.slice(Math.max(0,TODAY_IDX-13), TODAY_IDX+1);
+  var last14Qtd = sd.qtd.slice(Math.max(0,TODAY_IDX-13), TODAY_IDX+1);
 
   return {
     fat:fat, prevFat:prevFat, qtd:qtd, prevQtd:prevQtd, ticket:ticket, prevTicket:prevTicket,
-    estTotal:estTotal, critCount:critCount, giroMedio:giroMedio,
+    margem: fat>0 ? lb/fat*100 : 0, prevMargem: prevFat>0 ? prevLb/prevFat*100 : 0,
+    estTotal:estTotal, estValor:estValor, critCount:critCount, giroMedio:giroMedio,
     spark:last14, sparkQtd:last14Qtd
   };
 }
@@ -1500,6 +1643,7 @@ function renderKpis(refreshing){
       {key:'fat', label:'Faturamento', icon:'💰'},
       {key:'qtd', label:'Peças Vendidas', icon:'🔩'},
       {key:'ticket', label:'Ticket Médio', icon:'🧾'},
+      {key:'margem', label:'Margem Bruta', icon:'📊'},
       {key:'estoque', label:'Estoque Total', icon:'📦'},
       {key:'critico', label:'Estoque Crítico', icon:'⚠️', warn:true},
       {key:'giro', label:'Giro de Estoque', icon:'🔁'}
@@ -1542,9 +1686,15 @@ function renderKpis(refreshing){
   kpiEls.ticket.d.innerHTML = deltaArrow(growthTicket)+' '+fmtPct(growthTicket);
   kpiEls.ticket.s.innerHTML='';
 
+  var dMargem = k.margem-k.prevMargem;
+  countUp(kpiEls.margem.v, k.margem, function(v){ return v.toFixed(1)+'%'; });
+  kpiEls.margem.d.className='kdelta '+deltaClass(dMargem);
+  kpiEls.margem.d.innerHTML = deltaArrow(dMargem)+' '+(dMargem>=0?'+':'')+dMargem.toFixed(1)+' p.p. · LB '+fmtMoney(k.fat*k.margem/100);
+  kpiEls.margem.s.innerHTML='';
+
   countUp(kpiEls.estoque.v, k.estTotal, function(v){ return fmtUn(v)+' peças'; });
   kpiEls.estoque.d.className='kdelta flat';
-  kpiEls.estoque.d.textContent = 'Itens disponíveis em estoque';
+  kpiEls.estoque.d.textContent = fmtMoney(k.estValor)+' a custo';
   kpiEls.estoque.s.innerHTML='';
 
   countUp(kpiEls.critico.v, k.critCount, function(v){ return fmtUn(v)+' itens'; });
@@ -1563,28 +1713,27 @@ function renderKpis(refreshing){
    ============================================================ */
 function buildSeries(prods, rangeKey, metric){
   var pr = periodRange(rangeKey);
+  var sd = salesDaily();
   var span = pr.end-pr.start+1;
   var bucketDays = span<=31 ? 1 : (span<=95 ? 7 : (span<=190 ? 7 : 30));
   var points = [], prevPoints = [];
   for(var s=pr.start; s<=pr.end; s+=bucketDays){
     var e = Math.min(pr.end, s+bucketDays-1);
-    var fat=0, qtd=0;
-    prods.forEach(function(p){ fat+=sumRange(p.dailyFat,s,e); qtd+=sumRange(p.dailyQtd,s,e); });
-    var val = metric==='fat'?fat : metric==='qtd'?qtd : metric==='margem'?fat*0.24 : (qtd>0?fat/qtd:0);
+    var fat=sumRange(sd.fat,s,e), qtd=sumRange(sd.qtd,s,e), lb=sumRange(sd.lb,s,e);
+    var val = metric==='fat'?fat : metric==='qtd'?qtd : metric==='margem'?lb : (qtd>0?fat/qtd:0);
     points.push({date:DAYS[e], val:val});
   }
   var offset = pr.start-pr.prevStart <= 0 ? (pr.end-pr.start+1) : (pr.start-pr.prevStart);
   for(var s2=pr.prevStart; s2<=pr.prevEnd; s2+=bucketDays){
     var e2 = Math.min(pr.prevEnd, s2+bucketDays-1);
-    var fat2=0, qtd2=0;
-    prods.forEach(function(p){ fat2+=sumRange(p.dailyFat,s2,e2); qtd2+=sumRange(p.dailyQtd,s2,e2); });
-    var val2 = metric==='fat'?fat2 : metric==='qtd'?qtd2 : metric==='margem'?fat2*0.24 : (qtd2>0?fat2/qtd2:0);
+    var fat2=sumRange(sd.fat,s2,e2), qtd2=sumRange(sd.qtd,s2,e2), lb2=sumRange(sd.lb,s2,e2);
+    var val2 = metric==='fat'?fat2 : metric==='qtd'?qtd2 : metric==='margem'?lb2 : (qtd2>0?fat2/qtd2:0);
     prevPoints.push(val2);
   }
   return {points:points, prev:prevPoints};
 }
 
-var METRIC_LABEL = {fat:'Faturamento', qtd:'Peças vendidas', margem:'Margem', ticket:'Ticket médio'};
+var METRIC_LABEL = {fat:'Faturamento', qtd:'Peças vendidas', margem:'Lucro bruto', ticket:'Ticket médio'};
 var METRIC_FMT = {fat:fmtMoney, qtd:fmtUn, margem:fmtMoney, ticket:fmtMoney2};
 
 function renderMainChart(){
@@ -1726,16 +1875,31 @@ function renderGiroList(){
 }
 
 function renderLojaList(){
-  var prods = filteredProducts();
   var pr = periodRange(state.globalPeriod);
-  var map = aggregateByDim(prods, function(p){return p.regiao;}, pr);
-  var total=0; Object.keys(map).forEach(function(k){total+=map[k].fat;});
-  var rows = Object.keys(map).map(function(k){
-    var fisica = LOJA_INFO[k] ? LOJA_INFO[k].fisica : true;
-    return {label:(fisica?'':'🛒 ')+k, key:k, value:map[k].fat,
-      sub: total>0 ? (map[k].fat/total*100).toFixed(1)+'% · '+fmtUn(map[k].qtd)+' un':''};
-  }).sort(function(a,b){return b.value-a.value;});
-  renderBarList('lojaList', rows);
+  var real = salesFromResumo(), lojaMap, canalMap;
+  if(real){
+    var rr = resumoRows();
+    lojaMap = resumoAgg(rr, function(r){ return r.loja; }, pr.start, pr.end);
+    canalMap = resumoAgg(rr, function(r){ return r.canal; }, pr.start, pr.end);
+  } else {
+    var prods = filteredProducts();
+    lojaMap = aggregateByDim(prods, function(p){return p.regiao;}, pr);
+    canalMap = aggregateByDim(prods, function(p){return p.canal;}, pr);
+  }
+  function rowsOf(map, isLoja){
+    var total=0; Object.keys(map).forEach(function(k){total+=map[k].fat;});
+    return Object.keys(map).filter(function(k){ return map[k].fat>0.5; }).map(function(k){
+      var fisica = !isLoja || (LOJA_INFO[k] ? LOJA_INFO[k].fisica : true);
+      var mg = map[k].lb!==undefined && map[k].fat>0 ? ' · margem '+(map[k].lb/map[k].fat*100).toFixed(1)+'%' : '';
+      return {label:(fisica?'':'🛒 ')+k, key:k, value:map[k].fat,
+        sub: total>0 ? (map[k].fat/total*100).toFixed(1)+'% · '+fmtUn(map[k].qtd)+' un'+mg : ''};
+    }).sort(function(a,b){return b.value-a.value;});
+  }
+  renderBarList('lojaList', rowsOf(lojaMap, true));
+  renderBarList('canalList', rowsOf(canalMap, false));
+  document.getElementById('lojaFonte').textContent = real
+    ? 'Totais reais de cada loja e canal.'
+    : 'Com filtro de marca, categoria, aplicação, origem ou estoque, a loja de cada produto é a de maior venda dele (aproximação).';
 }
 
 function renderBrandModelLists(){
@@ -1743,13 +1907,14 @@ function renderBrandModelLists(){
   var pr = periodRange(state.globalPeriod);
   var brandMap = aggregateByDim(prods, function(p){return p.marca;}, pr);
   var totalB=0; Object.keys(brandMap).forEach(function(k){totalB+=brandMap[k].fat;});
-  var brandRows = Object.keys(brandMap).map(function(k){ return {label:k, value:brandMap[k].fat, sub: totalB>0 ? (brandMap[k].fat/totalB*100).toFixed(1)+'% · '+fmtUn(brandMap[k].qtd)+' un':''}; })
+  function caudaLbl(k){ return k==='Diversas' ? 'Cauda longa (várias)' : k; }
+  var brandRows = Object.keys(brandMap).map(function(k){ return {label:caudaLbl(k), value:brandMap[k].fat, sub: totalB>0 ? (brandMap[k].fat/totalB*100).toFixed(1)+'% · '+fmtUn(brandMap[k].qtd)+' un':''}; })
     .sort(function(a,b){return b.value-a.value;});
   renderBarList('brandList', brandRows);
 
   var modelMap = aggregateByDim(prods, function(p){ return p.modelo2 ? [p.modelo,p.modelo2] : p.modelo; }, pr);
   var totalM=0; Object.keys(modelMap).forEach(function(k){totalM+=modelMap[k].fat;});
-  var modelRows = Object.keys(modelMap).map(function(k){ return {label:k, value:modelMap[k].fat, sub: totalM>0 ? (modelMap[k].fat/totalM*100).toFixed(1)+'% · '+fmtUn(modelMap[k].qtd)+' un':''}; })
+  var modelRows = Object.keys(modelMap).map(function(k){ return {label:caudaLbl(k), value:modelMap[k].fat, sub: totalM>0 ? (modelMap[k].fat/totalM*100).toFixed(1)+'% · '+fmtUn(modelMap[k].qtd)+' un':''}; })
     .sort(function(a,b){return b.value-a.value;});
   renderBarList('modelList', modelRows);
 }
@@ -1777,8 +1942,8 @@ function vcKpi(label, value, sub){
 }
 function renderVendConsult(){
   var box = document.getElementById('vendConsultBody');
-  if(!SELLERS.length){ box.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">Não há vendedores neste escopo de acesso.</p>'; return; }
-  if(SELLERS.indexOf(state.vendConsultSel)===-1) state.vendConsultSel = SELLERS[0];
+  if(!VEND_PESSOAS.length){ box.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">Não há vendedores neste escopo de acesso.</p>'; return; }
+  if(VEND_PESSOAS.indexOf(state.vendConsultSel)===-1) state.vendConsultSel = VEND_PESSOAS[0];
   var sel = document.getElementById('vendConsultSelect');
   if(sel.value!==state.vendConsultSel) sel.value = state.vendConsultSel;
 
@@ -1789,7 +1954,7 @@ function renderVendConsult(){
   var groupFatByMarca = {}, groupFatByCategoria = {}, groupFatByProduto = {}, groupFatTotalAll = 0;
   var prodNameById = {};
   pool.forEach(function(p){
-    if(p.vendedor==='Diversos') return; // bucket de cauda longa não tem vendedor individual real
+    if(!isPessoa(p.vendedor)) return; // cauda longa e vendas sem vendedor não entram no comparativo
     if(!map[p.vendedor]) map[p.vendedor] = {fat:0, qtd:0, lb:0, dailyFat:new Array(N_DAYS).fill(0), skus:{}, marcas:{}, categorias:{}, produtos:{}};
     var fatP = sumRange(p.dailyFat, pr.start, pr.end);
     var qtdP = sumRange(p.dailyQtd, pr.start, pr.end);
@@ -1808,6 +1973,23 @@ function renderVendConsult(){
     if(!prodNameById[p.id]) prodNameById[p.id] = p.nome;
   });
 
+  // totais reais por vendedor (resumo); o mix de marcas/categorias/produtos continua vindo dos SKUs atribuídos
+  if(salesFromResumo()){
+    var rv = resumoRows({ignoreVendedor:true}).filter(function(r){ return isPessoa(r.vendedor); });
+    var realAgg = resumoAgg(rv, function(r){ return r.vendedor; }, pr.start, pr.end);
+    var frV = monthFractions(pr.start, pr.end);
+    var rowsByV = {}; rv.forEach(function(r){ (rowsByV[r.vendedor] = rowsByV[r.vendedor] || []).push(r); });
+    Object.keys(realAgg).forEach(function(n){
+      var a = realAgg[n]; if(a.fat<=0.5) return;
+      var mm = map[n] || (map[n] = {fat:0, qtd:0, lb:0, dailyFat:null, skus:{}, marcas:{}, categorias:{}, produtos:{}});
+      mm.fat = a.fat; mm.qtd = a.qtd; mm.lb = a.lb; mm.dailyFat = resumoDaily(rowsByV[n]);
+      // SKUs distintos por mês (média dos meses do período)
+      var porMes = {}; rowsByV[n].forEach(function(r){ if(frV.fat[r.mi]>0) porMes[r.mi] = (porMes[r.mi]||0) + r.skus; });
+      var ms = Object.keys(porMes); mm.skuMes = ms.length ? ms.reduce(function(t,k){ return t+porMes[k]; },0)/ms.length : 0;
+    });
+    Object.keys(map).forEach(function(n){ if(!realAgg[n] || realAgg[n].fat<=0.5) delete map[n]; });
+  }
+  function sumOf(m){ var t=0; Object.keys(m).forEach(function(k){ t+=m[k]; }); return t; }
   function hhi(distMap, total){
     if(!total) return 0;
     var s=0; Object.keys(distMap).forEach(function(k){ var sh=distMap[k]/total; s+=sh*sh; });
@@ -1820,13 +2002,13 @@ function renderVendConsult(){
 
   var rows = Object.keys(map).map(function(n){
     var m = map[n];
-    var skuCount = Object.keys(m.skus).length;
+    var skuCount = m.skuMes!==undefined ? m.skuMes : Object.keys(m.skus).length;
     var ticket = m.qtd>0 ? m.fat/m.qtd : 0;
-    var metaVal = SELLER_META[n];
+    var metaVal = SELLER_META[n] ? SELLER_META[n]*metaFator(pr) : 0;
     var metaPct = (metaVal>0) ? m.fat/metaVal*100 : 0;
     var margemPct = m.fat>0 ? m.lb/m.fat*100 : 0;
-    var marcaHHI = hhi(m.marcas, m.fat);
-    var catHHI = hhi(m.categorias, m.fat);
+    var marcaHHI = hhi(m.marcas, sumOf(m.marcas));
+    var catHHI = hhi(m.categorias, sumOf(m.categorias));
     return {name:n, fat:m.fat, qtd:m.qtd, lb:m.lb, skuCount:skuCount, ticket:ticket, metaPct:metaPct,
       margemPct:margemPct, marcas:m.marcas, categorias:m.categorias, produtos:m.produtos, marcaHHI:marcaHHI, catHHI:catHHI};
   }).sort(function(a,b){ return b.fat-a.fat; });
@@ -1933,7 +2115,7 @@ function renderVendConsult(){
     {label:'Faturamento', meVal:me.fat, peerVal:peerAvg, groupMax:maxOf('fat'), fmt:fmtMoney},
     {label:'Quantidade', meVal:me.qtd, peerVal:peerAvgQtd, groupMax:maxOf('qtd'), fmt:function(v){return fmtUn(v)+' un';}},
     {label:'Ticket médio', meVal:ticketMe, peerVal:ticketPeers, groupMax:maxOf('ticket'), fmt:fmtMoney2},
-    {label:'Mix de produtos', meVal:me.skuCount, peerVal:peerAvgSku, groupMax:maxOf('skuCount'), fmt:function(v){return Math.round(v)+' SKUs';}},
+    {label:'Mix de produtos', meVal:me.skuCount, peerVal:peerAvgSku, groupMax:maxOf('skuCount'), fmt:function(v){return Math.round(v)+(salesFromResumo()?' SKUs/mês':' SKUs');}},
     {label:'Margem bruta', meVal:me.margemPct, peerVal:peerAvgMargem, groupMax:Math.max(1,maxOf('margemPct')), fmt:function(v){return v.toFixed(1)+'%';}},
     {label:'Meta atingida', meVal:me.metaPct, peerVal:peerAvgMetaPct, groupMax:Math.max(100,maxOf('metaPct')), fmt:function(v){return v.toFixed(0)+'%';}},
     {label:'Participação', meVal:share, peerVal:peerAvgShare, groupMax:Math.max(share,peerAvgShare,1)*1.15, fmt:function(v){return v.toFixed(1)+'%';}}
@@ -1947,7 +2129,7 @@ function renderVendConsult(){
 
   /* ---- mix de marcas/categorias: top itens do vendedor + índice de mix vs. grupo ---- */
   function mixRows(distMap, groupDist){
-    return topN(distMap, me.fat, 6).map(function(t){
+    return topN(distMap, sumOf(distMap), 6).map(function(t){
       var groupShare = groupFatTotalAll>0 ? (groupDist[t.name]||0)/groupFatTotalAll*100 : 0;
       var meShare = t.pct;
       var indice = groupShare>0 ? meShare/groupShare : (meShare>0?2:1);
@@ -2002,7 +2184,7 @@ function renderVendConsult(){
     'ticket baixo mas margem acima da média — vende itens de alta rentabilidade mesmo em tickets menores.'));
 
   /* ---- análises não-óbvias: concentração, quadrante margem×ticket e divergência de mix ---- */
-  var topOverIndexed = topN(me.marcas, me.fat, 20).map(function(t){
+  var topOverIndexed = topN(me.marcas, sumOf(me.marcas), 20).map(function(t){
     var gs = groupFatTotalAll>0 ? (groupFatByMarca[t.name]||0)/groupFatTotalAll*100 : 0;
     return {name:t.name, meShare:t.pct, idx: gs>0 ? t.pct/gs : 2};
   }).sort(function(a,b){ return b.idx-a.idx; });
@@ -2160,7 +2342,7 @@ function radarChartSVG(axes, w, h){
    ESTOQUE — saúde / alertas
    ============================================================ */
 function renderStockHealth(){
-  var prods = filteredProducts();
+  var prods = filteredProducts().filter(function(p){ return !p.isBucket; });
   var counts = {normal:0,atencao:0,critico:0,zerado:0};
   prods.forEach(function(p){ counts[stockStatus(p)]++; });
   var total = prods.length || 1;
@@ -2191,7 +2373,7 @@ function renderStockHealth(){
 }
 
 function renderAlerts(){
-  var prods = filteredProducts().filter(function(p){ var s=stockStatus(p); return s==='critico'||s==='zerado'||s==='atencao'; });
+  var prods = filteredProducts().filter(function(p){ var s=stockStatus(p); return !p.isBucket && (s==='critico'||s==='zerado'||s==='atencao'); });
   prods.sort(function(a,b){
     var ga = a.estoqueMin-a.estoqueAtual, gb = b.estoqueMin-b.estoqueAtual;
     return gb-ga;
@@ -2214,7 +2396,7 @@ function renderAlerts(){
    TOP PRODUTOS
    ============================================================ */
 function renderTopProducts(){
-  var prods = filteredProducts();
+  var prods = filteredProducts().filter(function(p){ return !p.isBucket; });
   var pr = periodRange(state.globalPeriod);
   var rows = prods.map(function(p){
     var fat = sumRange(p.dailyFat, pr.start, pr.end);
@@ -2240,7 +2422,7 @@ function renderTopProducts(){
    CURVA ABC
    ============================================================ */
 function computeABC(){
-  var prods = filteredProducts();
+  var prods = filteredProducts().filter(function(p){ return !p.isBucket; });
   var pr = periodRange(state.globalPeriod);
   var rows = prods.map(function(p){ return {p:p, fat: sumRange(p.dailyFat,pr.start,pr.end)}; }).sort(function(a,b){return b.fat-a.fat;});
   var total = rows.reduce(function(s,r){return s+r.fat;},0) || 1;
@@ -2272,7 +2454,7 @@ function renderABC(){
     });
   });
 
-  var W=460,H=200, padL=40,padR=14,padT=14,padB=24;
+  var W=900,H=230, padL=40,padR=14,padT=14,padB=24;
   var innerW=W-padL-padR, innerH=H-padT-padB;
   function x(i){ return rows.length<=1?padL:padL+innerW*(i/(rows.length-1)); }
   function y(v){ return padT+innerH-innerH*(v/100); }
@@ -2327,31 +2509,47 @@ function renderABC(){
    VENDEDORES
    ============================================================ */
 function renderSellers(){
-  var prods = filteredProducts();
   var pr = periodRange(state.globalPeriod);
-  var map = {};
-  prods.forEach(function(p){
-    if(!map[p.vendedor]) map[p.vendedor]={fat:0,qtd:0};
-    map[p.vendedor].fat += sumRange(p.dailyFat,pr.start,pr.end);
-    map[p.vendedor].qtd += sumRange(p.dailyQtd,pr.start,pr.end);
-  });
-  var rows = Object.keys(map).map(function(name){
-    var meta = SELLER_META[name];
+  var map = {}, real = salesFromResumo(), semVend = 0, naoPessoa = 0, total = 0;
+  if(real){
+    var agg = resumoAgg(resumoRows(), function(r){ return r.vendedor; }, pr.start, pr.end);
+    Object.keys(agg).forEach(function(n){
+      total += agg[n].fat;
+      if(n===SEM_VENDEDOR){ semVend += agg[n].fat; return; }
+      map[n] = agg[n];
+    });
+  } else {
+    filteredProducts().forEach(function(p){
+      if(!isPessoa(p.vendedor)) return;
+      if(!map[p.vendedor]) map[p.vendedor]={fat:0,qtd:0,lb:0};
+      var f = sumRange(p.dailyFat,pr.start,pr.end);
+      map[p.vendedor].fat += f; map[p.vendedor].lb += f*p.margemPct/100;
+      map[p.vendedor].qtd += sumRange(p.dailyQtd,pr.start,pr.end);
+    });
+  }
+  var fm = metaFator(pr);
+  var rows = Object.keys(map).filter(function(n){ return map[n].fat>0.5; }).map(function(name){
+    var meta = SELLER_META[name] ? SELLER_META[name]*fm : 0;
     var pct = meta>0 ? map[name].fat/meta*100 : 0;
-    return {name:name, fat:map[name].fat, qtd:map[name].qtd, meta:meta, pct:pct};
+    return {name:name, fat:map[name].fat, qtd:map[name].qtd, mg: map[name].fat>0 ? map[name].lb/map[name].fat*100 : 0, meta:meta, pct:pct};
   }).sort(function(a,b){return b.fat-a.fat;});
 
   var box = document.getElementById('sellerList');
   if(!rows.length){ box.innerHTML='<p style="color:var(--text-muted); font-size:12.5px;">Sem dados para os filtros atuais.</p>'; return; }
   box.innerHTML = rows.map(function(r){
     var initials = r.name.split(' ').map(function(w){return w[0];}).slice(0,2).join('');
-    var pctClamped = Math.min(140, r.pct);
     return '<div class="seller-row">' +
       '<div class="seller-av">'+initials+'</div>' +
-      '<div class="seller-info"><div class="s-name">'+r.name+'</div><div class="s-meta">'+fmtMoney(r.fat)+' · '+fmtUn(r.qtd)+' peças</div></div>' +
-      '<div class="seller-goal"><div class="g-track"><div class="g-fill" style="width:'+Math.min(100,pctClamped)+'%"></div></div><div class="g-pct">'+r.pct.toFixed(0)+'% da meta</div></div>' +
+      '<div class="seller-info"><div class="s-name">'+r.name+'</div><div class="s-meta">'+fmtMoney(r.fat)+' · '+fmtUn(r.qtd)+' peças · margem '+r.mg.toFixed(1)+'%</div></div>' +
+      '<div class="seller-goal"><div class="g-track"><div class="g-fill" style="width:'+Math.min(100,r.pct)+'%"></div></div><div class="g-pct">'+(r.meta>0 ? r.pct.toFixed(0)+'% da meta' : 'sem meta')+'</div></div>' +
     '</div>';
   }).join('');
+  var nota = document.getElementById('sellerFonte');
+  if(nota){
+    nota.innerHTML = (real ? 'Totais reais de cada vendedor. ' : 'Com filtro de marca, categoria, aplicação, origem ou estoque, cada produto conta só para o vendedor que mais o vendeu (aproximação). ') +
+      (semVend>0 ? '<b>'+fmtMoney(semVend)+'</b> ('+(total>0?(semVend/total*100).toFixed(1):'0')+'%) foram vendidos sem vendedor informado e não aparecem na lista. ' : '') +
+      'Meta estimada a partir da média mensal real do vendedor, proporcional aos dias do período.';
+  }
 }
 
 /* ============================================================
@@ -2558,8 +2756,8 @@ function rebuildCheckGroup(key){
 }
 function initFilterSelects(){
   FILTER_KEYS.forEach(rebuildCheckGroup);
-  document.getElementById('vendConsultSelect').innerHTML = SELLERS.map(function(s){ return '<option value="'+s+'">'+s+'</option>'; }).join('');
-  if(SELLERS.indexOf(state.vendConsultSel)===-1) state.vendConsultSel = SELLERS[0]||'';
+  document.getElementById('vendConsultSelect').innerHTML = VEND_PESSOAS.map(function(s){ return '<option value="'+s+'">'+s+'</option>'; }).join('');
+  if(VEND_PESSOAS.indexOf(state.vendConsultSel)===-1) state.vendConsultSel = VEND_PESSOAS[0]||'';
   document.getElementById('vendConsultSelect').value = state.vendConsultSel;
 }
 function renderActiveTags(){
@@ -2616,15 +2814,25 @@ function computeAutoInsights(){
     byCanalPrev[p.canal] = (byCanalPrev[p.canal]||0)+fPrev;
     byLoja[p.regiao] = (byLoja[p.regiao]||0)+f;
     byLojaPrev[p.regiao] = (byLojaPrev[p.regiao]||0)+fPrev;
-    if(p.parado){ paradoEstValor += p.estoqueAtual*p.precoUnit; }
+    if(p.parado){ paradoEstValor += p.estCusto; }
     var st = stockStatus(p);
-    if(st==='critico' || st==='zerado'){
+    if(!p.isBucket && (st==='critico' || st==='zerado')){
       criticoCount++;
       var nDias = Math.max(1,(pr.end-pr.start+1));
       var avgDaily = f/nDias;
       criticoValorRisco += avgDaily*7; // proxy: ritmo médio de vendas do produto x 7 dias de possível ruptura
     }
   });
+
+  if(salesFromResumo()){
+    var rrI = resumoRows();
+    var aL = resumoAgg(rrI, function(r){ return r.loja; }, pr.start, pr.end), aLp = resumoAgg(rrI, function(r){ return r.loja; }, pr.prevStart, pr.prevEnd);
+    var aC = resumoAgg(rrI, function(r){ return r.canal; }, pr.start, pr.end), aCp = resumoAgg(rrI, function(r){ return r.canal; }, pr.prevStart, pr.prevEnd);
+    byLoja={}; byLojaPrev={}; byCanal={}; byCanalPrev={};
+    Object.keys(aL).forEach(function(k){ byLoja[k]=aL[k].fat; }); Object.keys(aLp).forEach(function(k){ byLojaPrev[k]=aLp[k].fat; });
+    Object.keys(aC).forEach(function(k){ byCanal[k]=aC[k].fat; }); Object.keys(aCp).forEach(function(k){ byCanalPrev[k]=aCp[k].fat; });
+  }
+  delete byMarca['Diversas']; // cauda longa não é uma marca
 
   var insights = [];
 
@@ -2647,7 +2855,7 @@ function computeAutoInsights(){
     var cur=byLoja[k], prev=byLojaPrev[k]||0;
     var delta = prev>0 ? (cur-prev)/prev*100 : (cur>0?100:0);
     return {k:k, cur:cur, prev:prev, delta:delta};
-  }).filter(function(d){ return d.prev>0 || d.cur>0; });
+  }).filter(function(d){ return (d.prev>0 || d.cur>0) && (d.cur+d.prev) >= (fatTotal+fatPrevTotal)*0.01; }); // ignora lojas com menos de 1% do total
   if(lojaDeltas.length>1){
     lojaDeltas.sort(function(a,b){ return b.delta-a.delta; });
     var bestLoja = lojaDeltas[0], worstLoja = lojaDeltas[lojaDeltas.length-1];
@@ -2680,7 +2888,7 @@ function computeAutoInsights(){
   if(paradoEstValor>0){
     insights.push({icon:'🧊', tone: paradoEstValor>50000?'warn':'info',
       title: fmtMoney(paradoEstValor)+' parados em itens sem giro',
-      body:'Valor de estoque (a preço médio) em produtos sem movimentação no recorte atual — candidatos a promoção, transferência entre lojas ou renegociação com fornecedor.'});
+      body:'Valor de estoque (a custo) em produtos marcados como parados na planilha de estoque — candidatos a promoção, transferência entre lojas ou renegociação com fornecedor.'});
   }
 
   // 5) risco de ruptura em itens críticos/zerados
@@ -2714,14 +2922,183 @@ function renderAutoInsights(){
   }).join('');
 }
 
+
+/* ============================================================
+   MÊS EM ANDAMENTO — acumulado, comparação com os mesmos dias do mês anterior e projeção
+   ============================================================ */
+var MES_NOME = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function fmtCurto(n){
+  var a = Math.abs(n);
+  if(a>=1e6) return 'R$ '+(n/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi';
+  if(a>=1e3) return 'R$ '+(n/1e3).toLocaleString('pt-BR',{maximumFractionDigits:0})+' mil';
+  return fmtMoney(n);
+}
+function mesCompleto(){ var d = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate()+1); return d.getDate()===1; }
+function renderMonthToDate(){
+  var grid = document.getElementById('mtdGrid'); if(!grid) return;
+  var sd = salesDaily();
+  var lastMi = monthIndexOfDay[TODAY_IDX], dia = NOW.getDate();
+  var mtd=0, mtdLb=0, dv=0, prevSame=0, prevFull=0, prevDv=0;
+  for(var i=0;i<N_DAYS;i++){
+    var mi = monthIndexOfDay[i];
+    if(mi===lastMi){ mtd+=sd.fat[i]; mtdLb+=sd.lb[i]; dv++; }
+    else if(mi===lastMi-1){ prevFull+=sd.fat[i]; prevDv++; if(DAYS[i].getDate()<=dia) prevSame+=sd.fat[i]; }
+  }
+  // quanto do mês os últimos 3 meses fechados já tinham faturado até este mesmo dia (curva real da empresa)
+  var shares = [];
+  for(var m=Math.max(0,lastMi-3); m<lastMi; m++){
+    var acc=0, tot=0;
+    for(var j=0;j<N_DAYS;j++){ if(monthIndexOfDay[j]!==m) continue; tot+=dayWeightFat[j]; if(DAYS[j].getDate()<=dia) acc+=dayWeightFat[j]; }
+    if(tot>0 && acc>0) shares.push(acc/tot);
+  }
+  var completo = mesCompleto();
+  var share = completo ? 1 : (shares.length ? shares.reduce(function(a,b){return a+b;},0)/shares.length : 0);
+  var proj = share>0 ? mtd/share : 0;
+  var mesAtual = MES_NOME[NOW.getMonth()], mesAnt = MES_NOME[(NOW.getMonth()+11)%12];
+  var vsSame = prevSame>0 ? (mtd-prevSame)/prevSame*100 : 0;
+  var vsFull = prevFull>0 ? (proj-prevFull)/prevFull*100 : 0;
+  var ritmo = dv ? mtd/dv : 0, ritmoAnt = prevDv ? prevFull/prevDv : 0;
+  var vsRitmo = ritmoAnt>0 ? (ritmo-ritmoAnt)/ritmoAnt*100 : 0;
+  function cor(v){ return v>=0 ? 'var(--good)' : 'var(--critical)'; }
+  document.getElementById('mtdTitle').textContent = (completo ? 'Mês fechado: ' : 'Mês em andamento: ') + mesAtual;
+  grid.innerHTML =
+    '<div class="mtd-box"><div class="l">Acumulado até '+fmtDate(NOW)+'</div><div class="v">'+fmtMoney(mtd)+'</div>' +
+      '<div class="s">'+dv+' dias com venda · margem '+(mtd>0?(mtdLb/mtd*100).toFixed(1):'0')+'%</div></div>' +
+    '<div class="mtd-box"><div class="l">vs. mesmos dias de '+mesAnt+'</div><div class="v" style="color:'+cor(vsSame)+'">'+fmtPct(vsSame)+'</div>' +
+      '<div class="s">'+mesAnt+' até o dia '+dia+': '+fmtMoney(prevSame)+'</div></div>' +
+    '<div class="mtd-box"><div class="l">'+(completo?'Total do mês':'Projeção de fechamento')+'</div><div class="v">'+fmtMoney(proj)+'</div>' +
+      '<div class="s"><span style="color:'+cor(vsFull)+'">'+fmtPct(vsFull)+'</span> vs. '+mesAnt+' fechado ('+fmtCurto(prevFull)+')</div></div>' +
+    '<div class="mtd-box"><div class="l">Ritmo por dia de venda</div><div class="v">'+fmtMoney(ritmo)+'</div>' +
+      '<div class="s"><span style="color:'+cor(vsRitmo)+'">'+fmtPct(vsRitmo)+'</span> vs. média de '+mesAnt+' ('+fmtCurto(ritmoAnt)+')</div></div>';
+  var pct = proj>0 ? Math.min(100, mtd/proj*100) : 0;
+  document.getElementById('mtdBar').innerHTML = '<i style="width:'+pct+'%; background:linear-gradient(90deg,var(--accent),var(--accent-2));"></i>';
+  document.getElementById('mtdNota').textContent = completo ? 'Mês completo na base de dados.' :
+    'Até o dia '+dia+', os últimos '+shares.length+' meses fechados já tinham em média '+(share*100).toFixed(0)+'% do faturamento do mês; a projeção divide o acumulado por essa fração. Usa os filtros aplicados, mas não o período selecionado.';
+}
+
+/* ============================================================
+   EVOLUÇÃO MENSAL POR CANAL (barras empilhadas + margem %)
+   ============================================================ */
+var CANAL_COR = {ATACADO:'var(--accent-2)', OFICINA:'var(--warning)', ECOMMERCE:'var(--accent)', ACESSORIOS:'var(--cat-c)'};
+function monthlyByCanal(){
+  var nM = REAL.months.length, byC = {}, lb = new Array(nM).fill(0), tot = new Array(nM).fill(0);
+  function add(c, mi, f, l){ (byC[c] = byC[c] || new Array(nM).fill(0))[mi] += f; tot[mi]+=f; lb[mi]+=l; }
+  if(salesFromResumo()){
+    resumoRows().forEach(function(r){ add(r.canal, r.mi, r.fat, r.lb); });
+  } else {
+    filteredProducts().forEach(function(p){ var m=p.margemPct/100; p.mfat.forEach(function(f,mi){ add(p.canal||'N/D', mi, f, f*m); }); });
+  }
+  return {byC:byC, lb:lb, tot:tot};
+}
+function renderMonthChart(){
+  var box = document.getElementById('monthChart'); if(!box) return;
+  var d = monthlyByCanal(), nM = REAL.months.length;
+  var canais = Object.keys(d.byC).sort(function(a,b){ return d.byC[b].reduce(function(x,y){return x+y;},0) - d.byC[a].reduce(function(x,y){return x+y;},0); });
+  var W=720, H=250, padL=54, padR=40, padT=22, padB=26, iw=W-padL-padR, ih=H-padT-padB;
+  var maxV = Math.max.apply(null, d.tot.concat([1]))*1.12;
+  var mgs = d.tot.map(function(t,i){ return t>0 ? d.lb[i]/t*100 : null; });
+  var mgVals = mgs.filter(function(v){ return v!==null; });
+  var mgMax = Math.max.apply(null, mgVals.concat([1]))*1.15, mgMin = Math.max(0, Math.min.apply(null, mgVals.concat([mgMax]))*0.85);
+  var bw = iw/nM, parcial = !mesCompleto();
+  function y(v){ return padT+ih-ih*v/maxV; }
+  function y2(v){ return padT+ih-ih*(v-mgMin)/((mgMax-mgMin)||1); }
+  var out = '';
+  for(var g=0; g<=4; g++){ var gv=maxV*g/4; out += '<line x1="'+padL+'" y1="'+y(gv)+'" x2="'+(W-padR)+'" y2="'+y(gv)+'" stroke="var(--border)"/>' +
+    '<text x="'+(padL-8)+'" y="'+(y(gv)+3)+'" text-anchor="end" font-size="9.5" fill="var(--text-muted)" font-family="JetBrains Mono, monospace">'+fmtCurto(gv).replace('R$ ','')+'</text>'; }
+  for(var mi=0; mi<nM; mi++){
+    var x0 = padL+mi*bw+bw*0.18, w = bw*0.64, acc = 0, last = parcial && mi===nM-1;
+    canais.forEach(function(c){
+      var v = d.byC[c][mi]; if(v<=0) return;
+      out += '<rect x="'+x0+'" y="'+y(acc+v)+'" width="'+w+'" height="'+(y(acc)-y(acc+v))+'" fill="'+(CANAL_COR[c]||'var(--neutral-stock)')+'" opacity="'+(last?0.45:0.9)+'"><title>'+REAL.monthLabels[mi]+' · '+c+': '+fmtMoney(v)+'</title></rect>';
+      acc += v;
+    });
+    out += '<text x="'+(x0+w/2)+'" y="'+(y(acc)-5)+'" text-anchor="middle" font-size="9.5" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
+    out += '<text x="'+(x0+w/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="var(--text-muted)">'+REAL.monthLabels[mi]+(last?'*':'')+'</text>';
+  }
+  var pts = mgs.map(function(v,i){ return v===null ? null : (padL+i*bw+bw/2)+','+y2(v); }).filter(Boolean);
+  out += '<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--text)" stroke-width="1.8" stroke-dasharray="1 0"/>';
+  mgs.forEach(function(v,i){ if(v===null) return; var cx=padL+i*bw+bw/2;
+    out += '<circle cx="'+cx+'" cy="'+y2(v)+'" r="3" fill="var(--text)"><title>Margem '+REAL.monthLabels[i]+': '+v.toFixed(1)+'%</title></circle>' +
+      '<text x="'+(cx+5)+'" y="'+(y2(v)-6)+'" font-size="9" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+v.toFixed(1)+'%</text>'; });
+  box.innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Faturamento mensal por canal">'+out+'</svg>';
+  document.getElementById('monthLegend').innerHTML = canais.map(function(c){ return '<span><i style="background:'+(CANAL_COR[c]||'var(--neutral-stock)')+'"></i>'+c+'</span>'; }).join('') +
+    '<span><i style="background:var(--text); height:2px; vertical-align:3px;"></i>Margem bruta %</span>' + (parcial ? '<span>* mês em andamento</span>' : '');
+}
+
+/* ============================================================
+   MAPA DE CALOR LOJA × MÊS
+   ============================================================ */
+function renderHeatLoja(){
+  var box = document.getElementById('heatLoja'); if(!box) return;
+  var nM = REAL.months.length, m = {};
+  if(salesFromResumo()){
+    resumoRows().forEach(function(r){ (m[r.loja] = m[r.loja] || new Array(nM).fill(0))[r.mi] += r.fat; });
+  } else {
+    filteredProducts().forEach(function(p){ var a = m[p.regiao] = m[p.regiao] || new Array(nM).fill(0); p.mfat.forEach(function(f,i){ a[i]+=f; }); });
+  }
+  var parcial = !mesCompleto();
+  var ult = parcial ? nM-2 : nM-1; // último mês fechado
+  var lojas = Object.keys(m).map(function(k){ return {k:k, v:m[k], t:m[k].reduce(function(a,b){return a+b;},0)}; })
+    .filter(function(o){ return o.t>0.5; }).sort(function(a,b){ return b.t-a.t; });
+  if(!lojas.length){ box.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">Sem dados para os filtros atuais.</p>'; return; }
+  var head = '<tr><th class="rl">Loja</th>' + REAL.monthLabels.map(function(l,i){ return '<th>'+l+(parcial && i===nM-1?'*':'')+'</th>'; }).join('') +
+    '<th>Total</th><th title="último mês fechado vs. o anterior">'+(REAL.monthLabels[ult]||'')+' vs. '+(REAL.monthLabels[ult-1]||'')+'</th></tr>';
+  var body = lojas.map(function(o){
+    var cmp = o.v.slice(0, parcial ? nM-1 : nM), mx = Math.max.apply(null, cmp.concat([1]));
+    var tds = o.v.map(function(v,i){
+      var a = v>0 ? 0.08 + 0.55*Math.min(1, v/mx) : 0.03;
+      return '<td style="background:rgba(34,211,238,'+a.toFixed(3)+')" title="'+o.k+' · '+REAL.monthLabels[i]+': '+fmtMoney(v)+'">'+(v>0?fmtCurto(v).replace('R$ ',''):'—')+'</td>';
+    }).join('');
+    var dlt = o.v[ult-1]>0 ? (o.v[ult]-o.v[ult-1])/o.v[ult-1]*100 : null;
+    var fis = LOJA_INFO[o.k] ? LOJA_INFO[o.k].fisica : true;
+    return '<tr><td class="rl">'+(fis?'':'🛒 ')+o.k+'</td>'+tds+'<td class="tot">'+fmtCurto(o.t).replace('R$ ','')+'</td>' +
+      '<td class="tot" style="color:'+(dlt===null?'var(--text-muted)':(dlt>=0?'var(--good)':'var(--critical)'))+'">'+(dlt===null?'—':fmtPct(dlt))+'</td></tr>';
+  }).join('');
+  box.innerHTML = '<table class="heat"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
+  document.getElementById('heatNota').textContent = 'Valores em R$ (mil/mi). ' + (parcial ? '* mês em andamento, fora da escala de cor. ' : '') +
+    'Usa os filtros aplicados; o período selecionado não se aplica.';
+}
+
+/* ============================================================
+   QUALIDADE DO CADASTRO DE VENDEDOR (visível para BI, diretoria e gerência)
+   ============================================================ */
+var NAO_PESSOA_RE = /ECOMMERCE|E-COMMERCE|CAIXA|LTDA|EXCLUS|CONVERS|\.COM|DISTRIBUIDORA|NAO CADASTRADO|SEM VENDEDOR/i;
+function renderDataQuality(){
+  var panel = document.getElementById('dqPanel'); if(!panel) return;
+  var vendedor = CURRENT_PROFILE && CURRENT_PROFILE.role==='vendedor';
+  panel.style.display = (vendedor || !HAS_RESUMO) ? 'none' : '';
+  if(vendedor || !HAS_RESUMO) return;
+  var pr = periodRange(state.globalPeriod);
+  var rows = resumoRows({ignoreVendedor:true});
+  var porLoja = resumoAgg(rows, function(r){ return r.loja; }, pr.start, pr.end);
+  var semLoja = resumoAgg(rows.filter(function(r){ return r.vendedor===SEM_VENDEDOR; }), function(r){ return r.loja; }, pr.start, pr.end);
+  var lst = Object.keys(semLoja).map(function(k){ return {k:k, v:semLoja[k].fat, p: porLoja[k] && porLoja[k].fat>0 ? semLoja[k].fat/porLoja[k].fat*100 : 0}; })
+    .filter(function(o){ return Math.abs(o.v)>0.5; }).sort(function(a,b){ return b.v-a.v; });
+  var totSem = Object.keys(semLoja).reduce(function(t,k){ return t+semLoja[k].fat; },0), tot = Object.keys(porLoja).reduce(function(t,k){ return t+porLoja[k].fat; },0);
+  document.getElementById('dqLoja').innerHTML = lst.length ?
+    lst.map(function(o){ return '<div class="dq-row"><span class="n">'+o.k+'</span><span class="v">'+fmtMoney(o.v)+' · '+o.p.toFixed(1)+'% da loja</span></div>'; }).join('') +
+    '<p class="note-muted">Total sem vendedor: <b>'+fmtMoney(totSem)+'</b> ('+(tot>0?(totSem/tot*100).toFixed(1):'0')+'% do faturamento). Essas vendas não entram em ranking nem meta.</p>'
+    : '<p class="note-muted">Todas as vendas do período têm vendedor informado.</p>';
+  var porNome = resumoAgg(rows.filter(function(r){ return r.vendedor!==SEM_VENDEDOR && NAO_PESSOA_RE.test(r.vendedor); }), function(r){ return r.vendedor; }, pr.start, pr.end);
+  var nomes = Object.keys(porNome).map(function(k){ return {k:k, v:porNome[k].fat}; }).filter(function(o){ return Math.abs(o.v)>0.5; }).sort(function(a,b){ return b.v-a.v; });
+  document.getElementById('dqNomes').innerHTML = nomes.length ?
+    nomes.slice(0,12).map(function(o){ return '<div class="dq-row"><span class="n" title="'+o.k+'">'+o.k+'</span><span class="v">'+fmtMoney(o.v)+'</span></div>'; }).join('') +
+    '<p class="note-muted">Lançamentos em caixas, e-commerce, empresas ou ajustes aparecem como “vendedor” na planilha. Vale revisar o cadastro na origem.</p>'
+    : '<p class="note-muted">Nenhum nome suspeito no período.</p>';
+}
+
 /* ============================================================
    RENDER GLOBAL
    ============================================================ */
 function renderAll(refreshing){
   renderKpis(refreshing);
   if(refreshing) return;
+  renderMonthToDate();
   renderAutoInsights();
   renderMainChart();
+  renderMonthChart();
+  renderHeatLoja();
+  renderDataQuality();
   renderCategoryList();
   renderStockHealth();
   renderAlerts();
@@ -2797,8 +3174,11 @@ function bindEvents(){
   document.getElementById('filtersBtn').addEventListener('click', function(){
     document.getElementById('filterRail').classList.toggle('pinned');
   });
-  document.getElementById('notifBtn').addEventListener('click', function(){ toast('Você tem 3 alertas de estoque crítico pendentes.'); });
-  document.getElementById('userAvatar').addEventListener('click', function(){ toast('Perfil: Rafael Mendes · Gestor Comercial'); });
+  document.getElementById('notifBtn').addEventListener('click', function(){
+    var n = filteredProducts().filter(function(p){ var st=stockStatus(p); return !p.isBucket && (st==='critico'||st==='zerado'); }).length;
+    toast(n ? n+' produto'+(n>1?'s':'')+' com estoque crítico ou zerado nos filtros atuais.' : 'Nenhum produto com estoque crítico nos filtros atuais.');
+  });
+  document.getElementById('userAvatar').addEventListener('click', function(){ if(CURRENT_USER) toast('Perfil: '+CURRENT_USER.nome+' · '+CURRENT_USER.perfil); });
 
   // refresh
   document.getElementById('refreshBtn').addEventListener('click', doRefresh);
@@ -3356,7 +3736,8 @@ async function loadData(){
     fetchAll('bi_config', 'chave,valor', 'chave'),
     fetchAll('bi_peso_diario', 'd,w_fat,w_qtd', 'd'),
     fetchAll('bi_produtos', 'id,nome,marca,categoria,montadora,loja,vendedor,canal,origem,fat,qtd,custo,lb,mfat,mqtd,est_fis,est_custo,est_min,dias_sem_giro,parado,status,is_bucket,bucket_count', 'fat'),
-    fetchAll('bi_meta_vendedor', 'vendedor,meta', 'vendedor')
+    fetchAll('bi_meta_vendedor', 'vendedor,meta', 'vendedor'),
+    fetchAll('bi_resumo_mes', 'mes,loja,canal,vendedor,fat,qtd,custo,lb,skus', 'mes').catch(function(){ return []; })
   ]);
   var cfg = {}; results[0].forEach(function(r){ cfg[r.chave] = r.valor; });
   if(!cfg.months || !results[1].length) throw new Error('sem_config');
@@ -3381,6 +3762,10 @@ async function loadData(){
     companyDaily: results[1].map(function(r){ return {d:r.d, fat:Number(r.w_fat), qtd:Number(r.w_qtd)}; }),
     products: products,
     sellerMeta: sellerMeta,
+    // totais reais mês x loja x canal x vendedor (sem a atribuição "principal" por SKU)
+    resumo: results[4].map(function(r){ return {mes:r.mes, loja:r.loja, canal:r.canal, vendedor:r.vendedor,
+      fat:Number(r.fat), qtd:Number(r.qtd), custo:Number(r.custo), lb:Number(r.lb), skus:Number(r.skus)}; }),
+    mesesEfetivos: Number(cfg.mesesEfetivos) || cfg.months.length,
     carga: cfg.carga || null
   };
 }

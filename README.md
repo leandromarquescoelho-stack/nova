@@ -30,9 +30,10 @@ supabase/functions/admin-invite-user/   função que o perfil BI usa para convid
 ### Tabelas
 
 - `profiles`: usuários, papel, loja, vendedor, ativo.
-- `bi_produtos`: vendas mensais (jan–set/2026) e estoque por SKU, com uma loja e um vendedor principal por linha.
+- `bi_produtos`: vendas mensais e estoque dos SKUs mais vendidos, com uma loja e um vendedor principal por linha; os demais SKUs ficam em itens "cauda longa" por loja e categoria.
+- `bi_resumo_mes`: totais reais por mês, loja, canal e vendedor (usados em lojas, canais, vendedores e no mês em andamento).
 - `bi_peso_diario`: peso de cada dia dentro do mês (só a proporção, não o faturamento absoluto).
-- `bi_meta_vendedor`: meta por vendedor.
+- `bi_meta_vendedor`: meta mensal por vendedor (sem planilha de metas, é estimada pela média mensal real do vendedor).
 - `bi_config`: meses e lojas.
 
 ## Usuários

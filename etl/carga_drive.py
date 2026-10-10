@@ -41,7 +41,8 @@ PADROES = {
     'meses_estoque_min': 1.5,    # estoque mínimo = venda média mensal x 1,5
     'limite_critico': 0.5,       # estoque < 50% do mínimo = crítico; < 100% = atenção
     'nome_formato': '{sku} - {descricao}',
-    'meta_fator': None,          # sem planilha de metas: meta = média mensal x fator (a carga inicial usou 1,12)
+    'meta_fator': None,
+    'vendedor_vazio': 'SEM VENDEDOR',          # sem planilha de metas: meta = média mensal x fator (a carga inicial usou 1,12)
 }
 
 
@@ -314,6 +315,8 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
         v[c] = texto(v[c]) if c in v else None
     if 'lb' not in vendas:
         v['lb'] = v['fat'] - v['custo']
+    # venda sem vendedor fica visível como tal (antes a planilha trazia "NOME NAO CADASTRADO")
+    v['vendedor'] = v['vendedor'].fillna(regras['vendedor_vazio'])
 
     # meses contínuos do primeiro ao último mês com venda
     ini, fim = v['data'].min(), v['data'].max()
@@ -346,7 +349,8 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
             agg['parado'] = 'any'  # parado em qualquer loja
         est = e.groupby('sku').agg(agg)
 
-    n_meses = max(1, len(meses))
+    # meses efetivos de venda (um mês em andamento conta só os dias já vendidos)
+    n_meses = max(1.0, ((fim - ini).days + 1) / (365.25 / 12))
     ordem = tot.sort_values('fat', ascending=False).index
     top = list(ordem[:regras['top_skus']])
     cauda = list(ordem[regras['top_skus']:])
@@ -387,18 +391,34 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
             at[k] = at[k] or 'N/D'
         produtos.append(linha(sku, nome, at, [sku]))
 
-    # cauda longa: um item "Outros" por loja principal
+    # cauda longa: um item "Outros" por loja x categoria principal (mantém as barras de categoria reais)
     if cauda:
-        loja_cauda = attrs['loja'].reindex(cauda).fillna('SEM LOJA')
-        for loja, skus in loja_cauda.groupby(loja_cauda).groups.items():
-            skus = list(skus)
-            sub = v[v['sku'].isin(skus)]
-            canal = principal(sub.assign(_k=1), '_k', 'canal')
-            at = {'marca': 'Diversas', 'categoria': 'Outros', 'montadora': 'Diversas', 'loja': loja,
-                  'vendedor': 'Diversos', 'canal': canal.iloc[0] if len(canal) else None, 'origem': 'Diversas'}
-            id_ = 'OUTROS_' + re.sub(r'\W+', '_', normaliza(loja)).strip('_')
-            nome = f'Outros itens — {loja} (cauda longa · {len(skus)} SKUs)'
+        chave = pd.DataFrame({'loja': attrs['loja'].reindex(cauda).fillna('SEM LOJA'),
+                              'categoria': attrs['categoria'].reindex(cauda).fillna('N/D')})
+        canal_sku = attrs['canal'].reindex(cauda)
+        usados = set()
+        for (loja, categoria), grp in chave.groupby(['loja', 'categoria']):
+            skus = list(grp.index)
+            canais = tot.loc[skus, 'fat'].groupby(canal_sku.reindex(skus).values).sum()
+            at = {'marca': 'Diversas', 'categoria': categoria, 'montadora': 'Diversas', 'loja': loja,
+                  'vendedor': 'Diversos', 'canal': canais.idxmax() if len(canais) else None, 'origem': 'Diversas'}
+            base = 'OUTROS_' + re.sub(r'\W+', '_', normaliza(f'{loja} {categoria}')).strip('_')
+            id_, n = base, 1
+            while id_ in usados:
+                n += 1
+                id_ = f'{base}_{n}'
+            usados.add(id_)
+            nome = f'Outros itens de {categoria} — {loja} (cauda longa · {len(skus)} SKUs)'
             produtos.append(linha(id_, nome, at, skus, bucket_count=len(skus)))
+
+    # totais reais (sem atribuição a um vendedor/loja "principal"): mês x loja x canal x vendedor
+    r = v.groupby(['mi', 'loja', 'canal', 'vendedor'], dropna=False)[['fat', 'qtd', 'custo', 'lb']].sum().reset_index()
+    sk = v.groupby(['mi', 'loja', 'canal', 'vendedor'], dropna=False)['sku'].nunique().reset_index(name='skus')
+    r = r.merge(sk, on=['mi', 'loja', 'canal', 'vendedor'])
+    resumo = [{'mes': chaves_mes[int(x.mi)], 'loja': None if pd.isna(x.loja) else x.loja,
+               'canal': None if pd.isna(x.canal) else x.canal, 'vendedor': x.vendedor,
+               'fat': round(float(x.fat), 2), 'qtd': round(float(x.qtd), 3), 'custo': round(float(x.custo), 2),
+               'lb': round(float(x.lb), 2), 'skus': int(x.skus)} for x in r.itertuples()]
 
     # curva diária da empresa: peso de cada dia no total do seu mês
     dia = v.groupby(v['data'].dt.normalize())[['fat', 'qtd']].sum()
@@ -410,7 +430,7 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
              for d, r in peso.iterrows()]
 
     # lojas: mantém o que já está no banco (física ou marketplace); loja nova = física se o canal não for e-commerce
-    lojas = sorted({p['loja'] for p in produtos if p['loja']})
+    lojas = sorted({p['loja'] for p in produtos if p['loja']} | {str(x) for x in v['loja'].dropna().unique()})
     loja_info = {}
     canal_loja = principal(v, 'loja', 'canal')
     for l in lojas:
@@ -421,11 +441,11 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
 
     metas_out = None
     if metas is None and regras.get('meta_fator'):
-        # sem planilha de metas: meta = venda média mensal atribuída ao vendedor x fator
+        # sem planilha de metas: meta mensal = venda média mensal real do vendedor x fator
         soma = {}
-        for p in produtos:
-            if not p['is_bucket'] and p['vendedor']:
-                soma[p['vendedor']] = soma.get(p['vendedor'], 0.0) + p['fat']
+        for x in resumo:
+            if x['vendedor'] and x['vendedor'] != regras['vendedor_vazio']:
+                soma[x['vendedor']] = soma.get(x['vendedor'], 0.0) + x['fat']
         metas_out = [{'vendedor': k, 'meta': round(x / n_meses * regras['meta_fator'], 2)} for k, x in sorted(soma.items())]
     if metas is not None:
         m = metas.copy()
@@ -436,7 +456,9 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
 
     return {
         'produtos': produtos, 'pesos': pesos, 'metas': metas_out,
-        'config': {'months': chaves_mes, 'monthLabels': rotulos, 'lojas': lojas, 'lojaInfo': loja_info},
+        'config': {'months': chaves_mes, 'monthLabels': rotulos, 'lojas': lojas, 'lojaInfo': loja_info,
+                   'mesesEfetivos': round(n_meses, 4)},
+        'resumo': resumo,
         'dados_ate': fim.date().isoformat(),
         'linhas_vendas': int(len(v)), 'linhas_estoque': 0 if estoque is None else int(len(estoque)),
     }
@@ -480,6 +502,11 @@ def gravar(conn, res, usados):
         cur.executemany(
             f"insert into public.bi_produtos ({', '.join(cols)}) values ({', '.join(['%s'] * len(cols))})",
             [[p[c] for c in cols] for p in res['produtos']])
+
+        cur.execute('delete from public.bi_resumo_mes')
+        cols_r = ['mes', 'loja', 'canal', 'vendedor', 'fat', 'qtd', 'custo', 'lb', 'skus']
+        cur.executemany(f"insert into public.bi_resumo_mes ({', '.join(cols_r)}) values ({', '.join(['%s'] * len(cols_r))})",
+                        [[x[c] for c in cols_r] for x in res['resumo']])
 
         cur.execute('delete from public.bi_peso_diario')
         cur.executemany('insert into public.bi_peso_diario (d, w_fat, w_qtd) values (%s, %s, %s)',
@@ -588,7 +615,8 @@ def main():
             log(f'{papel}: {len(df)} linhas lidas')
         res = transformar(dfs['vendas'], dfs.get('estoque'), dfs.get('metas'), mapa, loja_info)
         log(f"resultado: {len(res['produtos'])} produtos, {len(res['pesos'])} dias, "
-            f"{len(res['metas']) if res['metas'] is not None else 'sem'} metas, {len(res['config']['months'])} meses")
+            f"{len(res['metas']) if res['metas'] is not None else 'sem'} metas, {len(res['config']['months'])} meses, "
+            f"{len(res['resumo'])} linhas de resumo")
         if a.simular:
             if a.saida_json:
                 with open(a.saida_json, 'w', encoding='utf-8') as f:
