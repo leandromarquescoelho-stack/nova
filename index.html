@@ -1289,7 +1289,11 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             <label id="uiLojaWrap">Loja<select id="uiLoja"></select></label>
           </div>
           <div class="u-abas-label">Guias liberadas</div>
-          <div class="u-abas" id="uiAbas"></div>
+          <div class="u-abas" id="uiAbas" data-grp="abas"></div>
+          <div class="u-abas-label u-esc">Lojas liberadas</div>
+          <div class="u-abas u-esc" id="uiLojas" data-grp="lojas"></div>
+          <div class="u-abas-label u-esc">Canais liberados</div>
+          <div class="u-abas u-esc" id="uiCanais" data-grp="canais"></div>
           <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px;">
             <button class="login-btn" type="submit" style="max-width:200px; margin:0;">Enviar convite</button>
             <button class="tbtn" type="button" id="uiCancel">Cancelar</button>
@@ -1443,6 +1447,7 @@ var RESUMO = (REAL.resumo||[]).map(function(r){
   return {mi: REAL.months.indexOf(r.mes), loja:r.loja||'SEM LOJA', canal:r.canal||'N/D', vendedor:r.vendedor||SEM_VENDEDOR,
     fat:r.fat, qtd:r.qtd, custo:r.custo, lb:r.lb, skus:r.skus};
 }).filter(function(r){ return r.mi>=0; });
+var ALL_RESUMO = RESUMO; // referência completa (pré-escopo de acesso)
 var HAS_RESUMO = RESUMO.length>0;
 // fração de cada mês que cai dentro do intervalo de dias [s,e] (pela curva diária real)
 function monthFractions(s,e){
@@ -1532,12 +1537,20 @@ var CURRENT_PROFILE = null; // linha crua da tabela profiles do usuário logado
 
 var ROLE_LABEL = {bi:'BI', diretoria:'Diretoria', gerencia:'Gerência', vendedor:'Vendedor'};
 
+function listaPerfil(v){ return Array.isArray(v) ? v.filter(Boolean) : []; }
+// lojas e canais liberados (vazio/nulo = todos); gerência sem lista usa a loja do cadastro
 function escopoFromProfile(p){
-  if(p.role==='gerencia') return {tipo:'loja', loja:p.loja};
-  if(p.role==='vendedor') return {tipo:'vendedor', vendedor:p.vendedor_nome};
-  return {tipo:'all'};
+  var lj = listaPerfil(p.lojas), cn = listaPerfil(p.canais), e;
+  if(p.role==='gerencia'){
+    if(!lj.length && p.loja) lj = [p.loja];
+    e = lj.length===1 ? {tipo:'loja', loja:lj[0]} : {tipo:'all'};
+  } else if(p.role==='vendedor') e = {tipo:'vendedor', vendedor:p.vendedor_nome};
+  else e = {tipo:'all'};
+  if(p.role!=='bi'){ e.lojas = lj.length ? lj : null; e.canais = cn.length ? cn : null; }
+  return e;
 }
 
+function toSet(a){ var o={}; (a||[]).forEach(function(v){ o[v]=true; }); return o; }
 function applyScope(escopo){
   if(escopo.tipo==='loja'){
     PRODUCTS = ALL_PRODUCTS.filter(function(p){ return p.regiao===escopo.loja; });
@@ -1549,6 +1562,10 @@ function applyScope(escopo){
   } else {
     PRODUCTS = ALL_PRODUCTS;
   }
+  var lset = escopo.lojas ? toSet(escopo.lojas) : null, cset = escopo.canais ? toSet(escopo.canais) : null;
+  if(lset) PRODUCTS = PRODUCTS.filter(function(p){ return lset[p.regiao]; });
+  if(cset) PRODUCTS = PRODUCTS.filter(function(p){ return cset[p.canal]; });
+  RESUMO = ALL_RESUMO.filter(function(r){ return (!lset || lset[r.loja]) && (!cset || cset[r.canal]); });
   recomputeDims();
 }
 
@@ -3727,11 +3744,36 @@ var ABAS = [
 ];
 var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
 var ROLE_COR = {bi:'linear-gradient(135deg,#22d3ee,#3b82f6)', diretoria:'linear-gradient(135deg,#a78bfa,#6366f1)', gerencia:'linear-gradient(135deg,#fab219,#d9772e)', vendedor:'linear-gradient(135deg,#1fc46a,#1fb08a)'};
-var USERS_CACHE = [], USERS_TEM_ABAS = false, USERS_FILTRO = 'todos';
+var USERS_CACHE = [], USERS_TEM_ABAS = false, USERS_TEM_ESCOPO = false, USERS_FILTRO = 'todos';
 // guias que o perfil pode abrir (vazio/nulo = todas)
 function abasDoPerfil(p){ return (p && Array.isArray(p.abas) && p.abas.length) ? p.abas.filter(function(k){ return ABAS_TODAS.indexOf(k)!==-1; }) : ABAS_TODAS.slice(); }
-function abasChips(sel, disabled){
-  return ABAS.map(function(a){ return '<button type="button" class="u-aba" data-aba="'+a.k+'" aria-pressed="'+(sel.indexOf(a.k)!==-1)+'"'+(disabled?' disabled':'')+'>'+a.t+'</button>'; }).join('');
+function chipsHtml(items, sel, disabled){
+  return items.map(function(a){ return '<button type="button" class="u-aba" data-aba="'+escapeHtml(a.k)+'" aria-pressed="'+(sel.indexOf(a.k)!==-1)+'"'+(disabled?' disabled':'')+'>'+escapeHtml(a.t)+'</button>'; }).join('');
+}
+function abasChips(sel, disabled){ return chipsHtml(ABAS, sel, disabled); }
+function grpSel(root, grp){ var b = root.querySelector('.u-abas[data-grp="'+grp+'"]'); return b ? abasSelecionadas(b) : []; }
+function uniaoOrd(a, b){ var o = toSet(a); return a.concat((b||[]).filter(function(v){ return !o[v]; })).sort(); }
+function lojasUniverso(){ return (REAL.dims.lojas||[]).slice(); }
+function canaisUniverso(){
+  var o = {};
+  ALL_RESUMO.forEach(function(r){ if(r.canal && r.canal!=='N/D') o[r.canal]=1; });
+  ALL_PRODUCTS.forEach(function(p){ if(p.canal && p.canal!=='Diversos') o[p.canal]=1; });
+  return Object.keys(o).sort();
+}
+function lojasDoPerfil(p){ var l = listaPerfil(p.lojas); if(l.length) return l; if(p.role==='gerencia') return p.loja ? [p.loja] : []; return lojasUniverso(); }
+function canaisDoPerfil(p){ var c = listaPerfil(p.canais); return c.length ? c : canaisUniverso(); }
+function escopoChips(lojasSel, canaisSel, disabled){
+  var lu = uniaoOrd(lojasUniverso(), lojasSel), cu = uniaoOrd(canaisUniverso(), canaisSel);
+  var it = function(v){ return {k:v, t:v}; };
+  return '<div class="u-abas-label">Lojas liberadas</div><div class="u-abas" data-grp="lojas">'+chipsHtml(lu.map(it), lojasSel, disabled)+'</div>' +
+    '<div class="u-abas-label">Canais liberados</div><div class="u-abas" data-grp="canais">'+chipsHtml(cu.map(it), canaisSel, disabled)+'</div>';
+}
+function contemTodos(sel, todos){ var o = toSet(sel); return todos.every(function(v){ return o[v]; }); }
+// lojas/canais a gravar: nulo = todos; gerência grava a lista explícita (a loja principal é a primeira)
+function escopoPayload(role, lj, cn){
+  if(role==='bi') return {lojas:null, canais:null};
+  return {lojas: (role!=='gerencia' && contemTodos(lj, lojasUniverso())) ? null : lj,
+          canais: contemTodos(cn, canaisUniverso()) ? null : cn};
 }
 function bindAbas(box){
   Array.prototype.forEach.call(box.querySelectorAll('.u-aba'), function(b){
@@ -3757,10 +3799,11 @@ function userCard(p){
     '<div class="u-fields">' +
       '<label>Nome<input type="text" class="u-nome" value="'+escapeHtml(p.full_name||'')+'"></label>' +
       '<label>Papel<select class="u-role"'+(ehEu?' disabled title="Você não pode mudar o próprio papel"':'')+'>'+roleOpts+'</select></label>' +
-      '<label class="u-loja-w">Loja<select class="u-loja">'+lojaOptions(p.loja)+'</select></label>' +
+      (USERS_TEM_ESCOPO ? '' : '<label class="u-loja-w">Loja<select class="u-loja">'+lojaOptions(p.loja)+'</select></label>') +
       '<label class="u-vend-w">Vendedor nos dados<input type="text" class="u-vendedor" list="uVendList" value="'+escapeHtml(p.vendedor_nome||'')+'" placeholder="comece a digitar"></label>' +
     '</div>' +
-    (USERS_TEM_ABAS ? '<div class="u-abas-label">Guias liberadas</div><div class="u-abas">'+abasChips(abas, p.role==='bi')+'</div>' : '') +
+    (USERS_TEM_ABAS ? '<div class="u-abas-label">Guias liberadas</div><div class="u-abas" data-grp="abas">'+abasChips(abas, p.role==='bi')+'</div>' : '') +
+    (USERS_TEM_ESCOPO ? escopoChips(p.role==='bi' ? uniaoOrd(lojasUniverso(), listaPerfil(p.lojas)) : lojasDoPerfil(p), p.role==='bi' ? canaisUniverso() : canaisDoPerfil(p), p.role==='bi') : '') +
     '<div class="u-foot"><span class="when">Criado em '+fmtDateShort(p.created_at)+'</span>' +
       (ehEu ? '' : '<label class="u-switch" title="Acesso liberado"><input type="checkbox" class="u-active" '+(p.active?'checked':'')+'><i></i>Acesso</label>') +
       (st.c==='pend' ? '<button class="tbtn primary u-liberar" type="button">Liberar acesso</button>' : '') +
@@ -3770,13 +3813,15 @@ function userCard(p){
 }
 function ajustaEscopo(card){
   var role = card.querySelector('.u-role').value;
-  card.querySelector('.u-loja-w').style.display = role==='gerencia' ? '' : 'none';
+  var lw = card.querySelector('.u-loja-w'); if(lw) lw.style.display = role==='gerencia' ? '' : 'none';
   card.querySelector('.u-vend-w').style.display = role==='vendedor' ? '' : 'none';
   var chips = card.querySelectorAll('.u-aba');
   Array.prototype.forEach.call(chips, function(b){ b.disabled = role==='bi'; if(role==='bi') b.setAttribute('aria-pressed','true'); });
 }
 function validaEscopo(payload){
   if(payload.role==='gerencia' && !payload.loja) return 'Escolha a loja da gerência.';
+  if(payload.lojas && !payload.lojas.length) return 'Libere pelo menos uma loja.';
+  if(payload.canais && !payload.canais.length) return 'Libere pelo menos um canal.';
   if(payload.role==='vendedor' && !payload.vendedor_nome) return 'Informe o vendedor como aparece nos dados.';
   if(payload.role==='vendedor' && VEND_PESSOAS.indexOf(payload.vendedor_nome)===-1 && SELLERS.indexOf(payload.vendedor_nome)===-1)
     return 'Esse nome não aparece nas vendas; o usuário veria o painel vazio. Escolha um nome da lista.';
@@ -3790,11 +3835,16 @@ async function salvarCard(card, liberar){
   var payload = {
     full_name: card.querySelector('.u-nome').value.trim() || null,
     role: role,
-    loja: role==='gerencia' ? (card.querySelector('.u-loja').value || null) : null,
+    loja: role==='gerencia' && card.querySelector('.u-loja') ? (card.querySelector('.u-loja').value || null) : null,
     vendedor_nome: role==='vendedor' ? (card.querySelector('.u-vendedor').value.trim() || null) : null
   };
   if(act) payload.active = liberar ? true : act.checked;
-  if(USERS_TEM_ABAS){ var ab = abasSelecionadas(card); payload.abas = (role==='bi' || ab.length===ABAS_TODAS.length) ? null : ab; if(role!=='bi' && !ab.length) payload.abas = []; }
+  if(USERS_TEM_ESCOPO){
+    var esc = escopoPayload(role, grpSel(card,'lojas'), grpSel(card,'canais'));
+    payload.lojas = esc.lojas; payload.canais = esc.canais;
+    if(role==='gerencia') payload.loja = (esc.lojas||[])[0] || null;
+  }
+  if(USERS_TEM_ABAS){ var ab = grpSel(card,'abas'); payload.abas = (role==='bi' || ab.length===ABAS_TODAS.length) ? null : ab; if(role!=='bi' && !ab.length) payload.abas = []; }
   var erro = validaEscopo(payload);
   if(erro){ msg.style.color='var(--critical)'; msg.textContent = erro; return; }
   if(CURRENT_PROFILE && CURRENT_PROFILE.id===id){ delete payload.role; delete payload.active; }
@@ -3812,7 +3862,7 @@ function renderUsersList(){
     if(USERS_FILTRO==='pendentes' && st!=='pend') return false;
     if(USERS_FILTRO==='ativos' && st!=='ok') return false;
     if(!q) return true;
-    return normSearch([p.full_name,p.email,p.loja,p.vendedor_nome,ROLE_LABEL[p.role]].join(' ')).indexOf(q)!==-1;
+    return normSearch([p.full_name,p.email,p.loja,p.vendedor_nome,ROLE_LABEL[p.role]].concat(listaPerfil(p.lojas), listaPerfil(p.canais)).join(' ')).indexOf(q)!==-1;
   }).sort(function(a,b){
     var o = {pend:0, ok:1, off:2}; var d = o[statusUser(a).c]-o[statusUser(b).c];
     return d || String(a.full_name||a.email).localeCompare(String(b.full_name||b.email));
@@ -3844,6 +3894,15 @@ async function renderUsersAdmin(){
   if(res.error){ wrap.innerHTML = '<div class="login-error">Erro ao carregar usuários: '+escapeHtml(res.error)+'</div>'; return; }
   USERS_CACHE = res.data;
   USERS_TEM_ABAS = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'abas'); });
+  USERS_TEM_ESCOPO = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'lojas') && Object.prototype.hasOwnProperty.call(p, 'canais'); });
+  var uiLj = document.getElementById('uiLojas'), uiCn = document.getElementById('uiCanais');
+  if(uiLj && !uiLj.dataset.built){
+    uiLj.innerHTML = chipsHtml(lojasUniverso().map(function(v){ return {k:v,t:v}; }), [], false); bindAbas(uiLj);
+    uiCn.innerHTML = chipsHtml(canaisUniverso().map(function(v){ return {k:v,t:v}; }), canaisUniverso(), false); bindAbas(uiCn);
+    uiLj.dataset.built = '1';
+    var uiR = document.getElementById('uiRole'); if(uiR) uiR.dispatchEvent(new Event('change'));
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#userInviteForm .u-esc'), function(el){ el.style.display = USERS_TEM_ESCOPO ? '' : 'none'; });
   document.getElementById('uVendList').innerHTML = VEND_PESSOAS.map(function(v){ return '<option value="'+escapeHtml(v)+'">'; }).join('');
   var uiL = document.getElementById('uiLoja'); if(uiL && !uiL.options.length) uiL.innerHTML = lojaOptions('');
   var uiA = document.getElementById('uiAbas');
@@ -3964,7 +4023,13 @@ if(uiRoleEl){
   uiRoleEl.addEventListener('change', function(){
     var role = this.value;
     document.getElementById('uiVendedorWrap').style.display = (role==='vendedor') ? '' : 'none';
-    document.getElementById('uiLojaWrap').style.display = (role==='gerencia') ? '' : 'none';
+    document.getElementById('uiLojaWrap').style.display = (role==='gerencia' && !USERS_TEM_ESCOPO) ? '' : 'none';
+    // lojas: gerência escolhe as suas; os demais começam com todas
+    var uiLj = document.getElementById('uiLojas');
+    if(uiLj && uiLj.dataset.built){
+      Array.prototype.forEach.call(uiLj.querySelectorAll('.u-aba'), function(b){ b.setAttribute('aria-pressed', role==='gerencia' ? 'false' : 'true'); });
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('#uiLojas .u-aba, #uiCanais .u-aba'), function(b){ b.disabled = role==='bi'; if(role==='bi') b.setAttribute('aria-pressed','true'); });
   });
   uiRoleEl.dispatchEvent(new Event('change'));
 }
@@ -3981,9 +4046,11 @@ if(userInviteFormEl){
     var vendedorNome = document.getElementById('uiVendedorNome').value.trim();
     var loja = document.getElementById('uiLoja').value.trim();
     if(!email){ msg.textContent = 'Informe um e-mail.'; return; }
-    var abasConv = USERS_TEM_ABAS && role!=='bi' ? abasSelecionadas(document.getElementById('uiAbas')) : null;
+    var abasConv = USERS_TEM_ABAS && role!=='bi' ? grpSel(userInviteFormEl,'abas') : null;
     if(abasConv && abasConv.length===ABAS_TODAS.length) abasConv = null;
-    var erroEsc = validaEscopo({role:role, loja: role==='gerencia' ? loja : null, vendedor_nome: role==='vendedor' ? vendedorNome : null, abas: abasConv});
+    var escConv = USERS_TEM_ESCOPO ? escopoPayload(role, grpSel(userInviteFormEl,'lojas'), grpSel(userInviteFormEl,'canais')) : {lojas:null, canais:null};
+    if(USERS_TEM_ESCOPO && role==='gerencia') loja = (escConv.lojas||[])[0] || '';
+    var erroEsc = validaEscopo({role:role, loja: role==='gerencia' ? loja : null, vendedor_nome: role==='vendedor' ? vendedorNome : null, abas: abasConv, lojas: escConv.lojas, canais: escConv.canais});
     if(erroEsc){ msg.style.color='var(--critical)'; msg.textContent = erroEsc; return; }
     try{
       var sess = await supa.auth.getSession();
@@ -4000,11 +4067,16 @@ if(userInviteFormEl){
         msg.textContent = json.error || 'Falha ao convidar usuário.';
         return;
       }
-      if(abasConv){ await supa.from('profiles').update({abas: abasConv}).eq('email', email); }
+      var extra = {};
+      if(abasConv) extra.abas = abasConv;
+      if(escConv.lojas) extra.lojas = escConv.lojas;
+      if(escConv.canais) extra.canais = escConv.canais;
+      if(Object.keys(extra).length){ await supa.from('profiles').update(extra).eq('email', email); }
       msg.style.color = 'var(--good)';
       msg.textContent = 'Convite enviado para '+email+'.';
       userInviteFormEl.reset();
       var uiA2 = document.getElementById('uiAbas'); uiA2.innerHTML = abasChips(ABAS_TODAS, false); bindAbas(uiA2);
+      var uiC2 = document.getElementById('uiCanais'); if(uiC2 && USERS_TEM_ESCOPO){ uiC2.innerHTML = chipsHtml(canaisUniverso().map(function(v){ return {k:v,t:v}; }), canaisUniverso(), false); bindAbas(uiC2); }
       document.getElementById('uiRole').dispatchEvent(new Event('change'));
       renderUsersAdmin();
     } catch(ex){
@@ -4037,6 +4109,8 @@ function doLogin(u){
   else if(u.escopo.tipo==='loja') badge.textContent = u.perfil+' · '+u.escopo.loja;
   else if(u.escopo.tipo==='vendedor') badge.textContent = u.perfil+' · '+u.escopo.vendedor;
   else badge.textContent = u.perfil+' · todas as lojas do canal';
+  if(u.escopo.tipo==='all' && u.escopo.lojas) badge.textContent += ' · '+(u.escopo.lojas.length===1 ? u.escopo.lojas[0] : u.escopo.lojas.length+' lojas');
+  if(u.escopo.canais) badge.textContent += ' · '+u.escopo.canais.join(', ');
   if(u.escopo.tipo==='loja') state.regiao = [u.escopo.loja]; else state.regiao = [];
   if(u.escopo.tipo==='vendedor') state.vendedor = [u.escopo.vendedor]; else state.vendedor = [];
   var ehBI = !!(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi');
@@ -4184,7 +4258,8 @@ async function loadData(){
   var sellerMeta = {}; results[3].forEach(function(r){ sellerMeta[r.vendedor] = Number(r.meta); });
   return {
     months: cfg.months, monthLabels: cfg.monthLabels, lojaInfo: cfg.lojaInfo,
-    dims: {lojas: cfg.lojas},
+    dims: {lojas: (function(){ var t={}; results[2].forEach(function(r){ t[r.loja]=1; }); results[4].forEach(function(r){ t[r.loja]=1; });
+      return (cfg.lojas||[]).filter(function(l){ return t[l]; }); })()},
     // curva diária normalizada (peso do dia no mês) — o painel só usa a proporção
     companyDaily: results[1].map(function(r){ return {d:r.d, fat:Number(r.w_fat), qtd:Number(r.w_qtd)}; }),
     products: products,
