@@ -555,6 +555,53 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .login-help td{padding:3px 4px; font-family:'JetBrains Mono',monospace; font-size:11px; border-bottom:1px solid rgba(255,255,255,.06);}
 
 /* ---- Administração de usuários (papel BI) ---- */
+.u-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:14px; }
+.u-stat{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:13px 15px; box-shadow:var(--shadow-card); }
+.u-stat .l{ font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+.u-stat .v{ font-family:'Sora',sans-serif; font-size:22px; font-weight:700; margin-top:4px; }
+.u-stat.warn{ border-color:rgba(250,178,25,.4); background:linear-gradient(180deg, rgba(250,178,25,.08), var(--surface) 70%); }
+.u-toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+.u-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:12px; }
+@media (max-width:720px){ .u-grid{ grid-template-columns:1fr; } }
+.u-card{ background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:12px; min-width:0; }
+.u-card.pend{ border-color:rgba(250,178,25,.45); }
+.u-card.off{ opacity:.72; }
+.u-top{ display:flex; gap:11px; align-items:center; min-width:0; }
+.u-av{ width:40px; height:40px; border-radius:12px; flex:none; display:flex; align-items:center; justify-content:center; font-family:'Sora',sans-serif; font-weight:800; font-size:14px; color:#04141a; }
+.u-id{ min-width:0; flex:1; }
+.u-id b{ display:block; font-size:13.5px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.u-id span{ display:block; font-size:11.5px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.u-pill{ font-size:10.5px; font-weight:800; padding:3px 9px; border-radius:999px; white-space:nowrap; }
+.u-pill.ok{ background:rgba(31,196,106,.14); color:var(--good); }
+.u-pill.pend{ background:rgba(250,178,25,.16); color:var(--warning); }
+.u-pill.off{ background:rgba(224,72,63,.14); color:var(--critical); }
+.u-fields{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.u-fields label, .u-invite-grid label{ display:flex; flex-direction:column; gap:5px; font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; min-width:0; }
+.u-fields input, .u-fields select, .u-invite-grid input, .u-invite-grid select{
+  width:100%; box-sizing:border-box; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.10);
+  background:var(--surface); color:var(--text); font-size:12.5px; font-family:'Manrope',sans-serif; text-transform:none; letter-spacing:normal; font-weight:500;
+}
+.u-fields input:focus, .u-fields select:focus, .u-invite-grid input:focus, .u-invite-grid select:focus{ outline:none; border-color:var(--accent); }
+.u-abas-label{ font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin:12px 0 6px; }
+.u-card .u-abas-label{ margin:0 0 -6px; }
+.u-abas{ display:flex; flex-wrap:wrap; gap:6px; }
+.u-aba{ border:1px solid var(--border); background:var(--surface); color:var(--text-muted); border-radius:999px; padding:5px 11px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:'Manrope',sans-serif; }
+.u-aba[aria-pressed="true"]{ background:rgba(34,211,238,.12); border-color:rgba(34,211,238,.45); color:var(--accent); }
+.u-aba:disabled{ cursor:not-allowed; opacity:.6; }
+.u-foot{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:11px; }
+.u-foot .when{ font-size:11px; color:var(--text-muted); margin-right:auto; }
+.u-foot .tbtn{ font-size:11.5px; padding:6px 12px; }
+.tbtn.primary{ background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#04141a; border-color:transparent; }
+.tbtn.danger{ color:var(--critical); }
+.u-switch{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--text-2); cursor:pointer; user-select:none; }
+.u-switch input{ display:none; }
+.u-switch i{ width:32px; height:18px; border-radius:999px; background:var(--surface-3); position:relative; transition:background .15s; flex:none; }
+.u-switch i::after{ content:''; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:left .15s; }
+.u-switch input:checked + i{ background:var(--good); }
+.u-switch input:checked + i::after{ left:16px; }
+.u-invite{ background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
+.u-invite-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.u-msg{ font-size:11.5px; }
 .user-form{padding:16px 22px 20px;}
 .user-form-row{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:4px;}
 .user-form-row label{flex:1 1 180px; display:flex; flex-direction:column; font-size:11px; font-weight:700; color:var(--text-2); text-transform:uppercase; letter-spacing:.04em; gap:6px;}
@@ -1219,16 +1266,17 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       </section>
 
       <section class="view-panel" data-view-panel="usuarios" style="display:none;">
+      <div class="u-stats" id="uStats"></div>
+
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Convidar usuário</h2><div class="psub">A pessoa recebe um e-mail para definir a própria senha</div></div>
+          <div><h2>Usuários</h2><div class="psub">Libere ou bloqueie o acesso, defina o que cada pessoa enxerga e quais guias pode abrir</div></div>
+          <button class="tbtn" type="button" id="uNovoBtn">+ Convidar usuário</button>
         </div>
-        <form id="userInviteForm" class="user-form">
-          <div class="user-form-row">
+        <form id="userInviteForm" class="u-invite" style="display:none;">
+          <div class="u-invite-grid">
             <label>E-mail<input type="email" id="uiEmail" required placeholder="nome@chevroletnova.com.br"></label>
             <label>Nome completo<input type="text" id="uiNome" placeholder="Nome e sobrenome"></label>
-          </div>
-          <div class="user-form-row">
             <label>Papel
               <select id="uiRole">
                 <option value="vendedor">Vendedor</option>
@@ -1237,19 +1285,30 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
                 <option value="bi">BI</option>
               </select>
             </label>
-            <label id="uiVendedorWrap">Nome do vendedor (como aparece nos dados)<input type="text" id="uiVendedorNome" placeholder="ex.: João Silva"></label>
-            <label id="uiLojaWrap">Loja<input type="text" id="uiLoja" placeholder="ex.: Loja Centro"></label>
+            <label id="uiVendedorWrap">Vendedor (como aparece nos dados)<input type="text" id="uiVendedorNome" list="uVendList" placeholder="comece a digitar o nome"></label>
+            <label id="uiLojaWrap">Loja<select id="uiLoja"></select></label>
           </div>
-          <button class="login-btn" type="submit" style="max-width:220px;">Enviar convite</button>
-          <div class="login-error" id="uiMsg"></div>
+          <div class="u-abas-label">Guias liberadas</div>
+          <div class="u-abas" id="uiAbas"></div>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px;">
+            <button class="login-btn" type="submit" style="max-width:200px; margin:0;">Enviar convite</button>
+            <button class="tbtn" type="button" id="uiCancel">Cancelar</button>
+            <div class="login-error" id="uiMsg" style="margin:0;"></div>
+          </div>
         </form>
-      </div>
-
-      <div class="panel">
-        <div class="panel-head">
-          <div><h2>Usuários cadastrados</h2><div class="psub">Edite o papel, loja/vendedor ou desative o acesso</div></div>
+        <div class="u-toolbar">
+          <div class="search-box" style="flex:1 1 240px;">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input id="uBusca" type="text" placeholder="Buscar por nome, e-mail, loja ou vendedor...">
+          </div>
+          <div class="seg" id="uFiltro">
+            <button type="button" data-f="todos" aria-pressed="true">Todos</button>
+            <button type="button" data-f="ativos">Com acesso</button>
+            <button type="button" data-f="pendentes">Sem acesso</button>
+          </div>
         </div>
-        <div id="usersTableWrap" class="table-scroll"></div>
+        <datalist id="uVendList"></datalist>
+        <div id="usersTableWrap" class="u-grid"></div>
       </div>
       </section>
 
@@ -3397,6 +3456,7 @@ function bindEvents(){
     usuarios:{title:'Usuários', sub:'Gestão de acessos ao painel (somente BI)'},
     fontes:{title:'Links das planilhas', sub:'Origem dos dados da carga (somente BI)'}
   };
+  window.__NC_switchView = function(v){ switchView(v); };
   function switchView(view){
     state.currentView = view;
     Array.prototype.forEach.call(document.querySelectorAll('.nav-item'), function(n){
@@ -3661,53 +3721,152 @@ async function fetchAllProfiles(){
   if(res.error){ return {error: res.error.message}; }
   return {data: res.data||[]};
 }
-function buildUsersTable(profiles){
-  var ROLE_OPTS = ['vendedor','gerencia','diretoria','bi'];
-  var rows = profiles.map(function(p){
-    var roleOpts = ROLE_OPTS.map(function(r){
-      return '<option value="'+r+'"'+(r===p.role?' selected':'')+'>'+(ROLE_LABEL[r]||r)+'</option>';
-    }).join('');
-    return '<tr data-id="'+p.id+'">'+
-      '<td>'+escapeHtml(p.email)+'</td>'+
-      '<td><input type="text" class="u-edit u-nome" value="'+escapeHtml(p.full_name||'')+'" style="width:140px;"></td>'+
-      '<td><select class="u-edit u-role">'+roleOpts+'</select></td>'+
-      '<td><input type="text" class="u-edit u-vendedor" value="'+escapeHtml(p.vendedor_nome||'')+'" style="width:130px;" placeholder="—"></td>'+
-      '<td><input type="text" class="u-edit u-loja" value="'+escapeHtml(p.loja||'')+'" style="width:120px;" placeholder="—"></td>'+
-      '<td style="text-align:center;"><input type="checkbox" class="u-edit u-active" '+(p.active?'checked':'')+'></td>'+
-      '<td>'+fmtDateShort(p.created_at)+'</td>'+
-      '<td><button class="tbtn u-save" type="button">Salvar</button></td>'+
-      '</tr>';
-  }).join('');
-  return '<table class="data-table users-table"><thead><tr>'+
-    '<th>E-mail</th><th>Nome</th><th>Papel</th><th>Vendedor (dados)</th><th>Loja</th><th>Ativo</th><th>Criado em</th><th></th>'+
-    '</tr></thead><tbody>'+(rows||'<tr><td colspan="8" style="color:var(--text-muted);">Nenhum usuário cadastrado ainda.</td></tr>')+'</tbody></table>';
+var ABAS = [
+  {k:'dashboard', t:'Dashboard'}, {k:'vendas', t:'Vendas'}, {k:'estoque', t:'Estoque'},
+  {k:'produtos', t:'Produtos'}, {k:'vendedores', t:'Vendedores'}, {k:'insights', t:'Insights'}
+];
+var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
+var ROLE_COR = {bi:'linear-gradient(135deg,#22d3ee,#3b82f6)', diretoria:'linear-gradient(135deg,#a78bfa,#6366f1)', gerencia:'linear-gradient(135deg,#fab219,#d9772e)', vendedor:'linear-gradient(135deg,#1fc46a,#1fb08a)'};
+var USERS_CACHE = [], USERS_TEM_ABAS = false, USERS_FILTRO = 'todos';
+// guias que o perfil pode abrir (vazio/nulo = todas)
+function abasDoPerfil(p){ return (p && Array.isArray(p.abas) && p.abas.length) ? p.abas.filter(function(k){ return ABAS_TODAS.indexOf(k)!==-1; }) : ABAS_TODAS.slice(); }
+function abasChips(sel, disabled){
+  return ABAS.map(function(a){ return '<button type="button" class="u-aba" data-aba="'+a.k+'" aria-pressed="'+(sel.indexOf(a.k)!==-1)+'"'+(disabled?' disabled':'')+'>'+a.t+'</button>'; }).join('');
+}
+function bindAbas(box){
+  Array.prototype.forEach.call(box.querySelectorAll('.u-aba'), function(b){
+    b.addEventListener('click', function(){ b.setAttribute('aria-pressed', b.getAttribute('aria-pressed')==='true' ? 'false' : 'true'); });
+  });
+}
+function abasSelecionadas(box){ return Array.prototype.filter.call(box.querySelectorAll('.u-aba'), function(b){ return b.getAttribute('aria-pressed')==='true'; }).map(function(b){ return b.getAttribute('data-aba'); }); }
+function lojaOptions(atual){
+  var lojas = (REAL.dims.lojas||[]).slice();
+  if(atual && lojas.indexOf(atual)===-1) lojas.unshift(atual);
+  return '<option value="">— escolha a loja —</option>' + lojas.map(function(l){ return '<option value="'+escapeHtml(l)+'"'+(l===atual?' selected':'')+'>'+escapeHtml(l)+'</option>'; }).join('');
+}
+function iniciais(nome){ return String(nome||'?').trim().split(/\s+/).map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase(); }
+function statusUser(p){ return p.active ? {c:'ok', t:'Acesso liberado'} : {c:'pend', t:'Sem acesso'}; }
+function userCard(p){
+  var st = statusUser(p), abas = abasDoPerfil(p);
+  var roleOpts = ['vendedor','gerencia','diretoria','bi'].map(function(r){ return '<option value="'+r+'"'+(r===p.role?' selected':'')+'>'+(ROLE_LABEL[r]||r)+'</option>'; }).join('');
+  var ehEu = CURRENT_PROFILE && CURRENT_PROFILE.id===p.id;
+  return '<div class="u-card '+(st.c==='pend'?'pend':(st.c==='off'?'off':''))+'" data-id="'+p.id+'">' +
+    '<div class="u-top"><div class="u-av" style="background:'+(ROLE_COR[p.role]||ROLE_COR.vendedor)+'">'+escapeHtml(iniciais(p.full_name||p.email))+'</div>' +
+      '<div class="u-id"><b>'+escapeHtml(p.full_name||'(sem nome)')+(ehEu?' · você':'')+'</b><span>'+escapeHtml(p.email)+'</span></div>' +
+      '<span class="u-pill '+st.c+'">'+st.t+'</span></div>' +
+    '<div class="u-fields">' +
+      '<label>Nome<input type="text" class="u-nome" value="'+escapeHtml(p.full_name||'')+'"></label>' +
+      '<label>Papel<select class="u-role"'+(ehEu?' disabled title="Você não pode mudar o próprio papel"':'')+'>'+roleOpts+'</select></label>' +
+      '<label class="u-loja-w">Loja<select class="u-loja">'+lojaOptions(p.loja)+'</select></label>' +
+      '<label class="u-vend-w">Vendedor nos dados<input type="text" class="u-vendedor" list="uVendList" value="'+escapeHtml(p.vendedor_nome||'')+'" placeholder="comece a digitar"></label>' +
+    '</div>' +
+    (USERS_TEM_ABAS ? '<div class="u-abas-label">Guias liberadas</div><div class="u-abas">'+abasChips(abas, p.role==='bi')+'</div>' : '') +
+    '<div class="u-foot"><span class="when">Criado em '+fmtDateShort(p.created_at)+'</span>' +
+      (ehEu ? '' : '<label class="u-switch" title="Acesso liberado"><input type="checkbox" class="u-active" '+(p.active?'checked':'')+'><i></i>Acesso</label>') +
+      (st.c==='pend' ? '<button class="tbtn primary u-liberar" type="button">Liberar acesso</button>' : '') +
+      '<button class="tbtn u-save" type="button">Salvar</button>' +
+      '<span class="u-msg"></span></div>' +
+  '</div>';
+}
+function ajustaEscopo(card){
+  var role = card.querySelector('.u-role').value;
+  card.querySelector('.u-loja-w').style.display = role==='gerencia' ? '' : 'none';
+  card.querySelector('.u-vend-w').style.display = role==='vendedor' ? '' : 'none';
+  var chips = card.querySelectorAll('.u-aba');
+  Array.prototype.forEach.call(chips, function(b){ b.disabled = role==='bi'; if(role==='bi') b.setAttribute('aria-pressed','true'); });
+}
+function validaEscopo(payload){
+  if(payload.role==='gerencia' && !payload.loja) return 'Escolha a loja da gerência.';
+  if(payload.role==='vendedor' && !payload.vendedor_nome) return 'Informe o vendedor como aparece nos dados.';
+  if(payload.role==='vendedor' && VEND_PESSOAS.indexOf(payload.vendedor_nome)===-1 && SELLERS.indexOf(payload.vendedor_nome)===-1)
+    return 'Esse nome não aparece nas vendas; o usuário veria o painel vazio. Escolha um nome da lista.';
+  if(payload.abas && !payload.abas.length) return 'Libere pelo menos uma guia.';
+  return '';
+}
+async function salvarCard(card, liberar){
+  var id = card.getAttribute('data-id'), msg = card.querySelector('.u-msg');
+  var role = card.querySelector('.u-role').value;
+  var act = card.querySelector('.u-active');
+  var payload = {
+    full_name: card.querySelector('.u-nome').value.trim() || null,
+    role: role,
+    loja: role==='gerencia' ? (card.querySelector('.u-loja').value || null) : null,
+    vendedor_nome: role==='vendedor' ? (card.querySelector('.u-vendedor').value.trim() || null) : null
+  };
+  if(act) payload.active = liberar ? true : act.checked;
+  if(USERS_TEM_ABAS){ var ab = abasSelecionadas(card); payload.abas = (role==='bi' || ab.length===ABAS_TODAS.length) ? null : ab; if(role!=='bi' && !ab.length) payload.abas = []; }
+  var erro = validaEscopo(payload);
+  if(erro){ msg.style.color='var(--critical)'; msg.textContent = erro; return; }
+  if(CURRENT_PROFILE && CURRENT_PROFILE.id===id){ delete payload.role; delete payload.active; }
+  msg.style.color='var(--text-muted)'; msg.textContent = 'Salvando…';
+  var upd = await supa.from('profiles').update(payload).eq('id', id);
+  if(upd.error){ msg.style.color='var(--critical)'; msg.textContent = 'Erro ao salvar: '+upd.error.message; return; }
+  toast(liberar ? 'Acesso liberado.' : 'Usuário atualizado.');
+  renderUsersAdmin();
+}
+function renderUsersList(){
+  var wrap = document.getElementById('usersTableWrap'); if(!wrap) return;
+  var q = normSearch(document.getElementById('uBusca').value||'');
+  var lista = USERS_CACHE.filter(function(p){
+    var st = statusUser(p).c;
+    if(USERS_FILTRO==='pendentes' && st!=='pend') return false;
+    if(USERS_FILTRO==='ativos' && st!=='ok') return false;
+    if(!q) return true;
+    return normSearch([p.full_name,p.email,p.loja,p.vendedor_nome,ROLE_LABEL[p.role]].join(' ')).indexOf(q)!==-1;
+  }).sort(function(a,b){
+    var o = {pend:0, ok:1, off:2}; var d = o[statusUser(a).c]-o[statusUser(b).c];
+    return d || String(a.full_name||a.email).localeCompare(String(b.full_name||b.email));
+  });
+  wrap.innerHTML = lista.length ? lista.map(userCard).join('') : '<p class="note-muted">Nenhum usuário encontrado.</p>';
+  Array.prototype.forEach.call(wrap.querySelectorAll('.u-card'), function(card){
+    bindAbas(card); ajustaEscopo(card);
+    card.querySelector('.u-role').addEventListener('change', function(){ ajustaEscopo(card); });
+    card.querySelector('.u-save').addEventListener('click', function(){ salvarCard(card, false); });
+    var lib = card.querySelector('.u-liberar'); if(lib) lib.addEventListener('click', function(){ salvarCard(card, true); });
+  });
+}
+function renderUsersStats(){
+  var el = document.getElementById('uStats'); if(!el) return;
+  var n = {ok:0, pend:0, off:0}, porRole = {};
+  USERS_CACHE.forEach(function(p){ n[statusUser(p).c]++; porRole[p.role] = (porRole[p.role]||0)+1; });
+  el.innerHTML =
+    '<div class="u-stat"><div class="l">Usuários</div><div class="v">'+USERS_CACHE.length+'</div></div>' +
+    '<div class="u-stat"><div class="l">Com acesso</div><div class="v" style="color:var(--good)">'+n.ok+'</div></div>' +
+    '<div class="u-stat'+(n.pend?' warn':'')+'"><div class="l">Sem acesso</div><div class="v" style="color:var(--warning)">'+n.pend+'</div></div>' +
+    '<div class="u-stat"><div class="l">Por papel</div><div class="v" style="font-size:12.5px; font-family:Manrope,sans-serif; line-height:1.7;">' +
+      ['bi','diretoria','gerencia','vendedor'].filter(function(r){ return porRole[r]; }).map(function(r){ return (ROLE_LABEL[r]||r)+' '+porRole[r]; }).join(' · ') + '</div></div>';
 }
 async function renderUsersAdmin(){
   var wrap = document.getElementById('usersTableWrap');
   if(!wrap) return;
-  wrap.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:8px 2px;">Carregando…</div>';
+  if(!wrap.innerHTML) wrap.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:8px 2px;">Carregando…</div>';
   var res = await fetchAllProfiles();
   if(res.error){ wrap.innerHTML = '<div class="login-error">Erro ao carregar usuários: '+escapeHtml(res.error)+'</div>'; return; }
-  wrap.innerHTML = buildUsersTable(res.data);
-  Array.prototype.forEach.call(wrap.querySelectorAll('.u-save'), function(btn){
-    btn.addEventListener('click', async function(){
-      var tr = btn.closest('tr');
-      var id = tr.getAttribute('data-id');
-      var payload = {
-        full_name: tr.querySelector('.u-nome').value.trim() || null,
-        role: tr.querySelector('.u-role').value,
-        vendedor_nome: tr.querySelector('.u-vendedor').value.trim() || null,
-        loja: tr.querySelector('.u-loja').value.trim() || null,
-        active: tr.querySelector('.u-active').checked
-      };
-      btn.disabled = true; btn.textContent = 'Salvando…';
-      var upd = await supa.from('profiles').update(payload).eq('id', id);
-      btn.disabled = false;
-      btn.textContent = upd.error ? 'Erro' : 'Salvo ✓';
-      setTimeout(function(){ btn.textContent = 'Salvar'; }, 1800);
+  USERS_CACHE = res.data;
+  USERS_TEM_ABAS = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'abas'); });
+  document.getElementById('uVendList').innerHTML = VEND_PESSOAS.map(function(v){ return '<option value="'+escapeHtml(v)+'">'; }).join('');
+  var uiL = document.getElementById('uiLoja'); if(uiL && !uiL.options.length) uiL.innerHTML = lojaOptions('');
+  var uiA = document.getElementById('uiAbas');
+  if(uiA && !uiA.dataset.built){ uiA.innerHTML = abasChips(ABAS_TODAS, false); bindAbas(uiA); uiA.dataset.built='1'; }
+  if(uiA) uiA.style.display = USERS_TEM_ABAS ? '' : 'none';
+  uiA && (uiA.previousElementSibling.style.display = USERS_TEM_ABAS ? '' : 'none');
+  renderUsersStats();
+  renderUsersList();
+}
+(function(){
+  var b = document.getElementById('uBusca'); if(b) b.addEventListener('input', renderUsersList);
+  Array.prototype.forEach.call(document.querySelectorAll('#uFiltro button'), function(btn){
+    btn.addEventListener('click', function(){
+      Array.prototype.forEach.call(document.querySelectorAll('#uFiltro button'), function(x){ x.setAttribute('aria-pressed','false'); });
+      btn.setAttribute('aria-pressed','true'); USERS_FILTRO = btn.getAttribute('data-f'); renderUsersList();
     });
   });
-}
+  var nv = document.getElementById('uNovoBtn'), f = document.getElementById('userInviteForm');
+  if(nv && f){
+    nv.addEventListener('click', function(){ f.style.display = f.style.display==='none' ? '' : 'none'; if(f.style.display==='') document.getElementById('uiEmail').focus(); });
+    document.getElementById('uiCancel').addEventListener('click', function(){ f.style.display='none'; });
+  }
+})();
 /* ---------- links das planilhas (tabela bi_fonte; RLS: só perfil BI) ---------- */
 var FONTE_PAPEIS = [
   {papel:'vendas', rotulo:'Vendas', obrig:true},
@@ -3822,6 +3981,10 @@ if(userInviteFormEl){
     var vendedorNome = document.getElementById('uiVendedorNome').value.trim();
     var loja = document.getElementById('uiLoja').value.trim();
     if(!email){ msg.textContent = 'Informe um e-mail.'; return; }
+    var abasConv = USERS_TEM_ABAS && role!=='bi' ? abasSelecionadas(document.getElementById('uiAbas')) : null;
+    if(abasConv && abasConv.length===ABAS_TODAS.length) abasConv = null;
+    var erroEsc = validaEscopo({role:role, loja: role==='gerencia' ? loja : null, vendedor_nome: role==='vendedor' ? vendedorNome : null, abas: abasConv});
+    if(erroEsc){ msg.style.color='var(--critical)'; msg.textContent = erroEsc; return; }
     try{
       var sess = await supa.auth.getSession();
       var token = sess && sess.data && sess.data.session && sess.data.session.access_token;
@@ -3837,9 +4000,11 @@ if(userInviteFormEl){
         msg.textContent = json.error || 'Falha ao convidar usuário.';
         return;
       }
+      if(abasConv){ await supa.from('profiles').update({abas: abasConv}).eq('email', email); }
       msg.style.color = 'var(--good)';
       msg.textContent = 'Convite enviado para '+email+'.';
       userInviteFormEl.reset();
+      var uiA2 = document.getElementById('uiAbas'); uiA2.innerHTML = abasChips(ABAS_TODAS, false); bindAbas(uiA2);
       document.getElementById('uiRole').dispatchEvent(new Event('change'));
       renderUsersAdmin();
     } catch(ex){
@@ -3879,9 +4044,16 @@ function doLogin(u){
     var nav = document.querySelector('.nav-item[data-view="'+v+'"]');
     if(nav) nav.style.display = ehBI ? '' : 'none';
   });
-  if(!ehBI && (state.currentView==='usuarios' || state.currentView==='fontes')) switchView('dashboard');
+  var liberadas = ehBI ? ABAS_TODAS : abasDoPerfil(CURRENT_PROFILE);
+  ABAS_TODAS.forEach(function(v){
+    var nav = document.querySelector('.nav-item[data-view="'+v+'"]');
+    if(nav) nav.style.display = liberadas.indexOf(v)!==-1 ? '' : 'none';
+  });
   if(appBooted){ initFilterSelects(); state.page=1; renderAll(false); }
   else { appBooted = true; bootApp(); }
+  var foraDoPerfil = (!ehBI && (state.currentView==='usuarios' || state.currentView==='fontes')) ||
+    (liberadas.indexOf(state.currentView)===-1 && ABAS_TODAS.indexOf(state.currentView)!==-1);
+  if(foraDoPerfil && window.__NC_switchView) window.__NC_switchView(liberadas[0]||'dashboard');
   var regiaoGroup = document.getElementById('fcheck-regiao');
   if(regiaoGroup){
     Array.prototype.forEach.call(regiaoGroup.querySelectorAll('input'), function(cb){
