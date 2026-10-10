@@ -673,6 +673,36 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .mtd-box .s{ font-size:11.5px; color:var(--text-2); margin-top:4px; line-height:1.5; }
 .mtd-bar{ position:relative; height:8px; border-radius:6px; background:var(--surface-3); margin-top:14px; overflow:hidden; }
 .mtd-bar i{ position:absolute; left:0; top:0; bottom:0; border-radius:6px; }
+/* ---- guia insights ---- */
+.opp-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.opp-card{ background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:13px 14px; position:relative; overflow:hidden; }
+.opp-card::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--c, var(--accent)); }
+.opp-card .l{ font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+.opp-card .v{ font-family:'Sora',sans-serif; font-size:20px; font-weight:700; margin-top:6px; color:var(--text); }
+.opp-card .s{ font-size:11.5px; color:var(--text-2); margin-top:4px; line-height:1.5; }
+.ins-sec .why{ font-size:12px; color:var(--text-2); line-height:1.6; margin:-6px 0 12px; }
+.ins-sec .why b{ color:var(--text); }
+table.ins-table{ width:100%; border-collapse:collapse; font-size:12px; min-width:640px; }
+table.ins-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); padding:7px 8px; border-bottom:1px solid var(--border); white-space:nowrap; }
+table.ins-table td{ padding:7px 8px; border-bottom:1px solid var(--border); color:var(--text-2); white-space:nowrap; }
+table.ins-table td.n{ font-family:'JetBrains Mono',monospace; text-align:right; }
+table.ins-table th.n{ text-align:right; }
+table.ins-table td.p{ color:var(--text); font-weight:600; white-space:normal; min-width:220px; }
+table.ins-table tr[data-id]{ cursor:pointer; }
+table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
+.pill{ display:inline-block; padding:1px 7px; border-radius:999px; font-size:10.5px; font-weight:700; }
+.pill.up{ background:rgba(31,196,106,.14); color:var(--good); }
+.pill.down{ background:rgba(224,72,63,.14); color:var(--critical); }
+.pill.flat{ background:var(--surface-3); color:var(--text-muted); }
+/* ---- barra de canais ---- */
+.canal-bar{ display:flex; height:34px; border-radius:9px; overflow:hidden; background:var(--surface-3); }
+.canal-bar .seg{ height:100%; min-width:3px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#04141a; overflow:hidden; white-space:nowrap; cursor:default; transition:filter .12s; }
+.canal-bar .seg:hover, .canal-bar .seg.on{ filter:brightness(1.15); }
+#canalTip{ transform:translate(-50%, 0); }
+.canal-cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin-top:14px; }
+.canal-card{ background:var(--surface-2); border:1px solid var(--border); border-left:4px solid var(--c); border-radius:10px; padding:10px 12px; font-size:11.5px; color:var(--text-2); line-height:1.6; }
+.canal-card b{ display:block; color:var(--text); font-size:12.5px; margin-bottom:2px; }
+.canal-card .big{ font-family:'Sora',sans-serif; font-size:16px; font-weight:700; color:var(--text); }
 /* ---- legenda de canais / barras empilhadas ---- */
 .leg-row{ display:flex; flex-wrap:wrap; gap:12px; font-size:11px; color:var(--text-2); margin-top:8px; }
 .leg-row i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
@@ -783,6 +813,9 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
       </div>
       <div class="nav-item" data-view="vendedores">
         <span class="ico">&#128188;</span><span class="label">Vendedores</span><span class="tip">Vendedores</span>
+      </div>
+      <div class="nav-item" data-view="insights">
+        <span class="ico">&#128161;</span><span class="label">Insights</span><span class="tip">Insights</span>
       </div>
       <div class="nav-item" data-view="usuarios" style="display:none;">
         <span class="ico">&#128273;</span><span class="label">Usuários</span><span class="tip">Usuários</span>
@@ -1009,14 +1042,23 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 
       <!-- ============ VENDAS ============ -->
       <section class="view-panel" data-view-panel="vendas" style="display:none;">
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Vendas por Canal</h2><div class="psub">Participação de cada canal no faturamento do período &middot; passe o mouse para ver os detalhes</div></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="canal-bar" id="canalBar"></div>
+          <div class="chart-tip" id="canalTip"></div>
+        </div>
+        <div class="canal-cards" id="canalCards"></div>
+      </div>
+
       <div class="grid-2">
         <div class="panel">
           <div class="panel-head">
-            <div><h2>Vendas por Loja / Canal</h2><div class="psub">Lojas físicas e marketplaces (🛒) &middot; faturamento no período</div></div>
+            <div><h2>Vendas por Loja</h2><div class="psub">Lojas físicas e marketplaces (🛒) &middot; faturamento no período</div></div>
           </div>
           <div class="barlist scroll-limit" id="lojaList"></div>
-          <h3 class="dh" style="margin-top:14px;">Canais</h3>
-          <div class="barlist" id="canalList"></div>
           <p class="note-muted" id="lojaFonte"></p>
         </div>
         <div class="panel">
@@ -1140,7 +1182,7 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
       <section class="view-panel" data-view-panel="vendedores" style="display:none;">
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Performance de Vendedores</h2><div class="psub">Faturamento &middot; margem &middot; atingimento de meta (meta estimada)</div></div>
+          <div><h2>Performance de Vendedores</h2><div class="psub">Faturamento &middot; margem &middot; participação no total do período</div></div>
         </div>
         <div id="sellerList" class="scroll-limit"></div>
         <p class="note-muted" id="sellerFonte"></p>
@@ -1163,6 +1205,17 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
           <div><h3 class="dh">Nomes que não parecem vendedores</h3><div id="dqNomes"></div></div>
         </div>
       </div>
+      </section>
+
+      <!-- ============ INSIGHTS ============ -->
+      <section class="view-panel" data-view-panel="insights" style="display:none;">
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Onde está o dinheiro</h2><div class="psub" id="insBase">Oportunidades estimadas a partir dos dados de vendas e estoque</div></div>
+        </div>
+        <div class="opp-grid" id="oppGrid"></div>
+      </div>
+      <div id="insSections"></div>
       </section>
 
       <section class="view-panel" data-view-panel="usuarios" style="display:none;">
@@ -1899,10 +1952,51 @@ function renderLojaList(){
     }).sort(function(a,b){return b.value-a.value;});
   }
   renderBarList('lojaList', rowsOf(lojaMap, true));
-  renderBarList('canalList', rowsOf(canalMap, false));
+  renderCanalBar(canalMap);
   document.getElementById('lojaFonte').textContent = real
     ? 'Totais reais de cada loja e canal.'
     : 'Com filtro de marca, categoria, aplicação, origem ou estoque, a loja de cada produto é a de maior venda dele (aproximação).';
+}
+
+function renderCanalBar(map){
+  var bar = document.getElementById('canalBar'); if(!bar) return;
+  var tot = 0, totQ = 0;
+  var ks = Object.keys(map).filter(function(k){ return map[k].fat>0.5; });
+  ks.forEach(function(k){ tot += map[k].fat; totQ += map[k].qtd; });
+  ks.sort(function(a,b){ return map[b].fat-map[a].fat; });
+  if(!ks.length || tot<=0){ bar.innerHTML=''; document.getElementById('canalCards').innerHTML='<p class="note-muted">Sem vendas para os filtros atuais.</p>'; return; }
+  function det(k){
+    var m = map[k], mg = m.lb!==undefined && m.fat>0 ? m.lb/m.fat*100 : null;
+    return {fat:m.fat, qtd:m.qtd, share:m.fat/tot*100, shareQ: totQ>0 ? m.qtd/totQ*100 : 0, mg:mg, ticket: m.qtd>0 ? m.fat/m.qtd : 0};
+  }
+  bar.innerHTML = ks.map(function(k){
+    var d = det(k);
+    return '<div class="seg" data-k="'+k+'" style="width:'+d.share+'%; background:'+canalCor(k)+'">'+(d.share>=7 ? k+' '+d.share.toFixed(0)+'%' : '')+'</div>';
+  }).join('');
+  document.getElementById('canalCards').innerHTML = ks.map(function(k){
+    var d = det(k);
+    return '<div class="canal-card" style="--c:'+canalCor(k)+'"><b>'+k+'</b><div class="big">'+fmtMoney(d.fat)+'</div>' +
+      d.share.toFixed(1)+'% do faturamento<br>'+fmtUn(d.qtd)+' peças ('+d.shareQ.toFixed(1)+'%)<br>' +
+      (d.mg!==null ? 'Margem '+d.mg.toFixed(1)+'% · ' : '')+'ticket '+fmtMoney2(d.ticket)+'</div>';
+  }).join('');
+  var tip = document.getElementById('canalTip');
+  Array.prototype.forEach.call(bar.querySelectorAll('.seg'), function(seg){
+    function show(ev){
+      var k = seg.getAttribute('data-k'), d = det(k), r = bar.getBoundingClientRect();
+      tip.innerHTML = '<div class="tt-date">'+k+'</div>' +
+        '<div class="tt-row"><span>Faturamento</span><b>'+fmtMoney(d.fat)+'</b></div>' +
+        '<div class="tt-row"><span>Representatividade</span><b>'+d.share.toFixed(1)+'%</b></div>' +
+        '<div class="tt-row"><span>Quantidade</span><b>'+fmtUn(d.qtd)+' peças</b></div>' +
+        (d.mg!==null ? '<div class="tt-row"><span>Margem bruta</span><b>'+d.mg.toFixed(1)+'%</b></div>' : '') +
+        '<div class="tt-row"><span>Ticket médio</span><b>'+fmtMoney2(d.ticket)+'</b></div>';
+      var x = ev && ev.clientX ? ev.clientX - r.left : seg.offsetLeft + seg.offsetWidth/2;
+      tip.style.left = Math.max(110, Math.min(r.width-110, x))+'px'; tip.style.top = (bar.offsetHeight+8)+'px';
+      tip.classList.add('show');
+    }
+    seg.addEventListener('mousemove', show);
+    seg.addEventListener('click', show);
+    seg.addEventListener('mouseleave', function(){ tip.classList.remove('show'); });
+  });
 }
 
 function renderBrandModelLists(){
@@ -2059,7 +2153,6 @@ function renderVendConsult(){
     {key:'margemPct', label:'Margem'},
     {key:'qtd', label:'Qtd.'},
     {key:'ticket', label:'Ticket médio'},
-    {key:'metaPct', label:'Meta'},
     {key:'share', label:'Participação'}
   ];
   function buildVendRankTable(){
@@ -2081,7 +2174,6 @@ function renderVendConsult(){
         '<td class="mono" style="color:'+(r.margemPct>=groupAvgMargem?'var(--good)':'var(--critical)')+';">'+r.margemPct.toFixed(1)+'%</td>' +
         '<td class="mono">'+fmtUn(r.qtd)+'</td>' +
         '<td class="mono">'+fmtMoney2(r.ticket)+'</td>' +
-        '<td class="mono">'+(SELLER_META[r.name]>0 ? r.metaPct.toFixed(0)+'%' : '—')+'</td>' +
         '<td class="mono">'+r.share.toFixed(1)+'%</td>' +
       '</tr>';
     }).join('');
@@ -2108,8 +2200,6 @@ function renderVendConsult(){
   /* ---- radar: vendedor selecionado vs. média dos demais (mesmo filtro) ---- */
   var peerAvgQtd = others.length ? peerQtdTotal/others.length : 0;
   var peerAvgSku = others.length ? others.reduce(function(s,r){return s+r.skuCount;},0)/others.length : 0;
-  var metaOthers = others.filter(function(r){ return SELLER_META[r.name]>0; });
-  var peerAvgMetaPct = metaOthers.length ? metaOthers.reduce(function(s,r){return s+r.metaPct;},0)/metaOthers.length : 0;
   var peerAvgShare = others.length ? others.reduce(function(s,r){return s+(totalGroupFat>0?r.fat/totalGroupFat*100:0);},0)/others.length : 0;
   var maxOf = function(key){ return Math.max.apply(null, rows.map(function(r){return r[key];})) || 1; };
 
@@ -2120,7 +2210,6 @@ function renderVendConsult(){
     {label:'Ticket médio', meVal:ticketMe, peerVal:ticketPeers, groupMax:maxOf('ticket'), fmt:fmtMoney2},
     {label:'Mix de produtos', meVal:me.skuCount, peerVal:peerAvgSku, groupMax:maxOf('skuCount'), fmt:function(v){return Math.round(v)+(salesFromResumo()?' SKUs/mês':' SKUs');}},
     {label:'Margem bruta', meVal:me.margemPct, peerVal:peerAvgMargem, groupMax:Math.max(1,maxOf('margemPct')), fmt:function(v){return v.toFixed(1)+'%';}},
-    // 'Meta atingida' fora do radar por enquanto (metas ainda são estimadas)
     {label:'Participação', meVal:share, peerVal:peerAvgShare, groupMax:Math.max(share,peerAvgShare,1)*1.15, fmt:function(v){return v.toFixed(1)+'%';}}
   ];
   var radarSvg = radarChartSVG(radarAxes, 360, 300);
@@ -2530,12 +2619,12 @@ function renderSellers(){
       map[p.vendedor].qtd += sumRange(p.dailyQtd,pr.start,pr.end);
     });
   }
-  var fm = metaFator(pr);
+  var totPessoas = 0; Object.keys(map).forEach(function(n){ totPessoas += map[n].fat; });
   var rows = Object.keys(map).filter(function(n){ return map[n].fat>0.5; }).map(function(name){
-    var meta = SELLER_META[name] ? SELLER_META[name]*fm : 0;
-    var pct = meta>0 ? map[name].fat/meta*100 : 0;
-    return {name:name, fat:map[name].fat, qtd:map[name].qtd, mg: map[name].fat>0 ? map[name].lb/map[name].fat*100 : 0, meta:meta, pct:pct};
+    var pct = totPessoas>0 ? map[name].fat/totPessoas*100 : 0;
+    return {name:name, fat:map[name].fat, qtd:map[name].qtd, mg: map[name].fat>0 ? map[name].lb/map[name].fat*100 : 0, pct:pct};
   }).sort(function(a,b){return b.fat-a.fat;});
+  var maxPct = rows.length ? rows[0].pct : 1;
 
   var box = document.getElementById('sellerList');
   if(!rows.length){ box.innerHTML='<p style="color:var(--text-muted); font-size:12.5px;">Sem dados para os filtros atuais.</p>'; return; }
@@ -2544,14 +2633,14 @@ function renderSellers(){
     return '<div class="seller-row">' +
       '<div class="seller-av">'+initials+'</div>' +
       '<div class="seller-info"><div class="s-name">'+r.name+'</div><div class="s-meta">'+fmtMoney(r.fat)+' · '+fmtUn(r.qtd)+' peças · margem '+r.mg.toFixed(1)+'%</div></div>' +
-      '<div class="seller-goal"><div class="g-track"><div class="g-fill" style="width:'+Math.min(100,r.pct)+'%"></div></div><div class="g-pct">'+(r.meta>0 ? r.pct.toFixed(0)+'% da meta' : 'sem meta')+'</div></div>' +
+      '<div class="seller-goal"><div class="g-track"><div class="g-fill" style="width:'+(maxPct>0?r.pct/maxPct*100:0)+'%"></div></div><div class="g-pct">'+r.pct.toFixed(1)+'% do total</div></div>' +
     '</div>';
   }).join('');
   var nota = document.getElementById('sellerFonte');
   if(nota){
     nota.innerHTML = (real ? 'Totais reais de cada vendedor. ' : 'Com filtro de marca, categoria, aplicação, origem ou estoque, cada produto conta só para o vendedor que mais o vendeu (aproximação). ') +
       (semVend>0 ? '<b>'+fmtMoney(semVend)+'</b> ('+(total>0?(semVend/total*100).toFixed(1):'0')+'%) foram vendidos sem vendedor informado e não aparecem na lista. ' : '') +
-      'Meta estimada a partir da média mensal real do vendedor, proporcional aos dias do período.';
+      '';
   }
 }
 
@@ -2982,7 +3071,12 @@ function renderMonthToDate(){
 /* ============================================================
    EVOLUÇÃO MENSAL POR CANAL (barras empilhadas + margem %)
    ============================================================ */
-var CANAL_COR = {ATACADO:'var(--accent-2)', OFICINA:'var(--warning)', ECOMMERCE:'var(--accent)', ACESSORIOS:'var(--cat-c)'};
+var CANAL_COR = {ATACADO:'#3b82f6', OFICINA:'#fab219', ECOMMERCE:'#22d3ee', ACESSORIOS:'#1fb08a'};
+var CANAL_EXTRA = ['#d9772e','#a78bfa','#f472b6','#94a3b8','#84cc16'];
+function canalCor(c){
+  if(!CANAL_COR[c]){ var n = Object.keys(CANAL_COR).length - 4; CANAL_COR[c] = CANAL_EXTRA[Math.max(0,n) % CANAL_EXTRA.length]; }
+  return CANAL_COR[c];
+}
 function monthlyByCanal(){
   var nM = REAL.months.length, byC = {}, lb = new Array(nM).fill(0), tot = new Array(nM).fill(0);
   function add(c, mi, f, l){ (byC[c] = byC[c] || new Array(nM).fill(0))[mi] += f; tot[mi]+=f; lb[mi]+=l; }
@@ -3012,7 +3106,7 @@ function renderMonthChart(){
     var x0 = padL+mi*bw+bw*0.18, w = bw*0.64, acc = 0, last = parcial && mi===nM-1;
     canais.forEach(function(c){
       var v = d.byC[c][mi]; if(v<=0) return;
-      out += '<rect x="'+x0+'" y="'+y(acc+v)+'" width="'+w+'" height="'+(y(acc)-y(acc+v))+'" fill="'+(CANAL_COR[c]||'var(--neutral-stock)')+'" opacity="'+(last?0.45:0.9)+'"><title>'+REAL.monthLabels[mi]+' · '+c+': '+fmtMoney(v)+'</title></rect>';
+      out += '<rect x="'+x0+'" y="'+y(acc+v)+'" width="'+w+'" height="'+(y(acc)-y(acc+v))+'" fill="'+canalCor(c)+'" opacity="'+(last?0.45:0.9)+'"><title>'+REAL.monthLabels[mi]+' · '+c+': '+fmtMoney(v)+'</title></rect>';
       acc += v;
     });
     out += '<text x="'+(x0+w/2)+'" y="'+(y(acc)-5)+'" text-anchor="middle" font-size="9.5" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
@@ -3024,7 +3118,7 @@ function renderMonthChart(){
     out += '<circle cx="'+cx+'" cy="'+y2(v)+'" r="3" fill="var(--text)"><title>Margem '+REAL.monthLabels[i]+': '+v.toFixed(1)+'%</title></circle>' +
       '<text x="'+(cx+5)+'" y="'+(y2(v)-6)+'" font-size="9" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+v.toFixed(1)+'%</text>'; });
   box.innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Faturamento mensal por canal">'+out+'</svg>';
-  document.getElementById('monthLegend').innerHTML = canais.map(function(c){ return '<span><i style="background:'+(CANAL_COR[c]||'var(--neutral-stock)')+'"></i>'+c+'</span>'; }).join('') +
+  document.getElementById('monthLegend').innerHTML = canais.map(function(c){ return '<span><i style="background:'+canalCor(c)+'"></i>'+c+'</span>'; }).join('') +
     '<span><i style="background:var(--text); height:2px; vertical-align:3px;"></i>Margem bruta %</span>' + (parcial ? '<span>* mês em andamento</span>' : '');
 }
 
@@ -3080,7 +3174,7 @@ function renderDataQuality(){
   var totSem = Object.keys(semLoja).reduce(function(t,k){ return t+semLoja[k].fat; },0), tot = Object.keys(porLoja).reduce(function(t,k){ return t+porLoja[k].fat; },0);
   document.getElementById('dqLoja').innerHTML = lst.length ?
     lst.map(function(o){ return '<div class="dq-row"><span class="n">'+o.k+'</span><span class="v">'+fmtMoney(o.v)+' · '+o.p.toFixed(1)+'% da loja</span></div>'; }).join('') +
-    '<p class="note-muted">Total sem vendedor: <b>'+fmtMoney(totSem)+'</b> ('+(tot>0?(totSem/tot*100).toFixed(1):'0')+'% do faturamento). Essas vendas não entram em ranking nem meta.</p>'
+    '<p class="note-muted">Total sem vendedor: <b>'+fmtMoney(totSem)+'</b> ('+(tot>0?(totSem/tot*100).toFixed(1):'0')+'% do faturamento). Essas vendas não entram no ranking de vendedores.</p>'
     : '<p class="note-muted">Todas as vendas do período têm vendedor informado.</p>';
   var porNome = resumoAgg(rows.filter(function(r){ return r.vendedor!==SEM_VENDEDOR && NAO_PESSOA_RE.test(r.vendedor); }), function(r){ return r.vendedor; }, pr.start, pr.end);
   var nomes = Object.keys(porNome).map(function(k){ return {k:k, v:porNome[k].fat}; }).filter(function(o){ return Math.abs(o.v)>0.5; }).sort(function(a,b){ return b.v-a.v; });
@@ -3088,6 +3182,161 @@ function renderDataQuality(){
     nomes.slice(0,12).map(function(o){ return '<div class="dq-row"><span class="n" title="'+o.k+'">'+o.k+'</span><span class="v">'+fmtMoney(o.v)+'</span></div>'; }).join('') +
     '<p class="note-muted">Lançamentos em caixas, e-commerce, empresas ou ajustes aparecem como “vendedor” na planilha. Vale revisar o cadastro na origem.</p>'
     : '<p class="note-muted">Nenhum nome suspeito no período.</p>';
+}
+
+
+/* ============================================================
+   GUIA INSIGHTS — oportunidades de faturamento e margem que não aparecem nos rankings
+   Base: últimos 3 meses fechados vs. os 3 anteriores (produtos), totais reais (lojas/canais/vendedores)
+   ============================================================ */
+function quantil(arr, q){ if(!arr.length) return 0; var a = arr.slice().sort(function(x,y){return x-y;}); var i = Math.min(a.length-1, Math.max(0, Math.floor(q*(a.length-1)))); return a[i]; }
+function insTable(cols, rows){
+  return '<div class="table-scroll"><table class="ins-table"><thead><tr>' + cols.map(function(c){ return '<th'+(c.n?' class="n"':'')+'>'+c.t+'</th>'; }).join('') + '</tr></thead><tbody>' +
+    rows.map(function(r){ return '<tr'+(r.id?' data-id="'+r.id+'"':'')+'>' + r.c.map(function(v,i){ return '<td'+(cols[i].n?' class="n"':(cols[i].p?' class="p"':''))+'>'+v+'</td>'; }).join('') + '</tr>'; }).join('') +
+    '</tbody></table></div>';
+}
+function insSec(titulo, sub, why, corpo){
+  return '<div class="panel ins-sec" style="margin-bottom:14px;"><div class="panel-head"><div><h2>'+titulo+'</h2><div class="psub">'+sub+'</div></div></div>' +
+    '<p class="why">'+why+'</p>' + corpo + '</div>';
+}
+function tendPill(v){
+  if(v===null || !isFinite(v)) return '<span class="pill flat">novo</span>';
+  var c = v>5 ? 'up' : (v<-5 ? 'down' : 'flat');
+  return '<span class="pill '+c+'">'+(v>0?'+':'')+v.toFixed(0)+'%</span>';
+}
+function renderInsights(){
+  var box = document.getElementById('insSections'); if(!box) return;
+  var nM = REAL.months.length, fechado = mesCompleto() ? nM-1 : nM-2;
+  var L3 = [fechado-2, fechado-1, fechado].filter(function(i){ return i>=0; });
+  var P3 = [fechado-5, fechado-4, fechado-3].filter(function(i){ return i>=0; });
+  var lbl = function(ix){ return ix.length ? REAL.monthLabels[ix[0]]+'–'+REAL.monthLabels[ix[ix.length-1]] : ''; };
+  var soma = function(arr, ix){ var t=0; ix.forEach(function(i){ t += arr[i]||0; }); return t; };
+  var ehVendedor = CURRENT_PROFILE && CURRENT_PROFILE.role==='vendedor';
+  var prods = filteredProducts().filter(function(p){ return !p.isBucket && p.fat>0; }).map(function(p){
+    var f3 = soma(p.mfat, L3), fp = soma(p.mfat, P3), q3 = soma(p.mqtd, L3), qp = soma(p.mqtd, P3);
+    var vendaMes = q3/Math.max(1,L3.length);
+    return {p:p, f3:f3, fp:fp, q3:q3, qp:qp, mg:p.margemPct, lb3:f3*p.margemPct/100,
+      tend: fp>0 ? (f3-fp)/fp*100 : null, cob: vendaMes>0 ? p.estoqueAtual/vendaMes : (p.estoqueAtual>0 ? 99 : 0),
+      st: stockStatus(p)};
+  });
+  document.getElementById('insBase').textContent = 'Produtos: '+lbl(L3)+' comparado a '+lbl(P3)+' (meses fechados). Lojas, canais e vendedores: todo o período, com os filtros aplicados.';
+  var opp = [], html = '';
+
+  /* 1) produtos de maior margem para trabalhar melhor */
+  var ativos = prods.filter(function(x){ return x.f3>0; });
+  var corteMg = quantil(ativos.map(function(x){ return x.mg; }), 0.75);
+  var corteVol = quantil(ativos.map(function(x){ return x.f3; }), 0.5);
+  var estrelas = ativos.filter(function(x){ return x.mg>=corteMg && x.f3>=corteVol; })
+    .sort(function(a,b){ return b.lb3-a.lb3; }).slice(0,15);
+  var lbEstrelas = estrelas.reduce(function(t,x){ return t+x.lb3; },0);
+  opp.push({l:'Alta margem para empurrar', v:estrelas.length+' produtos', s:'margem acima de '+corteMg.toFixed(0)+'% · '+fmtMoney(lbEstrelas)+' de lucro bruto em 3 meses. +10% de venda neles = '+fmtMoney(lbEstrelas/3*0.1*12)+'/ano de LB.', c:'var(--good)'});
+  html += insSec('Produtos de maior margem para trabalhar melhor', 'Margem no quartil mais alto e venda relevante · ordenados pelo lucro bruto dos últimos 3 meses',
+    'Estes itens deixam mais dinheiro por real vendido. <b>Prioridade:</b> os que estão crescendo e têm estoque para pelo menos 1 mês; vale colocá-los no roteiro dos vendedores, em kits e no e-commerce. Os que estão <b>caindo</b> com margem alta são os mais baratos de recuperar.',
+    insTable([{t:'Produto',p:1},{t:'Marca'},{t:'Margem',n:1},{t:'Fat. 3 meses',n:1},{t:'LB 3 meses',n:1},{t:'Tendência'},{t:'Cobertura',n:1}],
+      estrelas.map(function(x){ return {id:x.p.id, c:[x.p.nome, x.p.marca, x.mg.toFixed(1)+'%', fmtMoney(x.f3), fmtMoney(x.lb3), tendPill(x.tend),
+        (x.cob>=24?'24+':x.cob.toFixed(1))+' m'+(x.cob<1?' ⚠️':'')]}; })));
+
+  /* 2) ruptura: venda perdendo por falta de estoque */
+  var rupt = ativos.filter(function(x){ return x.st==='zerado' || x.cob<0.5; }).map(function(x){
+    var fatMes = x.f3/Math.max(1,L3.length);
+    x.risco = fatMes * Math.max(0, 1 - Math.min(1, x.cob)); return x;
+  }).filter(function(x){ return x.risco>0; }).sort(function(a,b){ return b.risco-a.risco; });
+  var riscoTot = rupt.reduce(function(t,x){ return t+x.risco; },0);
+  opp.push({l:'Venda em risco por ruptura', v:fmtMoney(riscoTot)+'/mês', s:rupt.length+' produtos que vendem bem com menos de 15 dias de estoque.', c:'var(--critical)'});
+  html += insSec('Venda em risco por falta de estoque', 'Produtos com venda nos últimos 3 meses e estoque para menos de meio mês',
+    'Ruptura não aparece no faturamento: a venda simplesmente não acontece, e o cliente aprende a comprar em outro lugar. Risco = venda média mensal × parte do mês que o estoque não cobre. <b>Ação:</b> reposição imediata dos primeiros da lista.',
+    insTable([{t:'Produto',p:1},{t:'Loja principal'},{t:'Estoque',n:1},{t:'Venda/mês (un)',n:1},{t:'Cobertura',n:1},{t:'Venda em risco/mês',n:1},{t:'Margem',n:1}],
+      rupt.slice(0,15).map(function(x){ return {id:x.p.id, c:[x.p.nome, x.p.regiao, fmtUn(x.p.estoqueAtual), fmtUn(x.q3/Math.max(1,L3.length)), (x.cob*30).toFixed(0)+' dias', fmtMoney(x.risco), x.mg.toFixed(1)+'%']}; })));
+
+  /* 3) vazamento de preço: preço médio caiu sem ganho de volume */
+  var vaz = ativos.filter(function(x){ return x.q3>=10 && x.qp>=10; }).map(function(x){
+    var pa = x.f3/x.q3, pb = x.fp/x.qp; x.pa=pa; x.pb=pb; x.dp = pb>0 ? (pa-pb)/pb*100 : 0; x.dq = (x.q3-x.qp)/x.qp*100;
+    x.perda = (pb-pa)*x.q3; return x;
+  }).filter(function(x){ return x.dp<=-3 && x.dq<=5 && x.perda>0; }).sort(function(a,b){ return b.perda-a.perda; });
+  var vazTot = vaz.reduce(function(t,x){ return t+x.perda; },0);
+  opp.push({l:'Desconto que não trouxe volume', v:fmtMoney(vazTot), s:vaz.length+' produtos baixaram o preço médio em 3 meses e não venderam mais por isso.', c:'var(--warning)'});
+  html += insSec('Desconto que não virou volume', 'Preço médio caiu 3% ou mais e a quantidade não subiu · '+lbl(L3)+' vs. '+lbl(P3),
+    'É o vazamento mais difícil de ver: o faturamento parece estável, mas o mesmo volume está saindo mais barato. Valor = queda do preço médio × quantidade vendida. Pode ser desconto, mudança de mix de loja/canal ou reajuste de custo não repassado. <b>Ação:</b> revisar a política de preço e desconto desses itens.',
+    insTable([{t:'Produto',p:1},{t:'Preço antes',n:1},{t:'Preço agora',n:1},{t:'Var. preço',n:1},{t:'Var. qtd.',n:1},{t:'Valor deixado na mesa',n:1}],
+      vaz.slice(0,15).map(function(x){ return {id:x.p.id, c:[x.p.nome, fmtMoney2(x.pb), fmtMoney2(x.pa), x.dp.toFixed(1)+'%', (x.dq>0?'+':'')+x.dq.toFixed(0)+'%', fmtMoney(x.perda)]}; })));
+
+  /* 4) queda forte com estoque disponível: demanda que sumiu */
+  var queda = ativos.concat(prods.filter(function(x){ return x.f3<=0 && x.fp>0; })).filter(function(x){ return x.fp>0 && x.f3 < x.fp*0.7 && x.cob>=1; })
+    .map(function(x){ x.perdaF = x.fp-x.f3; return x; }).sort(function(a,b){ return b.perdaF-a.perdaF; });
+  var quedaTot = queda.slice(0,30).reduce(function(t,x){ return t+x.perdaF; },0);
+  opp.push({l:'Clientes que pararam de comprar', v:fmtMoney(quedaTot), s:'queda de venda em 3 meses nos 30 produtos que mais caíram, todos com estoque disponível.', c:'var(--accent-2)'});
+  html += insSec('Produtos que caíram mesmo com estoque', 'Venda caiu mais de 30% e o estoque cobre ao menos 1 mês · ordenados pela perda em R$',
+    'Como há estoque, a queda não é ruptura: algum cliente ou canal deixou de comprar. <b>Ação:</b> puxar a lista de clientes que compravam esses itens e reativar, ou checar se um concorrente está com preço menor.',
+    insTable([{t:'Produto',p:1},{t:'Loja principal'},{t:'Fat. antes',n:1},{t:'Fat. agora',n:1},{t:'Variação'},{t:'Margem',n:1}],
+      queda.slice(0,15).map(function(x){ return {id:x.p.id, c:[x.p.nome, x.p.regiao, fmtMoney(x.fp), fmtMoney(x.f3), tendPill(x.tend), x.mg.toFixed(1)+'%']}; })));
+
+  /* 5) capital parado: excesso de estoque e itens sem giro */
+  var excesso = prods.filter(function(x){ return x.p.estCusto>0 && (x.cob>6 || x.p.parado); }).map(function(x){
+    x.capital = x.p.parado || x.cob>=99 ? x.p.estCusto : x.p.estCusto*(1-6/x.cob); return x;
+  }).sort(function(a,b){ return b.capital-a.capital; });
+  var capTot = excesso.reduce(function(t,x){ return t+x.capital; },0);
+  opp.push({l:'Capital preso em estoque', v:fmtMoney(capTot), s:'a custo, acima de 6 meses de cobertura ou parado. Liberar parte disso financia os itens de alta margem.', c:'var(--neutral-stock)'});
+  html += insSec('Capital preso em estoque', 'Valor a custo acima de 6 meses de venda, ou itens marcados como parados',
+    'Dinheiro parado no estoque não gira e ainda ocupa espaço do que vende. <b>Ação:</b> transferir para a loja que vende mais, montar promoção casada com itens de alta margem ou negociar devolução com o fornecedor.',
+    insTable([{t:'Produto',p:1},{t:'Estoque',n:1},{t:'Venda/mês (un)',n:1},{t:'Cobertura',n:1},{t:'Valor em excesso (custo)',n:1},{t:'Situação'}],
+      excesso.slice(0,15).map(function(x){ return {id:x.p.id, c:[x.p.nome, fmtUn(x.p.estoqueAtual), fmtUn(x.q3/Math.max(1,L3.length)), x.cob>=99?'sem venda':x.cob.toFixed(0)+' m', fmtMoney(x.capital), x.p.parado?'<span class="pill down">parado</span>':'<span class="pill flat">excesso</span>']}; })));
+
+  /* 6) margem por loja dentro do mesmo canal (totais reais) */
+  if(HAS_RESUMO && !ehVendedor){
+    var rr = resumoRows({ignoreVendedor:true});
+    var porCanal = {}, porLC = {};
+    rr.forEach(function(r){
+      var c = porCanal[r.canal] = porCanal[r.canal] || {fat:0, lb:0}; c.fat += r.fat; c.lb += r.lb;
+      var k = r.loja+'|'+r.canal, o = porLC[k] = porLC[k] || {loja:r.loja, canal:r.canal, fat:0, lb:0}; o.fat += r.fat; o.lb += r.lb;
+    });
+    var totFat = Object.keys(porCanal).reduce(function(t,k){ return t+porCanal[k].fat; },0);
+    var anual = 12/Math.max(1, MESES_EFETIVOS);
+    var gaps = Object.keys(porLC).map(function(k){ var o = porLC[k], c = porCanal[o.canal];
+      var mgC = c.fat>0 ? c.lb/c.fat*100 : 0, mgL = o.fat>0 ? o.lb/o.fat*100 : 0;
+      return {loja:o.loja, canal:o.canal, fat:o.fat, mgL:mgL, mgC:mgC, gap:(mgC-mgL)/100*o.fat*anual}; })
+      .filter(function(g){ return g.fat >= totFat*0.005 && g.gap>0; }).sort(function(a,b){ return b.gap-a.gap; });
+    var gapTot = gaps.reduce(function(t,g){ return t+g.gap; },0);
+    opp.push({l:'Margem abaixo da média do canal', v:fmtMoney(gapTot)+'/ano', s:'lucro bruto se cada loja vendesse com a margem média do próprio canal.', c:'var(--accent)'});
+    var canaisMg = Object.keys(porCanal).filter(function(c){ return porCanal[c].fat>0; }).sort(function(a,b){ return porCanal[b].fat-porCanal[a].fat; })
+      .map(function(c){ return '<b>'+c+'</b> '+(porCanal[c].lb/porCanal[c].fat*100).toFixed(1)+'%'; }).join(' · ');
+    html += insSec('Mesma operação, margens diferentes', 'Margem de cada loja comparada à média do próprio canal · valor anualizado',
+      'Margem média por canal: '+canaisMg+'. Quando uma loja vende no mesmo canal com margem bem abaixo da média, a diferença costuma ser desconto ou mix, não o mercado. <b>Ação:</b> alinhar política de preço com as lojas da lista. Comparar dentro do canal evita culpar uma loja só por vender mais atacado.',
+      insTable([{t:'Loja',p:1},{t:'Canal'},{t:'Faturamento',n:1},{t:'Margem da loja',n:1},{t:'Média do canal',n:1},{t:'LB a recuperar/ano',n:1}],
+        gaps.slice(0,12).map(function(g){ return {c:[g.loja, '<span style="color:'+canalCor(g.canal)+'">●</span> '+g.canal, fmtMoney(g.fat), g.mgL.toFixed(1)+'%', g.mgC.toFixed(1)+'%', fmtMoney(g.gap)]}; })));
+
+    /* 7) vendedores: margem abaixo da média da própria loja */
+    var porLoja = {}, porV = {};
+    rr.forEach(function(r){
+      if(!isPessoa(r.vendedor) || NAO_PESSOA_RE.test(r.vendedor)) return;
+      var l = porLoja[r.loja] = porLoja[r.loja] || {fat:0, lb:0}; l.fat += r.fat; l.lb += r.lb;
+      var k = r.vendedor+'|'+r.loja, v = porV[k] = porV[k] || {v:r.vendedor, loja:r.loja, fat:0, lb:0}; v.fat += r.fat; v.lb += r.lb;
+    });
+    var vg = Object.keys(porV).map(function(k){ var v = porV[k], l = porLoja[v.loja];
+      var mgL = l.fat>0 ? l.lb/l.fat*100 : 0, mgV = v.fat>0 ? v.lb/v.fat*100 : 0;
+      return {v:v.v, loja:v.loja, fat:v.fat, mgV:mgV, mgL:mgL, gap:(mgL-mgV)/100*v.fat*anual}; })
+      .filter(function(g){ return g.fat >= totFat*0.002 && g.gap>0; }).sort(function(a,b){ return b.gap-a.gap; });
+    var vgTot = vg.slice(0,10).reduce(function(t,g){ return t+g.gap; },0);
+    opp.push({l:'Desconto concentrado em vendedores', v:fmtMoney(vgTot)+'/ano', s:'lucro bruto se os 10 vendedores da lista vendessem com a margem média da própria loja.', c:'#a78bfa'});
+    html += insSec('Vendedores com margem abaixo da própria loja', 'Mesma loja, mesmo estoque, mesmos preços de tabela · valor anualizado',
+      'Ranking de faturamento premia volume; aqui aparece quem vende mais barato que os colegas da mesma loja. Pode ser carteira de clientes grandes (desconto legítimo) ou falta de disciplina de preço. <b>Ação:</b> rever alçada de desconto e acompanhar margem por vendedor, não só faturamento.',
+      insTable([{t:'Vendedor',p:1},{t:'Loja'},{t:'Faturamento',n:1},{t:'Margem do vendedor',n:1},{t:'Média da loja',n:1},{t:'LB a recuperar/ano',n:1}],
+        vg.slice(0,10).map(function(g){ return {c:[g.v, g.loja, fmtMoney(g.fat), g.mgV.toFixed(1)+'%', g.mgL.toFixed(1)+'%', fmtMoney(g.gap)]}; })));
+  }
+
+  /* 8) concentração: dependência de poucos itens */
+  var fatTotP = ativos.reduce(function(t,x){ return t+x.f3; },0);
+  var top20 = ativos.slice().sort(function(a,b){ return b.f3-a.f3; }).slice(0,20).reduce(function(t,x){ return t+x.f3; },0);
+  if(fatTotP>0){
+    opp.push({l:'Dependência dos 20 maiores itens', v:(top20/fatTotP*100).toFixed(0)+'%', s:'do faturamento detalhado dos últimos 3 meses. Falta de um deles pesa no mês inteiro: devem ter estoque de segurança.', c:'var(--cat-b)'});
+  }
+
+  document.getElementById('oppGrid').innerHTML = opp.map(function(o){
+    return '<div class="opp-card" style="--c:'+o.c+'"><div class="l">'+o.l+'</div><div class="v">'+o.v+'</div><div class="s">'+o.s+'</div></div>';
+  }).join('');
+  box.innerHTML = html + '<p class="note-muted" style="margin:0 0 18px;">Estimativas a partir das planilhas: margem = lucro bruto ÷ faturamento; os produtos incluem só os SKUs detalhados (sem a cauda longa). Clique num produto para ver o histórico.</p>';
+  Array.prototype.forEach.call(box.querySelectorAll('tr[data-id]'), function(tr){
+    tr.addEventListener('click', function(){ openDrawer(tr.getAttribute('data-id')); });
+  });
 }
 
 /* ============================================================
@@ -3114,6 +3363,7 @@ function renderAll(refreshing){
   renderTable();
   renderActiveTags();
   if(state.currentView==='vendedores') renderVendConsult();
+  if(state.currentView==='insights') renderInsights();
 }
 
 /* ============================================================
@@ -3143,6 +3393,7 @@ function bindEvents(){
     estoque:{title:'Estoque', sub:'Saúde do estoque, alertas e giro'},
     produtos:{title:'Produtos', sub:'Curva ABC e catálogo detalhado'},
     vendedores:{title:'Vendedores', sub:'Performance e consultoria comparativa'},
+    insights:{title:'Insights', sub:'Oportunidades para aumentar faturamento e margem'},
     usuarios:{title:'Usuários', sub:'Gestão de acessos ao painel (somente BI)'},
     fontes:{title:'Links das planilhas', sub:'Origem dos dados da carga (somente BI)'}
   };
@@ -3159,6 +3410,7 @@ function bindEvents(){
     document.getElementById('viewTitle').textContent = meta.title;
     document.getElementById('viewSub').textContent = meta.sub;
     if(view==='vendedores'){ renderVendConsult(); }
+    if(view==='insights'){ renderInsights(); }
     if(view==='usuarios'){ renderUsersAdmin(); }
     if(view==='fontes'){ renderFontesAdmin(); }
     document.getElementById('app').removeAttribute('data-sidebar-mobile');
