@@ -587,7 +587,14 @@ def main():
     else:
         log('nenhuma fonte cadastrada (tabela bi_fonte vazia); nada a fazer')
         return
-    arquivos = fonte.listar()
+    try:
+        arquivos = fonte.listar()
+    except SystemExit as ex:
+        # link quebrado/bloqueado: registra no banco para aparecer na tela "Links das planilhas"
+        if conn is not None and isinstance(fonte, FonteLinks):
+            registrar_erro(db_url, {'fonte': {'id': 'links', 'nome': ', '.join(sorted(links)), 'modificado': datetime.now(timezone.utc).isoformat(),
+                                              'md5': None}}, str(ex))
+        raise
     log(f'{len(arquivos)} planilha(s) na pasta')
 
     usados = {}
