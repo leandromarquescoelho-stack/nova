@@ -622,23 +622,6 @@ def gravar(conn, res, usados):
                         (arq['id'], arq['nome'], arq['modificado'], arq['md5']))
             ids.append((cur.fetchone()[0], papel))
 
-        cur.execute('delete from public.bi_produtos')
-        cols = ['id', 'nome', 'marca', 'categoria', 'montadora', 'loja', 'vendedor', 'canal', 'origem',
-                'fat', 'qtd', 'custo', 'lb', 'mfat', 'mqtd', 'est_fis', 'est_custo', 'est_min',
-                'dias_sem_giro', 'parado', 'status', 'is_bucket', 'bucket_count']
-        cur.executemany(
-            f"insert into public.bi_produtos ({', '.join(cols)}) values ({', '.join(['%s'] * len(cols))})",
-            [[p[c] for c in cols] for p in res['produtos']])
-
-        cur.execute('delete from public.bi_resumo_mes')
-        cols_r = ['mes', 'loja', 'canal', 'vendedor', 'fat', 'qtd', 'custo', 'lb', 'skus']
-        cur.executemany(f"insert into public.bi_resumo_mes ({', '.join(cols_r)}) values ({', '.join(['%s'] * len(cols_r))})",
-                        [[x[c] for c in cols_r] for x in res['resumo']])
-
-        cur.execute('delete from public.bi_peso_diario')
-        cur.executemany('insert into public.bi_peso_diario (d, w_fat, w_qtd) values (%s, %s, %s)',
-                        [(p['d'], p['w_fat'], p['w_qtd']) for p in res['pesos']])
-
         base = res.get('base')
         if base is not None:
             for t in ('bi_cache', 'bi_venda', 'bi_estoque', 'bi_cliente', 'bi_produto', 'bi_dim'):
@@ -649,6 +632,12 @@ def gravar(conn, res, usados):
             copiar(cur, 'bi_venda', base['vendas'])
             if base['estoque'] is not None:
                 copiar(cur, 'bi_estoque', base['estoque'])
+            # vendedores x lojas onde venderam (a gerência vê as metas dos vendedores das suas lojas)
+            cur.execute('delete from public.bi_vendedor_loja')
+            cur.execute("""insert into public.bi_vendedor_loja (vendedor, loja)
+                           select distinct dv.valor, dl.valor from public.bi_venda v
+                           join public.bi_dim dv on dv.tipo = 'vendedor' and dv.id = v.vendedor
+                           join public.bi_dim dl on dl.tipo = 'loja' and dl.id = v.loja""")
 
         if res['metas'] is not None:
             cur.execute('delete from public.bi_meta_vendedor')
