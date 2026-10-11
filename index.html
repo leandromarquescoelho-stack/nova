@@ -339,6 +339,13 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .scroll-limit::-webkit-scrollbar-thumb{ background:var(--surface-3); border-radius:6px; }
 .scroll-limit::-webkit-scrollbar-thumb:hover{ background:var(--text-muted); }
 .scroll-limit{ scrollbar-width:thin; scrollbar-color:var(--surface-3) transparent; }
+[data-fk]{ cursor:pointer; }
+[data-fk]:hover{ filter:brightness(1.15); }
+.barlist-row[data-fk]:hover .bl-label, .seller-row[data-fk]:hover .s-name{ color:var(--accent); }
+[data-foff]{ opacity:.38; }
+.barlist-row[data-fon] .bl-label, .seller-row[data-fon] .s-name, tr[data-fon] .rl{ color:var(--accent); }
+.barlist-row[data-fon] .bl-label::before, .seller-row[data-fon] .s-name::before{ content:'● '; }
+.canal-bar .seg[data-fk]{ cursor:pointer; }
 .barlist-row{display:grid; grid-template-columns:120px minmax(40px,1fr) 118px; align-items:center; gap:10px; cursor:default;}
 .barlist-row .bl-label{font-size:12px; color:var(--text-2); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .barlist-row .bl-track{height:9px; border-radius:5px; background:var(--surface-3); overflow:hidden; position:relative;}
@@ -747,6 +754,43 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .canal-bar .seg:hover, .canal-bar .seg.on{ filter:brightness(1.15); }
 #canalTip{ transform:translate(-50%, 0); }
 .canal-cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin-top:14px; }
+.canal-card[data-fk]{ cursor:pointer; }
+.sim-ctl{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--text-2); }
+.sim-ctl input, .frp-dias input{ width:64px; padding:5px 7px; border-radius:7px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font:inherit; font-weight:700; }
+.frp-datas{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.frp-datas label{ display:flex; flex-direction:column; gap:3px; font-size:10.5px; font-weight:700; color:var(--text-muted); flex:1 1 120px; }
+.frp-datas input{ padding:5px 7px; border-radius:7px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font:inherit; font-size:12px; color-scheme:light dark; }
+.frp-per{ font-size:11px; color:var(--text-2); margin-top:8px; line-height:1.5; }
+.fbusca{ margin-bottom:10px; position:relative; }
+.fbusca-in{ width:100%; box-sizing:border-box; height:30px; padding:0 9px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:12px; font-family:'Manrope',sans-serif; }
+.fbusca-in:focus{ outline:none; border-color:var(--accent); }
+.fbusca-res{ display:none; flex-direction:column; margin-top:4px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); max-height:180px; overflow-y:auto; }
+.fbusca-res.show{ display:flex; }
+.fbusca-op{ text-align:left; background:none; border:none; border-bottom:1px solid var(--border); padding:6px 8px; font:inherit; font-size:11.5px; color:var(--text); cursor:pointer; }
+.fbusca-op:hover, .fbusca-op:focus{ background:var(--surface); outline:none; }
+.fbusca-msg{ padding:6px 8px; font-size:11px; color:var(--text-muted); }
+.fbusca-sel{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+.fbusca-sel .tag-chip{ max-width:100%; }
+.fbusca-sel .tag-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dtag-btn{ cursor:pointer; color:var(--accent); border-color:var(--accent); }
+#app[data-carregando] .content{ opacity:.55; transition:opacity .2s; }
+#app[data-carregando] #refreshBtn svg{ animation:spin 1s linear infinite; }
+.frp-dias{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12px; color:var(--text-2); margin-top:8px; }
+.sim-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:4px 0 12px; }
+.sim-kpis .k{ background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+.sim-kpis .k .l{ font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; }
+.sim-kpis .k .v{ font-family:'Sora',sans-serif; font-size:18px; font-weight:700; margin-top:3px; }
+.sim-kpis .k .s{ font-size:11px; color:var(--text-muted); }
+.sim-faixas{ display:flex; height:30px; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
+.sim-faixas .fx{ display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; color:#04141a; min-width:2px; cursor:pointer; white-space:nowrap; overflow:hidden; }
+.sim-faixas .fx.off{ opacity:.3; }
+.sim-leg{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11px; color:var(--text-muted); margin-top:6px; }
+.sim-leg i{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px; }
+.sim-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 2px; border-bottom:1px solid var(--border); font-size:12px; cursor:pointer; }
+.sim-row:hover .n{ color:var(--accent); }
+.sim-row .n{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-2); font-weight:600; }
+.sim-row .m{ color:var(--text-muted); font-size:11px; }
+.sim-row .v{ font-family:'JetBrains Mono',monospace; text-align:right; white-space:nowrap; }
 .canal-card{ background:var(--surface-2); border:1px solid var(--border); border-left:4px solid var(--c); border-radius:10px; padding:10px 12px; font-size:11.5px; color:var(--text-2); line-height:1.6; }
 .canal-card b{ display:block; color:var(--text); font-size:12.5px; margin-bottom:2px; }
 .canal-card .big{ font-family:'Sora',sans-serif; font-size:16px; font-weight:700; color:var(--text); }
@@ -899,12 +943,17 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <div class="topbar-right">
         <div class="scope-badge" id="scopeBadge" title="Escopo de acesso"></div>
         <select class="tbtn" id="periodSelect" aria-label="Selecionar período">
+          <option value="hoje">Último dia</option>
+          <option value="ontem">Dia anterior</option>
           <option value="7d">Últimos 7 dias</option>
           <option value="30d" selected>Últimos 30 dias</option>
           <option value="thismonth">Este mês</option>
           <option value="lastmonth">Mês anterior</option>
-          <option value="3m">Últimos 3 meses</option>
+          <option value="3m">Últimos 90 dias</option>
+          <option value="6m">Últimos 6 meses</option>
           <option value="12m">Últimos 12 meses</option>
+          <option value="tudo">Todo o histórico</option>
+          <option value="custom">Personalizado</option>
         </select>
         <button class="tbtn" id="filtersBtn">
           <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -948,13 +997,20 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <div class="frp-section">
           <label class="frp-label">Período rápido</label>
           <div class="fgroup" id="periodChips">
-            <button class="period-chip" data-p="hoje">Hoje</button>
-            <button class="period-chip" data-p="ontem">Ontem</button>
+            <button class="period-chip" data-p="hoje" title="Último dia com dados">Último dia</button>
+            <button class="period-chip" data-p="ontem">Dia anterior</button>
             <button class="period-chip" data-p="7d">7 dias</button>
             <button class="period-chip" aria-pressed="true" data-p="30d">30 dias</button>
             <button class="period-chip" data-p="thismonth">Este mês</button>
             <button class="period-chip" data-p="lastmonth">Mês anterior</button>
+            <button class="period-chip" data-p="3m">90 dias</button>
+            <button class="period-chip" data-p="12m">12 meses</button>
           </div>
+          <div class="frp-datas">
+            <label>De <input type="date" id="fDe"></label>
+            <label>Até <input type="date" id="fAte"></label>
+          </div>
+          <div class="frp-per" id="perInfo"></div>
         </div>
 
         <div class="frp-label" style="margin-top:2px;">Dimensões &middot; clique para expandir &middot; selecione uma ou mais opções</div>
@@ -993,6 +1049,52 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="origem" placeholder="Buscar..." autocomplete="off"></div>
           <div class="fcheck-list scroll-limit-sm" id="fcheck-origem"></div>
         </div>
+        <div class="fcheck-group" data-key="emitente">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Emitente<b class="fch-count" id="fcount-emitente"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="emitente">todos</button><button type="button" class="fcheck-clear" data-key="emitente">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="emitente" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-emitente"></div>
+        </div>
+        <div class="fcheck-group" data-key="linha">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Linha<b class="fch-count" id="fcount-linha"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="linha">todos</button><button type="button" class="fcheck-clear" data-key="linha">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="linha" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-linha"></div>
+        </div>
+        <div class="fcheck-group" data-key="classificacao">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Classificação da peça<b class="fch-count" id="fcount-classificacao"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="classificacao">todos</button><button type="button" class="fcheck-clear" data-key="classificacao">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="classificacao" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-classificacao"></div>
+        </div>
+        <div class="fcheck-group" data-key="tipo_cliente">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Tipo de cliente<b class="fch-count" id="fcount-tipo_cliente"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="tipo_cliente">todos</button><button type="button" class="fcheck-clear" data-key="tipo_cliente">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="tipo_cliente" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-tipo_cliente"></div>
+        </div>
+        <div class="fcheck-group" data-key="cidade">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Cidade<b class="fch-count" id="fcount-cidade"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="cidade">todos</button><button type="button" class="fcheck-clear" data-key="cidade">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="cidade" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-cidade"></div>
+        </div>
+        <div class="frp-section frp-buscas">
+          <div class="frp-label" style="margin-bottom:6px;">Busca &middot; digite e escolha na lista</div>
+        <div class="fbusca" data-key="produto">
+          <label class="frp-label" for="fbusca-produto">Produto<b class="fch-count" id="fcount-produto"></b></label>
+          <input type="text" class="fbusca-in" id="fbusca-produto" data-key="produto" placeholder="Código ou descrição" autocomplete="off">
+          <div class="fbusca-res" id="fres-produto"></div>
+          <div class="fbusca-sel" id="fsel-produto"></div>
+        </div>
+        <div class="fbusca" data-key="cliente">
+          <label class="frp-label" for="fbusca-cliente">Razão social<b class="fch-count" id="fcount-cliente"></b></label>
+          <input type="text" class="fbusca-in" id="fbusca-cliente" data-key="cliente" placeholder="Nome ou código do cliente" autocomplete="off">
+          <div class="fbusca-res" id="fres-cliente"></div>
+          <div class="fbusca-sel" id="fsel-cliente"></div>
+        </div>
+        <div class="fbusca" data-key="nf">
+          <label class="frp-label" for="fbusca-nf">Nota fiscal<b class="fch-count" id="fcount-nf"></b></label>
+          <input type="text" class="fbusca-in" id="fbusca-nf" data-key="nf" placeholder="Número da NF" autocomplete="off" inputmode="numeric">
+          <div class="fbusca-res" id="fres-nf"></div>
+          <div class="fbusca-sel" id="fsel-nf"></div>
+        </div>
+        </div>
 
         <div class="frp-section">
           <label class="frp-label">Estoque</label>
@@ -1001,6 +1103,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             <div class="fcheck-list" id="fcheck-status"></div>
           </div>
           <label class="frp-checkbox"><input type="checkbox" id="fParado"> Somente itens sem giro (parados)</label>
+          <label class="frp-dias">Sem venda há pelo menos <input type="number" id="fDiasMin" min="0" step="1" placeholder="—" inputmode="numeric"> dias</label>
         </div>
       </div>
     </div>
@@ -1138,6 +1241,25 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <!-- ============ ESTOQUE ============ -->
       <section class="view-panel" data-view-panel="estoque" style="display:none;">
+      <div class="panel" style="margin-bottom:14px;" id="simPanel">
+        <div class="panel-head">
+          <div><h2>Simulador de estoque sem movimento</h2><div class="psub" id="simSub">Quanto do estoque está há X dias ou mais sem vender</div></div>
+          <div class="sim-ctl">
+            <label>Sem venda há <input type="number" id="simDias" min="0" step="1" value="90" inputmode="numeric"> dias ou mais</label>
+            <div class="seg" id="simChips">
+              <button data-d="30">30</button><button data-d="60">60</button><button data-d="90">90</button><button data-d="180">180</button><button data-d="270">270</button><button data-d="365">365</button>
+            </div>
+            <button class="tbtn" id="simAplicar" type="button" title="Aplica este corte como filtro em todo o painel">Filtrar painel</button>
+          </div>
+        </div>
+        <div class="sim-kpis" id="simKpis"></div>
+        <div class="sim-faixas" id="simFaixas"></div>
+        <div class="grid-2" style="margin:12px 0 0;">
+          <div><div class="u-abas-label">Por categoria</div><div class="barlist scroll-limit-sm" id="simCat"></div></div>
+          <div><div class="u-abas-label">Maiores valores parados</div><div class="scroll-limit-sm" id="simTop"></div></div>
+        </div>
+        <div class="note-muted" id="simNota" style="margin-top:8px;"></div>
+      </div>
       <div class="grid-2">
         <div class="panel">
           <div class="panel-head">
@@ -1370,104 +1492,244 @@ window.__NC_main = function(){
    carregadas a partir das planilhas da pasta do Google Drive.
    ============================================================ */
 
-/* ---------- dados: carregados do Supabase após o login (cada perfil recebe só as linhas que pode ver — RLS no banco) ---------- */
+/* ---------- dados: buscados no Supabase após o login. Toda consulta passa pelo escopo do perfil no banco
+   (lojas, canais e vendedor liberados) e devolve números exatos da base de vendas linha a linha. ---------- */
 var REAL = window.__NC_REAL;
+var META = REAL.meta;
+function isoDia(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function parseDia(s){ var p=String(s).slice(0,10).split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+function c2(v){ return (+v||0)/100; } // centavos -> reais
+function n0(v){ return +v||0; }
 
-var MONTH_LABELS = REAL.monthLabels;
-var companyDaily = REAL.companyDaily; // [{d:'2026-01-01', fat, qtd}, ...] — real, 1 ponto por dia com venda
-
-/* ---------- calendário real: do 1º ao último dia com dados ---------- */
-var NOW = (function(){ var p=companyDaily[companyDaily.length-1].d.split('-'); return new Date(+p[0], +p[1]-1, +p[2], 20,10,0); })();
-var N_DAYS = companyDaily.length;
-var DAYS = companyDaily.map(function(r){ var p=r.d.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); });
-
+/* ---------- calendário contínuo: todos os dias corridos, do primeiro ao último dia com dados ---------- */
+var DAYS = (function(){
+  var a = parseDia(META.dias[0]), b = parseDia(META.dias[1]), out = [];
+  for(var d = new Date(a); d <= b; d = new Date(d.getFullYear(), d.getMonth(), d.getDate()+1)) out.push(d);
+  return out;
+})();
+var N_DAYS = DAYS.length;
+var DIA_IDX = {}; DAYS.forEach(function(d,i){ DIA_IDX[isoDia(d)] = i; });
+var NOW = (function(){ var d = DAYS[N_DAYS-1]; return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 20,10,0); })();
 function monthKeyOfDate(d){ return d.getFullYear()+'-'+(d.getMonth()+1); }
+var MES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+REAL.months = [];
+DAYS.forEach(function(d){ var k = monthKeyOfDate(d); if(REAL.months.indexOf(k)===-1) REAL.months.push(k); });
+REAL.monthLabels = (function(){
+  var variosAnos = DAYS[0].getFullYear()!==DAYS[N_DAYS-1].getFullYear();
+  return REAL.months.map(function(k){ var p = k.split('-'); return MES_ABREV[+p[1]-1]+(variosAnos ? '/'+p[0].slice(2) : ''); });
+})();
+var MONTH_LABELS = REAL.monthLabels;
 var monthIndexOfDay = DAYS.map(function(d){ return REAL.months.indexOf(monthKeyOfDate(d)); });
+function mesIdx(cod){ cod = +cod; return REAL.months.indexOf((2000+Math.floor(cod/100))+'-'+(cod%100)); }
+var MESES_EFETIVOS = Math.max(1, N_DAYS/30.4375);
 
-// total real de faturamento/quantidade por mês, a partir da série diária real da empresa
-var monthTotalFat = new Array(REAL.months.length).fill(0);
-var monthTotalQtd = new Array(REAL.months.length).fill(0);
-companyDaily.forEach(function(r,i){
-  var mi = monthIndexOfDay[i];
-  if(mi<0) return;
-  monthTotalFat[mi]+=r.fat; monthTotalQtd[mi]+=r.qtd;
+/* ---------- dimensões (código -> nome) ---------- */
+var DIMN = {}, DIMI = {}, DIMT = {};
+Object.keys(META.dims||{}).forEach(function(t){
+  var n = DIMN[t] = {}, i = DIMI[t] = {};
+  (META.dims[t]||[]).forEach(function(x){ n[x[0]] = x[1]; i[x[1]] = x[0]; });
 });
-// peso de cada dia dentro do seu mês (participação real no fat/qtd do mês)
-var dayWeightFat = companyDaily.map(function(r,i){ var mi=monthIndexOfDay[i]; return (mi>=0 && monthTotalFat[mi]>0) ? r.fat/monthTotalFat[mi] : 0; });
-var dayWeightQtd = companyDaily.map(function(r,i){ var mi=monthIndexOfDay[i]; return (mi>=0 && monthTotalQtd[mi]>0) ? r.qtd/monthTotalQtd[mi] : 0; });
+Object.keys(META.dimTodas||{}).forEach(function(t){
+  var n = DIMT[t] = {}, i = DIMI[t] = DIMI[t] || {};
+  (META.dimTodas[t]||[]).forEach(function(x){ n[x[0]] = x[1]; if(i[x[1]]===undefined) i[x[1]] = x[0]; });
+});
+function dimNome(t, id){
+  if(id===null || id===undefined) return 'N/D';
+  return (DIMN[t] && DIMN[t][id]) || (DIMT[t] && DIMT[t][id]) || 'N/D';
+}
+function dimLista(t){ return ((META.dims && META.dims[t]) || []).map(function(x){ return x[1]; }); }
+var PRODINFO = {};
+(META.produtos||[]).forEach(function(r){ PRODINFO[r[0]] = {pn:r[1], nome:r[2], cat:r[3], marca:r[4], mont:r[5], linha:r[6], classif:r[7]}; });
 
-/* ---------- produtos (dados reais — top 2.000 SKUs por faturamento + bucket "Outros")
-   Cada produto recebe 1 marca/categoria/montadora/loja/vendedor "principal" (o de maior
-   faturamento no período) — simplificação necessária para viabilizar os filtros cruzados
-   do protótipo, já que um mesmo PN real é vendido por vários vendedores/lojas ao longo
-   do tempo. A série diária de cada produto é obtida distribuindo o total MENSAL real do
-   produto pelos dias daquele mês, seguindo a mesma curva diária real da empresa (dia bom
-   para a empresa = dia bom para o produto) — por construção, a soma diária de todos os
-   produtos bate exatamente com o faturamento/quantidade reais da empresa em cada dia. */
-var MESES_EFETIVOS = REAL.mesesEfetivos || REAL.months.length;
-var PRODUCTS = REAL.products.map(function(rp){
-  var dailyFat = new Array(N_DAYS);
-  var dailyQtd = new Array(N_DAYS);
-  for(var i=0;i<N_DAYS;i++){
-    var mi = monthIndexOfDay[i];
-    dailyFat[i] = mi>=0 ? rp.mfat[mi]*dayWeightFat[i] : 0;
-    dailyQtd[i] = mi>=0 ? rp.mqtd[mi]*dayWeightQtd[i] : 0;
+/* ---------- estoque por loja x produto (data da última venda e compra) ---------- */
+var EST = REAL.est || {};
+['loja','produto','est','custo','vend','comp','parado'].forEach(function(k){ if(!Array.isArray(EST[k])) EST[k] = []; });
+var EST_POR_PROD = {};
+EST.produto.forEach(function(pid, i){ (EST_POR_PROD[pid] = EST_POR_PROD[pid] || []).push(i); });
+var REF_DIA = DAYS[N_DAYS-1];
+// estoque do produto nas lojas do recorte; dias sem movimentação = desde a última venda ou compra (a mais recente entre as lojas)
+function estoqueDe(pid, lset){
+  var ix = EST_POR_PROD[pid]; if(!ix) return null;
+  var o = {est:0, custo:0, ult:null, parado:false, loja:null, dias:null}, maior = -Infinity, achou = false;
+  ix.forEach(function(i){
+    var lj = dimNome('loja', EST.loja[i]);
+    if(lset && !lset[lj]) return;
+    achou = true;
+    var e = n0(EST.est[i]);
+    o.est += e; o.custo += n0(EST.custo[i]);
+    if(EST.parado[i] && e>0) o.parado = true;
+    if(e>maior){ maior = e; o.loja = lj; }
+    var dv = EST.vend[i], dc = EST.comp[i];
+    if(dv && (!o.ult || dv>o.ult)) o.ult = dv;
+    if(dc && (!o.ult || dc>o.ult)) o.ult = dc;
+  });
+  if(!achou) return null;
+  if(o.ult) o.dias = Math.max(0, Math.round((REF_DIA - parseDia(o.ult))/86400000));
+  return o;
+}
+
+/* ---------- filtros do painel -> colunas da base (o estado guarda nomes; o banco recebe códigos) ---------- */
+var FILTRO_COL = {regiao:'loja', canal:'canal', emitente:'emitente', origem:'origem', vendedor:'vendedor', linha:'linha',
+  marca:'marca', categoria:'categoria', modelo:'montadora', classificacao:'classificacao', tipo_cliente:'tipo_cliente', cidade:'cidade'};
+var FILTRO_ID = ['produto','cliente','nf']; // estes guardam o próprio código
+// filtros que só existem na venda: com eles ativos, itens que só têm estoque saem da lista
+var SO_VENDA = ['vendedor','canal','origem','emitente','tipo_cliente','cidade','cliente','nf'];
+// atributos do produto (valem também para itens só com estoque)
+var ATRIB_PROD = [['categoria','categoria','cat'],['marca','marca','marca'],['modelo','montadora','mont'],['linha','linha','linha'],['classificacao','classificacao','classif']];
+function painelFiltros(restrito){
+  var f = {};
+  Object.keys(FILTRO_COL).forEach(function(k){
+    if(!state[k] || !state[k].length) return;
+    var col = FILTRO_COL[k], m = DIMI[col] || {};
+    var ids = state[k].map(function(v){ return m[v]; }).filter(function(x){ return x!==undefined; });
+    f[col] = ids.length ? ids.sort(function(a,b){ return a-b; }) : [-1];
+  });
+  FILTRO_ID.forEach(function(k){ if(state[k] && state[k].length) f[k] = state[k].map(Number).sort(function(a,b){ return a-b; }); });
+  if(restrito){
+    var ids = Object.keys(restrito).map(Number);
+    if(f.produto){ var r = toSet(f.produto); ids = ids.filter(function(id){ return r[id]; }); }
+    f.produto = ids.length ? ids.sort(function(a,b){ return a-b; }) : [-1];
   }
-  var precoUnit = rp.qtd>0 ? rp.fat/rp.qtd : 0;
-  var estAtual = rp.estFis||0;
-  var estMinCalc = rp.estMin||0;
-  // giro anualizado estimado = (qtd vendida/mês * 12) / estoque atual — mês em andamento conta só os dias já vendidos
-  var giro = estAtual>0 ? ((rp.qtd/Math.max(1,MESES_EFETIVOS))*12)/estAtual : (rp.qtd>0 ? 24 : 0);
-  giro = Math.max(0, Math.min(30, Math.round(giro*10)/10));
-  var custo = rp.custo||0;
-  var lb = (rp.lb!==undefined && rp.lb!==null) ? rp.lb : (rp.fat - custo);
-  var margemPct = rp.fat>0 ? (lb/rp.fat)*100 : 0;
-  return {
-    id: rp.id, codigo: rp.id, nome: rp.nome,
-    marca: rp.marca, categoria: rp.categoria, modelo: rp.montadora, modelo2: null,
-    vendedor: rp.vendedor, regiao: rp.loja, canal: rp.canal, origem: rp.origem || 'N/D',
-    precoUnit: Math.round(precoUnit*100)/100,
-    estoqueAtual: Math.round(estAtual), estoqueMin: Math.max(1, Math.round(estMinCalc)),
-    giro: giro,
-    diasSemGiro: rp.diasSemGiro, parado: !!rp.parado, isBucket: !!rp.isBucket, bucketCount: rp.bucketCount||0,
-    estCusto: rp.estCusto||0,
-    fat: rp.fat||0, qtd: rp.qtd||0, custo: custo, lb: lb, margemPct: margemPct,
-    mfat: rp.mfat, mqtd: rp.mqtd,
-    dailyFat: dailyFat, dailyQtd: dailyQtd
-  };
-});
-var ALL_PRODUCTS = PRODUCTS; // referência completa (pré-escopo de acesso), usada só p/ montar o login
+  return f;
+}
+function estoqueFiltrosAtivos(){ return !!(state.status.length || state.soParados || state.diasMin!==null); }
+function painelPeriodo(){
+  var pr = periodRange(state.globalPeriod);
+  function d(i){ return isoDia(DAYS[Math.max(0, Math.min(N_DAYS-1, i))]); }
+  var semAnt = pr.prevEnd < 0;
+  return {ini:d(pr.start), fim:d(pr.end), pini: semAnt ? '1900-01-01' : d(pr.prevStart), pfim: semAnt ? '1900-01-01' : d(pr.prevEnd),
+    s7i:d(N_DAYS-7), s7f:d(N_DAYS-1), p7i:d(N_DAYS-14), p7f:d(N_DAYS-8)};
+}
 
-/* ---------- resumo real mês x loja x canal x vendedor ----------
-   Os produtos carregam 1 loja/vendedor "principal" por SKU (simplificação p/ filtros cruzados).
-   Para lojas, canais e vendedores os totais corretos vêm do resumo: cada mês é distribuído
-   pelos dias com a mesma curva diária da empresa, então qualquer período bate com o restante do painel. */
+/* ---------- consultas (memória curta por sessão: voltar a um filtro já visto é instantâneo) ---------- */
+var MEMO = {}, MEMO_ORDEM = [];
+function rpcMemo(fn, args){
+  var k = fn+'|'+JSON.stringify(args);
+  if(MEMO[k]) return MEMO[k];
+  var pr = window.__NC_rpc(fn, args);
+  MEMO[k] = pr; MEMO_ORDEM.push(k);
+  if(MEMO_ORDEM.length > 40) delete MEMO[MEMO_ORDEM.shift()];
+  pr.catch(function(){ delete MEMO[k]; });
+  return pr;
+}
+function buscarPainel(f){
+  var per = painelPeriodo();
+  return Promise.all([
+    rpcMemo('bi_painel', {f:f, per:{}, parte:'a'}),
+    rpcMemo('bi_painel', {f:f, per:per, parte:'b'}),
+    rpcMemo('bi_painel', {f:f, per:per, parte:'c'})
+  ]).then(function(r){ return {a:r[0]||{}, b:r[1]||{}, c:r[2]||{}}; });
+}
+
+/* ---------- produtos do recorte ---------- */
+var ZERO_M = REAL.months.map(function(){ return 0; });
+function passaAtributos(inf){
+  for(var i=0;i<ATRIB_PROD.length;i++){
+    var a = ATRIB_PROD[i];
+    if(state[a[0]].length && state[a[0]].indexOf(dimNome(a[1], inf[a[2]]))===-1) return false;
+  }
+  return true;
+}
+function novoProduto(id, r, lset){
+  var inf = PRODINFO[id] || {pn:String(id), nome:String(id)};
+  var s = estoqueDe(id, lset);
+  var ft = r ? c2(r[9]) : 0, qt = r ? n0(r[10]) : 0, lt = r ? c2(r[11]) : 0;
+  var est = s ? s.est : 0;
+  // giro anualizado = (peças vendidas por mês x 12) / estoque atual
+  var giro = est>0 ? ((qt/MESES_EFETIVOS)*12)/est : (qt>0 ? 24 : 0);
+  giro = Math.max(0, Math.min(30, Math.round(giro*10)/10));
+  return {
+    id: String(id), pid: id, codigo: inf.pn, nome: inf.nome,
+    marca: dimNome('marca', inf.marca), categoria: dimNome('categoria', inf.cat), modelo: dimNome('montadora', inf.mont), modelo2: null,
+    linha: dimNome('linha', inf.linha), classificacao: dimNome('classificacao', inf.classif),
+    regiao: (s && s.loja) || '', vendedor: '', canal: '', origem: '',
+    precoUnit: qt>0 ? Math.round(ft/qt*100)/100 : 0,
+    estoqueAtual: Math.round(est), estoqueMin: Math.max(1, Math.round(qt/MESES_EFETIVOS*1.5)),
+    giro: giro, diasSemGiro: s ? s.dias : null, parado: !!(s && s.parado), isBucket: false, soEstoque: !r,
+    estCusto: s ? s.custo : 0,
+    fat: ft, qtd: qt, custo: ft-lt, lb: lt, margemPct: ft>0 ? lt/ft*100 : 0,
+    fatP: r ? c2(r[1]) : 0, qtdP: r ? n0(r[2]) : 0, lbP: r ? c2(r[3]) : 0,
+    fatPrev: r ? c2(r[4]) : 0, qtdPrev: r ? n0(r[5]) : 0, lbPrev: r ? c2(r[6]) : 0,
+    fat7: r ? c2(r[7]) : 0, fatPrev7: r ? c2(r[8]) : 0,
+    mfat: ZERO_M, mqtd: ZERO_M
+  };
+}
+// produtos com venda no recorte (qualquer data) + itens em estoque sem venda, quando nenhum filtro exclusivo de venda está ativo
+function montarProdutos(b, restrito){
+  var lset = state.regiao.length ? toSet(state.regiao) : null;
+  var vistos = {}, out = [];
+  (b.p||[]).forEach(function(r){
+    var id = r[0]; vistos[id] = true;
+    if(restrito && !restrito[id]) return;
+    out.push(novoProduto(id, r, lset));
+  });
+  var soVenda = SO_VENDA.some(function(k){ return state[k] && state[k].length; });
+  if(!soVenda){
+    var pf = state.produto.length ? toSet(state.produto) : null;
+    Object.keys(EST_POR_PROD).forEach(function(k){
+      var id = +k; if(vistos[id]) return;
+      if(restrito && !restrito[id]) return;
+      if(pf && !pf[k]) return;
+      var inf = PRODINFO[id]; if(!inf || !passaAtributos(inf)) return;
+      var p = novoProduto(id, null, lset);
+      if(p.estoqueAtual>0 || p.estCusto>0) out.push(p);
+    });
+  }
+  return out.sort(function(a,b){ return b.fat - a.fat; });
+}
+
 var SEM_VENDEDOR = 'SEM VENDEDOR';
-var RESUMO = (REAL.resumo||[]).map(function(r){
-  return {mi: REAL.months.indexOf(r.mes), loja:r.loja||'SEM LOJA', canal:r.canal||'N/D', vendedor:r.vendedor||SEM_VENDEDOR,
-    fat:r.fat, qtd:r.qtd, custo:r.custo, lb:r.lb, skus:r.skus};
-}).filter(function(r){ return r.mi>=0; });
-var ALL_RESUMO = RESUMO; // referência completa (pré-escopo de acesso)
-var HAS_RESUMO = RESUMO.length>0;
-// fração de cada mês que cai dentro do intervalo de dias [s,e] (pela curva diária real)
+var PRODUCTS = [], BASE_PRODUCTS = [], RESUMO = [], AG = {}, HAS_RESUMO = true;
+var DAILY = {fat:[], qtd:[], lb:[]};
+var monthTotalFat = [], monthTotalQtd = [], dayWeightFat = [], dayWeightQtd = [];
+var DIM_LISTA = ['categoria','marca','montadora','loja','canal','vendedor'];
+var AG_LISTA = {};
+function agLinhas(t, linhas){
+  var m = {};
+  (linhas||[]).forEach(function(r){
+    m[dimNome(t, r[0])] = {fat:c2(r[1]), qtd:n0(r[2]), lb:c2(r[3]), prevFat:c2(r[4]), prevQtd:n0(r[5]), prevLb:c2(r[6]),
+      fatTot:c2(r[7]), qtdTot:n0(r[8]), lbTot:c2(r[9])};
+  });
+  return m;
+}
+function aplicarPainel(v, baseProds, prods, listas){
+  var fat = new Array(N_DAYS).fill(0), qtd = fat.slice(), lb = fat.slice();
+  ((v.a && v.a.d)||[]).forEach(function(r){ var i = DIA_IDX[r[0]]; if(i===undefined) return; fat[i] = c2(r[1]); qtd[i] = n0(r[2]); lb[i] = c2(r[3]); });
+  DAILY = {fat:fat, qtd:qtd, lb:lb};
+  monthTotalFat = new Array(REAL.months.length).fill(0); monthTotalQtd = monthTotalFat.slice();
+  for(var i=0;i<N_DAYS;i++){ var mi = monthIndexOfDay[i]; monthTotalFat[mi] += fat[i]; monthTotalQtd[mi] += qtd[i]; }
+  // peso de cada dia dentro do seu mês (usado só no ritmo do mês e no painel de qualidade)
+  dayWeightFat = fat.map(function(x,i){ var t = monthTotalFat[monthIndexOfDay[i]]; return t>0 ? x/t : 0; });
+  dayWeightQtd = qtd.map(function(x,i){ var t = monthTotalQtd[monthIndexOfDay[i]]; return t>0 ? x/t : 0; });
+  RESUMO = ((v.a && v.a.r)||[]).map(function(r){
+    return {mi: mesIdx(r[0]), loja: dimNome('loja', r[1]), canal: dimNome('canal', r[2]),
+      vendedor: r[3]===null ? SEM_VENDEDOR : dimNome('vendedor', r[3]), fat:c2(r[4]), qtd:n0(r[5]), custo:c2(r[6]), lb:c2(r[7])};
+  }).filter(function(r){ return r.mi>=0; });
+  AG = {};
+  Object.keys(v.c||{}).forEach(function(t){ AG[t] = agLinhas(t, v.c[t]); });
+  AG_LISTA = {};
+  Object.keys(AG).forEach(function(t){ AG_LISTA[t] = AG[t]; });
+  Object.keys(listas||{}).forEach(function(t){ AG_LISTA[t] = agLinhas(t, listas[t]); });
+  var porId = {}; prods.forEach(function(p){ porId[p.pid] = p; });
+  ((v.b && v.b.pm)||[]).forEach(function(r){
+    var p = porId[r[0]], mi = mesIdx(r[1]); if(!p || mi<0) return;
+    if(p.mfat===ZERO_M){ p.mfat = ZERO_M.slice(); p.mqtd = ZERO_M.slice(); }
+    p.mfat[mi] += c2(r[2]); p.mqtd[mi] += n0(r[3]);
+  });
+  BASE_PRODUCTS = baseProds; PRODUCTS = prods;
+}
+function agMap(t){ return AG[t] || {}; }
+function agLista(t){ return AG_LISTA[t] || {}; }
+
+// fração de cada mês que cai dentro do intervalo de dias [s,e]
 function monthFractions(s,e){
   var ff = new Array(REAL.months.length).fill(0), fq = new Array(REAL.months.length).fill(0);
   for(var i=Math.max(0,s); i<=e && i<N_DAYS; i++){ var mi=monthIndexOfDay[i]; if(mi>=0){ ff[mi]+=dayWeightFat[i]; fq[mi]+=dayWeightQtd[i]; } }
   return {fat:ff, qtd:fq};
 }
-// filtros que o resumo suporta (loja, canal, vendedor); os demais (marca, categoria...) só existem por SKU
-function productOnlyFiltersActive(){
-  return !!(state.marca.length || state.categoria.length || state.modelo.length || state.origem.length || state.status.length || state.soParados);
-}
-function resumoRows(opts){
-  opts = opts||{};
-  return RESUMO.filter(function(r){
-    if(!inArr(state.regiao, r.loja)) return false;
-    if(!inArr(state.canal, r.canal)) return false;
-    if(!opts.ignoreVendedor && !inArr(state.vendedor, r.vendedor)) return false;
-    return true;
-  });
-}
+function productOnlyFiltersActive(){ return false; }
+// o resumo já chega filtrado pelo banco
+function resumoRows(){ return RESUMO; }
 // agrega o resumo por uma chave no intervalo [s,e]; retorna {chave:{fat,qtd,lb,custo}}
 function resumoAgg(rows, keyFn, s, e){
   var fr = monthFractions(s,e), out = {};
@@ -1479,40 +1741,24 @@ function resumoAgg(rows, keyFn, s, e){
   });
   return out;
 }
-// série diária de faturamento de um conjunto de linhas do resumo
-function resumoDaily(rows){
-  var mt = new Array(REAL.months.length).fill(0);
-  rows.forEach(function(r){ mt[r.mi]+=r.fat; });
-  return monthIndexOfDay.map(function(mi,i){ return mi>=0 ? mt[mi]*dayWeightFat[i] : 0; });
-}
-function isPessoa(nome){ return nome && nome!==SEM_VENDEDOR && nome!=='Diversos'; }
+function isPessoa(nome){ return nome && nome!==SEM_VENDEDOR && nome!=='Diversos' && nome!=='N/D'; }
 
-var LOJA_INFO = REAL.lojaInfo; // {loja: {fisica:bool}}
-var PHYSICAL_LOJAS = REAL.dims.lojas.filter(function(l){ return LOJA_INFO[l] && LOJA_INFO[l].fisica; });
+var LOJA_INFO = REAL.lojaInfo || {}; // {loja: {fisica:bool}}
+REAL.dims = {lojas: dimLista('loja')};
+var PHYSICAL_LOJAS = REAL.dims.lojas.filter(function(l){ return !LOJA_INFO[l] || LOJA_INFO[l].fisica; });
 var MARKET_LOJAS = REAL.dims.lojas.filter(function(l){ return LOJA_INFO[l] && !LOJA_INFO[l].fisica; });
 
-// dimensões dos filtros — recalculadas após o escopo de acesso ser aplicado (ver recomputeDims)
-var CATEGORIES, BRANDS, MODELS, SELLERS, VEND_PESSOAS, REGIONS, CANAIS, ORIGENS, SELLER_META_ALL, SELLER_META;
+// opções dos filtros: só o que existe dentro do escopo de acesso
+var CATEGORIES, BRANDS, MODELS, SELLERS, VEND_PESSOAS, REGIONS, CANAIS, ORIGENS, EMITENTES, LINHAS, TIPOS_CLI, CIDADES, CLASSIFS, SELLER_META;
 function slug(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,''); }
 function recomputeDims(){
-  CATEGORIES = uniqSorted(PRODUCTS, 'categoria');
-  BRANDS = uniqSorted(PRODUCTS, 'marca');
-  MODELS = uniqSorted(PRODUCTS, 'modelo');
-  SELLERS = uniqSorted(PRODUCTS, 'vendedor').filter(function(v){ return v!=='Diversos'; });
-  REGIONS = uniqSorted(PRODUCTS, 'regiao');
-  CANAIS = uniqSorted(PRODUCTS, 'canal').filter(function(v){ return v!=='Diversos'; });
-  ORIGENS = uniqSorted(PRODUCTS, 'origem').filter(function(v){ return v!=='Diversas'; });
-  // vendedores "de verdade" para ranking/consultoria: todos com venda real no resumo (não só os "principais" de algum SKU)
-  var vs = {}; SELLERS.forEach(function(v){ if(isPessoa(v)) vs[v]=true; });
-  RESUMO.forEach(function(r){ if(isPessoa(r.vendedor)) vs[r.vendedor]=true; });
-  VEND_PESSOAS = Object.keys(vs).sort();
+  CATEGORIES = dimLista('categoria'); BRANDS = dimLista('marca'); MODELS = dimLista('montadora');
+  SELLERS = dimLista('vendedor'); REGIONS = dimLista('loja'); CANAIS = dimLista('canal'); ORIGENS = dimLista('origem');
+  EMITENTES = dimLista('emitente'); LINHAS = dimLista('linha'); TIPOS_CLI = dimLista('tipo_cliente');
+  CIDADES = dimLista('cidade'); CLASSIFS = dimLista('classificacao');
+  VEND_PESSOAS = SELLERS.filter(isPessoa);
   SELLER_META = {};
-  VEND_PESSOAS.forEach(function(s){ if(REAL.sellerMeta[s]!==undefined) SELLER_META[s]=REAL.sellerMeta[s]; });
-}
-function uniqSorted(list, key){
-  var seen = {}; var out = [];
-  list.forEach(function(p){ var v=p[key]; if(v && !seen[v]){ seen[v]=true; out.push(v); } });
-  return out.sort();
+  VEND_PESSOAS.forEach(function(s){ if(REAL.sellerMeta[s]!==undefined) SELLER_META[s] = REAL.sellerMeta[s]; });
 }
 
 /* ============================================================
@@ -1551,21 +1797,8 @@ function escopoFromProfile(p){
 }
 
 function toSet(a){ var o={}; (a||[]).forEach(function(v){ o[v]=true; }); return o; }
+// o banco já devolve só o que o perfil pode ver; aqui só montamos as opções dos filtros
 function applyScope(escopo){
-  if(escopo.tipo==='loja'){
-    PRODUCTS = ALL_PRODUCTS.filter(function(p){ return p.regiao===escopo.loja; });
-  } else if(escopo.tipo==='canal'){
-    var mktSet = {}; MARKET_LOJAS.forEach(function(l){ mktSet[l]=true; });
-    PRODUCTS = ALL_PRODUCTS.filter(function(p){ return mktSet[p.regiao]; });
-  } else if(escopo.tipo==='vendedor'){
-    PRODUCTS = ALL_PRODUCTS.filter(function(p){ return p.vendedor===escopo.vendedor; });
-  } else {
-    PRODUCTS = ALL_PRODUCTS;
-  }
-  var lset = escopo.lojas ? toSet(escopo.lojas) : null, cset = escopo.canais ? toSet(escopo.canais) : null;
-  if(lset) PRODUCTS = PRODUCTS.filter(function(p){ return lset[p.regiao]; });
-  if(cset) PRODUCTS = PRODUCTS.filter(function(p){ return cset[p.canal]; });
-  RESUMO = ALL_RESUMO.filter(function(r){ return (!lset || lset[r.loja]) && (!cset || cset[r.canal]); });
   recomputeDims();
 }
 
@@ -1586,7 +1819,10 @@ var STATUS_ICON = { normal:'🟢', atencao:'🟡', critico:'🔴', zerado:'⚫' 
    ============================================================ */
 var state = {
   marca:[], categoria:[], modelo:[], vendedor:[], regiao:[], canal:[], origem:[], status:[],
+  emitente:[], linha:[], tipo_cliente:[], cidade:[], classificacao:[],
+  produto:[], cliente:[], nf:[],   // códigos (busca)
   globalPeriod:'30d',
+  perIni:null, perFim:null,        // período personalizado (índices do calendário)
   chartRange:'30d',
   chartMetric:'fat',
   catSort:'fat',
@@ -1598,7 +1834,9 @@ var state = {
   currentView:'dashboard',
   vendConsultSel:'',
   vendSortCol:'fat', vendSortDir:'desc',
-  soParados:false
+  soParados:false,
+  diasMin:null,   // filtro: sem venda há pelo menos N dias
+  simDias:90      // corte do simulador de estoque
 };
 
 /* ============================================================
@@ -1633,6 +1871,11 @@ function periodRange(key){
     case '3m': start=end-89; break;
     case '6m': start=end-181; break;
     case '12m': start=end-364; break;
+    case 'tudo': start=0; break;
+    case 'custom':
+      if(state.perIni!==null && state.perFim!==null){ start=Math.min(state.perIni,state.perFim); end=Math.max(state.perIni,state.perFim); }
+      else start=end-29;
+      break;
     default: start=end-29;
   }
   start = Math.max(0,start);
@@ -1649,36 +1892,17 @@ function sumRange(arr,s,e){ var t=0; for(var i=s;i<=e && i<arr.length;i++){ if(i
    FILTRAGEM
    ============================================================ */
 function inArr(arr,v){ return !arr.length || arr.indexOf(v)!==-1; }
+// filtros de venda (loja, canal, marca, cliente, NF...) já são aplicados no banco; aqui ficam só os de estoque
 function matchesFilters(p){
-  if(!inArr(state.marca,p.marca)) return false;
-  if(!inArr(state.categoria,p.categoria)) return false;
-  if(state.modelo.length && state.modelo.indexOf(p.modelo)===-1 && (!p.modelo2 || state.modelo.indexOf(p.modelo2)===-1)) return false;
-  if(!inArr(state.vendedor,p.vendedor)) return false;
-  if(!inArr(state.regiao,p.regiao)) return false;
-  if(!inArr(state.canal,p.canal)) return false;
-  if(!inArr(state.origem,p.origem)) return false;
   if(state.soParados && !p.parado) return false;
+  if(state.diasMin!==null && !(p.diasSemGiro!==null && p.diasSemGiro!==undefined && p.diasSemGiro>=state.diasMin)) return false;
   if(state.status.length && state.status.indexOf(stockStatus(p))===-1) return false;
   return true;
 }
 function filteredProducts(){ return PRODUCTS.filter(matchesFilters); }
-function salesFromResumo(){ return HAS_RESUMO && !productOnlyFiltersActive(); }
-// série diária do recorte: pelo resumo real quando só há filtros de loja/canal/vendedor; senão pelos SKUs
-function salesDaily(){
-  var fat = new Array(N_DAYS).fill(0), qtd = new Array(N_DAYS).fill(0), lb = new Array(N_DAYS).fill(0);
-  if(salesFromResumo()){
-    var mf = new Array(REAL.months.length).fill(0), mq = mf.slice(), ml = mf.slice();
-    resumoRows().forEach(function(r){ mf[r.mi]+=r.fat; mq[r.mi]+=r.qtd; ml[r.mi]+=r.lb; });
-    for(var i=0;i<N_DAYS;i++){ var mi=monthIndexOfDay[i]; if(mi<0) continue;
-      fat[i]=mf[mi]*dayWeightFat[i]; qtd[i]=mq[mi]*dayWeightQtd[i]; lb[i]=ml[mi]*dayWeightFat[i]; }
-    return {fat:fat, qtd:qtd, lb:lb};
-  }
-  filteredProducts().forEach(function(p){
-    var m = p.margemPct/100;
-    for(var i=0;i<N_DAYS;i++){ fat[i]+=p.dailyFat[i]; qtd[i]+=p.dailyQtd[i]; lb[i]+=p.dailyFat[i]*m; }
-  });
-  return {fat:fat, qtd:qtd, lb:lb};
-}
+function salesFromResumo(){ return true; }
+// série diária exata do recorte (todos os filtros, inclusive os de estoque), vinda do banco
+function salesDaily(){ return DAILY; }
 
 /* ============================================================
    TOASTS
@@ -1946,13 +2170,44 @@ function renderMainChart(){
 /* ============================================================
    BAR LISTS (categoria / marca / modelo / giro)
    ============================================================ */
+// clique em um item de visual = filtra o painel inteiro por ele (clique de novo remove)
+function fkAttr(key, val){
+  if(!key || val===undefined || val===null || val==='Diversas' || val==='Diversos') return '';
+  var on = state[key] && state[key].indexOf(val)!==-1, ativo = state[key] && state[key].length;
+  return ' data-fk="'+key+'" data-fv="'+String(val).replace(/"/g,'&quot;')+'"'+(on?' data-fon="1"':(ativo?' data-foff="1"':''))+' title="Clique para filtrar por '+String(val).replace(/"/g,'&quot;')+'"';
+}
+var FK_LABEL = {marca:'Marca', categoria:'Categoria', modelo:'Montadora', vendedor:'Vendedor', regiao:'Loja', canal:'Canal', origem:'Origem',
+  emitente:'Emitente', linha:'Linha', tipo_cliente:'Tipo de cliente', cidade:'Cidade', classificacao:'Classificação',
+  produto:'Produto', cliente:'Razão', nf:'NF'};
+// rótulos dos filtros que guardam códigos (produto, cliente, NF)
+var BUSCA_LBL = {produto:{}, cliente:{}, nf:{}};
+function prodRotulo(inf){ return String(inf.nome).indexOf(inf.pn)===0 ? inf.nome : inf.pn+' · '+inf.nome; }
+function filtroRotulo(key, val){
+  if(key==='produto'){ var inf = PRODINFO[val]; return inf ? prodRotulo(inf) : String(val); }
+  if(BUSCA_LBL[key]) return BUSCA_LBL[key][val] || (key==='nf' ? 'NF '+val : String(val));
+  return String(val);
+}
+function toggleFiltro(key, val){
+  var arr = state[key]; if(!arr) return;
+  if(CURRENT_USER && ((key==='regiao' && CURRENT_USER.escopo.tipo==='loja') || (key==='vendedor' && CURRENT_USER.escopo.tipo==='vendedor'))) return;
+  var i = arr.indexOf(val);
+  if(i===-1) arr.push(val); else arr.splice(i,1);
+  syncFilterSelects(); state.page = 1; renderAll(false);
+  var rot = escapeHtml(filtroRotulo(key, val));
+  toast(i===-1 ? (FK_LABEL[key]||key)+': '+rot+' aplicado. Clique de novo para remover.' : 'Filtro '+rot+' removido.');
+}
+document.addEventListener('click', function(ev){
+  var el = ev.target.closest && ev.target.closest('[data-fk]');
+  if(!el || el.closest('.fcheck-group')) return;
+  toggleFiltro(el.getAttribute('data-fk'), el.getAttribute('data-fv'));
+});
 function renderBarList(containerId, rows, opts){
   opts = opts||{};
   var max = Math.max.apply(null, rows.map(function(r){return r.value;})) || 1;
   var box = document.getElementById(containerId);
   box.innerHTML = rows.map(function(r){
     var display = r.display!==undefined ? r.display : (opts.fmt ? opts.fmt(r.value) : fmtMoney(r.value));
-    return '<div class="barlist-row" data-key="'+(r.key||'')+'">' +
+    return '<div class="barlist-row" data-key="'+(r.key||'')+'"'+(opts.fk ? fkAttr(opts.fk, r.key!==undefined ? r.key : r.label) : '')+'>' +
       '<div class="bl-label">'+r.label+'</div>' +
       '<div class="bl-track"><div class="bl-fill" style="width:'+(Math.max(0,r.value)/max*100)+'%"></div></div>' +
       '<div><div class="bl-val">'+ display +'</div>' +
@@ -1961,26 +2216,15 @@ function renderBarList(containerId, rows, opts){
   }).join('') || '<p style="color:var(--text-muted); font-size:12px;">Sem dados para os filtros atuais.</p>';
 }
 
-function aggregateByDim(prods, dimFn, pr){
-  var map = {};
-  prods.forEach(function(p){
-    var key = dimFn(p);
-    if(Array.isArray(key)){ key.forEach(function(kk){ addAgg(map,kk,p,pr); }); }
-    else addAgg(map,key,p,pr);
-  });
-  return map;
-}
-function addAgg(map,key,p,pr){
-  if(!map[key]) map[key]={fat:0,qtd:0,prevFat:0};
-  map[key].fat += sumRange(p.dailyFat, pr.start, pr.end);
-  map[key].qtd += sumRange(p.dailyQtd, pr.start, pr.end);
-  map[key].prevFat += sumRange(p.dailyFat, pr.prevStart, pr.prevEnd);
+// totais exatos por dimensão no período (já com todos os filtros); só itens com venda no período ou no anterior
+function agAtivos(t){
+  var m = agLista(t), out = {};
+  Object.keys(m).forEach(function(k){ if(Math.abs(m[k].fat)>0.5 || Math.abs(m[k].prevFat)>0.5) out[k] = m[k]; });
+  return out;
 }
 
 function renderCategoryList(){
-  var prods = filteredProducts();
-  var pr = periodRange(state.globalPeriod);
-  var map = aggregateByDim(prods, function(p){return p.categoria;}, pr);
+  var map = agAtivos('categoria');
   var totalFat = 0; Object.keys(map).forEach(function(k){ totalFat+=map[k].fat; });
   var rows = Object.keys(map).map(function(k){
     var m = map[k];
@@ -1990,7 +2234,7 @@ function renderCategoryList(){
       display: state.catSort==='qtd' ? fmtUn(m.qtd)+' un' : (state.catSort==='growth'? fmtPct(growth) : fmtMoney(m.fat)),
       sub: totalFat>0 ? (m.fat/totalFat*100).toFixed(1)+'% do total' : ''};
   }).sort(function(a,b){ return b.sortVal-a.sortVal; });
-  renderBarList('catList', rows);
+  renderBarList('catList', rows, {fk:'categoria'});
 }
 
 function renderGiroList(){
@@ -2003,21 +2247,11 @@ function renderGiroList(){
   });
   var rows = Object.keys(map).map(function(k){ return {label:k, value: map[k].sum/map[k].w}; });
   rows.sort(function(a,b){ return state.giroSortDesc ? b.value-a.value : a.value-b.value; });
-  renderBarList('giroList', rows, {fmt:function(v){ return v.toFixed(1)+'x'; }});
+  renderBarList('giroList', rows, {fk:'categoria', fmt:function(v){ return v.toFixed(1)+'x'; }});
 }
 
 function renderLojaList(){
-  var pr = periodRange(state.globalPeriod);
-  var real = salesFromResumo(), lojaMap, canalMap;
-  if(real){
-    var rr = resumoRows();
-    lojaMap = resumoAgg(rr, function(r){ return r.loja; }, pr.start, pr.end);
-    canalMap = resumoAgg(rr, function(r){ return r.canal; }, pr.start, pr.end);
-  } else {
-    var prods = filteredProducts();
-    lojaMap = aggregateByDim(prods, function(p){return p.regiao;}, pr);
-    canalMap = aggregateByDim(prods, function(p){return p.canal;}, pr);
-  }
+  var lojaMap = agLista('loja'), canalMap = agLista('canal');
   function rowsOf(map, isLoja){
     var total=0; Object.keys(map).forEach(function(k){total+=map[k].fat;});
     return Object.keys(map).filter(function(k){ return map[k].fat>0.5; }).map(function(k){
@@ -2027,11 +2261,9 @@ function renderLojaList(){
         sub: total>0 ? (map[k].fat/total*100).toFixed(1)+'% · '+fmtUn(map[k].qtd)+' un'+mg : ''};
     }).sort(function(a,b){return b.value-a.value;});
   }
-  renderBarList('lojaList', rowsOf(lojaMap, true));
+  renderBarList('lojaList', rowsOf(lojaMap, true), {fk:'regiao'});
   renderCanalBar(canalMap);
-  document.getElementById('lojaFonte').textContent = real
-    ? 'Totais reais de cada loja e canal.'
-    : 'Com filtro de marca, categoria, aplicação, origem ou estoque, a loja de cada produto é a de maior venda dele (aproximação).';
+  document.getElementById('lojaFonte').textContent = 'Totais exatos de cada loja e canal, com todos os filtros aplicados. Clique para filtrar.';
 }
 
 function renderCanalBar(map){
@@ -2047,11 +2279,11 @@ function renderCanalBar(map){
   }
   bar.innerHTML = ks.map(function(k){
     var d = det(k);
-    return '<div class="seg" data-k="'+k+'" style="width:'+d.share+'%; background:'+canalCor(k)+'">'+(d.share>=7 ? k+' '+d.share.toFixed(0)+'%' : '')+'</div>';
+    return '<div class="seg" data-k="'+k+'"'+fkAttr('canal',k)+' style="width:'+d.share+'%; background:'+canalCor(k)+'">'+(d.share>=7 ? k+' '+d.share.toFixed(0)+'%' : '')+'</div>';
   }).join('');
   document.getElementById('canalCards').innerHTML = ks.map(function(k){
     var d = det(k);
-    return '<div class="canal-card" style="--c:'+canalCor(k)+'"><b>'+k+'</b><div class="big">'+fmtMoney(d.fat)+'</div>' +
+    return '<div class="canal-card"'+fkAttr('canal',k)+' style="--c:'+canalCor(k)+'"><b>'+k+'</b><div class="big">'+fmtMoney(d.fat)+'</div>' +
       d.share.toFixed(1)+'% do faturamento<br>'+fmtUn(d.qtd)+' peças ('+d.shareQ.toFixed(1)+'%)<br>' +
       (d.mg!==null ? 'Margem '+d.mg.toFixed(1)+'% · ' : '')+'ticket '+fmtMoney2(d.ticket)+'</div>';
   }).join('');
@@ -2076,39 +2308,25 @@ function renderCanalBar(map){
 }
 
 function renderBrandModelLists(){
-  var prods = filteredProducts();
-  var pr = periodRange(state.globalPeriod);
-  var brandMap = aggregateByDim(prods, function(p){return p.marca;}, pr);
+  var brandMap = agAtivos('marca');
   var totalB=0; Object.keys(brandMap).forEach(function(k){totalB+=brandMap[k].fat;});
   function caudaLbl(k){ return k==='Diversas' ? 'Cauda longa (várias)' : k; }
-  var brandRows = Object.keys(brandMap).map(function(k){ return {label:caudaLbl(k), value:brandMap[k].fat, sub: totalB>0 ? (brandMap[k].fat/totalB*100).toFixed(1)+'% · '+fmtUn(brandMap[k].qtd)+' un':''}; })
+  var brandRows = Object.keys(brandMap).map(function(k){ return {label:caudaLbl(k), key:k, value:brandMap[k].fat, sub: totalB>0 ? (brandMap[k].fat/totalB*100).toFixed(1)+'% · '+fmtUn(brandMap[k].qtd)+' un':''}; })
     .sort(function(a,b){return b.value-a.value;});
-  renderBarList('brandList', brandRows);
+  renderBarList('brandList', brandRows, {fk:'marca'});
 
-  var modelMap = aggregateByDim(prods, function(p){ return p.modelo2 ? [p.modelo,p.modelo2] : p.modelo; }, pr);
+  var modelMap = agAtivos('montadora');
   var totalM=0; Object.keys(modelMap).forEach(function(k){totalM+=modelMap[k].fat;});
-  var modelRows = Object.keys(modelMap).map(function(k){ return {label:caudaLbl(k), value:modelMap[k].fat, sub: totalM>0 ? (modelMap[k].fat/totalM*100).toFixed(1)+'% · '+fmtUn(modelMap[k].qtd)+' un':''}; })
+  var modelRows = Object.keys(modelMap).map(function(k){ return {label:caudaLbl(k), key:k, value:modelMap[k].fat, sub: totalM>0 ? (modelMap[k].fat/totalM*100).toFixed(1)+'% · '+fmtUn(modelMap[k].qtd)+' un':''}; })
     .sort(function(a,b){return b.value-a.value;});
-  renderBarList('modelList', modelRows);
+  renderBarList('modelList', modelRows, {fk:'modelo'});
 }
 
 /* ============================================================
    CONSULTORIA DE VENDEDOR — comparação vs. demais, sob os
    mesmos filtros globais aplicados (exceto o próprio vendedor)
    ============================================================ */
-function productsForVendConsult(){
-  return PRODUCTS.filter(function(p){
-    if(!inArr(state.marca,p.marca)) return false;
-    if(!inArr(state.categoria,p.categoria)) return false;
-    if(state.modelo.length && state.modelo.indexOf(p.modelo)===-1 && (!p.modelo2 || state.modelo.indexOf(p.modelo2)===-1)) return false;
-    if(!inArr(state.regiao,p.regiao)) return false;
-    if(!inArr(state.canal,p.canal)) return false;
-    if(!inArr(state.origem,p.origem)) return false;
-    if(state.soParados && !p.parado) return false;
-    if(state.status.length && state.status.indexOf(stockStatus(p))===-1) return false;
-    return true;
-  });
-}
+var VC = {key:null, d:null, pend:null}; // comparativo de vendedores (bi_vendedores)
 function vcKpi(label, value, sub){
   return '<div class="kpi-card"><div class="klabel">'+label+'</div><div class="kvalue">'+value+'</div>' +
     '<div class="kdelta flat" style="margin-top:4px; white-space:normal;">'+sub+'</div></div>';
@@ -2121,47 +2339,46 @@ function renderVendConsult(){
   if(sel.value!==state.vendConsultSel) sel.value = state.vendConsultSel;
 
   var pr = periodRange(state.globalPeriod);
-  var pool = productsForVendConsult();
-  var map = {};
-  // totais do grupo (todos vendedores, mesmo filtro) por marca/categoria/produto — usados para os radares por dimensão e o índice de mix
+  var fv = JSON.parse(JSON.stringify(PAINEL_F || painelFiltros(null))); delete fv.vendedor; // o comparativo ignora o filtro de vendedor
+  var vk = JSON.stringify([fv, painelPeriodo().ini, painelPeriodo().fim]);
+  if(VC.key!==vk){
+    if(VC.pend!==vk){
+      VC.pend = vk;
+      box.innerHTML = '<p class="note-muted">Carregando o comparativo dos vendedores…</p>';
+      rpcMemo('bi_vendedores', {f: fv, per: {ini: painelPeriodo().ini, fim: painelPeriodo().fim}}).then(function(d){
+        if(VC.pend!==vk) return;
+        VC = {key:vk, d:d||{}, pend:null};
+        if(state.currentView==='vendedores') renderVendConsult();
+      }).catch(function(){
+        if(VC.pend!==vk) return;
+        VC.pend = null; box.innerHTML = '<p class="note-muted">Não foi possível carregar o comparativo. Tente de novo.</p>';
+      });
+    }
+    return;
+  }
+  // totais exatos por vendedor no período; mix de marcas, categorias e produtos do grupo (só vendedores pessoas)
+  var D = VC.d, map = {};
   var groupFatByMarca = {}, groupFatByCategoria = {}, groupFatByProduto = {}, groupFatTotalAll = 0;
   var prodNameById = {};
-  pool.forEach(function(p){
-    if(!isPessoa(p.vendedor)) return; // cauda longa e vendas sem vendedor não entram no comparativo
-    if(!map[p.vendedor]) map[p.vendedor] = {fat:0, qtd:0, lb:0, dailyFat:new Array(N_DAYS).fill(0), skus:{}, marcas:{}, categorias:{}, produtos:{}};
-    var fatP = sumRange(p.dailyFat, pr.start, pr.end);
-    var qtdP = sumRange(p.dailyQtd, pr.start, pr.end);
-    var lbP = fatP * (p.margemPct/100); // margem do produto aplicada ao recorte de período (proporção estável no período)
-    var mm = map[p.vendedor];
-    mm.fat += fatP; mm.qtd += qtdP; mm.lb += lbP;
-    if(qtdP>0) mm.skus[p.id] = true;
-    mm.marcas[p.marca] = (mm.marcas[p.marca]||0) + fatP;
-    mm.categorias[p.categoria] = (mm.categorias[p.categoria]||0) + fatP;
-    mm.produtos[p.id] = (mm.produtos[p.id]||0) + fatP;
-    for(var i=Math.max(0,pr.start); i<=pr.end && i<N_DAYS; i++){ mm.dailyFat[i] += p.dailyFat[i]; }
-    groupFatByMarca[p.marca] = (groupFatByMarca[p.marca]||0) + fatP;
-    groupFatByCategoria[p.categoria] = (groupFatByCategoria[p.categoria]||0) + fatP;
-    groupFatByProduto[p.id] = (groupFatByProduto[p.id]||0) + fatP;
-    groupFatTotalAll += fatP;
-    if(!prodNameById[p.id]) prodNameById[p.id] = p.nome;
+  function vnome(id){ return id===null ? SEM_VENDEDOR : dimNome('vendedor', id); }
+  (D.v||[]).forEach(function(r){
+    var n = vnome(r[0]); if(!isPessoa(n) || c2(r[1])<=0.5) return;
+    map[n] = {fat:c2(r[1]), qtd:n0(r[2]), lb:c2(r[3]), dailyFat:new Array(N_DAYS).fill(0), skus:{}, marcas:{}, categorias:{}, produtos:{}};
+    groupFatTotalAll += c2(r[1]);
   });
-
-  // totais reais por vendedor (resumo); o mix de marcas/categorias/produtos continua vindo dos SKUs atribuídos
-  if(salesFromResumo()){
-    var rv = resumoRows({ignoreVendedor:true}).filter(function(r){ return isPessoa(r.vendedor); });
-    var realAgg = resumoAgg(rv, function(r){ return r.vendedor; }, pr.start, pr.end);
-    var frV = monthFractions(pr.start, pr.end);
-    var rowsByV = {}; rv.forEach(function(r){ (rowsByV[r.vendedor] = rowsByV[r.vendedor] || []).push(r); });
-    Object.keys(realAgg).forEach(function(n){
-      var a = realAgg[n]; if(a.fat<=0.5) return;
-      var mm = map[n] || (map[n] = {fat:0, qtd:0, lb:0, dailyFat:null, skus:{}, marcas:{}, categorias:{}, produtos:{}});
-      mm.fat = a.fat; mm.qtd = a.qtd; mm.lb = a.lb; mm.dailyFat = resumoDaily(rowsByV[n]);
-      // SKUs distintos por mês (média dos meses do período)
-      var porMes = {}; rowsByV[n].forEach(function(r){ if(frV.fat[r.mi]>0) porMes[r.mi] = (porMes[r.mi]||0) + r.skus; });
-      var ms = Object.keys(porMes); mm.skuMes = ms.length ? ms.reduce(function(t,k){ return t+porMes[k]; },0)/ms.length : 0;
+  function mix(lista, tipo, campo, grupo){
+    (lista||[]).forEach(function(r){
+      var m = map[vnome(r[0])]; if(!m) return;
+      var k = tipo ? dimNome(tipo, r[1]) : String(r[1]), f = c2(r[2]);
+      m[campo][k] = (m[campo][k]||0) + f; grupo[k] = (grupo[k]||0) + f;
+      if(!tipo && !prodNameById[k]) prodNameById[k] = PRODINFO[r[1]] ? PRODINFO[r[1]].nome : k;
     });
-    Object.keys(map).forEach(function(n){ if(!realAgg[n] || realAgg[n].fat<=0.5) delete map[n]; });
   }
+  mix(D.vm, 'marca', 'marcas', groupFatByMarca);
+  mix(D.vc, 'categoria', 'categorias', groupFatByCategoria);
+  mix(D.vp, null, 'produtos', groupFatByProduto);
+  (D.vd||[]).forEach(function(r){ var m = map[vnome(r[0])], i = DIA_IDX[r[1]]; if(m && i!==undefined) m.dailyFat[i] += c2(r[2]); });
+  (D.vs||[]).forEach(function(r){ var m = map[vnome(r[0])]; if(m) m.skuMes = +r[1]||0; });
   function sumOf(m){ var t=0; Object.keys(m).forEach(function(k){ t+=m[k]; }); return t; }
   function hhi(distMap, total){
     if(!total) return 0;
@@ -2540,6 +2757,56 @@ function renderStockHealth(){
   }).join('');
 }
 
+/* ---------- simulador: estoque sem venda há N dias ou mais ---------- */
+var SIM_FAIXAS = [[0,30,'#1fb08a'],[31,60,'#22d3ee'],[61,90,'#3b82f6'],[91,180,'#fab219'],[181,270,'#d9772e'],[271,365,'#ef4444'],[366,1e9,'#9b1c1c']];
+function simItens(){
+  // usa os filtros do painel, exceto o próprio corte de dias (o simulador mostra todas as faixas)
+  // (parte da lista completa do recorte, antes do filtro de estoque restringir os produtos)
+  var dm = state.diasMin; state.diasMin = null;
+  var prods = BASE_PRODUCTS.filter(matchesFilters).filter(function(p){ return !p.isBucket && p.estCusto>0 && p.diasSemGiro!==null && p.diasSemGiro!==undefined; });
+  state.diasMin = dm;
+  return prods;
+}
+function renderSimulador(){
+  var box = document.getElementById('simKpis'); if(!box) return;
+  var X = state.simDias, itens = simItens();
+  Array.prototype.forEach.call(document.querySelectorAll('#simChips button'), function(b){ b.setAttribute('aria-pressed', String(+b.getAttribute('data-d')===X)); });
+  var tot = {n:0, q:0, v:0}, sel = {n:0, q:0, v:0, vendaAno:0}, cat = {};
+  itens.forEach(function(p){
+    tot.n++; tot.q += p.estoqueAtual; tot.v += p.estCusto;
+    if(p.diasSemGiro>=X){
+      sel.n++; sel.q += p.estoqueAtual; sel.v += p.estCusto; sel.vendaAno += p.fat;
+      var c = cat[p.categoria] = cat[p.categoria] || {fat:0, n:0}; c.fat += p.estCusto; c.n++;
+    }
+  });
+  var pct = tot.v>0 ? sel.v/tot.v*100 : 0;
+  box.innerHTML =
+    '<div class="k"><div class="l">Itens</div><div class="v">'+fmtUn(sel.n)+'</div><div class="s">de '+fmtUn(tot.n)+' com estoque</div></div>' +
+    '<div class="k"><div class="l">Peças</div><div class="v">'+fmtUn(sel.q)+'</div><div class="s">'+(tot.q>0?(sel.q/tot.q*100).toFixed(1):'0')+'% das peças</div></div>' +
+    '<div class="k"><div class="l">Valor a custo</div><div class="v" style="color:var(--warning)">'+fmtMoney(sel.v)+'</div><div class="s">'+pct.toFixed(1)+'% do estoque</div></div>' +
+    '<div class="k"><div class="l">Custo de carregar</div><div class="v">'+fmtMoney(sel.v*0.015*12)+'</div><div class="s">por ano, a 1,5% ao mês</div></div>';
+  // faixas de dias
+  var fx = SIM_FAIXAS.map(function(f){ var v=0, n=0; itens.forEach(function(p){ if(p.diasSemGiro>=f[0] && p.diasSemGiro<=f[1]){ v+=p.estCusto; n++; } }); return {f:f, v:v, n:n}; });
+  var fxTot = fx.reduce(function(a,o){ return a+o.v; }, 0) || 1;
+  document.getElementById('simFaixas').innerHTML = fx.filter(function(o){ return o.v>0; }).map(function(o){
+    var w = o.v/fxTot*100, lbl = o.f[1]>=1e9 ? '+'+(o.f[0]-1) : o.f[0]+'–'+o.f[1];
+    return '<div class="fx'+(o.f[1]<X?' off':'')+'" data-d="'+o.f[0]+'" style="width:'+w+'%; background:'+o.f[2]+'" title="'+lbl+' dias: '+fmtMoney(o.v)+' em '+fmtUn(o.n)+' itens. Clique para simular a partir de '+o.f[0]+' dias.">'+(w>=8?lbl+'d':'')+'</div>';
+  }).join('');
+  var leg = document.getElementById('simLeg');
+  if(!leg){ leg = document.createElement('div'); leg.id='simLeg'; leg.className='sim-leg'; document.getElementById('simFaixas').after(leg); }
+  leg.innerHTML = fx.map(function(o){ var lbl = o.f[1]>=1e9 ? 'mais de '+(o.f[0]-1) : o.f[0]+' a '+o.f[1]; return '<span><i style="background:'+o.f[2]+'"></i>'+lbl+' dias · '+fmtCurto(o.v)+'</span>'; }).join('');
+  var catRows = Object.keys(cat).map(function(k){ return {label:k, key:k, value:cat[k].fat, sub: cat[k].n+' itens'}; }).sort(function(a,b){ return b.value-a.value; });
+  renderBarList('simCat', catRows, {fk:'categoria'});
+  var top = itens.filter(function(p){ return p.diasSemGiro>=X; }).sort(function(a,b){ return b.estCusto-a.estCusto; }).slice(0,40);
+  document.getElementById('simTop').innerHTML = top.length ? top.map(function(p){
+    return '<div class="sim-row" data-id="'+escapeHtml(p.id)+'"><div style="min-width:0"><div class="n">'+escapeHtml(p.nome)+'</div><div class="m">'+escapeHtml(p.categoria||'')+' · '+fmtUn(p.estoqueAtual)+' peças · '+fmtUn(p.diasSemGiro)+' dias</div></div><div class="v">'+fmtMoney(p.estCusto)+'</div></div>';
+  }).join('') : '<p class="note-muted">Nenhum item com '+X+' dias ou mais sem venda nos filtros atuais.</p>';
+  document.getElementById('simSub').textContent = fmtMoney(sel.v)+' a custo estão há '+X+' dias ou mais sem venda'+(sel.vendaAno>0 ? '' : '');
+  document.getElementById('simNota').textContent = typeof STOCK_ITENS!=='undefined' && STOCK_ITENS ? '' :
+    'Base atual: produtos com venda no ano, estoque somado entre as lojas e o menor número de dias entre elas. Itens sem nenhuma venda no ano ainda não entram.';
+  var ap = document.getElementById('simAplicar'); ap.textContent = state.diasMin===X ? 'Remover filtro' : 'Filtrar painel';
+}
+
 function renderAlerts(){
   var prods = filteredProducts().filter(function(p){ var s=stockStatus(p); return !p.isBucket && (s==='critico'||s==='zerado'||s==='atencao'); });
   prods.sort(function(a,b){
@@ -2565,11 +2832,8 @@ function renderAlerts(){
    ============================================================ */
 function renderTopProducts(){
   var prods = filteredProducts().filter(function(p){ return !p.isBucket; });
-  var pr = periodRange(state.globalPeriod);
-  var rows = prods.map(function(p){
-    var fat = sumRange(p.dailyFat, pr.start, pr.end);
-    var last7 = sumRange(p.dailyFat, TODAY_IDX-6, TODAY_IDX);
-    var prev7 = sumRange(p.dailyFat, TODAY_IDX-13, TODAY_IDX-7);
+  var rows = prods.filter(function(p){ return Math.abs(p.fatP)>0.005; }).map(function(p){
+    var fat = p.fatP, last7 = p.fat7, prev7 = p.fatPrev7;
     var trend = prev7>0 ? (last7-prev7)/prev7*100 : 0;
     return {p:p, fat:fat, trend:trend};
   }).sort(function(a,b){ return b.fat-a.fat; }).slice(0,30);
@@ -2591,8 +2855,7 @@ function renderTopProducts(){
    ============================================================ */
 function computeABC(){
   var prods = filteredProducts().filter(function(p){ return !p.isBucket; });
-  var pr = periodRange(state.globalPeriod);
-  var rows = prods.map(function(p){ return {p:p, fat: sumRange(p.dailyFat,pr.start,pr.end)}; }).sort(function(a,b){return b.fat-a.fat;});
+  var rows = prods.filter(function(p){ return p.fatP>0.005; }).map(function(p){ return {p:p, fat: p.fatP}; }).sort(function(a,b){return b.fat-a.fat;});
   var total = rows.reduce(function(s,r){return s+r.fat;},0) || 1;
   var cum=0;
   rows.forEach(function(r){ cum += r.fat; r.cumPct = cum/total*100; r.cls = r.cumPct<=80?'A':(r.cumPct<=95?'B':'C'); });
@@ -2677,24 +2940,12 @@ function renderABC(){
    VENDEDORES
    ============================================================ */
 function renderSellers(){
-  var pr = periodRange(state.globalPeriod);
-  var map = {}, real = salesFromResumo(), semVend = 0, naoPessoa = 0, total = 0;
-  if(real){
-    var agg = resumoAgg(resumoRows(), function(r){ return r.vendedor; }, pr.start, pr.end);
-    Object.keys(agg).forEach(function(n){
-      total += agg[n].fat;
-      if(n===SEM_VENDEDOR){ semVend += agg[n].fat; return; }
-      map[n] = agg[n];
-    });
-  } else {
-    filteredProducts().forEach(function(p){
-      if(!isPessoa(p.vendedor)) return;
-      if(!map[p.vendedor]) map[p.vendedor]={fat:0,qtd:0,lb:0};
-      var f = sumRange(p.dailyFat,pr.start,pr.end);
-      map[p.vendedor].fat += f; map[p.vendedor].lb += f*p.margemPct/100;
-      map[p.vendedor].qtd += sumRange(p.dailyQtd,pr.start,pr.end);
-    });
-  }
+  var map = {}, semVend = 0, total = 0, agg = agLista('vendedor');
+  Object.keys(agg).forEach(function(n){
+    total += agg[n].fat;
+    if(!isPessoa(n)){ semVend += agg[n].fat; return; }
+    map[n] = agg[n];
+  });
   var totPessoas = 0; Object.keys(map).forEach(function(n){ totPessoas += map[n].fat; });
   var rows = Object.keys(map).filter(function(n){ return map[n].fat>0.5; }).map(function(name){
     var pct = totPessoas>0 ? map[name].fat/totPessoas*100 : 0;
@@ -2706,7 +2957,7 @@ function renderSellers(){
   if(!rows.length){ box.innerHTML='<p style="color:var(--text-muted); font-size:12.5px;">Sem dados para os filtros atuais.</p>'; return; }
   box.innerHTML = rows.map(function(r){
     var initials = r.name.split(' ').map(function(w){return w[0];}).slice(0,2).join('');
-    return '<div class="seller-row">' +
+    return '<div class="seller-row"'+fkAttr('vendedor', r.name)+'>' +
       '<div class="seller-av">'+initials+'</div>' +
       '<div class="seller-info"><div class="s-name">'+r.name+'</div><div class="s-meta">'+fmtMoney(r.fat)+' · '+fmtUn(r.qtd)+' peças · margem '+r.mg.toFixed(1)+'%</div></div>' +
       '<div class="seller-goal"><div class="g-track"><div class="g-fill" style="width:'+(maxPct>0?r.pct/maxPct*100:0)+'%"></div></div><div class="g-pct">'+r.pct.toFixed(1)+'% do total</div></div>' +
@@ -2714,7 +2965,7 @@ function renderSellers(){
   }).join('');
   var nota = document.getElementById('sellerFonte');
   if(nota){
-    nota.innerHTML = (real ? 'Totais reais de cada vendedor. ' : 'Com filtro de marca, categoria, aplicação, origem ou estoque, cada produto conta só para o vendedor que mais o vendeu (aproximação). ') +
+    nota.innerHTML = 'Totais exatos de cada vendedor, com todos os filtros aplicados. Clique para filtrar. ' +
       (semVend>0 ? '<b>'+fmtMoney(semVend)+'</b> ('+(total>0?(semVend/total*100).toFixed(1):'0')+'%) foram vendidos sem vendedor informado e não aparecem na lista. ' : '') +
       '';
   }
@@ -2725,12 +2976,10 @@ function renderSellers(){
    ============================================================ */
 function tableRows(){
   var prods = filteredProducts();
-  var pr = periodRange(state.globalPeriod);
   var abcMap = {};
   if(state.abcFilter){ computeABC().forEach(function(r){ abcMap[r.p.id]=r.cls; }); }
   var rows = prods.map(function(p){
-    var qtdPeriodo = sumRange(p.dailyQtd,pr.start,pr.end);
-    var fatPeriodo = sumRange(p.dailyFat,pr.start,pr.end);
+    var qtdPeriodo = p.qtdP, fatPeriodo = p.fatP;
     return {
       id:p.id, codigo:p.codigo, nome:p.nome, marca:p.marca, categoria:p.categoria,
       modelo: p.modelo+(p.modelo2?' / '+p.modelo2:''), estoqueAtual:p.estoqueAtual, estoqueMin:p.estoqueMin,
@@ -2797,13 +3046,16 @@ function renderTable(){
    DRAWER (drill-down)
    ============================================================ */
 function openDrawer(productId){
-  var p = PRODUCTS.filter(function(x){return x.id===productId;})[0];
+  var p = PRODUCTS.filter(function(x){return x.id===productId;})[0] || BASE_PRODUCTS.filter(function(x){return x.id===productId;})[0];
   if(!p) return;
+  drawerAtual = p.id;
   document.getElementById('drawerCode').textContent = p.codigo;
   document.getElementById('drawerName').textContent = p.nome;
   document.getElementById('drawerPhoto').textContent = 'Foto do produto · '+p.categoria;
-  document.getElementById('drawerTags').innerHTML = [p.marca,p.categoria,p.modelo+(p.modelo2?'/'+p.modelo2:''),p.vendedor,p.regiao]
-    .map(function(t){ return '<span class="dtag">'+t+'</span>'; }).join('');
+  document.getElementById('drawerTags').innerHTML = [['marca',p.marca],['categoria',p.categoria],['modelo',p.modelo],['linha',p.linha],['classificacao',p.classificacao]]
+    .filter(function(t){ return t[1] && t[1]!=='N/D'; })
+    .map(function(t){ return '<span class="dtag"'+fkAttr(t[0], t[1])+'>'+escapeHtml(t[1])+'</span>'; }).join('') +
+    '<button type="button" class="dtag dtag-btn"'+fkAttr('produto', p.id)+'>'+(state.produto.indexOf(p.id)!==-1 ? 'Tirar filtro deste produto' : 'Filtrar o painel por este produto')+'</button>';
 
   var st = stockStatus(p);
   var abcRow = computeABC().filter(function(r){return r.p.id===p.id;})[0];
@@ -2814,32 +3066,38 @@ function openDrawer(productId){
     ['Giro de estoque', p.giro.toFixed(1)+'x'],
     ['Classe ABC', cls],
     ['Status', STATUS_LABEL[st]],
-    ['Preço unitário', fmtMoney2(p.precoUnit)]
+    ['Preço médio', p.precoUnit>0 ? fmtMoney2(p.precoUnit) : '—'],
+    ['Estoque a custo', fmtMoney(p.estCusto)],
+    ['Sem movimentação', p.diasSemGiro===null || p.diasSemGiro===undefined ? '—' : p.diasSemGiro+' dias'],
+    ['Loja com mais estoque', p.regiao || '—']
   ].map(function(pair){ return '<div class="dstat"><div class="dl">'+pair[0]+'</div><div class="dv">'+pair[1]+'</div></div>'; }).join('');
 
-  var weekly = [];
-  for(var w=11;w>=0;w--){
-    var e = TODAY_IDX-w*7, s = e-6;
-    weekly.push(sumRange(p.dailyFat, Math.max(0,s), Math.max(0,e)));
-  }
-  document.getElementById('drawerSpark').innerHTML = sparklineSVG(weekly, 380, 56, 'var(--accent)', true);
-
-  // dados reais do banco: totais mensais do produto (mfat/mqtd) e preço médio = fat/qtd do mês
-  var salesRows='', priceRows='';
-  var nM = REAL.months.length;
-  for(var mi=nM-1; mi>=Math.max(0,nM-6); mi--){
-    var mf = (p.mfat && p.mfat[mi]) || 0, mq = (p.mqtd && p.mqtd[mi]) || 0;
-    var rotulo = (REAL.monthLabels && REAL.monthLabels[mi]) || REAL.months[mi];
-    salesRows += '<div class="dlist-row"><span>'+rotulo+' · '+fmtUn(mq)+' un.</span><b>'+fmtMoney(mf)+'</b></div>';
-    priceRows += '<div class="dlist-row"><span>'+rotulo+'</span><b>'+(mq>0 ? fmtMoney2(mf/mq) : '—')+'</b></div>';
-  }
-  document.getElementById('drawerSales').innerHTML = salesRows;
-  document.getElementById('drawerPrices').innerHTML = priceRows;
+  // série diária exata do produto no recorte atual (busca ao abrir)
+  document.getElementById('drawerSpark').innerHTML = '<p class="note-muted">Carregando vendas…</p>';
+  document.getElementById('drawerSales').innerHTML = ''; document.getElementById('drawerPrices').innerHTML = '';
+  rpcMemo('bi_produto_serie', {f: painelFiltros(null), produto: p.pid}).then(function(serie){
+    if(drawerAtual!==p.id) return;
+    var df = new Array(N_DAYS).fill(0), mf = ZERO_M.slice(), mq = ZERO_M.slice();
+    (serie||[]).forEach(function(r){ var i = DIA_IDX[r[0]]; if(i===undefined) return; df[i] += c2(r[1]); mf[monthIndexOfDay[i]] += c2(r[1]); mq[monthIndexOfDay[i]] += n0(r[2]); });
+    var weekly = [];
+    for(var w=11;w>=0;w--){ var e = TODAY_IDX-w*7, s = e-6; weekly.push(sumRange(df, Math.max(0,s), Math.max(0,e))); }
+    document.getElementById('drawerSpark').innerHTML = sparklineSVG(weekly, 380, 56, 'var(--accent)', true);
+    var salesRows='', priceRows='', nM = REAL.months.length;
+    for(var mi=nM-1; mi>=Math.max(0,nM-6); mi--){
+      var rotulo = (REAL.monthLabels && REAL.monthLabels[mi]) || REAL.months[mi];
+      salesRows += '<div class="dlist-row"><span>'+rotulo+' · '+fmtUn(mq[mi])+' un.</span><b>'+fmtMoney(mf[mi])+'</b></div>';
+      priceRows += '<div class="dlist-row"><span>'+rotulo+'</span><b>'+(mq[mi]>0 ? fmtMoney2(mf[mi]/mq[mi]) : '—')+'</b></div>';
+    }
+    document.getElementById('drawerSales').innerHTML = salesRows;
+    document.getElementById('drawerPrices').innerHTML = priceRows;
+  }).catch(function(){ if(drawerAtual===p.id) document.getElementById('drawerSpark').innerHTML = '<p class="note-muted">Não foi possível carregar as vendas deste produto.</p>'; });
 
   document.getElementById('drawer').classList.add('open');
   document.getElementById('overlay').classList.add('show');
 }
+var drawerAtual = null;
 function closeDrawer(){
+  drawerAtual = null;
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
 }
@@ -2852,7 +3110,8 @@ function fillSelect(id, values, placeholder){
   sel.innerHTML = '<option value="">'+placeholder+'</option>' + values.map(function(v){ return '<option value="'+v+'">'+v+'</option>'; }).join('');
 }
 /* ---- filtros multi-seleção (checkbox) ---- */
-var FILTER_KEYS = ['marca','categoria','modelo','vendedor','regiao','canal','origem','status'];
+var FILTER_KEYS = ['marca','categoria','modelo','vendedor','regiao','canal','origem','emitente','linha','classificacao','tipo_cliente','cidade','status'];
+var BUSCA_KEYS = ['produto','cliente','nf'];
 function optionsForKey(key){
   switch(key){
     case 'marca': return BRANDS;
@@ -2862,6 +3121,11 @@ function optionsForKey(key){
     case 'regiao': return REGIONS;
     case 'canal': return CANAIS;
     case 'origem': return ORIGENS;
+    case 'emitente': return EMITENTES;
+    case 'linha': return LINHAS;
+    case 'classificacao': return CLASSIFS;
+    case 'tipo_cliente': return TIPOS_CLI;
+    case 'cidade': return CIDADES;
     case 'status': return ['normal','atencao','critico','zerado'];
   }
   return [];
@@ -2931,24 +3195,28 @@ function initFilterSelects(){
 function renderActiveTags(){
   var defs = [
     ['marca','Marca'],['categoria','Categoria'],['modelo','Montadora'],['vendedor','Vendedor'],
-    ['regiao','Loja'],['canal','Canal'],['origem','Origem']
+    ['regiao','Loja'],['canal','Canal'],['origem','Origem'],['emitente','Emitente'],['linha','Linha'],
+    ['classificacao','Classificação'],['tipo_cliente','Tipo de cliente'],['cidade','Cidade'],
+    ['produto','Produto'],['cliente','Razão'],['nf','NF']
   ];
   var box = document.getElementById('activeTags');
   var chips = [];
   defs.forEach(function(d){
     state[d[0]].forEach(function(v){
-      chips.push('<span class="tag-chip">'+d[1]+': '+v+'<button data-k="'+d[0]+'" data-v="'+v.replace(/"/g,'&quot;')+'">✕</button></span>');
+      chips.push('<span class="tag-chip">'+d[1]+': '+escapeHtml(filtroRotulo(d[0], v))+'<button data-k="'+d[0]+'" data-v="'+String(v).replace(/"/g,'&quot;')+'">✕</button></span>');
     });
   });
   state.status.forEach(function(v){
     chips.push('<span class="tag-chip">Status: '+STATUS_LABEL[v]+'<button data-k="status" data-v="'+v+'">✕</button></span>');
   });
   if(state.soParados) chips.push('<span class="tag-chip">Somente sem giro<button data-k="soParados" data-v="">✕</button></span>');
+  if(state.diasMin!==null) chips.push('<span class="tag-chip">Sem venda há ≥ '+state.diasMin+' dias<button data-k="diasMin" data-v="">✕</button></span>');
   box.innerHTML = chips.join('');
   Array.prototype.forEach.call(box.querySelectorAll('[data-k]'), function(b){
     b.addEventListener('click', function(){
       var key = b.getAttribute('data-k'), val = b.getAttribute('data-v');
       if(key==='soParados'){ state.soParados = false; }
+      else if(key==='diasMin'){ state.diasMin = null; }
       else { var arr = state[key], i = arr.indexOf(val); if(i!==-1) arr.splice(i,1); }
       syncFilterSelects();
       state.page=1;
@@ -2958,7 +3226,9 @@ function renderActiveTags(){
 }
 function syncFilterSelects(){
   FILTER_KEYS.forEach(rebuildCheckGroup);
+  BUSCA_KEYS.forEach(renderBuscaSel);
   document.getElementById('fParado').checked = state.soParados;
+  document.getElementById('fDiasMin').value = state.diasMin===null ? '' : state.diasMin;
 }
 
 /* ============================================================
@@ -2971,17 +3241,14 @@ function computeAutoInsights(){
   if(!prods.length) return [];
   var byMarca={}, byCanal={}, byCanalPrev={}, byLoja={}, byLojaPrev={};
   var fatTotal=0, fatPrevTotal=0, qtdTotal=0, qtdPrevTotal=0, paradoEstValor=0, criticoCount=0, criticoValorRisco=0;
+  var sd = salesDaily();
+  fatTotal = sumRange(sd.fat, pr.start, pr.end); fatPrevTotal = sumRange(sd.fat, pr.prevStart, pr.prevEnd);
+  qtdTotal = sumRange(sd.qtd, pr.start, pr.end); qtdPrevTotal = sumRange(sd.qtd, pr.prevStart, pr.prevEnd);
+  [['marca',byMarca,null],['canal',byCanal,byCanalPrev],['loja',byLoja,byLojaPrev]].forEach(function(t){
+    var m = agMap(t[0]); Object.keys(m).forEach(function(k){ t[1][k] = m[k].fat; if(t[2]) t[2][k] = m[k].prevFat; });
+  });
   prods.forEach(function(p){
-    var f = sumRange(p.dailyFat, pr.start, pr.end);
-    var fPrev = sumRange(p.dailyFat, pr.prevStart, pr.prevEnd);
-    var q = sumRange(p.dailyQtd, pr.start, pr.end);
-    var qPrev = sumRange(p.dailyQtd, pr.prevStart, pr.prevEnd);
-    fatTotal+=f; fatPrevTotal+=fPrev; qtdTotal+=q; qtdPrevTotal+=qPrev;
-    byMarca[p.marca] = (byMarca[p.marca]||0)+f;
-    byCanal[p.canal] = (byCanal[p.canal]||0)+f;
-    byCanalPrev[p.canal] = (byCanalPrev[p.canal]||0)+fPrev;
-    byLoja[p.regiao] = (byLoja[p.regiao]||0)+f;
-    byLojaPrev[p.regiao] = (byLojaPrev[p.regiao]||0)+fPrev;
+    var f = p.fatP;
     if(p.parado){ paradoEstValor += p.estCusto; }
     var st = stockStatus(p);
     if(!p.isBucket && (st==='critico' || st==='zerado')){
@@ -2992,14 +3259,6 @@ function computeAutoInsights(){
     }
   });
 
-  if(salesFromResumo()){
-    var rrI = resumoRows();
-    var aL = resumoAgg(rrI, function(r){ return r.loja; }, pr.start, pr.end), aLp = resumoAgg(rrI, function(r){ return r.loja; }, pr.prevStart, pr.prevEnd);
-    var aC = resumoAgg(rrI, function(r){ return r.canal; }, pr.start, pr.end), aCp = resumoAgg(rrI, function(r){ return r.canal; }, pr.prevStart, pr.prevEnd);
-    byLoja={}; byLojaPrev={}; byCanal={}; byCanalPrev={};
-    Object.keys(aL).forEach(function(k){ byLoja[k]=aL[k].fat; }); Object.keys(aLp).forEach(function(k){ byLojaPrev[k]=aLp[k].fat; });
-    Object.keys(aC).forEach(function(k){ byCanal[k]=aC[k].fat; }); Object.keys(aCp).forEach(function(k){ byCanalPrev[k]=aCp[k].fat; });
-  }
   delete byMarca['Diversas']; // cauda longa não é uma marca
 
   var insights = [];
@@ -3109,8 +3368,9 @@ function renderMonthToDate(){
   var mtd=0, mtdLb=0, dv=0, prevSame=0, prevFull=0, prevDv=0;
   for(var i=0;i<N_DAYS;i++){
     var mi = monthIndexOfDay[i];
-    if(mi===lastMi){ mtd+=sd.fat[i]; mtdLb+=sd.lb[i]; dv++; }
-    else if(mi===lastMi-1){ prevFull+=sd.fat[i]; prevDv++; if(DAYS[i].getDate()<=dia) prevSame+=sd.fat[i]; }
+    // ritmo por dia com venda (domingos e feriados sem venda não entram)
+    if(mi===lastMi){ mtd+=sd.fat[i]; mtdLb+=sd.lb[i]; if(sd.fat[i]>0) dv++; }
+    else if(mi===lastMi-1){ prevFull+=sd.fat[i]; if(sd.fat[i]>0) prevDv++; if(DAYS[i].getDate()<=dia) prevSame+=sd.fat[i]; }
   }
   // quanto do mês os últimos 3 meses fechados já tinham faturado até este mesmo dia (curva real da empresa)
   var shares = [];
@@ -3182,7 +3442,7 @@ function renderMonthChart(){
     var x0 = padL+mi*bw+bw*0.18, w = bw*0.64, acc = 0, last = parcial && mi===nM-1;
     canais.forEach(function(c){
       var v = d.byC[c][mi]; if(v<=0) return;
-      out += '<rect x="'+x0+'" y="'+y(acc+v)+'" width="'+w+'" height="'+(y(acc)-y(acc+v))+'" fill="'+canalCor(c)+'" opacity="'+(last?0.45:0.9)+'"><title>'+REAL.monthLabels[mi]+' · '+c+': '+fmtMoney(v)+'</title></rect>';
+      out += '<rect'+fkAttr('canal',c)+' x="'+x0+'" y="'+y(acc+v)+'" width="'+w+'" height="'+(y(acc)-y(acc+v))+'" fill="'+canalCor(c)+'" opacity="'+(last?0.45:0.9)+'"><title>'+REAL.monthLabels[mi]+' · '+c+': '+fmtMoney(v)+'</title></rect>';
       acc += v;
     });
     out += '<text x="'+(x0+w/2)+'" y="'+(y(acc)-5)+'" text-anchor="middle" font-size="9.5" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
@@ -3194,7 +3454,7 @@ function renderMonthChart(){
     out += '<circle cx="'+cx+'" cy="'+y2(v)+'" r="3" fill="var(--text)"><title>Margem '+REAL.monthLabels[i]+': '+v.toFixed(1)+'%</title></circle>' +
       '<text x="'+(cx+5)+'" y="'+(y2(v)-6)+'" font-size="9" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+v.toFixed(1)+'%</text>'; });
   box.innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Faturamento mensal por canal">'+out+'</svg>';
-  document.getElementById('monthLegend').innerHTML = canais.map(function(c){ return '<span><i style="background:'+canalCor(c)+'"></i>'+c+'</span>'; }).join('') +
+  document.getElementById('monthLegend').innerHTML = canais.map(function(c){ return '<span'+fkAttr('canal',c)+'><i style="background:'+canalCor(c)+'"></i>'+c+'</span>'; }).join('') +
     '<span><i style="background:var(--text); height:2px; vertical-align:3px;"></i>Margem bruta %</span>' + (parcial ? '<span>* mês em andamento</span>' : '');
 }
 
@@ -3224,7 +3484,7 @@ function renderHeatLoja(){
     }).join('');
     var dlt = o.v[ult-1]>0 ? (o.v[ult]-o.v[ult-1])/o.v[ult-1]*100 : null;
     var fis = LOJA_INFO[o.k] ? LOJA_INFO[o.k].fisica : true;
-    return '<tr><td class="rl">'+(fis?'':'🛒 ')+o.k+'</td>'+tds+'<td class="tot">'+fmtCurto(o.t).replace('R$ ','')+'</td>' +
+    return '<tr'+fkAttr('regiao', o.k)+'><td class="rl">'+(fis?'':'🛒 ')+o.k+'</td>'+tds+'<td class="tot">'+fmtCurto(o.t).replace('R$ ','')+'</td>' +
       '<td class="tot" style="color:'+(dlt===null?'var(--text-muted)':(dlt>=0?'var(--good)':'var(--critical)'))+'">'+(dlt===null?'—':fmtPct(dlt))+'</td></tr>';
   }).join('');
   box.innerHTML = '<table class="heat"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
@@ -3418,7 +3678,53 @@ function renderInsights(){
 /* ============================================================
    RENDER GLOBAL
    ============================================================ */
-function renderAll(refreshing){
+/* ---------- atualização: busca no banco os números do recorte (filtros + período) e redesenha tudo ---------- */
+var painelSeq = 0, painelChave = null, PAINEL_F = null;
+function carregando(on){
+  var app = document.getElementById('app'); if(!app) return;
+  if(on) app.setAttribute('data-carregando', '1'); else app.removeAttribute('data-carregando');
+}
+function passaEstoque(p){ return matchesFilters(p); }
+async function renderAll(refreshing){
+  var fBase = painelFiltros(null), per = painelPeriodo();
+  var chave = JSON.stringify([fBase, per, state.status, state.soParados, state.diasMin, state.regiao]);
+  if(chave===painelChave){ renderTudo(refreshing); return; }
+  var seq = ++painelSeq;
+  carregando(true);
+  try{
+    var base = await buscarPainel(fBase);
+    if(seq!==painelSeq) return;
+    var baseProds = montarProdutos(base.b, null), view = base, prods = baseProds, fv = fBase;
+    if(estoqueFiltrosAtivos()){
+      // filtros de estoque: os números passam a considerar só os produtos que atendem ao filtro
+      var ok = {}; baseProds.forEach(function(p){ if(passaEstoque(p)) ok[p.pid] = true; });
+      fv = painelFiltros(ok);
+      view = await buscarPainel(fv);
+      if(seq!==painelSeq) return;
+      prods = montarProdutos(view.b, ok).filter(passaEstoque);
+    }
+    // listas clicáveis (categoria, marca, loja...): mostram todas as opções, sem o próprio filtro, para comparar e trocar
+    var per = painelPeriodo(), listas = {};
+    var extras = Object.keys(FILTRO_COL).filter(function(k){ return state[k].length && DIM_LISTA.indexOf(FILTRO_COL[k])!==-1 && fv[FILTRO_COL[k]]; });
+    var res = await Promise.all(extras.map(function(k){
+      var col = FILTRO_COL[k], f2 = JSON.parse(JSON.stringify(fv)); delete f2[col];
+      return rpcMemo('bi_painel', {f:f2, per:per, parte:'c'}).then(function(c){ return [col, c]; });
+    }));
+    if(seq!==painelSeq) return;
+    res.forEach(function(x){ listas[x[0]] = (x[1]||{})[x[0]] || []; });
+    aplicarPainel(view, baseProds, prods, listas);
+    painelChave = chave; PAINEL_F = fv;
+  } catch(ex){
+    if(seq!==painelSeq) return;
+    carregando(false);
+    toast('Não foi possível atualizar os números. Verifique a conexão e tente de novo.');
+    if(painelChave===null) throw ex;
+    return;
+  }
+  carregando(false);
+  renderTudo(refreshing);
+}
+function renderTudo(refreshing){
   renderKpis(refreshing);
   if(refreshing) return;
   renderMonthToDate();
@@ -3429,6 +3735,7 @@ function renderAll(refreshing){
   renderDataQuality();
   renderCategoryList();
   renderStockHealth();
+  renderSimulador();
   renderAlerts();
   renderTopProducts();
   renderABC();
@@ -3499,6 +3806,7 @@ function bindEvents(){
 
   // header period select
   document.getElementById('periodSelect').addEventListener('change', function(){
+    if(this.value==='custom' && state.perIni===null){ var pr0 = periodRange(state.globalPeriod); state.perIni = pr0.start; state.perFim = pr0.end; }
     state.globalPeriod = this.value;
     syncPeriodChips();
     state.page=1; renderAll(false);
@@ -3521,7 +3829,7 @@ function bindEvents(){
       Array.prototype.forEach.call(document.querySelectorAll('.period-chip'), function(c){ c.setAttribute('aria-pressed','false'); });
       chip.setAttribute('aria-pressed','true');
       state.globalPeriod = chip.getAttribute('data-p');
-      document.getElementById('periodSelect').value = ['hoje','ontem','7d','30d','thismonth','lastmonth'].indexOf(state.globalPeriod)!==-1 ? state.globalPeriod : '30d';
+      syncPeriodChips();
       state.page=1; renderAll(false);
     });
   });
@@ -3567,12 +3875,38 @@ function bindEvents(){
       if(group) group.classList.toggle('open');
     });
   });
+  ['fDe','fAte'].forEach(function(id){ document.getElementById(id).addEventListener('change', aplicarDatas); });
+  document.getElementById('fDiasMin').addEventListener('change', function(){
+    var v = parseInt(this.value, 10);
+    state.diasMin = isNaN(v) || v<0 ? null : v; state.page=1; renderAll(false);
+  });
+  function setSimDias(v){
+    v = parseInt(v, 10); if(isNaN(v) || v<0) return;
+    state.simDias = v; document.getElementById('simDias').value = v; renderSimulador();
+  }
+  document.getElementById('simDias').addEventListener('input', function(){ setSimDias(this.value); });
+  Array.prototype.forEach.call(document.querySelectorAll('#simChips button'), function(b){
+    b.addEventListener('click', function(){ setSimDias(b.getAttribute('data-d')); });
+  });
+  document.getElementById('simFaixas').addEventListener('click', function(ev){
+    var fx = ev.target.closest('.fx'); if(fx) setSimDias(fx.getAttribute('data-d'));
+  });
+  document.getElementById('simAplicar').addEventListener('click', function(){
+    state.diasMin = state.diasMin===state.simDias ? null : state.simDias;
+    syncFilterSelects(); state.page=1; renderAll(false);
+    toast(state.diasMin===null ? 'Filtro de dias sem venda removido.' : 'Painel filtrado: sem venda há '+state.diasMin+' dias ou mais.');
+  });
+  document.getElementById('simTop').addEventListener('click', function(ev){
+    var r = ev.target.closest('.sim-row'); if(r) openDrawer(r.getAttribute('data-id'));
+  });
   document.getElementById('fParado').addEventListener('change', function(){
     state.soParados = this.checked; state.page=1; renderAll(false);
   });
   document.getElementById('clearFilters').addEventListener('click', function(){
-    FILTER_KEYS.forEach(function(k){ state[k] = []; });
-    state.soParados=false;
+    FILTER_KEYS.concat(BUSCA_KEYS).forEach(function(k){ state[k] = []; });
+    if(CURRENT_USER && CURRENT_USER.escopo.tipo==='loja') state.regiao = [CURRENT_USER.escopo.loja];
+    if(CURRENT_USER && CURRENT_USER.escopo.tipo==='vendedor') state.vendedor = [CURRENT_USER.escopo.vendedor];
+    state.soParados=false; state.diasMin=null;
     syncFilterSelects(); state.page=1; renderAll(false);
   });
 
@@ -3585,7 +3919,7 @@ function bindEvents(){
   });
   document.addEventListener('click', function(e){
     var rail = document.getElementById('filterRail');
-    if(rail.classList.contains('pinned') && !rail.contains(e.target)){ rail.classList.remove('pinned'); }
+    if(rail.classList.contains('pinned') && !rail.contains(e.target) && document.body.contains(e.target) && !e.target.closest('#filtersBtn')){ rail.classList.remove('pinned'); }
   });
 
   // consultoria de vendedor
@@ -3683,6 +4017,93 @@ function syncPeriodChips(){
   Array.prototype.forEach.call(document.querySelectorAll('.period-chip'), function(c){
     c.setAttribute('aria-pressed', c.getAttribute('data-p')===state.globalPeriod ? 'true':'false');
   });
+  var sel = document.getElementById('periodSelect'); if(sel) sel.value = state.globalPeriod;
+  var pr = periodRange(state.globalPeriod), de = document.getElementById('fDe'), ate = document.getElementById('fAte');
+  if(de && ate){
+    de.min = ate.min = isoDia(DAYS[0]); de.max = ate.max = isoDia(DAYS[N_DAYS-1]);
+    de.value = isoDia(DAYS[pr.start]); ate.value = isoDia(DAYS[pr.end]);
+  }
+  var info = document.getElementById('perInfo');
+  if(info){
+    var n = pr.end-pr.start+1;
+    info.innerHTML = '<b>'+fmtDateFull(DAYS[pr.start])+'</b> a <b>'+fmtDateFull(DAYS[pr.end])+'</b> · '+n+(n>1?' dias corridos':' dia')+'<br>' +
+      (pr.prevEnd>=0 ? 'Comparado com '+fmtDateFull(DAYS[pr.prevStart])+' a '+fmtDateFull(DAYS[pr.prevEnd]) : 'Sem período anterior para comparar') +
+      '<br><span style="color:var(--text-muted)">Dados até '+fmtDateFull(DAYS[N_DAYS-1])+'</span>';
+    if(sel) sel.title = fmtDateFull(DAYS[pr.start])+' a '+fmtDateFull(DAYS[pr.end]);
+  }
+}
+// período personalizado (de/até)
+function aplicarDatas(){
+  var de = DIA_IDX[document.getElementById('fDe').value], ate = DIA_IDX[document.getElementById('fAte').value];
+  if(de===undefined || ate===undefined){ toast('Escolha datas entre '+fmtDateFull(DAYS[0])+' e '+fmtDateFull(DAYS[N_DAYS-1])+'.'); syncPeriodChips(); return; }
+  state.perIni = Math.min(de, ate); state.perFim = Math.max(de, ate); state.globalPeriod = 'custom';
+  syncPeriodChips(); state.page = 1; renderAll(false);
+}
+
+/* ---------- filtros por busca: produto (lista local), razão social e NF (busca no banco) ---------- */
+var PRODBUSCA = null;
+function buscaProdutos(t){
+  if(!PRODBUSCA) PRODBUSCA = Object.keys(PRODINFO).map(function(id){ var i = PRODINFO[id]; return [id, normSearch(i.pn), normSearch(i.nome), prodRotulo(i)]; });
+  t = normSearch(t).trim(); var ini = [], meio = [];
+  for(var i=0;i<PRODBUSCA.length && ini.length<30;i++){
+    var r = PRODBUSCA[i];
+    if(r[1].indexOf(t)===0) ini.push([r[0], r[3]]);
+    else if(meio.length<30 && (r[1].indexOf(t)!==-1 || r[2].indexOf(t)!==-1)) meio.push([r[0], r[3]]);
+  }
+  return ini.concat(meio).slice(0,30);
+}
+function renderBuscaSel(key){
+  var box = document.getElementById('fsel-'+key); if(!box) return;
+  box.innerHTML = state[key].map(function(v){
+    return '<span class="tag-chip"><span>'+escapeHtml(filtroRotulo(key, v))+'</span><button type="button" data-bk="'+key+'" data-bv="'+escapeHtml(v)+'" aria-label="Remover">✕</button></span>';
+  }).join('');
+  var c = document.getElementById('fcount-'+key); if(c) c.textContent = state[key].length ? ' ('+state[key].length+')' : '';
+}
+function mostrarOpcoesBusca(key, ops, msg){
+  var res = document.getElementById('fres-'+key);
+  if(!ops){ res.classList.remove('show'); res.innerHTML = ''; return; }
+  res.innerHTML = ops.length ? ops.map(function(o){
+    return '<button type="button" class="fbusca-op" data-bk="'+key+'" data-bv="'+escapeHtml(String(o[0]))+'" data-bl="'+escapeHtml(o[1])+'">'+escapeHtml(o[1])+'</button>';
+  }).join('') : '<div class="fbusca-msg">'+(msg||'Nada encontrado.')+'</div>';
+  res.classList.add('show');
+}
+function bindBuscas(){
+  var timers = {}, seqB = {};
+  BUSCA_KEYS.forEach(function(key){
+    var inp = document.getElementById('fbusca-'+key); if(!inp) return;
+    inp.addEventListener('keydown', function(e){ e.stopPropagation(); if(e.key==='Escape'){ inp.value=''; mostrarOpcoesBusca(key, null); } });
+    inp.addEventListener('input', function(){
+      clearTimeout(timers[key]);
+      var t = inp.value.trim();
+      if(t.length < (key==='nf' ? 1 : 2)){ mostrarOpcoesBusca(key, null); return; }
+      if(key==='nf' && !/^\d+$/.test(t)){ mostrarOpcoesBusca(key, [], 'Digite só os números da nota.'); return; }
+      timers[key] = setTimeout(function(){
+        if(key==='produto'){ mostrarOpcoesBusca(key, buscaProdutos(t)); return; }
+        var my = seqB[key] = (seqB[key]||0)+1;
+        mostrarOpcoesBusca(key, [], 'Buscando…');
+        window.__NC_rpc('bi_busca', {campo: key, termo: t}).then(function(r){
+          if(seqB[key]===my) mostrarOpcoesBusca(key, r||[]);
+        }).catch(function(){ if(seqB[key]===my) mostrarOpcoesBusca(key, [], 'Não foi possível buscar agora.'); });
+      }, key==='produto' ? 120 : 300);
+    });
+  });
+  document.getElementById('filterRail').addEventListener('click', function(ev){
+    var op = ev.target.closest('.fbusca-op');
+    if(op){
+      var key = op.getAttribute('data-bk'), v = op.getAttribute('data-bv');
+      if(key!=='produto') BUSCA_LBL[key][v] = op.getAttribute('data-bl');
+      if(state[key].indexOf(v)===-1) state[key].push(v);
+      document.getElementById('fbusca-'+key).value = ''; mostrarOpcoesBusca(key, null);
+      renderBuscaSel(key); state.page = 1; renderAll(false);
+      return;
+    }
+    var rm = ev.target.closest('.fbusca-sel [data-bk]');
+    if(rm){
+      var k2 = rm.getAttribute('data-bk'), i = state[k2].indexOf(rm.getAttribute('data-bv'));
+      if(i!==-1) state[k2].splice(i,1);
+      renderBuscaSel(k2); state.page = 1; renderAll(false);
+    }
+  });
 }
 
 /* ============================================================
@@ -3755,10 +4176,7 @@ function grpSel(root, grp){ var b = root.querySelector('.u-abas[data-grp="'+grp+
 function uniaoOrd(a, b){ var o = toSet(a); return a.concat((b||[]).filter(function(v){ return !o[v]; })).sort(); }
 function lojasUniverso(){ return (REAL.dims.lojas||[]).slice(); }
 function canaisUniverso(){
-  var o = {};
-  ALL_RESUMO.forEach(function(r){ if(r.canal && r.canal!=='N/D') o[r.canal]=1; });
-  ALL_PRODUCTS.forEach(function(p){ if(p.canal && p.canal!=='Diversos') o[p.canal]=1; });
-  return Object.keys(o).sort();
+  return (CANAIS||[]).filter(function(c){ return c && c!=='N/D'; });
 }
 function lojasDoPerfil(p){ var l = listaPerfil(p.lojas); if(l.length) return l; if(p.role==='gerencia') return p.loja ? [p.loja] : []; return lojasUniverso(); }
 function canaisDoPerfil(p){ var c = listaPerfil(p.canais); return c.length ? c : canaisUniverso(); }
@@ -4092,14 +4510,16 @@ if(userInviteFormEl){
 function bootApp(){
   initFilterSelects();
   bindEvents();
-  renderAll(false);
+  bindBuscas();
+  BUSCA_KEYS.forEach(renderBuscaSel);
+  syncPeriodChips();
   updateLiveLabel();
+  return renderAll(false);
 }
 var appBooted = false;
 function doLogin(u){
   CURRENT_USER = u;
   applyScope(u.escopo);
-  document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = '';
   var initials = u.nome.split(' ').filter(function(w){return w.length;}).map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
   document.getElementById('userAvatar').textContent = initials || 'NC';
@@ -4123,8 +4543,9 @@ function doLogin(u){
     var nav = document.querySelector('.nav-item[data-view="'+v+'"]');
     if(nav) nav.style.display = liberadas.indexOf(v)!==-1 ? '' : 'none';
   });
-  if(appBooted){ initFilterSelects(); state.page=1; renderAll(false); }
-  else { appBooted = true; bootApp(); }
+  var pronto;
+  if(appBooted){ initFilterSelects(); state.page=1; pronto = renderAll(false); }
+  else { appBooted = true; pronto = bootApp(); }
   var foraDoPerfil = (!ehBI && (state.currentView==='usuarios' || state.currentView==='fontes')) ||
     (liberadas.indexOf(state.currentView)===-1 && ABAS_TODAS.indexOf(state.currentView)!==-1);
   if(foraDoPerfil && window.__NC_switchView) window.__NC_switchView(liberadas[0]||'dashboard');
@@ -4140,6 +4561,8 @@ function doLogin(u){
       cb.disabled = (u.escopo.tipo==='vendedor');
     });
   }
+  // a tela de login sai só quando os primeiros números chegam
+  return Promise.resolve(pronto).then(function(){ document.getElementById('loginScreen').style.display = 'none'; });
 }
 function setLoginBusy(busy){
   var btn = document.querySelector('#loginForm .login-btn');
@@ -4181,7 +4604,7 @@ document.getElementById('logoutBtn').addEventListener('click', async function(){
 window.__NC_enter = function(profile){
   CURRENT_PROFILE = profile;
   document.getElementById('loginError').textContent = '';
-  doLogin(profileToUser(profile));
+  return doLogin(profileToUser(profile));
 };
 
 
@@ -4232,42 +4655,29 @@ window.__NC_cargaAtual = async function(){
   if(r.error) throw r.error;
   return r.data ? r.data.valor : null;
 };
+// funções do banco (cada uma aplica o escopo do perfil antes de responder)
+async function rpc(fn, args){
+  var r = await supa.rpc(fn, args || {});
+  if(r.error) throw r.error;
+  return r.data;
+}
+window.__NC_rpc = rpc;
 async function loadData(){
   var results = await Promise.all([
     fetchAll('bi_config', 'chave,valor', 'chave'),
-    fetchAll('bi_peso_diario', 'd,w_fat,w_qtd', 'd'),
-    fetchAll('bi_produtos', 'id,nome,marca,categoria,montadora,loja,vendedor,canal,origem,fat,qtd,custo,lb,mfat,mqtd,est_fis,est_custo,est_min,dias_sem_giro,parado,status,is_bucket,bucket_count', 'fat'),
-    fetchAll('bi_meta_vendedor', 'vendedor,meta', 'vendedor'),
-    fetchAll('bi_resumo_mes', 'mes,loja,canal,vendedor,fat,qtd,custo,lb,skus', 'mes').catch(function(){ return []; })
+    rpc('bi_meta'),
+    rpc('bi_estoque_itens'),
+    fetchAll('bi_meta_vendedor', 'vendedor,meta', 'vendedor').catch(function(){ return []; })
   ]);
   var cfg = {}; results[0].forEach(function(r){ cfg[r.chave] = r.valor; });
-  if(!cfg.months || !results[1].length) throw new Error('sem_config');
-  var num = function(v){ return v===null || v===undefined ? null : Number(v); };
-  var products = results[2].map(function(r){
-    var p = {
-      id:r.id, nome:r.nome, marca:r.marca, categoria:r.categoria, montadora:r.montadora,
-      loja:r.loja, vendedor:r.vendedor, canal:r.canal, origem:r.origem,
-      fat:num(r.fat), qtd:num(r.qtd), custo:num(r.custo), lb:num(r.lb),
-      mfat:(r.mfat||[]).map(Number), mqtd:(r.mqtd||[]).map(Number),
-      estFis:num(r.est_fis), estCusto:num(r.est_custo), estMin:num(r.est_min),
-      diasSemGiro:num(r.dias_sem_giro), parado:!!r.parado, status:r.status
-    };
-    if(r.is_bucket){ p.isBucket = true; p.bucketCount = r.bucket_count; }
-    return p;
-  }).sort(function(a,b){ return b.fat - a.fat; });
+  var meta = results[1];
+  if(!meta || !meta.dias || !meta.dias[0]) throw new Error('sem_dados');
   var sellerMeta = {}; results[3].forEach(function(r){ sellerMeta[r.vendedor] = Number(r.meta); });
   return {
-    months: cfg.months, monthLabels: cfg.monthLabels, lojaInfo: cfg.lojaInfo,
-    dims: {lojas: (function(){ var t={}; results[2].forEach(function(r){ t[r.loja]=1; }); results[4].forEach(function(r){ t[r.loja]=1; });
-      return (cfg.lojas||[]).filter(function(l){ return t[l]; }); })()},
-    // curva diária normalizada (peso do dia no mês) — o painel só usa a proporção
-    companyDaily: results[1].map(function(r){ return {d:r.d, fat:Number(r.w_fat), qtd:Number(r.w_qtd)}; }),
-    products: products,
+    meta: meta,             // opções dos filtros, meses, dias e cadastro de produtos (no escopo do perfil)
+    est: results[2] || {},  // estoque loja x produto
+    lojaInfo: cfg.lojaInfo || {},
     sellerMeta: sellerMeta,
-    // totais reais mês x loja x canal x vendedor (sem a atribuição "principal" por SKU)
-    resumo: results[4].map(function(r){ return {mes:r.mes, loja:r.loja, canal:r.canal, vendedor:r.vendedor,
-      fat:Number(r.fat), qtd:Number(r.qtd), custo:Number(r.custo), lb:Number(r.lb), skus:Number(r.skus)}; }),
-    mesesEfetivos: Number(cfg.mesesEfetivos) || cfg.months.length,
     carga: cfg.carga || null
   };
 }
@@ -4290,14 +4700,15 @@ async function enter(authUser){
     errEl.textContent = 'Não foi possível carregar os dados do painel. Tente novamente ou contate o BI.';
     busy(null); return;
   }
-  if(!real.products.length){
+  if(!real.meta.meses || !real.meta.meses.length){
     errEl.textContent = 'Nenhum dado liberado para o seu perfil. Contate o BI para revisar sua loja ou vendedor.';
     busy(null); await supa.auth.signOut(); return;
   }
   window.__NC_REAL = real;
   if(!started){ started = true; window.__NC_main(); }
+  try{ await window.__NC_enter(pr.data); }
+  catch(ex){ errEl.textContent = 'Não foi possível carregar os números do painel. Tente novamente ou contate o BI.'; }
   busy(null);
-  window.__NC_enter(pr.data);
 }
 
 document.getElementById('loginForm').addEventListener('submit', async function(e){
