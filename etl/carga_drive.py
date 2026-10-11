@@ -641,7 +641,7 @@ def gravar(conn, res, usados):
 
         base = res.get('base')
         if base is not None:
-            for t in ('bi_venda', 'bi_estoque', 'bi_cliente', 'bi_produto', 'bi_dim'):
+            for t in ('bi_cache', 'bi_venda', 'bi_estoque', 'bi_cliente', 'bi_produto', 'bi_dim'):
                 cur.execute(f'delete from public.{t}')
             cur.executemany('insert into public.bi_dim (tipo, id, valor) values (%s, %s, %s)', base['dims'])
             copiar(cur, 'bi_produto', base['produtos'])
