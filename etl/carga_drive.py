@@ -25,6 +25,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -464,6 +465,132 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
     }
 
 
+# ---------------------------------------------------------------- base linha a linha (filtros exatos no painel)
+DIMS = ['loja', 'canal', 'emitente', 'origem', 'vendedor', 'linha', 'marca', 'categoria', 'montadora',
+        'classificacao', 'tipo_cliente', 'cidade']
+COLS_VENDA = ['dia', 'mes'] + DIMS + ['produto', 'cliente', 'nf', 'qtd', 'fat', 'custo', 'lb']
+
+
+def sem_acento(x):
+    x = unicodedata.normalize('NFKD', str(x))
+    return normaliza(''.join(c for c in x if not unicodedata.combining(c)))
+
+
+def centavos(serie):
+    return (serie * 100).round().astype('int64')
+
+
+def transformar_base(vendas, estoque, regras):
+    """Vendas linha a linha com dimensões numeradas, produtos, clientes e estoque por loja x produto."""
+    v = vendas.copy()
+    v['data'] = datas(v['data'])
+    v = v.dropna(subset=['data'])
+    v['sku'] = sku_texto(v['sku'])
+    v = v.dropna(subset=['sku'])
+    for c in ('fat', 'qtd', 'custo', 'lb'):
+        v[c] = numero(v[c]) if c in v else 0.0
+    if 'lb' not in vendas:
+        v['lb'] = v['fat'] - v['custo']
+    for c in DIMS + ['descricao', 'razao']:
+        v[c] = texto(v[c]) if c in v else None
+    v['vendedor'] = v['vendedor'].fillna(regras['vendedor_vazio'])
+    for c in DIMS:
+        v[c] = v[c].fillna('N/D')
+    v['codcli'] = sku_texto(v['codcli']).fillna('0') if 'codcli' in v else '0'
+    v['nf'] = numero(v['nf']).astype('int64') if 'nf' in v else 0
+
+    # estoque: loja e grupo com a grafia usada nas vendas (a planilha de estoque tem acentos)
+    e = None
+    if estoque is not None and 'loja' in estoque:
+        e = estoque.copy()
+        e['sku'] = sku_texto(e['sku'])
+        e = e.dropna(subset=['sku'])
+        lojas_v = {sem_acento(x): x for x in v['loja'].unique()}
+        # nomes diferentes entre as planilhas (ex.: por extenso no estoque, sigla nas vendas): bi_config.mapa_colunas.estoque.apelidos_loja
+        for de, para in (regras.get('apelidos_loja') or {}).items():
+            lojas_v[sem_acento(de)] = para
+        e['loja'] = texto(e['loja']).fillna('N/D').map(lambda x: lojas_v.get(sem_acento(x), x))
+        cats_v = {sem_acento(x): x for x in v['categoria'].unique()}
+        g = texto(e['grupo']) if 'grupo' in e else pd.Series(None, index=e.index)
+        e['categoria'] = g.map(lambda x: 'N/D' if not isinstance(x, str) or x == '0' else cats_v.get(sem_acento(x), x))
+        e['linha'] = texto(e['linha']).fillna('N/D') if 'linha' in e else 'N/D'
+        e['descricao'] = texto(e['descricao']) if 'descricao' in e else None
+        e['est_fis'] = numero(e['est_fis'])
+        e['est_custo'] = numero(e['est_custo']) if 'est_custo' in e else 0.0
+        for c in ('dt_ult_vend', 'dt_ult_comp'):
+            d = datas(e[c]) if c in e else pd.Series(pd.NaT, index=e.index)
+            e[c] = d.where(d >= pd.Timestamp('2000-01-01'))
+        sim = {normaliza(x) for x in regras.get('valores_parado', ['P', 'S', 'SIM', 'X'])}
+        e['parado'] = texto(e['parado']).map(lambda x: normaliza(x) in sim if isinstance(x, str) else False) if 'parado' in e else False
+
+    # produtos: atributos de maior faturamento; itens só do estoque usam a descrição/linha/grupo do estoque
+    attrs = {a: principal(v, 'sku', a) for a in ('descricao', 'categoria', 'marca', 'montadora', 'linha', 'classificacao')}
+    prod = pd.DataFrame(attrs)
+    if e is not None:
+        so_est = e[~e['sku'].isin(prod.index)].drop_duplicates('sku').set_index('sku')
+        extra = pd.DataFrame({
+            'descricao': [f'{k} - {d}' if isinstance(d, str) else k for k, d in so_est['descricao'].items()],
+            'categoria': so_est['categoria'], 'marca': 'N/D', 'montadora': 'N/D', 'linha': so_est['linha'],
+            'classificacao': 'N/D'}, index=so_est.index)
+        prod = pd.concat([prod, extra])
+    prod = prod.sort_index()
+    prod['id'] = range(1, len(prod) + 1)
+    for c in ('categoria', 'marca', 'montadora', 'linha', 'classificacao'):
+        prod[c] = prod[c].fillna('N/D')
+
+    # dimensões numeradas (ordem alfabética)
+    dims = {}
+    for t in DIMS:
+        vals = set(v[t].unique())
+        if t in ('categoria', 'marca', 'montadora', 'linha', 'classificacao'):
+            vals |= set(prod[t].unique())
+        if t == 'loja' and e is not None:
+            vals |= set(e['loja'].unique())
+        dims[t] = {x: i for i, x in enumerate(sorted(vals), start=1)}
+    if max(len(m) for m in dims.values()) > 32000:
+        raise ValueError('dimensão com valores demais para o painel')
+
+    cli = v.groupby('codcli').agg(razao=('razao', 'first'), tipo_cliente=('tipo_cliente', 'first'), cidade=('cidade', 'first'))
+    cli['id'] = range(1, len(cli) + 1)
+
+    out = pd.DataFrame({'dia': v['data'].dt.strftime('%Y-%m-%d'),
+                        'mes': (v['data'].dt.year - 2000) * 100 + v['data'].dt.month})
+    for t in DIMS:
+        out[t] = v[t].map(dims[t]).astype('int64')
+    out['produto'] = v['sku'].map(prod['id']).astype('int64')
+    out['cliente'] = v['codcli'].map(cli['id']).astype('int64')
+    out['nf'] = v['nf']
+    out['qtd'] = v['qtd'].round().astype('int64')
+    for c in ('fat', 'custo', 'lb'):
+        out[c] = centavos(v[c])
+    if out[['fat', 'custo', 'lb', 'nf']].abs().max().max() >= 2**31:
+        raise ValueError('valor acima do limite da base linha a linha')
+
+    produtos = pd.DataFrame({'id': prod['id'], 'pn': prod.index, 'nome': prod['descricao'].fillna(pd.Series(prod.index, index=prod.index))})
+    for c in ('categoria', 'marca', 'montadora', 'linha', 'classificacao'):
+        produtos[c] = prod[c].map(dims[c]).astype('int64')
+    clientes = pd.DataFrame({'id': cli['id'], 'codcli': cli.index, 'razao': cli['razao'],
+                             'tipo_cliente': cli['tipo_cliente'].map(dims['tipo_cliente']).astype('int64'),
+                             'cidade': cli['cidade'].map(dims['cidade']).astype('int64')})
+    est = None
+    if e is not None:
+        est = pd.DataFrame({'loja': e['loja'].map(dims['loja']).astype('int64'),
+                            'produto': e['sku'].map(prod['id']).astype('int64'),
+                            'est_fis': e['est_fis'].round(3), 'custo': e['est_custo'].round(2),
+                            'dt_ult_vend': e['dt_ult_vend'].dt.strftime('%Y-%m-%d'),
+                            'dt_ult_comp': e['dt_ult_comp'].dt.strftime('%Y-%m-%d'),
+                            'parado': e['parado'].astype(bool)})
+    dim_rows = [(t, i, x) for t, m in dims.items() for x, i in m.items()]
+    return {'dims': dim_rows, 'produtos': produtos, 'clientes': clientes, 'vendas': out[COLS_VENDA], 'estoque': est}
+
+
+def copiar(cur, tabela, df):
+    buf = io.StringIO()
+    df.to_csv(buf, index=False, header=False)
+    with cur.copy(f"copy public.{tabela} ({', '.join(df.columns)}) from stdin with (format csv)") as cp:
+        cp.write(buf.getvalue())
+
+
 # ---------------------------------------------------------------- banco
 def ler_config(cur):
     cur.execute("select chave, valor from public.bi_config where chave in ('mapa_colunas','lojaInfo')")
@@ -511,6 +638,17 @@ def gravar(conn, res, usados):
         cur.execute('delete from public.bi_peso_diario')
         cur.executemany('insert into public.bi_peso_diario (d, w_fat, w_qtd) values (%s, %s, %s)',
                         [(p['d'], p['w_fat'], p['w_qtd']) for p in res['pesos']])
+
+        base = res.get('base')
+        if base is not None:
+            for t in ('bi_venda', 'bi_estoque', 'bi_cliente', 'bi_produto', 'bi_dim'):
+                cur.execute(f'delete from public.{t}')
+            cur.executemany('insert into public.bi_dim (tipo, id, valor) values (%s, %s, %s)', base['dims'])
+            copiar(cur, 'bi_produto', base['produtos'])
+            copiar(cur, 'bi_cliente', base['clientes'])
+            copiar(cur, 'bi_venda', base['vendas'])
+            if base['estoque'] is not None:
+                copiar(cur, 'bi_estoque', base['estoque'])
 
         if res['metas'] is not None:
             cur.execute('delete from public.bi_meta_vendedor')
@@ -621,10 +759,18 @@ def main():
             dfs[papel] = renomear(df, spec['colunas'], papel)
             log(f'{papel}: {len(df)} linhas lidas')
         res = transformar(dfs['vendas'], dfs.get('estoque'), dfs.get('metas'), mapa, loja_info)
+        res['base'] = transformar_base(dfs['vendas'], dfs.get('estoque'),
+                                       {**PADROES, **mapa.get('regras', {}),
+                                        'valores_parado': mapa.get('estoque', {}).get('valores_parado', ['P']),
+                                        'apelidos_loja': mapa.get('estoque', {}).get('apelidos_loja', {})})
+        b = res['base']
+        log(f"base linha a linha: {len(b['vendas'])} vendas, {len(b['produtos'])} produtos, {len(b['clientes'])} clientes, "
+            f"{0 if b['estoque'] is None else len(b['estoque'])} itens de estoque")
         log(f"resultado: {len(res['produtos'])} produtos, {len(res['pesos'])} dias, "
             f"{len(res['metas']) if res['metas'] is not None else 'sem'} metas, {len(res['config']['months'])} meses, "
             f"{len(res['resumo'])} linhas de resumo")
         if a.simular:
+            res.pop('base', None)
             if a.saida_json:
                 with open(a.saida_json, 'w', encoding='utf-8') as f:
                     json.dump(res, f, ensure_ascii=False)
