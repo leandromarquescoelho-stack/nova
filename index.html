@@ -346,6 +346,8 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .barlist-row[data-fon] .bl-label, .seller-row[data-fon] .s-name, tr[data-fon] .rl{ color:var(--accent); }
 .barlist-row[data-fon] .bl-label::before, .seller-row[data-fon] .s-name::before{ content:'● '; }
 .canal-bar .seg[data-fk]{ cursor:pointer; }
+tr.vend-row{ cursor:pointer; }
+tr.vend-row:hover td{ background:var(--surface-2); }
 .barlist-row{display:grid; grid-template-columns:120px minmax(40px,1fr) 118px; align-items:center; gap:10px; cursor:default;}
 .barlist-row .bl-label{font-size:12px; color:var(--text-2); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .barlist-row .bl-track{height:9px; border-radius:5px; background:var(--surface-3); overflow:hidden; position:relative;}
@@ -2466,7 +2468,7 @@ function renderVendConsult(){
     }).join('')+'</tr>';
     var tbody = sortedRows.map(function(r,i){
       var isMe = r.name===selName;
-      return '<tr'+(isMe?' style="background:rgba(34,211,238,.08);"':'')+'>' +
+      return '<tr class="vend-row" data-vend="'+escapeHtml(r.name)+'"'+(isMe?' style="background:rgba(34,211,238,.08);"':' title="Clique para analisar este vendedor"')+'>' +
         '<td class="mono" style="color:var(--text-muted);">'+(i+1)+'</td>' +
         '<td class="prodcell"'+(isMe?' style="color:var(--accent);"':'')+'>'+r.name+(isMe?' · selecionado':'')+'</td>' +
         '<td class="mono">'+fmtMoney(r.fat)+'</td>' +
@@ -2628,7 +2630,7 @@ function renderVendConsult(){
 
   box.innerHTML = kpisHtml +
     '<div class="grid-2">' +
-      '<div><h3 class="dh">Ranking do grupo &middot; clique no cabeçalho para ordenar</h3><div class="table-scroll scroll-limit">'+rankHtml+'</div></div>' +
+      '<div><h3 class="dh">Ranking do grupo &middot; clique no cabeçalho para ordenar ou no vendedor para analisá-lo</h3><div class="table-scroll scroll-limit">'+rankHtml+'</div></div>' +
       '<div>' +
         '<h3 class="dh">'+selName+' vs. média dos demais &middot; radar</h3>' +
         '<div class="radar-legend">' +
@@ -3932,6 +3934,17 @@ function bindEvents(){
   document.getElementById('vendConsultSelect').addEventListener('change', function(){
     state.vendConsultSel = this.value;
     renderVendConsult();
+  });
+  // clique numa linha do ranking troca o vendedor analisado (mantém a rolagem da tabela)
+  document.getElementById('vendConsultBody').addEventListener('click', function(ev){
+    var tr = ev.target.closest('tr.vend-row'); if(!tr) return;
+    var nome = tr.getAttribute('data-vend'); if(!nome || nome===state.vendConsultSel) return;
+    var sc = tr.closest('.table-scroll'), top = sc ? sc.scrollTop : 0;
+    state.vendConsultSel = nome;
+    document.getElementById('vendConsultSelect').value = nome;
+    renderVendConsult();
+    var sc2 = document.querySelector('#vendConsultBody .table-scroll'); if(sc2) sc2.scrollTop = top;
+    var card = document.getElementById('vendConsultSelect'); if(card) card.scrollIntoView({behavior:'smooth', block:'nearest'});
   });
 
   // main chart metric + range
