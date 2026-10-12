@@ -750,7 +750,8 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .pill.flat{ background:var(--surface-3); color:var(--text-muted); }
 /* ---- barra de canais ---- */
 .canal-bar{ display:flex; height:34px; border-radius:9px; overflow:hidden; background:var(--surface-3); }
-.canal-bar .seg{ height:100%; min-width:3px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#04141a; overflow:hidden; white-space:nowrap; cursor:default; transition:filter .12s; }
+.canal-bar .seg{ height:100%; min-width:3px; display:flex; align-items:center; justify-content:center; padding:0 4px; box-sizing:border-box; text-overflow:ellipsis; font-size:11px; font-weight:800; color:#04141a; overflow:hidden; white-space:nowrap; cursor:default; transition:filter .12s; }
+@media (max-width:700px){ .canal-bar .seg.peq .sn{ display:none; } }
 .canal-bar .seg:hover, .canal-bar .seg.on{ filter:brightness(1.15); }
 #canalTip{ transform:translate(-50%, 0); }
 .canal-cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin-top:14px; }
@@ -1194,7 +1195,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <section class="view-panel" data-view-panel="vendas" style="display:none;">
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Vendas por Canal</h2><div class="psub">Participação de cada canal no faturamento do período &middot; passe o mouse para ver os detalhes</div></div>
+          <div><h2>Vendas por Canal</h2><div class="psub">Participação de cada canal no faturamento do período Participação de cada canal no faturamento do período &middot; passe o mouse para ver os detalhesmiddot; canais pequenos aparecem com largura mínima Participação de cada canal no faturamento do período &middot; passe o mouse para ver os detalhesmiddot; passe o mouse para ver os detalhes</div></div>
         </div>
         <div class="chart-wrap">
           <div class="canal-bar" id="canalBar"></div>
@@ -2277,9 +2278,14 @@ function renderCanalBar(map){
     var m = map[k], mg = m.lb!==undefined && m.fat>0 ? m.lb/m.fat*100 : null;
     return {fat:m.fat, qtd:m.qtd, share:m.fat/tot*100, shareQ: totQ>0 ? m.qtd/totQ*100 : 0, mg:mg, ticket: m.qtd>0 ? m.fat/m.qtd : 0};
   }
+  // largura ajustada: canais pequenos ganham um mínimo para ficarem visíveis com nome e %; os grandes dividem o resto na proporção real
+  var MIN = Math.min(14, 60/ks.length), larg = {}, peqTot = 0, grdShare = 0;
+  ks.forEach(function(k){ var s = det(k).share; if(s<MIN){ larg[k] = MIN; peqTot += MIN; } else grdShare += s; });
+  ks.forEach(function(k){ if(larg[k]===undefined) larg[k] = grdShare>0 ? det(k).share/grdShare*(100-peqTot) : MIN; });
+  function pctTxt(s){ return s<1 ? s.toFixed(1).replace('.',',') : s.toFixed(0); }
   bar.innerHTML = ks.map(function(k){
     var d = det(k);
-    return '<div class="seg" data-k="'+k+'"'+fkAttr('canal',k)+' style="width:'+d.share+'%; background:'+canalCor(k)+'">'+(d.share>=7 ? k+' '+d.share.toFixed(0)+'%' : '')+'</div>';
+    return '<div class="seg'+(d.share<MIN?' peq':'')+'" data-k="'+k+'"'+fkAttr('canal',k)+' style="width:'+larg[k]+'%; background:'+canalCor(k)+'"><span class="sn">'+k+'&nbsp;</span>'+pctTxt(d.share)+'%</div>';
   }).join('');
   document.getElementById('canalCards').innerHTML = ks.map(function(k){
     var d = det(k);
