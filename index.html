@@ -346,7 +346,15 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .barlist-row[data-fon] .bl-label, .seller-row[data-fon] .s-name, tr[data-fon] .rl{ color:var(--accent); }
 .barlist-row[data-fon] .bl-label::before, .seller-row[data-fon] .s-name::before{ content:'● '; }
 .canal-bar .seg[data-fk]{ cursor:pointer; }
-tr.vend-row{ cursor:pointer; }
+tr.vend-row, .vend-pt{ cursor:pointer; }
+.vr-cel{ display:flex; align-items:center; gap:8px; }
+.vr-nome{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.vr-bar{ flex:0 0 48px; height:4px; border-radius:2px; background:var(--surface-3); overflow:hidden; opacity:.85; }
+.vr-bar i{ display:block; height:100%; background:var(--accent); border-radius:2px; }
+.vr-pct{ flex:0 0 auto; font-size:10.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+.cid-mov{ display:grid; grid-template-columns:1fr auto; gap:2px 10px; padding:6px 4px; border-bottom:1px solid var(--border); font-size:12px; cursor:pointer; }
+.cid-mov:hover{ background:var(--surface-2); }
+.cid-de{ grid-column:1 / -1; font-size:10.5px; color:var(--text-muted); }
 tr.vend-row:hover td{ background:var(--surface-2); }
 .barlist-row{display:grid; grid-template-columns:120px minmax(40px,1fr) 118px; align-items:center; gap:10px; cursor:default;}
 .barlist-row .bl-label{font-size:12px; color:var(--text-2); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -1233,6 +1241,18 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
       </div>
 
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><div><h2>Cidades que mais compram</h2><div class="psub">Faturamento no período &middot; participação &middot; variação vs. período anterior &middot; clique para filtrar</div></div></div>
+          <div class="barlist scroll-limit" id="cidadeList"></div>
+          <p class="note-muted" id="cidadeNota"></p>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Cidades que mais mudaram</h2><div class="psub">Maiores ganhos e perdas em R$ vs. período anterior de mesmo tamanho</div></div></div>
+          <div id="cidadeMov"></div>
+        </div>
+      </div>
+
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
           <div><h2>Loja &times; mês</h2><div class="psub">Faturamento mensal de cada loja &middot; cor mais forte = mês mais alto daquela loja</div></div>
@@ -1354,28 +1374,17 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <section class="view-panel" data-view-panel="vendedores" style="display:none;">
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Performance de Vendedores</h2><div class="psub">Faturamento &middot; margem &middot; participação no total do período</div></div>
-        </div>
-        <div id="sellerList" class="scroll-limit"></div>
-        <p class="note-muted" id="sellerFonte"></p>
-      </div>
-
-      <div class="panel" style="margin-bottom:14px;">
-        <div class="panel-head">
           <div><h2>Consultoria de Vendedor</h2><div class="psub">Compare um vendedor com os demais, dentro dos filtros aplicados acima</div></div>
           <select class="fsel" id="vendConsultSelect" style="min-width:220px;"></select>
         </div>
         <div id="vendConsultBody"></div>
       </div>
 
-      <div class="panel" style="margin-bottom:14px;" id="dqPanel">
+      <div class="panel" style="margin-bottom:14px;" id="vendCliPanel">
         <div class="panel-head">
-          <div><h2>Qualidade do cadastro de vendedor</h2><div class="psub">Vendas sem vendedor ou lançadas em nomes que não são pessoas &middot; período selecionado</div></div>
+          <div><h2>Faturamento &times; clientes atendidos</h2><div class="psub">Cada ponto é um vendedor &middot; clientes distintos no período, com os filtros aplicados &middot; clique num ponto para analisar o vendedor</div></div>
         </div>
-        <div class="grid-2" style="margin-bottom:0;">
-          <div><h3 class="dh">Sem vendedor, por loja</h3><div id="dqLoja"></div></div>
-          <div><h3 class="dh">Nomes que não parecem vendedores</h3><div id="dqNomes"></div></div>
-        </div>
+        <div id="vendCliBody"></div>
       </div>
       </section>
 
@@ -1685,7 +1694,7 @@ var SEM_VENDEDOR = 'SEM VENDEDOR';
 var PRODUCTS = [], BASE_PRODUCTS = [], RESUMO = [], AG = {}, HAS_RESUMO = true;
 var DAILY = {fat:[], qtd:[], lb:[]};
 var monthTotalFat = [], monthTotalQtd = [], dayWeightFat = [], dayWeightQtd = [];
-var DIM_LISTA = ['categoria','marca','montadora','loja','canal','vendedor'];
+var DIM_LISTA = ['categoria','marca','montadora','loja','canal','vendedor','cidade'];
 var AG_LISTA = {};
 function agLinhas(t, linhas){
   var m = {};
@@ -2269,6 +2278,31 @@ function renderLojaList(){
   document.getElementById('lojaFonte').textContent = 'Totais exatos de cada loja e canal, com todos os filtros aplicados. Clique para filtrar.';
 }
 
+/* ---------- cidades: ranking, concentração e maiores variações vs. período anterior ---------- */
+function renderCidades(){
+  var box = document.getElementById('cidadeList'); if(!box) return;
+  var m = agLista('cidade'), ks = Object.keys(m).filter(function(k){ return k!=='N/D' || m[k].fat>0.5; });
+  var tot = 0, n = 0; ks.forEach(function(k){ if(m[k].fat>0.5){ tot += m[k].fat; n++; } });
+  var rows = ks.filter(function(k){ return m[k].fat>0.5; }).map(function(k){
+    var o = m[k], g = o.prevFat>0 ? (o.fat-o.prevFat)/o.prevFat*100 : null;
+    return {label:k, key:k, value:o.fat, sub: (tot>0?(o.fat/tot*100).toFixed(1):'0')+'% · '+fmtUn(o.qtd)+' un · '+(g===null ? 'sem venda no período anterior' : (g>=0?'▲ ':'▼ ')+Math.abs(g).toFixed(1)+'%')};
+  }).sort(function(a,b){ return b.value-a.value; });
+  renderBarList('cidadeList', rows.slice(0,30), {fk:'cidade'});
+  var top5 = rows.slice(0,5).reduce(function(s,r){ return s+r.value; },0);
+  var nota = document.getElementById('cidadeNota');
+  if(nota) nota.innerHTML = rows.length ? (n+' cidades com venda no período. As 5 maiores somam <b>'+(tot>0?(top5/tot*100).toFixed(1):'0')+'%</b> do faturamento'+(rows.length>30?'; a lista mostra as 30 maiores':'')+'.') : '';
+  var mov = ks.map(function(k){ return {k:k, d:m[k].fat-m[k].prevFat, a:m[k].prevFat, b:m[k].fat}; }).filter(function(x){ return Math.abs(x.d)>0.5; });
+  var ganhos = mov.filter(function(x){ return x.d>0; }).sort(function(a,b){ return b.d-a.d; }).slice(0,8);
+  var perdas = mov.filter(function(x){ return x.d<0; }).sort(function(a,b){ return a.d-b.d; }).slice(0,8);
+  function lista(arr, cor){
+    return arr.length ? arr.map(function(x){
+      return '<div class="cid-mov"'+fkAttr('cidade', x.k)+'><span>'+escapeHtml(x.k)+'</span><span class="mono" style="color:'+cor+'">'+(x.d>0?'+':'−')+fmtMoney(Math.abs(x.d)).replace('R$ ','R$ ')+'</span>' +
+        '<span class="mono cid-de">'+fmtCurto(x.a)+' → '+fmtCurto(x.b)+'</span></div>';
+    }).join('') : '<p class="note-muted">Nenhuma.</p>';
+  }
+  var mb = document.getElementById('cidadeMov');
+  if(mb) mb.innerHTML = '<h3 class="dh">Mais cresceram</h3>'+lista(ganhos, 'var(--good)')+'<h3 class="dh" style="margin-top:12px;">Mais caíram</h3>'+lista(perdas, 'var(--critical)');
+}
 function renderCanalBar(map){
   var bar = document.getElementById('canalBar'); if(!bar) return;
   var tot = 0, totQ = 0;
@@ -2387,6 +2421,7 @@ function renderVendConsult(){
   mix(D.vp, null, 'produtos', groupFatByProduto);
   (D.vd||[]).forEach(function(r){ var m = map[vnome(r[0])], i = DIA_IDX[r[1]]; if(m && i!==undefined) m.dailyFat[i] += c2(r[2]); });
   (D.vs||[]).forEach(function(r){ var m = map[vnome(r[0])]; if(m) m.skuMes = +r[1]||0; });
+  (D.vcli||[]).forEach(function(r){ var m = map[vnome(r[0])]; if(m){ m.cli = n0(r[1]); m.nfs = n0(r[2]); } });
   function sumOf(m){ var t=0; Object.keys(m).forEach(function(k){ t+=m[k]; }); return t; }
   function hhi(distMap, total){
     if(!total) return 0;
@@ -2408,7 +2443,8 @@ function renderVendConsult(){
     var marcaHHI = hhi(m.marcas, sumOf(m.marcas));
     var catHHI = hhi(m.categorias, sumOf(m.categorias));
     return {name:n, fat:m.fat, qtd:m.qtd, lb:m.lb, skuCount:skuCount, ticket:ticket, metaPct:metaPct,
-      margemPct:margemPct, marcas:m.marcas, categorias:m.categorias, produtos:m.produtos, marcaHHI:marcaHHI, catHHI:catHHI};
+      margemPct:margemPct, marcas:m.marcas, categorias:m.categorias, produtos:m.produtos, marcaHHI:marcaHHI, catHHI:catHHI,
+      cli:m.cli||0, nfs:m.nfs||0};
   }).sort(function(a,b){ return b.fat-a.fat; });
 
   if(!rows.length){ box.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">Sem vendas de vendedores para os filtros/período atuais.</p>'; return; }
@@ -2442,20 +2478,20 @@ function renderVendConsult(){
     vcKpi('vs. mediana dos pares', fmtPct(vsMedPct), 'Mediana dos demais: '+fmtMoney(peerMedian)) +
     vcKpi('Participação no grupo', share.toFixed(1)+'%', 'do faturamento filtrado, todos vendedores') +
     vcKpi('Ticket médio', fmtMoney2(ticketMe), 'Pares: '+fmtMoney2(ticketPeers)) +
-    vcKpi('Margem bruta estimada', me.margemPct.toFixed(1)+'%', (margemVsPeers>=0?'+':'')+margemVsPeers.toFixed(1)+' p.p. vs. pares ('+margemPeers.toFixed(1)+'%)') +
+    vcKpi('Margem bruta', me.margemPct.toFixed(1)+'%', (margemVsPeers>=0?'+':'')+margemVsPeers.toFixed(1)+' p.p. vs. pares ('+margemPeers.toFixed(1)+'%)') +
   '</div>';
 
   /* ---- ranking do grupo: tabela ordenável (clique no cabeçalho) ---- */
   var groupAvgMargem = rows.reduce(function(s,r){ return s+r.margemPct; },0)/rows.length;
   var VEND_RANK_COLS = [
     {key:null, label:'#'},
-    {key:'name', label:'Vendedor'},
+    {key:'name', label:'Vendedor · % do total'},
     {key:'fat', label:'Faturamento'},
     {key:'margemPct', label:'Margem'},
     {key:'qtd', label:'Qtd.'},
-    {key:'ticket', label:'Ticket médio'},
-    {key:'share', label:'Participação'}
+    {key:'ticket', label:'Ticket médio'}
   ];
+  var maxShare = Math.max.apply(null, rows.map(function(r){ return r.share; }).concat([0]));
   function buildVendRankTable(){
     var sortedRows = rows.slice().sort(function(a,b){
       var k = state.vendSortCol, dir = state.vendSortDir==='asc'?1:-1;
@@ -2470,12 +2506,13 @@ function renderVendConsult(){
       var isMe = r.name===selName;
       return '<tr class="vend-row" data-vend="'+escapeHtml(r.name)+'"'+(isMe?' style="background:rgba(34,211,238,.08);"':' title="Clique para analisar este vendedor"')+'>' +
         '<td class="mono" style="color:var(--text-muted);">'+(i+1)+'</td>' +
-        '<td class="prodcell"'+(isMe?' style="color:var(--accent);"':'')+'>'+r.name+(isMe?' · selecionado':'')+'</td>' +
+        '<td class="prodcell"'+(isMe?' style="color:var(--accent);"':'')+'><div class="vr-cel"><span class="vr-nome">'+r.name+'</span>' +
+          '<span class="vr-bar" title="'+r.share.toFixed(1)+'% do faturamento do grupo"><i style="width:'+(maxShare>0?r.share/maxShare*100:0)+'%"></i></span>' +
+          '<span class="vr-pct">'+r.share.toFixed(1)+'%</span></div></td>' +
         '<td class="mono">'+fmtMoney(r.fat)+'</td>' +
         '<td class="mono" style="color:'+(r.margemPct>=groupAvgMargem?'var(--good)':'var(--critical)')+';">'+r.margemPct.toFixed(1)+'%</td>' +
         '<td class="mono">'+fmtUn(r.qtd)+'</td>' +
         '<td class="mono">'+fmtMoney2(r.ticket)+'</td>' +
-        '<td class="mono">'+r.share.toFixed(1)+'%</td>' +
       '</tr>';
     }).join('');
     return '<table class="data-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table>';
@@ -2542,63 +2579,64 @@ function renderVendConsult(){
   var peerAvgCatHHI = others.length ? others.reduce(function(s,r){return s+r.catHHI;},0)/others.length : 0;
   function hhiLabel(v){ return v>=2500 ? 'alta concentração' : (v>=1500 ? 'concentração moderada' : 'baixa concentração (mix diversificado)'); }
 
-  /* ---- quadrante margem × ticket médio: posição do vendedor vs. todo o grupo ---- */
-  var quadMaxTicket = Math.max.apply(null, rows.map(function(r){return r.ticket;})) || 1;
-  var quadMaxMargem = Math.max.apply(null, rows.map(function(r){return r.margemPct;})) || 1;
-  var quadMinMargem = Math.min.apply(null, rows.map(function(r){return r.margemPct;}));
-  function scatterSVG(w,h){
-    var pad=44;
-    var xMax = quadMaxTicket*1.08 || 1, yMin = Math.min(0,quadMinMargem*1.15), yMax = quadMaxMargem*1.15 || 1;
-    function xPix(v){ return pad + (v/xMax)*(w-2*pad); }
-    function yPix(v){ return h-pad - ((v-yMin)/(yMax-yMin||1))*(h-2*pad); }
-    var avgTicketAll = rows.reduce(function(s,r){return s+r.ticket;},0)/rows.length;
-    var avgMargemAll = rows.reduce(function(s,r){return s+r.margemPct;},0)/rows.length;
-    var quadLines = '<line x1="'+xPix(avgTicketAll)+'" y1="'+pad+'" x2="'+xPix(avgTicketAll)+'" y2="'+(h-pad)+'" stroke="rgba(255,255,255,.10)" stroke-dasharray="3,3"/>' +
-      '<line x1="'+pad+'" y1="'+yPix(avgMargemAll)+'" x2="'+(w-pad)+'" y2="'+yPix(avgMargemAll)+'" stroke="rgba(255,255,255,.10)" stroke-dasharray="3,3"/>';
-    var axisLines = '<line x1="'+pad+'" y1="'+(h-pad)+'" x2="'+(w-pad)+'" y2="'+(h-pad)+'" stroke="rgba(255,255,255,.18)"/>' +
-      '<line x1="'+pad+'" y1="'+pad+'" x2="'+pad+'" y2="'+(h-pad)+'" stroke="rgba(255,255,255,.18)"/>';
-    var dots = rows.map(function(r){
-      var isMe = r.name===selName;
-      var cx=xPix(r.ticket), cy=yPix(r.margemPct);
-      return '<circle cx="'+cx+'" cy="'+cy+'" r="'+(isMe?7:4)+'" fill="'+(isMe?'var(--accent)':'var(--text-muted)')+'" fill-opacity="'+(isMe?1:0.55)+'"'+(isMe?' stroke="#fff" stroke-width="1.5"':'')+'/>';
-    }).join('');
-    var labels = '<text x="'+pad+'" y="'+(h-pad+16)+'" font-size="9.5" fill="var(--text-muted)" font-family="Manrope,sans-serif">ticket médio →</text>' +
-      '<text x="6" y="'+pad+'" font-size="9.5" fill="var(--text-muted)" font-family="Manrope,sans-serif" transform="rotate(-90 12 '+pad+')">margem →</text>';
-    return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'">'+quadLines+axisLines+dots+labels+'</svg>';
-  }
-  var scatterSvg = scatterSVG(360,240);
-  var quadrant = (ticketMe>=avgOf('ticket') ? 'alto' : 'baixo')+'/'+(me.margemPct>=avgOf('margemPct') ? 'alta' : 'baixa');
+  /* ---- quadrante margem × faturamento: cada vendedor do grupo ---- */
   function avgOf(key){ return rows.reduce(function(s,r){return s+r[key];},0)/rows.length; }
-  var quadTicketHigh = ticketMe >= avgOf('ticket');
-  var quadMargemHigh = me.margemPct >= avgOf('margemPct');
-  var quadTexto = quadTicketHigh && quadMargemHigh ? 'ticket alto e margem alta — combinação mais rentável do grupo.' :
-    (!quadTicketHigh && !quadMargemHigh ? 'ticket baixo e margem baixa — atenção: vendas de menor valor agregado e menor rentabilidade.' :
-    (quadTicketHigh && !quadMargemHigh ? 'ticket alto mas margem abaixo da média — pode estar concedendo mais desconto ou vendendo itens de menor margem em tickets maiores.' :
-    'ticket baixo mas margem acima da média — vende itens de alta rentabilidade mesmo em tickets menores.'));
+  // gráfico de dispersão genérico: x/y por vendedor, linhas na média do grupo, ponto clicável
+  function dispersaoSVG(w, h, fx, fy, rotX, rotY, fmtX, fmtY){
+    var pad = 46, xs = rows.map(fx), ys = rows.map(fy);
+    var xMax = Math.max.apply(null, xs.concat([1]))*1.08, yMin = Math.min(0, Math.min.apply(null, ys)*1.15), yMax = Math.max.apply(null, ys.concat([1]))*1.12;
+    function xp(v){ return pad + (v/xMax)*(w-2*pad); }
+    function yp(v){ return h-pad - ((v-yMin)/((yMax-yMin)||1))*(h-2*pad); }
+    var mx = xs.reduce(function(s,v){return s+v;},0)/xs.length, my = ys.reduce(function(s,v){return s+v;},0)/ys.length;
+    var out = '<line x1="'+xp(mx)+'" y1="'+pad+'" x2="'+xp(mx)+'" y2="'+(h-pad)+'" stroke="rgba(255,255,255,.14)" stroke-dasharray="3,3"/>' +
+      '<line x1="'+pad+'" y1="'+yp(my)+'" x2="'+(w-pad)+'" y2="'+yp(my)+'" stroke="rgba(255,255,255,.14)" stroke-dasharray="3,3"/>' +
+      '<line x1="'+pad+'" y1="'+(h-pad)+'" x2="'+(w-pad)+'" y2="'+(h-pad)+'" stroke="rgba(255,255,255,.18)"/>' +
+      '<line x1="'+pad+'" y1="'+pad+'" x2="'+pad+'" y2="'+(h-pad)+'" stroke="rgba(255,255,255,.18)"/>';
+    rows.forEach(function(r,i){
+      var isMe = r.name===selName;
+      out += '<circle class="vend-pt" data-vend="'+escapeHtml(r.name)+'" cx="'+xp(xs[i])+'" cy="'+yp(ys[i])+'" r="'+(isMe?7:4.5)+'" fill="'+(isMe?'var(--accent)':'var(--text-muted)')+'" fill-opacity="'+(isMe?1:0.6)+'"'+(isMe?' stroke="#fff" stroke-width="1.5"':'')+'>' +
+        '<title>'+escapeHtml(r.name)+' · '+rotX+': '+fmtX(xs[i])+' · '+rotY+': '+fmtY(ys[i])+'</title></circle>';
+    });
+    out += '<text x="'+(w-pad)+'" y="'+(h-pad+16)+'" text-anchor="end" font-size="9.5" fill="var(--text-muted)" font-family="Manrope,sans-serif">'+rotX+' →</text>' +
+      '<text x="'+pad+'" y="'+(pad-8)+'" font-size="9.5" fill="var(--text-muted)" font-family="Manrope,sans-serif">↑ '+rotY+'</text>' +
+      '<text x="'+(xp(mx)+4)+'" y="'+(h-pad-4)+'" font-size="9" fill="var(--text-muted)" font-family="Manrope,sans-serif">média '+fmtX(mx)+'</text>' +
+      '<text x="'+(w-pad)+'" y="'+(yp(my)-4)+'" text-anchor="end" font-size="9" fill="var(--text-muted)" font-family="Manrope,sans-serif">média '+fmtY(my)+'</text>';
+    return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" role="img">'+out+'</svg>';
+  }
+  var scatterSvg = dispersaoSVG(380, 250, function(r){ return r.fat; }, function(r){ return r.margemPct; }, 'faturamento', 'margem', fmtCurto, function(v){ return v.toFixed(1)+'%'; });
+  var fatAlto = me.fat >= avgOf('fat'), mgAlta = me.margemPct >= avgOf('margemPct');
+  var quadTexto = selName+' está no quadrante de <b>faturamento '+(fatAlto?'acima':'abaixo')+'</b> e <b>margem '+(mgAlta?'acima':'abaixo')+'</b> da média do grupo ('+fmtMoney(me.fat)+' e '+me.margemPct.toFixed(1)+'%; médias '+fmtMoney(avgOf('fat'))+' e '+avgOf('margemPct').toFixed(1)+'%).';
 
-  /* ---- análises não-óbvias: concentração, quadrante margem×ticket e divergência de mix ---- */
-  var topOverIndexed = topN(me.marcas, sumOf(me.marcas), 20).map(function(t){
-    var gs = groupFatTotalAll>0 ? (groupFatByMarca[t.name]||0)/groupFatTotalAll*100 : 0;
-    return {name:t.name, meShare:t.pct, idx: gs>0 ? t.pct/gs : 2};
-  }).sort(function(a,b){ return b.idx-a.idx; });
-  var maisSuperIndexada = topOverIndexed.length ? topOverIndexed[0] : null;
+  /* ---- análises com os números do recorte (sem suposições) ---- */
+  function partDe(dist, k){ var t = sumOf(dist); return t>0 ? (dist[k]||0)/t*100 : 0; }
+  var demaisMarca = {}; Object.keys(groupFatByMarca).forEach(function(k){ demaisMarca[k] = groupFatByMarca[k] - (me.marcas[k]||0); });
+  var demaisCat = {}; Object.keys(groupFatByCategoria).forEach(function(k){ demaisCat[k] = groupFatByCategoria[k] - (me.categorias[k]||0); });
+  function top3(dist){ return topN(dist, sumOf(dist), 3).reduce(function(s,t){ return s+t.pct; },0); }
   var insightsList = [];
-  insightsList.push('<b>Concentração de mix:</b> marcas → HHI '+me.marcaHHI+' ('+hhiLabel(me.marcaHHI)+', pares: '+Math.round(peerAvgMarcaHHI)+') · categorias → HHI '+me.catHHI+' ('+hhiLabel(me.catHHI)+', pares: '+Math.round(peerAvgCatHHI)+').');
-  insightsList.push('<b>Quadrante margem × ticket:</b> '+selName+' opera com '+quadTexto);
-  if(maisSuperIndexada && maisSuperIndexada.meShare>1){
-    insightsList.push('<b>Marca mais super-indexada:</b> "'+maisSuperIndexada.name+'" responde por '+maisSuperIndexada.meShare.toFixed(1)+'% das vendas do vendedor, um índice de '+maisSuperIndexada.idx.toFixed(1)+'x a participação média dessa marca no grupo — especialização (ou dependência) fora do padrão.');
-  }
-  if(me.margemPct < margemPeers - 2 && me.fat > peerAvg){
-    insightsList.push('<b>Alerta não-óbvio:</b> faturamento acima da média do grupo, porém margem abaixo dos pares — o volume pode estar sendo sustentado por descontos ou por um mix com produtos de menor rentabilidade.');
-  }
-  if(me.margemPct > margemPeers + 2 && me.fat < peerAvg){
-    insightsList.push('<b>Ponto forte não-óbvio:</b> faturamento abaixo da média, mas margem acima dos pares — vendedor mais seletivo/rentável por venda; potencial de crescimento em volume sem sacrificar margem.');
-  }
-  if(me.marcaHHI > peerAvgMarcaHHI + 800){
-    insightsList.push('<b>Risco de concentração:</b> mix de marcas bem mais concentrado que a média do grupo — carteira mais exposta a variações de estoque/preço de poucas marcas.');
+  var t3me = top3(me.marcas), t3dem = top3(demaisMarca), t3n = topN(me.marcas, sumOf(me.marcas), 3).map(function(t){ return t.name; });
+  if(t3n.length) insightsList.push('<b>Concentração:</b> as 3 principais marcas dele ('+t3n.join(', ')+') somam '+t3me.toFixed(1)+'% do faturamento. Nos demais vendedores somados, as 3 principais marcas somam '+t3dem.toFixed(1)+'%.');
+  // marcas: maior diferença de participação (para mais e para menos) vs. os demais
+  var difs = Object.keys(groupFatByMarca).map(function(k){ return {k:k, me:partDe(me.marcas,k), dem:partDe(demaisMarca,k)}; });
+  var acima = difs.slice().sort(function(a,b){ return (b.me-b.dem)-(a.me-a.dem); })[0];
+  var abaixo = difs.slice().sort(function(a,b){ return (a.me-a.dem)-(b.me-b.dem); })[0];
+  if(acima && acima.me-acima.dem>=2) insightsList.push('<b>Marca mais forte em relação aos demais:</b> '+acima.k+' é '+acima.me.toFixed(1)+'% das vendas dele e '+acima.dem.toFixed(1)+'% das vendas dos demais.');
+  if(abaixo && abaixo.dem-abaixo.me>=2) insightsList.push('<b>Marca com maior lacuna:</b> '+abaixo.k+' é '+abaixo.dem.toFixed(1)+'% das vendas dos demais e '+abaixo.me.toFixed(1)+'% das dele. Na mesma proporção dos demais, seriam '+fmtMoney(me.fat*(abaixo.dem-abaixo.me)/100)+' a mais em '+abaixo.k+' no período.');
+  var difc = Object.keys(groupFatByCategoria).map(function(k){ return {k:k, me:partDe(me.categorias,k), dem:partDe(demaisCat,k)}; })
+    .sort(function(a,b){ return (a.me-a.dem)-(b.me-b.dem); })[0];
+  if(difc && difc.dem-difc.me>=2) insightsList.push('<b>Categoria com maior lacuna:</b> '+difc.k+' é '+difc.dem.toFixed(1)+'% das vendas dos demais e '+difc.me.toFixed(1)+'% das dele.');
+  if(others.length) insightsList.push('<b>Margem:</b> '+me.margemPct.toFixed(1)+'% contra '+margemPeers.toFixed(1)+'% dos demais. Com a margem dos demais, o lucro bruto dele no período seria '+fmtMoney(me.fat*margemPeers/100)+' (foi '+fmtMoney(me.lb)+').');
+  var diasMe = 0, diasPer = Math.max(0,pr.end)-Math.max(0,pr.start)+1;
+  for(var di=Math.max(0,pr.start); di<=pr.end; di++){ if(map[selName].dailyFat[di]>0) diasMe++; }
+  var diasDem = others.length ? others.reduce(function(s,r){ var n=0; for(var j=Math.max(0,pr.start); j<=pr.end; j++){ if(map[r.name].dailyFat[j]>0) n++; } return s+n; },0)/others.length : 0;
+  insightsList.push('<b>Dias com venda:</b> '+diasMe+' de '+diasPer+' dias do período ('+(diasMe? fmtMoney(me.fat/diasMe) : 'R$ 0')+' por dia com venda). Média dos demais: '+diasDem.toFixed(1)+' dias.');
+  if(me.skuCount) insightsList.push('<b>Variedade:</b> '+Math.round(me.skuCount)+' produtos diferentes vendidos por mês, em média. Média dos demais: '+Math.round(others.length ? others.reduce(function(s,r){return s+r.skuCount;},0)/others.length : 0)+'.');
+  if(me.cli){
+    var cliDem = others.filter(function(r){ return r.cli; }), fatCliDem = cliDem.reduce(function(s,r){return s+r.fat;},0)/Math.max(1,cliDem.reduce(function(s,r){return s+r.cli;},0));
+    insightsList.push('<b>Clientes:</b> '+fmtUn(me.cli)+' clientes atendidos em '+fmtUn(me.nfs)+' notas, '+fmtMoney(me.fat/me.cli)+' por cliente e '+fmtMoney(me.fat/Math.max(1,me.nfs))+' por nota. Nos demais: '+fmtMoney(fatCliDem)+' por cliente.');
   }
   var insightsHtml = '<ul style="margin:0; padding-left:18px; display:flex; flex-direction:column; gap:8px; font-size:12.5px; color:var(--text-2); line-height:1.6;">' +
-    insightsList.map(function(t){ return '<li>'+t+'</li>'; }).join('') + '</ul>';
+    insightsList.map(function(t){ return '<li>'+t+'</li>'; }).join('') + '</ul>' +
+    '<p style="font-size:11px; color:var(--text-muted); margin-top:8px;">Todos os números vêm das vendas do período e dos filtros aplicados.</p>';
 
   /* ---- radares por dimensão: top 10 marcas/categorias/produtos do grupo, vendedor vs. média dos demais ---- */
   function buildDimRadar(dimKey, groupDist, labelFn){
@@ -2663,9 +2701,10 @@ function renderVendConsult(){
     '</div>' +
     '<div class="grid-2" style="margin-top:14px;">' +
       '<div>' +
-        '<h3 class="dh">Quadrante margem &times; ticket médio (todo o grupo)</h3>' +
+        '<h3 class="dh">Quadrante margem &times; faturamento (todo o grupo)</h3>' +
         '<div class="chart-wrap" style="display:flex; justify-content:center;">'+scatterSvg+'</div>' +
-        '<p style="font-size:11px; color:var(--text-muted); margin-top:6px; line-height:1.6;">Cada ponto é um vendedor do grupo filtrado; o ponto em destaque é '+selName+'. As linhas tracejadas marcam a média do grupo em cada eixo — os quatro quadrantes ajudam a enxergar padrões de rentabilidade que não aparecem só olhando o ranking de faturamento.</p>' +
+        '<p style="font-size:11.5px; color:var(--text-2); margin-top:6px; line-height:1.6;">'+quadTexto+'</p>' +
+        '<p style="font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.6;">Cada ponto é um vendedor; as linhas tracejadas marcam a média do grupo. Clique num ponto para analisar o vendedor.</p>' +
       '</div>' +
       '<div>' +
         '<h3 class="dh">Análises não óbvias</h3>' +
@@ -2683,6 +2722,36 @@ function renderVendConsult(){
         dimRadarBlock('Top 10 Produtos — FAT normalizado', radarProdSvg) +
       '</div>' +
     '</div>';
+
+  /* ---- faturamento × clientes distintos (painel abaixo da consultoria) ---- */
+  var cliBox = document.getElementById('vendCliBody');
+  if(cliBox){
+    var comCli = rows.filter(function(r){ return r.cli>0; });
+    if(!comCli.length){ cliBox.innerHTML = '<p class="note-muted">Sem dados de clientes para este recorte.</p>'; }
+    else {
+      var svgCli = dispersaoSVG(420, 270, function(r){ return r.cli; }, function(r){ return r.fat; }, 'clientes distintos', 'faturamento', fmtUn, fmtCurto);
+      var mCli = avgOf('cli'), mFat = avgOf('fat');
+      var porCli = comCli.slice().sort(function(a,b){ return b.cli-a.cli; });
+      var tab = '<table class="data-table"><thead><tr><th>Vendedor</th><th>Clientes</th><th>Notas</th><th>R$ por cliente</th><th>R$ por nota</th></tr></thead><tbody>' +
+        porCli.map(function(r){
+          var isMe = r.name===selName;
+          return '<tr class="vend-row" data-vend="'+escapeHtml(r.name)+'"'+(isMe?' style="background:rgba(34,211,238,.08);"':'')+'>' +
+            '<td class="prodcell"'+(isMe?' style="color:var(--accent);"':'')+'>'+r.name+'</td><td class="mono">'+fmtUn(r.cli)+'</td><td class="mono">'+fmtUn(r.nfs)+'</td>' +
+            '<td class="mono">'+fmtMoney(r.fat/r.cli)+'</td><td class="mono">'+fmtMoney(r.fat/Math.max(1,r.nfs))+'</td></tr>';
+        }).join('') + '</tbody></table>';
+      var meQ = me.cli ? (selName+': '+fmtUn(me.cli)+' clientes ('+(me.cli>=mCli?'acima':'abaixo')+' da média de '+fmtUn(mCli)+') e '+fmtMoney(me.fat)+' de faturamento ('+(me.fat>=mFat?'acima':'abaixo')+' da média de '+fmtMoney(mFat)+').') : '';
+      var muitosCliBaixoFat = comCli.filter(function(r){ return r.cli>=mCli && r.fat<mFat; }).map(function(r){ return r.name; });
+      var poucosCliAltoFat = comCli.filter(function(r){ return r.cli<mCli && r.fat>=mFat; }).map(function(r){ return r.name; });
+      cliBox.innerHTML = '<div class="grid-2" style="margin-bottom:0;">' +
+        '<div><div class="chart-wrap" style="display:flex; justify-content:center;">'+svgCli+'</div>' +
+          '<p style="font-size:11.5px; color:var(--text-2); margin-top:6px; line-height:1.6;">'+meQ+'</p>' +
+          (muitosCliBaixoFat.length ? '<p style="font-size:11.5px; color:var(--text-2); line-height:1.6;"><b>Muitos clientes e faturamento abaixo da média:</b> '+muitosCliBaixoFat.join(', ')+'.</p>' : '') +
+          (poucosCliAltoFat.length ? '<p style="font-size:11.5px; color:var(--text-2); line-height:1.6;"><b>Poucos clientes e faturamento acima da média:</b> '+poucosCliAltoFat.join(', ')+'.</p>' : '') +
+        '</div>' +
+        '<div class="table-scroll scroll-limit">'+tab+'</div>' +
+      '</div>';
+    }
+  }
 
   Array.prototype.forEach.call(box.querySelectorAll('[data-col]'), function(th){
     th.addEventListener('click', function(){
@@ -2961,7 +3030,7 @@ function renderSellers(){
   }).sort(function(a,b){return b.fat-a.fat;});
   var maxPct = rows.length ? rows[0].pct : 1;
 
-  var box = document.getElementById('sellerList');
+  var box = document.getElementById('sellerList'); if(!box) return;
   if(!rows.length){ box.innerHTML='<p style="color:var(--text-muted); font-size:12.5px;">Sem dados para os filtros atuais.</p>'; return; }
   box.innerHTML = rows.map(function(r){
     var initials = r.name.split(' ').map(function(w){return w[0];}).slice(0,2).join('');
@@ -3751,6 +3820,7 @@ function renderTudo(refreshing){
   renderSellers();
   renderBrandModelLists();
   renderLojaList();
+  renderCidades();
   renderTable();
   renderActiveTags();
   if(state.currentView==='vendedores') renderVendConsult();
@@ -3936,8 +4006,8 @@ function bindEvents(){
     renderVendConsult();
   });
   // clique numa linha do ranking troca o vendedor analisado (mantém a rolagem da tabela)
-  document.getElementById('vendConsultBody').addEventListener('click', function(ev){
-    var tr = ev.target.closest('tr.vend-row'); if(!tr) return;
+  function cliqueVendedor(ev){
+    var tr = ev.target.closest('tr.vend-row, .vend-pt'); if(!tr) return;
     var nome = tr.getAttribute('data-vend'); if(!nome || nome===state.vendConsultSel) return;
     var sc = tr.closest('.table-scroll'), top = sc ? sc.scrollTop : 0;
     state.vendConsultSel = nome;
@@ -3945,7 +4015,9 @@ function bindEvents(){
     renderVendConsult();
     var sc2 = document.querySelector('#vendConsultBody .table-scroll'); if(sc2) sc2.scrollTop = top;
     var card = document.getElementById('vendConsultSelect'); if(card) card.scrollIntoView({behavior:'smooth', block:'nearest'});
-  });
+  }
+  document.getElementById('vendConsultBody').addEventListener('click', cliqueVendedor);
+  document.getElementById('vendCliBody').addEventListener('click', cliqueVendedor);
 
   // main chart metric + range
   Array.prototype.forEach.call(document.querySelectorAll('#metricSeg button'), function(btn){
