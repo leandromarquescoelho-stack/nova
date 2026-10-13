@@ -244,9 +244,21 @@ def normaliza(s):
     return re.sub(r'\s+', ' ', str(s)).strip().upper()
 
 
+# colunas que podem faltar na planilha (viram 'N/D'); tenta também as grafias alternativas
+OPCIONAIS = {'subcategoria': ['SUBGRUPO', 'SUB GRUPO', 'SUB_GRUPO', 'SUBGRUPO_PECA', 'SUBGRUPO PECA', 'SUBGRUPO_PEÇA', 'SUBCATEGORIA']}
+
+
 def renomear(df, colunas, origem):
     """colunas = {nome_padrao: 'Nome da coluna na planilha'}; compara sem diferenciar maiúsculas/espaços."""
     reais = {normaliza(c): c for c in df.columns}
+    colunas = dict(colunas)
+    for padrao, alternativas in OPCIONAIS.items():
+        if padrao not in colunas:
+            continue
+        achada = next((c for c in [colunas[padrao]] + alternativas if c and normaliza(c) in reais), None)
+        if achada is None:
+            log(f'planilha de {origem}: coluna opcional {padrao} não encontrada; fica N/D')
+        colunas[padrao] = achada
     faltando = [padrao for padrao, col in colunas.items() if col and normaliza(col) not in reais]
     if faltando:
         raise ValueError(f'planilha de {origem}: colunas não encontradas para {faltando}')
@@ -466,8 +478,9 @@ def transformar(vendas, estoque, metas, cfg, loja_info_atual):
 
 
 # ---------------------------------------------------------------- base linha a linha (filtros exatos no painel)
-DIMS = ['loja', 'canal', 'emitente', 'origem', 'vendedor', 'linha', 'marca', 'categoria', 'montadora',
+DIMS = ['loja', 'canal', 'emitente', 'origem', 'vendedor', 'linha', 'marca', 'categoria', 'subcategoria', 'montadora',
         'classificacao', 'tipo_cliente', 'cidade']
+ATRIB_PROD = ('categoria', 'subcategoria', 'marca', 'montadora', 'linha', 'classificacao')
 COLS_VENDA = ['dia', 'mes'] + DIMS + ['produto', 'cliente', 'nf', 'qtd', 'fat', 'custo', 'lb']
 
 
@@ -524,25 +537,25 @@ def transformar_base(vendas, estoque, regras):
         e['parado'] = texto(e['parado']).map(lambda x: normaliza(x) in sim if isinstance(x, str) else False) if 'parado' in e else False
 
     # produtos: atributos de maior faturamento; itens só do estoque usam a descrição/linha/grupo do estoque
-    attrs = {a: principal(v, 'sku', a) for a in ('descricao', 'categoria', 'marca', 'montadora', 'linha', 'classificacao')}
+    attrs = {a: principal(v, 'sku', a) for a in ('descricao',) + ATRIB_PROD}
     prod = pd.DataFrame(attrs)
     if e is not None:
         so_est = e[~e['sku'].isin(prod.index)].drop_duplicates('sku').set_index('sku')
         extra = pd.DataFrame({
             'descricao': [f'{k} - {d}' if isinstance(d, str) else k for k, d in so_est['descricao'].items()],
-            'categoria': so_est['categoria'], 'marca': 'N/D', 'montadora': 'N/D', 'linha': so_est['linha'],
+            'categoria': so_est['categoria'], 'subcategoria': 'N/D', 'marca': 'N/D', 'montadora': 'N/D', 'linha': so_est['linha'],
             'classificacao': 'N/D'}, index=so_est.index)
         prod = pd.concat([prod, extra])
     prod = prod.sort_index()
     prod['id'] = range(1, len(prod) + 1)
-    for c in ('categoria', 'marca', 'montadora', 'linha', 'classificacao'):
+    for c in ATRIB_PROD:
         prod[c] = prod[c].fillna('N/D')
 
     # dimensões numeradas (ordem alfabética)
     dims = {}
     for t in DIMS:
         vals = set(v[t].unique())
-        if t in ('categoria', 'marca', 'montadora', 'linha', 'classificacao'):
+        if t in ATRIB_PROD:
             vals |= set(prod[t].unique())
         if t == 'loja' and e is not None:
             vals |= set(e['loja'].unique())
@@ -567,7 +580,7 @@ def transformar_base(vendas, estoque, regras):
         raise ValueError('valor acima do limite da base linha a linha')
 
     produtos = pd.DataFrame({'id': prod['id'], 'pn': prod.index, 'nome': prod['descricao'].fillna(pd.Series(prod.index, index=prod.index))})
-    for c in ('categoria', 'marca', 'montadora', 'linha', 'classificacao'):
+    for c in ATRIB_PROD:
         produtos[c] = prod[c].map(dims[c]).astype('int64')
     clientes = pd.DataFrame({'id': cli['id'], 'codcli': cli.index, 'razao': cli['razao'],
                              'tipo_cliente': cli['tipo_cliente'].map(dims['tipo_cliente']).astype('int64'),
@@ -743,6 +756,8 @@ def main():
         dfs = {}
         for papel, arq in usados.items():
             spec = mapa[papel]
+            if papel == 'vendas':  # subcategoria = coluna SUBGRUPO, opcional enquanto não estiver no mapa do banco
+                spec = {**spec, 'colunas': {'subcategoria': 'SUBGRUPO', **spec['colunas']}}
             nome, buf = fonte.baixar(arq)
             df = ler_planilha(nome, buf, spec.get('aba'), spec.get('linha_cabecalho', 0))
             dfs[papel] = renomear(df, spec['colunas'], papel)
