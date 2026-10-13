@@ -352,6 +352,13 @@ tr.vend-row, .vend-pt{ cursor:pointer; }
 .vr-bar{ flex:0 0 48px; height:4px; border-radius:2px; background:var(--surface-3); overflow:hidden; opacity:.85; }
 .vr-bar i{ display:block; height:100%; background:var(--accent); border-radius:2px; }
 .vr-pct{ flex:0 0 auto; font-size:10.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+.du-tab{ min-width:0 !important; }
+.du-tab th, .du-tab td{ white-space:nowrap; }
+.du-tab tfoot td{ border-top:1px solid var(--border); padding-top:6px; }
+.du-sub{ font-size:10px; color:var(--text-muted); font-weight:400; white-space:normal; }
+.du-menos{ color:var(--warning); }
+.du-atual td{ background:rgba(34,211,238,.06); }
+.du-fraco td{ opacity:.6; }
 .cid-mov{ display:grid; grid-template-columns:1fr auto; gap:2px 10px; padding:6px 4px; border-bottom:1px solid var(--border); font-size:12px; cursor:pointer; }
 .cid-mov:hover{ background:var(--surface-2); }
 .cid-de{ grid-column:1 / -1; font-size:10.5px; color:var(--text-muted); }
@@ -916,6 +923,9 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <div class="nav-item" data-view="vendedores">
         <span class="ico">&#128188;</span><span class="label">Vendedores</span><span class="tip">Vendedores</span>
       </div>
+      <div class="nav-item" data-view="diasuteis">
+        <span class="ico">&#128197;</span><span class="label">Dias úteis</span><span class="tip">Dias úteis</span>
+      </div>
       <div class="nav-item" data-view="insights">
         <span class="ico">&#128161;</span><span class="label">Insights</span><span class="tip">Insights</span>
       </div>
@@ -1397,6 +1407,36 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <div class="opp-grid" id="oppGrid"></div>
       </div>
       <div id="insSections"></div>
+      </section>
+
+      <!-- ============ DIAS ÚTEIS ============ -->
+      <section class="view-panel" data-view-panel="diasuteis" style="display:none;">
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Dias úteis por mês</h2><div class="psub">Segunda a sexta, sem feriados nacionais, do estado de SP e do município de cada loja &middot; e-commerce conta todos os dias</div></div>
+          <select class="fsel" id="duAno" aria-label="Ano"></select>
+        </div>
+        <div id="duMesBody"></div>
+      </div>
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Feriados do ano</h2><div class="psub">Municipais conforme o edital de feriados do TJSP &middot; pontos facultativos não são descontados</div></div>
+        </div>
+        <div id="duFerBody"></div>
+      </div>
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Quanto vende cada tipo de dia</h2><div class="psub">Média de faturamento por dia em toda a base, com os filtros aplicados &middot; lojas físicas = todos os canais menos e-commerce</div></div>
+        </div>
+        <div id="duTipoBody"></div>
+        <p id="duTipoNota" style="font-size:11.5px; color:var(--text-2); margin-top:8px; line-height:1.6;"></p>
+      </div>
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Faturamento por dia útil</h2><div class="psub">Lojas físicas: faturamento do mês &divide; dias úteis do município da loja &middot; e-commerce &divide; dias corridos &middot; mês atual até o último dia com dados</div></div>
+        </div>
+        <div id="duLojaBody"></div>
+      </div>
       </section>
 
       <section class="view-panel" data-view-panel="usuarios" style="display:none;">
@@ -2302,6 +2342,202 @@ function renderCidades(){
   }
   var mb = document.getElementById('cidadeMov');
   if(mb) mb.innerHTML = '<h3 class="dh">Mais cresceram</h3>'+lista(ganhos, 'var(--good)')+'<h3 class="dh" style="margin-top:12px;">Mais caíram</h3>'+lista(perdas, 'var(--critical)');
+}
+/* ---------- dias úteis: feriados nacionais, do estado de SP e dos municípios das lojas ----------
+   Fonte dos municipais: edital do Conselho Superior da Magistratura (TJSP) com os feriados municipais de 2026.
+   Dia útil = segunda a sexta sem feriado. Sábado e pontos facultativos aparecem à parte.
+   E-commerce (canal ECOMMERCE e lojas de marketplace) vende todos os dias: conta dias corridos. */
+var LOJA_MUNICIPIO = {'IPIRANGA':'São Paulo', 'JOAO DIAS':'São Paulo', 'TATUAPE':'São Paulo', 'CAMPINAS':'Campinas',
+  'RIBEIRAO':'Ribeirão Preto', 'RIO PRETO':'São José do Rio Preto', 'SBC':'São Bernardo do Campo'};
+var MUNICIPIOS = ['São Paulo','Campinas','Ribeirão Preto','São José do Rio Preto','São Bernardo do Campo'];
+var CANAL_ONLINE = 'ECOMMERCE';
+var DIA_SEMANA = ['dom','seg','ter','qua','qui','sex','sáb'];
+function pascoa(y){
+  var a=y%19, b=Math.floor(y/100), c=y%100, d=Math.floor(b/4), e=b%4, f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3),
+      h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4, l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451),
+      mes=Math.floor((h+l-7*m+114)/31), dia=((h+l-7*m+114)%31)+1;
+  return new Date(y, mes-1, dia);
+}
+var FERIADOS_MEMO = {};
+// lista do ano: {iso, d, nome, tipo: nacional|estadual|municipal|facultativo, cidades: [municípios] (só municipal)}
+function feriadosAno(y){
+  if(FERIADOS_MEMO[y]) return FERIADOS_MEMO[y];
+  var p = pascoa(y), m = {};
+  function dt(mes, dia){ return new Date(y, mes-1, dia); }
+  function rel(n){ return new Date(p.getFullYear(), p.getMonth(), p.getDate()+n); }
+  function add(d, nome, tipo, cidade){
+    var k = isoDia(d), o = m[k];
+    if(o && o.tipo!=='municipal' && o.tipo!=='facultativo') return; // nacional/estadual já cobre todas as lojas
+    if(o && tipo==='municipal' && o.tipo==='municipal'){ if(o.cidades.indexOf(cidade)===-1) o.cidades.push(cidade); if(o.nome.indexOf(nome)===-1) o.nome += ' / '+nome; return; }
+    m[k] = {iso:k, d:d, nome:nome, tipo:tipo, cidades: cidade ? [cidade] : null};
+  }
+  [[1,1,'Confraternização Universal'],[4,21,'Tiradentes'],[5,1,'Dia do Trabalho'],[9,7,'Independência do Brasil'],
+   [10,12,'Nossa Senhora Aparecida'],[11,2,'Finados'],[11,15,'Proclamação da República'],[12,25,'Natal']]
+    .forEach(function(x){ add(dt(x[0],x[1]), x[2], 'nacional'); });
+  add(rel(-2), 'Sexta-feira Santa', 'nacional'); // feriado em todos os municípios das lojas
+  if(y>=2024) add(dt(11,20), 'Consciência Negra', 'nacional'); // nacional pela Lei 14.759/2023
+  else ['São Paulo','Campinas','São Bernardo do Campo'].forEach(function(c){ add(dt(11,20), 'Consciência Negra', 'municipal', c); });
+  add(dt(7,9), 'Revolução Constitucionalista', 'estadual');
+  var cc = rel(60);
+  [['São Paulo',[dt(1,25),'Aniversário de São Paulo'],[cc,'Corpus Christi']],
+   ['Campinas',[cc,'Corpus Christi'],[dt(12,8),'Nossa Senhora da Conceição']],
+   ['Ribeirão Preto',[dt(1,20),'São Sebastião'],[dt(6,19),'Aniversário de Ribeirão Preto']],
+   ['São José do Rio Preto',[dt(3,19),'São José'],[cc,'Corpus Christi'],[dt(12,8),'Nossa Senhora da Conceição']],
+   ['São Bernardo do Campo',[cc,'Corpus Christi'],[dt(8,20),'Aniversário de São Bernardo do Campo']]]
+    .forEach(function(x){ x.slice(1).forEach(function(f){ add(f[0], f[1], 'municipal', x[0]); }); });
+  [[rel(-48),'Carnaval (segunda)'],[rel(-47),'Carnaval (terça)'],[rel(-46),'Quarta-feira de Cinzas'],[dt(12,24),'Véspera de Natal'],[dt(12,31),'Véspera de Ano Novo']]
+    .forEach(function(x){ if(!m[isoDia(x[0])]) add(x[0], x[1], 'facultativo'); });
+  var out = Object.keys(m).sort().map(function(k){ return m[k]; });
+  FERIADOS_MEMO[y] = {lista: out, porDia: m};
+  return FERIADOS_MEMO[y];
+}
+// feriado que vale para o município (null = vale para todos os municípios); facultativo não conta
+function feriadoDe(d, municipio){
+  var o = feriadosAno(d.getFullYear()).porDia[isoDia(d)];
+  if(!o || o.tipo==='facultativo') return null;
+  if(o.tipo==='municipal' && (!municipio || o.cidades.indexOf(municipio)===-1)) return null;
+  return o;
+}
+// 'util' | 'sabado' | 'domingo' | 'feriado'
+function tipoDia(d, municipio){
+  if(feriadoDe(d, municipio)) return 'feriado';
+  var w = d.getDay();
+  return w===0 ? 'domingo' : (w===6 ? 'sabado' : 'util');
+}
+// contagem entre duas datas (inclusive); municipio null = só feriados nacionais e estaduais
+function contarDias(d1, d2, municipio){
+  var o = {uteis:0, sabados:0, domingos:0, feriados:0, corridos:0};
+  for(var d = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate()); d <= d2; d = new Date(d.getFullYear(), d.getMonth(), d.getDate()+1)){
+    o.corridos++;
+    var t = tipoDia(d, municipio);
+    if(t==='util') o.uteis++; else if(t==='sabado') o.sabados++; else if(t==='domingo') o.domingos++;
+    if(feriadoDe(d, municipio) && d.getDay()!==0 && d.getDay()!==6) o.feriados++;
+  }
+  return o;
+}
+// dias úteis da loja no intervalo (marketplace = dias corridos)
+function diasUteisLoja(loja, d1, d2){
+  if(LOJA_INFO[loja] && !LOJA_INFO[loja].fisica) return contarDias(d1, d2, null).corridos;
+  return contarDias(d1, d2, LOJA_MUNICIPIO[loja] || null).uteis;
+}
+function lojasDoMunicipio(c){ return Object.keys(LOJA_MUNICIPIO).filter(function(l){ return LOJA_MUNICIPIO[l]===c; }); }
+
+var DU_ANO = null, DU_SEQ = 0;
+function renderDiasUteis(){
+  var box = document.getElementById('duMesBody'); if(!box) return;
+  var anoIni = DAYS[0].getFullYear(), anoFim = DAYS[N_DAYS-1].getFullYear()+1;
+  if(DU_ANO===null) DU_ANO = DAYS[N_DAYS-1].getFullYear();
+  var sel = document.getElementById('duAno');
+  if(sel && !sel.options.length){
+    for(var y=anoIni; y<=anoFim; y++) sel.add(new Option(String(y), String(y)));
+    sel.addEventListener('change', function(){ DU_ANO = +sel.value; renderDiasUteis(); });
+  }
+  if(sel) sel.value = String(DU_ANO);
+  var y = DU_ANO, ult = DAYS[N_DAYS-1];
+
+  // dias úteis por mês e município
+  var tot = {}; MUNICIPIOS.forEach(function(c){ tot[c] = 0; }); var totSab = 0, totCor = 0;
+  var linhas = MES_ABREV.map(function(lbl, mi){
+    var a = new Date(y, mi, 1), b = new Date(y, mi+1, 0), nac = contarDias(a, b, null);
+    var atual = y===ult.getFullYear() && mi===ult.getMonth();
+    totSab += nac.sabados; totCor += nac.corridos;
+    var cels = MUNICIPIOS.map(function(c){
+      var n = contarDias(a, b, c).uteis; tot[c] += n;
+      var dif = n<nac.uteis ? ' du-menos' : '';
+      return '<td class="mono'+dif+'"'+(dif?' title="'+(nac.uteis-n)+' feriado(s) municipal(is) a mais"':'')+'>'+n+'</td>';
+    }).join('');
+    var dec = '';
+    if(atual){ var u = contarDias(a, ult, 'São Paulo').uteis; dec = '<div class="du-sub">'+u+' até '+String(ult.getDate()).padStart(2,'0')+'/'+String(mi+1).padStart(2,'0')+' (SP)</div>'; }
+    return '<tr'+(atual?' class="du-atual"':'')+'><td>'+lbl+'/'+String(y).slice(2)+dec+'</td>'+cels+'<td class="mono">'+nac.sabados+'</td><td class="mono">'+nac.corridos+'</td></tr>';
+  }).join('');
+  var cab = MUNICIPIOS.map(function(c){ return '<th title="'+lojasDoMunicipio(c).join(', ')+'">'+c+'<div class="du-sub">'+lojasDoMunicipio(c).join(', ')+'</div></th>'; }).join('');
+  box.innerHTML = '<div class="table-scroll"><table class="data-table du-tab"><thead><tr><th>Mês</th>'+cab+'<th>Sábados</th><th>Dias corridos<div class="du-sub">e-commerce</div></th></tr></thead><tbody>'+linhas+
+    '</tbody><tfoot><tr><td><b>Ano</b></td>'+MUNICIPIOS.map(function(c){ return '<td class="mono"><b>'+tot[c]+'</b></td>'; }).join('')+'<td class="mono"><b>'+totSab+'</b></td><td class="mono"><b>'+totCor+'</b></td></tr></tfoot></table></div>';
+
+  // feriados do ano
+  var fl = feriadosAno(y).lista;
+  var fb = document.getElementById('duFerBody');
+  if(fb) fb.innerHTML = '<div class="table-scroll scroll-limit"><table class="data-table du-tab"><thead><tr><th>Data</th><th>Dia</th><th>Feriado</th><th>Abrangência</th><th>Efeito nas lojas físicas</th></tr></thead><tbody>' +
+    fl.map(function(f){
+      var w = f.d.getDay(), fds = w===0 || w===6;
+      var abr = f.tipo==='nacional' ? 'Nacional' : f.tipo==='estadual' ? 'Estadual (SP)' : f.tipo==='facultativo' ? 'Ponto facultativo' : 'Municipal: '+f.cidades.join(', ');
+      var lojas = f.tipo==='municipal' ? f.cidades.reduce(function(a,c){ return a.concat(lojasDoMunicipio(c)); }, []) : null;
+      var ef = f.tipo==='facultativo' ? '<span class="note-muted">Não descontado (conta como dia normal)</span>'
+        : fds ? '<span class="note-muted">Cai no fim de semana</span>'
+        : (w===2 || w===4) ? 'Tira 1 dia útil'+(lojas?' de '+lojas.join(', '):' de todas')+' · <span style="color:var(--warning)">emenda possível</span>'
+        : 'Tira 1 dia útil'+(lojas?' de '+lojas.join(', '):' de todas');
+      return '<tr'+(fds||f.tipo==='facultativo'?' class="du-fraco"':'')+'><td class="mono">'+f.iso.slice(8,10)+'/'+f.iso.slice(5,7)+'</td><td>'+DIA_SEMANA[w]+'</td><td>'+f.nome+'</td><td>'+abr+'</td><td>'+ef+'</td></tr>';
+    }).join('') + '</tbody></table></div>';
+
+  renderDuVendas();
+}
+
+// venda real por tipo de dia e por dia útil (base inteira, com os filtros aplicados)
+function renderDuVendas(){
+  var tb = document.getElementById('duTipoBody'), mb = document.getElementById('duLojaBody');
+  if(!tb || !mb) return;
+  var seq = ++DU_SEQ, f = PAINEL_F || {}, idOn = (DIMI.canal||{})[CANAL_ONLINE];
+  var todos = Object.keys(DIMI.canal||{}).map(function(k){ return DIMI.canal[k]; });
+  var base = f.canal ? f.canal : todos;
+  function comCanais(ids){ var g = JSON.parse(JSON.stringify(f)); g.canal = ids.length ? ids.slice().sort(function(a,b){ return a-b; }) : [-1]; return g; }
+  var fFis = comCanais(base.filter(function(i){ return i!==idOn; })), fOn = comCanais(base.filter(function(i){ return i===idOn; }));
+  tb.innerHTML = '<p class="note-muted">Carregando vendas por dia…</p>';
+  Promise.all([rpcMemo('bi_painel', {f:fFis, per:{}, parte:'a'}), rpcMemo('bi_painel', {f:fOn, per:{}, parte:'a'})]).then(function(r){
+    if(seq!==DU_SEQ) return;
+    function serie(v){ var s = {}; ((v && v.d)||[]).forEach(function(x){ s[String(x[0]).slice(0,10)] = c2(x[1]); }); return s; }
+    var sFis = serie(r[0]), sOn = serie(r[1]);
+    // classifica cada dia da base: feriados municipais ficam à parte (afetam só parte das lojas)
+    function classe(d){
+      var o = feriadosAno(d.getFullYear()).porDia[isoDia(d)], w = d.getDay();
+      if(o && w!==0 && w!==6){
+        if(o.tipo==='nacional' || o.tipo==='estadual') return 'fer';
+        if(o.tipo==='municipal') return 'mun';
+        if(/Carnaval/.test(o.nome)) return 'carn';
+        if(/Cinzas/.test(o.nome)) return 'cinz';
+        return 'vesp';
+      }
+      return w===0 ? 'dom' : (w===6 ? 'sab' : 'util');
+    }
+    var CL = [['util','Dia útil (seg a sex)'],['sab','Sábado'],['dom','Domingo'],['fer','Feriado nacional ou estadual em dia de semana'],
+      ['mun','Feriado municipal em dia de semana (só parte das lojas fecha)'],['carn','Carnaval (segunda e terça)'],['cinz','Quarta-feira de Cinzas'],['vesp','Vésperas de Natal e Ano Novo em dia de semana']];
+    var acc = {}; CL.forEach(function(c){ acc[c[0]] = {n:0, fis:0, on:0}; });
+    DAYS.forEach(function(d){ var k = classe(d), iso = isoDia(d); acc[k].n++; acc[k].fis += sFis[iso]||0; acc[k].on += sOn[iso]||0; });
+    var bFis = acc.util.n ? acc.util.fis/acc.util.n : 0, bOn = acc.util.n ? acc.util.on/acc.util.n : 0;
+    function pct(v, b){ return b>0 ? Math.round(v/b*100)+'%' : '–'; }
+    tb.innerHTML = '<div class="table-scroll"><table class="data-table du-tab"><thead><tr><th>Tipo de dia</th><th>Dias na base</th><th>Lojas físicas · média/dia</th><th>% de um dia útil</th><th>E-commerce · média/dia</th><th>% de um dia útil</th></tr></thead><tbody>' +
+      CL.filter(function(c){ return acc[c[0]].n; }).map(function(c){
+        var a = acc[c[0]], mf = a.fis/a.n, mo = a.on/a.n;
+        return '<tr><td>'+c[1]+'</td><td class="mono">'+a.n+'</td><td class="mono">'+fmtMoney(mf)+'</td><td class="mono"><b>'+pct(mf,bFis)+'</b></td><td class="mono">'+fmtMoney(mo)+'</td><td class="mono"><b>'+pct(mo,bOn)+'</b></td></tr>';
+      }).join('') + '</tbody></table></div>';
+    var nt = document.getElementById('duTipoNota');
+    if(nt){
+      var ps = bFis>0 && acc.sab.n ? acc.sab.fis/acc.sab.n/bFis : null;
+      var txt = [];
+      if(ps!==null) txt.push('Nas lojas físicas, um sábado vende <b>'+Math.round(ps*100)+'%</b> de um dia útil. Para projeção, cada sábado pode valer '+ps.toFixed(2).replace('.',',')+' dia útil.');
+      if(bOn>0 && acc.sab.n && acc.dom.n) txt.push('No e-commerce, sábado vende <b>'+pct(acc.sab.on/acc.sab.n, bOn)+'</b> e domingo <b>'+pct(acc.dom.on/acc.dom.n, bOn)+'</b> de um dia útil.');
+      if(acc.carn.n && bFis>0) txt.push('No Carnaval, as lojas físicas venderam <b>'+pct(acc.carn.fis/acc.carn.n, bFis)+'</b> de um dia útil.');
+      nt.innerHTML = txt.join(' ') + ' Base: '+isoDia(DAYS[0]).split('-').reverse().join('/')+' a '+isoDia(DAYS[N_DAYS-1]).split('-').reverse().join('/')+', com os filtros aplicados.';
+    }
+    // R$ por dia útil, mês a mês, por loja (mês corrente conta só até o último dia com dados)
+    var ult = DAYS[N_DAYS-1], meses = REAL.months.slice(-12);
+    var lojas = PHYSICAL_LOJAS.filter(function(l){ return RESUMO.some(function(x){ return x.loja===l && x.canal!==CANAL_ONLINE && x.fat>0; }); });
+    function fatMes(mi, cond){ return RESUMO.reduce(function(s,x){ return x.mi===mi && cond(x) ? s+x.fat : s; }, 0); }
+    function limites(k){ var p = k.split('-'), a = new Date(+p[0], +p[1]-1, 1), b = new Date(+p[0], +p[1], 0); return [a, b<ult ? b : ult]; }
+    var cab = meses.map(function(k){ var p = k.split('-'); return '<th>'+MES_ABREV[+p[1]-1]+'/'+p[0].slice(2)+'</th>'; }).join('');
+    var corpo = lojas.map(function(l){
+      return '<tr><td>'+l+'<div class="du-sub">'+(LOJA_MUNICIPIO[l]||'município não cadastrado')+'</div></td>'+meses.map(function(k){
+        var mi = REAL.months.indexOf(k), lim = limites(k), du = diasUteisLoja(l, lim[0], lim[1]);
+        var v = fatMes(mi, function(x){ return x.loja===l && x.canal!==CANAL_ONLINE; });
+        return '<td class="mono" title="'+fmtMoney(v)+' em '+du+' dias úteis">'+(du>0 && v>0 ? fmtCurto(v/du) : '–')+'</td>';
+      }).join('')+'</tr>';
+    }).join('');
+    var onl = '<tr class="du-atual"><td>E-commerce<div class="du-sub">por dia corrido</div></td>'+meses.map(function(k){
+      var mi = REAL.months.indexOf(k), lim = limites(k), dc = contarDias(lim[0], lim[1], null).corridos;
+      var v = fatMes(mi, function(x){ return x.canal===CANAL_ONLINE; });
+      return '<td class="mono" title="'+fmtMoney(v)+' em '+dc+' dias corridos">'+(v>0 ? fmtCurto(v/dc) : '–')+'</td>';
+    }).join('')+'</tr>';
+    mb.innerHTML = '<div class="table-scroll"><table class="data-table du-tab"><thead><tr><th>Loja</th>'+cab+'</tr></thead><tbody>'+corpo+onl+'</tbody></table></div>';
+  }).catch(function(){ if(seq===DU_SEQ) tb.innerHTML = '<p class="note-muted">Não foi possível carregar as vendas por dia.</p>'; });
 }
 function renderCanalBar(map){
   var bar = document.getElementById('canalBar'); if(!bar) return;
@@ -3825,6 +4061,7 @@ function renderTudo(refreshing){
   renderActiveTags();
   if(state.currentView==='vendedores') renderVendConsult();
   if(state.currentView==='insights') renderInsights();
+  if(state.currentView==='diasuteis') renderDiasUteis();
 }
 
 /* ============================================================
@@ -3854,6 +4091,7 @@ function bindEvents(){
     estoque:{title:'Estoque', sub:'Saúde do estoque, alertas e giro'},
     produtos:{title:'Produtos', sub:'Curva ABC e catálogo detalhado'},
     vendedores:{title:'Vendedores', sub:'Performance e consultoria comparativa'},
+    diasuteis:{title:'Dias úteis', sub:'Calendário de dias úteis por loja, feriados e venda por tipo de dia'},
     insights:{title:'Insights', sub:'Oportunidades para aumentar faturamento e margem'},
     usuarios:{title:'Usuários', sub:'Gestão de acessos ao painel (somente BI)'},
     fontes:{title:'Links das planilhas', sub:'Origem dos dados da carga (somente BI)'}
@@ -3873,6 +4111,7 @@ function bindEvents(){
     document.getElementById('viewSub').textContent = meta.sub;
     if(view==='vendedores'){ renderVendConsult(); }
     if(view==='insights'){ renderInsights(); }
+    if(view==='diasuteis'){ renderDiasUteis(); }
     if(view==='usuarios'){ renderUsersAdmin(); }
     if(view==='fontes'){ renderFontesAdmin(); }
     document.getElementById('app').removeAttribute('data-sidebar-mobile');
@@ -4252,7 +4491,7 @@ async function fetchAllProfiles(){
 }
 var ABAS = [
   {k:'dashboard', t:'Dashboard'}, {k:'vendas', t:'Vendas'}, {k:'estoque', t:'Estoque'},
-  {k:'produtos', t:'Produtos'}, {k:'vendedores', t:'Vendedores'}, {k:'insights', t:'Insights'}
+  {k:'produtos', t:'Produtos'}, {k:'vendedores', t:'Vendedores'}, {k:'diasuteis', t:'Dias úteis'}, {k:'insights', t:'Insights'}
 ];
 var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
 var ROLE_COR = {bi:'linear-gradient(135deg,#22d3ee,#3b82f6)', diretoria:'linear-gradient(135deg,#a78bfa,#6366f1)', gerencia:'linear-gradient(135deg,#fab219,#d9772e)', vendedor:'linear-gradient(135deg,#1fc46a,#1fb08a)'};
