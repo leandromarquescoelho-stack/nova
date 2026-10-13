@@ -353,6 +353,12 @@ tr.vend-row, .vend-pt{ cursor:pointer; }
 .vr-bar i{ display:block; height:100%; background:var(--accent); border-radius:2px; }
 .vr-pct{ flex:0 0 auto; font-size:10.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
 .du-tab{ min-width:0 !important; }
+.proj-mini{ font-size:9px; font-style:italic; color:var(--text-muted); margin-top:1px; }
+.proj-sw{ background:transparent !important; border:1px dashed var(--text-muted); }
+.proj-leg{ color:var(--text-muted); font-style:italic; }
+.mtd-bar .mtd-falta{ position:absolute; right:0; top:0; bottom:0; border:1px dashed var(--text-muted); border-left:0; border-radius:0 6px 6px 0; opacity:.6; box-sizing:border-box; }
+.mtd-proj .v{ color:var(--text-2); }
+.mtd-proj .l::after{ content:' · estimativa'; font-weight:400; color:var(--text-muted); }
 .du-tab th, .du-tab td{ white-space:nowrap; }
 .du-tab tfoot td{ border-top:1px solid var(--border); padding-top:6px; }
 .du-sub{ font-size:10px; color:var(--text-muted); font-weight:400; white-space:normal; }
@@ -2147,7 +2153,15 @@ var METRIC_FMT = {fat:fmtMoney, qtd:fmtUn, margem:fmtMoney, ticket:fmtMoney2};
 function renderMainChart(){
   var prods = filteredProducts();
   var data = buildSeries(prods, state.chartRange, state.chartMetric);
-  var pts = data.points;
+  var pts = data.points, nReal = pts.length;
+  // 30 dias: estende até o fim do mês com a projeção por dias úteis (linha pontilhada neutra)
+  if(state.chartRange==='30d' && periodRange('30d').end===TODAY_IDX){
+    pts = pts.concat(projecaoDiaria().map(function(v){
+      var m = state.chartMetric;
+      return {date:v.date, proj:true, val: m==='fat'?v.fat : m==='qtd'?v.qtd : m==='margem'?v.lb : (v.qtd>0?v.fat/v.qtd:0)};
+    }));
+  }
+  var realPts = pts.slice(0, nReal), projPts = pts.slice(nReal);
   var W = 720, H = 260, padL=54, padR=14, padT=16, padB=28;
   var innerW=W-padL-padR, innerH=H-padT-padB;
   var vals = pts.map(function(p){return p.val;});
@@ -2168,8 +2182,15 @@ function renderMainChart(){
     return '<text x="'+x(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">'+lbl+'</text>';
   }).join('');
 
-  var linePts = pts.map(function(p,i){ return x(i)+','+y(p.val); }).join(' ');
-  var areaPts = 'M'+x(0)+','+(padT+innerH)+' L'+pts.map(function(p,i){return x(i)+','+y(p.val);}).join(' L')+' L'+x(pts.length-1)+','+(padT+innerH)+' Z';
+  var linePts = realPts.map(function(p,i){ return x(i)+','+y(p.val); }).join(' ');
+  var areaPts = 'M'+x(0)+','+(padT+innerH)+' L'+realPts.map(function(p,i){return x(i)+','+y(p.val);}).join(' L')+' L'+x(nReal-1)+','+(padT+innerH)+' Z';
+  var projSvg = '';
+  if(projPts.length){
+    var px0 = x(nReal-1), px1 = x(pts.length-1);
+    projSvg = '<rect x="'+(px0+2)+'" y="'+padT+'" width="'+(px1-px0)+'" height="'+innerH+'" fill="var(--text-muted)" fill-opacity="0.05"/>' +
+      '<polyline points="'+[nReal-1].concat(projPts.map(function(p,j){ return nReal+j; })).map(function(i){ return x(i)+','+y(pts[i].val); }).join(' ')+'" fill="none" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="2 4" stroke-linecap="round"/>' +
+      '<text x="'+((px0+px1)/2)+'" y="'+(padT+10)+'" text-anchor="middle" font-size="9.5" font-style="italic" fill="var(--text-muted)">projeção de fechamento</text>';
+  }
   var prevLine = data.prev.length ? data.prev.map(function(v,i){ return x(i)+','+y(v); }).join(' ') : '';
 
   var gradId='mgGrad';
@@ -2180,7 +2201,7 @@ function renderMainChart(){
     '</linearGradient></defs>' +
     grid + ylabels +
     '<path d="'+areaPts+'" fill="url(#'+gradId+')"/>' +
-    (prevLine ? '<polyline points="'+prevLine+'" fill="none" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="4 4"/>' : '') +
+    (prevLine ? '<polyline points="'+prevLine+'" fill="none" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="4 4"/>' : '') + projSvg +
     '<polyline points="'+linePts+'" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>' +
     pts.map(function(p,i){ return '<circle class="hoverdot" data-i="'+i+'" cx="'+x(i)+'" cy="'+y(p.val)+'" r="9" fill="transparent"/>'; }).join('') +
     '<g id="crosshair" style="opacity:0"><line x1="0" y1="'+padT+'" x2="0" y2="'+(padT+innerH)+'" stroke="var(--border-strong)" stroke-width="1"/><circle r="4" fill="var(--accent)" stroke="var(--plane)" stroke-width="2"/></g>' +
@@ -2190,7 +2211,8 @@ function renderMainChart(){
   document.getElementById('mainChart').innerHTML = svg;
   document.getElementById('mainLegend').innerHTML =
     '<span><i style="background:var(--accent)"></i>'+METRIC_LABEL[state.chartMetric]+' (período atual)</span>' +
-    '<span><i class="dashed" style="color:var(--text-muted)"></i>Período anterior</span>';
+    '<span><i class="dashed" style="color:var(--text-muted)"></i>Período anterior</span>' +
+    (projPts.length ? '<span class="proj-leg"><i class="proj-sw"></i>Projeção de fechamento do mês (dias úteis)</span>' : '');
 
   var svgEl = document.getElementById('mainChartSvg');
   var tip = document.getElementById('mainTip');
@@ -2206,10 +2228,10 @@ function renderMainChart(){
     cross.style.opacity='1';
     cross.querySelector('line').setAttribute('x1',cx); cross.querySelector('line').setAttribute('x2',cx);
     cross.querySelector('circle').setAttribute('cx',cx); cross.querySelector('circle').setAttribute('cy',cy);
-    var prevVal = data.prev[idx];
+    var prevVal = p.proj ? null : data.prev[idx];
     var cmp = (prevVal && prevVal>0) ? ((p.val-prevVal)/prevVal*100) : null;
     tip.innerHTML = '<div class="tt-date">'+fmtDateFull(p.date)+'</div>' +
-      '<div class="tt-row"><span>'+METRIC_LABEL[state.chartMetric]+'</span><b>'+METRIC_FMT[state.chartMetric](p.val)+'</b></div>' +
+      '<div class="tt-row"><span>'+(p.proj?'Projeção · ':'')+METRIC_LABEL[state.chartMetric]+'</span><b>'+METRIC_FMT[state.chartMetric](p.val)+'</b></div>' +
       (cmp!==null ? '<div class="tt-row"><span>vs. período anterior</span><b style="color:'+(cmp>=0?'var(--good)':'var(--critical)')+'">'+fmtPct(cmp)+'</b></div>' : '');
     var leftPct = (cx/W*100);
     tip.style.left = leftPct+'%';
@@ -2538,6 +2560,115 @@ function renderDuVendas(){
     }).join('')+'</tr>';
     mb.innerHTML = '<div class="table-scroll"><table class="data-table du-tab"><thead><tr><th>Loja</th>'+cab+'</tr></thead><tbody>'+corpo+onl+'</tbody></table></div>';
   }).catch(function(){ if(seq===DU_SEQ) tb.innerHTML = '<p class="note-muted">Não foi possível carregar as vendas por dia.</p>'; });
+}
+/* ---------- projeção de fechamento do mês por dias úteis ----------
+   Cada dia vale um peso: dia útil = 1; sábado, domingo, feriado, Carnaval e vésperas valem o quanto vendem de fato
+   em relação a um dia útil (últimos 12 meses fechados). Lojas físicas usam o calendário do município da loja;
+   e-commerce (canal ECOMMERCE e marketplaces) usa os próprios pesos, sem feriado municipal.
+   Projeção = acumulado do mês ÷ peso dos dias já passados × peso do mês inteiro. */
+function classeDia(d, municipio, separarMun){
+  var o = feriadosAno(d.getFullYear()).porDia[isoDia(d)], w = d.getDay();
+  if(o && w!==0 && w!==6){
+    if(o.tipo==='nacional' || o.tipo==='estadual') return 'fer';
+    if(o.tipo==='municipal'){ if(separarMun) return 'mun'; if(municipio && o.cidades.indexOf(municipio)!==-1) return 'fer'; }
+    else if(/Carnaval/.test(o.nome)) return 'carn';
+    else if(/Cinzas/.test(o.nome)) return 'cinz';
+    else return 'vesp';
+  }
+  return w===0 ? 'dom' : (w===6 ? 'sab' : 'util');
+}
+function inicioMesAtual(){ var i = TODAY_IDX; while(i>0 && DAYS[i].getDate()!==1) i--; return i; }
+var PESOS = null, PESOS_PR = null, PROJ_MEMO = {};
+function carregarPesos(){
+  if(PESOS_PR) return PESOS_PR;
+  var idOn = (DIMI.canal||{})[CANAL_ONLINE];
+  var fis = Object.keys(DIMI.canal||{}).map(function(k){ return DIMI.canal[k]; }).filter(function(i){ return i!==idOn; }).sort(function(a,b){ return a-b; });
+  var ini = inicioMesAtual();
+  if(ini<=0){ PESOS_PR = Promise.resolve(null); return PESOS_PR; }
+  PESOS_PR = Promise.all([
+    fis.length ? rpcMemo('bi_painel', {f:{canal:fis}, per:{}, parte:'a'}) : null,
+    idOn!==undefined ? rpcMemo('bi_painel', {f:{canal:[idOn]}, per:{}, parte:'a'}) : null
+  ]).then(function(r){
+    function calc(v){
+      if(!v) return null;
+      var s = {}; (v.d||[]).forEach(function(x){ s[String(x[0]).slice(0,10)] = c2(x[1]); });
+      var acc = {};
+      for(var i=Math.max(0, ini-365); i<ini; i++){
+        var k = classeDia(DAYS[i], null, true), a = acc[k] = acc[k] || {n:0, v:0};
+        a.n++; a.v += s[isoDia(DAYS[i])]||0;
+      }
+      var base = acc.util && acc.util.n ? acc.util.v/acc.util.n : 0;
+      if(base<=0) return null;
+      var p = {util:1};
+      ['sab','dom','fer','carn','cinz','vesp'].forEach(function(k){ p[k] = acc[k] && acc[k].n ? acc[k].v/acc[k].n/base : null; });
+      if(p.sab===null) p.sab = 0;
+      if(p.dom===null) p.dom = 0;
+      if(p.fer===null) p.fer = p.dom;
+      ['carn','cinz','vesp'].forEach(function(k){ if(p[k]===null) p[k] = 1; });
+      return p;
+    }
+    PESOS = {fis: calc(r[0]), on: calc(r[1])}; PROJ_MEMO = {};
+    return PESOS;
+  }).catch(function(){ PESOS_PR = null; return null; });
+  return PESOS_PR;
+}
+function pesoDia(d, online, municipio){
+  var p = PESOS && PESOS[online ? 'on' : 'fis'];
+  return p ? p[classeDia(d, online ? null : municipio, false)] : null;
+}
+// pesos do mês atual para um grupo (online ou loja física de um município): já passados e mês inteiro
+function pesosMes(online, municipio){
+  var k = (online?'on':'fis')+'|'+(municipio||'');
+  if(PROJ_MEMO[k]) return PROJ_MEMO[k];
+  var a = DAYS[inicioMesAtual()], ult = DAYS[TODAY_IDX], fim = new Date(a.getFullYear(), a.getMonth()+1, 0), el = 0, tot = 0, ok = true;
+  for(var d = new Date(a); d <= fim; d = new Date(d.getFullYear(), d.getMonth(), d.getDate()+1)){
+    var p = pesoDia(d, online, municipio); if(p===null){ ok = false; break; }
+    tot += p; if(d <= ult) el += p;
+  }
+  return (PROJ_MEMO[k] = ok && el>0 ? {el:el, tot:tot} : null);
+}
+function projAtiva(){ return !!PESOS && !mesCompleto() && inicioMesAtual()>0; }
+function grupoLinha(r){
+  var on = r.canal===CANAL_ONLINE || !!(LOJA_INFO[r.loja] && !LOJA_INFO[r.loja].fisica);
+  return {on:on, mun: on ? null : (LOJA_MUNICIPIO[r.loja]||null)};
+}
+// fator de fechamento de uma linha do resumo do mês atual (1 quando não há projeção)
+function fatorLinha(r){
+  if(!projAtiva()) return 1;
+  var g = grupoLinha(r), pm = pesosMes(g.on, g.mun);
+  return pm ? pm.tot/pm.el : 1;
+}
+// soma real e projetada do mês atual para as linhas do resumo que passam na condição
+function projMes(cond){
+  var mi = monthIndexOfDay[TODAY_IDX], o = {real:0, proj:0};
+  RESUMO.forEach(function(r){ if(r.mi!==mi || (cond && !cond(r))) return; o.real += r.fat; o.proj += r.fat*fatorLinha(r); });
+  return o;
+}
+// valores projetados dia a dia para o restante do mês (ritmo de cada grupo por peso × peso do dia)
+function projecaoDiaria(){
+  if(!projAtiva()) return [];
+  var mi = monthIndexOfDay[TODAY_IDX], gr = {};
+  RESUMO.forEach(function(r){
+    if(r.mi!==mi) return;
+    var g = grupoLinha(r), k = (g.on?'on':'fis')+'|'+(g.mun||''), o = gr[k] = gr[k] || {g:g, fat:0, qtd:0, lb:0};
+    o.fat += r.fat; o.qtd += r.qtd; o.lb += r.lb;
+  });
+  var ult = DAYS[TODAY_IDX], fim = new Date(ult.getFullYear(), ult.getMonth()+1, 0), out = [];
+  for(var d = new Date(ult.getFullYear(), ult.getMonth(), ult.getDate()+1); d <= fim; d = new Date(d.getFullYear(), d.getMonth(), d.getDate()+1)){
+    var v = {date:d, fat:0, qtd:0, lb:0};
+    Object.keys(gr).forEach(function(k){
+      var o = gr[k], pm = pesosMes(o.g.on, o.g.mun), p = pesoDia(d, o.g.on, o.g.mun);
+      if(!pm || p===null) return;
+      v.fat += o.fat/pm.el*p; v.qtd += o.qtd/pm.el*p; v.lb += o.lb/pm.el*p;
+    });
+    out.push(v);
+  }
+  return out;
+}
+function textoPesos(){
+  var p = PESOS && PESOS.fis; if(!p) return '';
+  function f(x){ return x.toFixed(2).replace('.',','); }
+  return 'Nas lojas físicas, sábado vale '+f(p.sab)+' e domingo '+f(p.dom)+' dia útil, conforme a venda real dos últimos 12 meses.';
 }
 function renderCanalBar(map){
   var bar = document.getElementById('canalBar'); if(!bar) return;
@@ -3695,6 +3826,8 @@ function renderMonthToDate(){
   var completo = mesCompleto();
   var share = completo ? 1 : (shares.length ? shares.reduce(function(a,b){return a+b;},0)/shares.length : 0);
   var proj = share>0 ? mtd/share : 0;
+  var pm = projAtiva() ? projMes() : null;
+  if(pm && pm.real>0) proj = mtd*pm.proj/pm.real; // projeção por dias úteis (pesos reais de sábado, domingo e feriados)
   var mesAtual = MES_NOME[NOW.getMonth()], mesAnt = MES_NOME[(NOW.getMonth()+11)%12];
   var vsSame = prevSame>0 ? (mtd-prevSame)/prevSame*100 : 0;
   var vsFull = prevFull>0 ? (proj-prevFull)/prevFull*100 : 0;
@@ -3707,13 +3840,18 @@ function renderMonthToDate(){
       '<div class="s">'+dv+' dias com venda · margem '+(mtd>0?(mtdLb/mtd*100).toFixed(1):'0')+'%</div></div>' +
     '<div class="mtd-box"><div class="l">vs. mesmos dias de '+mesAnt+'</div><div class="v" style="color:'+cor(vsSame)+'">'+fmtPct(vsSame)+'</div>' +
       '<div class="s">'+mesAnt+' até o dia '+dia+': '+fmtMoney(prevSame)+'</div></div>' +
-    '<div class="mtd-box"><div class="l">'+(completo?'Total do mês':'Projeção de fechamento')+'</div><div class="v">'+fmtMoney(proj)+'</div>' +
+    '<div class="mtd-box'+(completo?'':' mtd-proj')+'"><div class="l">'+(completo?'Total do mês':'Projeção de fechamento')+'</div><div class="v">'+fmtMoney(proj)+'</div>' +
       '<div class="s"><span style="color:'+cor(vsFull)+'">'+fmtPct(vsFull)+'</span> vs. '+mesAnt+' fechado ('+fmtCurto(prevFull)+')</div></div>' +
     '<div class="mtd-box"><div class="l">Ritmo por dia de venda</div><div class="v">'+fmtMoney(ritmo)+'</div>' +
       '<div class="s"><span style="color:'+cor(vsRitmo)+'">'+fmtPct(vsRitmo)+'</span> vs. média de '+mesAnt+' ('+fmtCurto(ritmoAnt)+')</div></div>';
   var pct = proj>0 ? Math.min(100, mtd/proj*100) : 0;
-  document.getElementById('mtdBar').innerHTML = '<i style="width:'+pct+'%; background:linear-gradient(90deg,var(--accent),var(--accent-2));"></i>';
-  document.getElementById('mtdNota').textContent = completo ? 'Mês completo na base de dados.' :
+  document.getElementById('mtdBar').innerHTML = '<i style="width:'+pct+'%; background:linear-gradient(90deg,var(--accent),var(--accent-2));"></i>' +
+    (completo ? '' : '<b class="mtd-falta" style="width:'+(100-pct)+'%" title="Falta para a projeção de fechamento"></b>');
+  var fimMes = new Date(NOW.getFullYear(), NOW.getMonth()+1, 0), amanha = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate()+1);
+  var faltam = amanha<=fimMes ? contarDias(amanha, fimMes, 'São Paulo') : null;
+  document.getElementById('mtdNota').textContent = completo ? 'Mês completo na base de dados.' : pm ?
+    'Projeção de fechamento por dias úteis: o ritmo do mês por dia útil de cada loja, aplicado aos dias que faltam no calendário do município dela; e-commerce conta todos os dias. ' +
+      (faltam ? 'Faltam '+faltam.uteis+' dias úteis e '+faltam.sabados+' sábado(s) em São Paulo. ' : '') + textoPesos() + ' Usa os filtros aplicados, mas não o período selecionado.' :
     'Até o dia '+dia+', os últimos '+shares.length+' meses fechados já tinham em média '+(share*100).toFixed(0)+'% do faturamento do mês; a projeção divide o acumulado por essa fração. Usa os filtros aplicados, mas não o período selecionado.';
 }
 
@@ -3741,7 +3879,8 @@ function renderMonthChart(){
   var d = monthlyByCanal(), nM = REAL.months.length;
   var canais = Object.keys(d.byC).sort(function(a,b){ return d.byC[b].reduce(function(x,y){return x+y;},0) - d.byC[a].reduce(function(x,y){return x+y;},0); });
   var W=720, H=250, padL=54, padR=40, padT=22, padB=26, iw=W-padL-padR, ih=H-padT-padB;
-  var maxV = Math.max.apply(null, d.tot.concat([1]))*1.12;
+  var pmc = projAtiva() ? projMes() : null, projUlt = pmc && pmc.real>0 ? d.tot[nM-1]*pmc.proj/pmc.real : null;
+  var maxV = Math.max.apply(null, d.tot.concat([1, projUlt||0]))*1.12;
   var mgs = d.tot.map(function(t,i){ return t>0 ? d.lb[i]/t*100 : null; });
   var mgVals = mgs.filter(function(v){ return v!==null; });
   var mgMax = Math.max.apply(null, mgVals.concat([1]))*1.15, mgMin = Math.max(0, Math.min.apply(null, mgVals.concat([mgMax]))*0.85);
@@ -3755,9 +3894,14 @@ function renderMonthChart(){
     var x0 = padL+mi*bw+bw*0.18, w = bw*0.64, acc = 0, last = parcial && mi===nM-1;
     canais.forEach(function(c){
       var v = d.byC[c][mi]; if(v<=0) return;
-      out += '<rect'+fkAttr('canal',c)+' x="'+x0+'" y="'+y(acc+v)+'" width="'+w+'" height="'+(y(acc)-y(acc+v))+'" fill="'+canalCor(c)+'" opacity="'+(last?0.45:0.9)+'"><title>'+REAL.monthLabels[mi]+' · '+c+': '+fmtMoney(v)+'</title></rect>';
+      out += '<rect'+fkAttr('canal',c)+' x="'+x0+'" y="'+y(acc+v)+'" width="'+w+'" height="'+(y(acc)-y(acc+v))+'" fill="'+canalCor(c)+'" opacity="'+(last?(projUlt?0.8:0.45):0.9)+'"><title>'+REAL.monthLabels[mi]+' · '+c+': '+fmtMoney(v)+'</title></rect>';
       acc += v;
     });
+    if(last && projUlt && projUlt>acc){
+      out += '<rect x="'+x0+'" y="'+y(projUlt)+'" width="'+w+'" height="'+(y(acc)-y(projUlt))+'" fill="var(--text-muted)" fill-opacity="0.08" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3"><title>Projeção de fechamento: '+fmtMoney(projUlt)+' (realizado '+fmtMoney(acc)+')</title></rect>' +
+        '<text x="'+(x0+w/2)+'" y="'+(y(projUlt)-5)+'" text-anchor="middle" font-size="9" font-style="italic" fill="var(--text-muted)" font-family="JetBrains Mono, monospace">proj. '+fmtCurto(projUlt).replace('R$ ','')+'</text>' +
+        '<text x="'+(x0+w/2)+'" y="'+(y(acc)+11)+'" text-anchor="middle" font-size="9" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
+    } else
     out += '<text x="'+(x0+w/2)+'" y="'+(y(acc)-5)+'" text-anchor="middle" font-size="9.5" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
     out += '<text x="'+(x0+w/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="var(--text-muted)">'+REAL.monthLabels[mi]+(last?'*':'')+'</text>';
   }
@@ -3768,7 +3912,8 @@ function renderMonthChart(){
       '<text x="'+(cx+5)+'" y="'+(y2(v)-6)+'" font-size="9" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+v.toFixed(1)+'%</text>'; });
   box.innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Faturamento mensal por canal">'+out+'</svg>';
   document.getElementById('monthLegend').innerHTML = canais.map(function(c){ return '<span'+fkAttr('canal',c)+'><i style="background:'+canalCor(c)+'"></i>'+c+'</span>'; }).join('') +
-    '<span><i style="background:var(--text); height:2px; vertical-align:3px;"></i>Margem bruta %</span>' + (parcial ? '<span>* mês em andamento</span>' : '');
+    '<span><i style="background:var(--text); height:2px; vertical-align:3px;"></i>Margem bruta %</span>' + (parcial ? '<span>* mês em andamento</span>' : '') +
+    (projUlt ? '<span class="proj-leg"><i class="proj-sw"></i>Projeção de fechamento (dias úteis)</span>' : '');
 }
 
 /* ============================================================
@@ -3791,9 +3936,12 @@ function renderHeatLoja(){
     '<th>Total</th><th title="último mês fechado vs. o anterior">'+(REAL.monthLabels[ult]||'')+' vs. '+(REAL.monthLabels[ult-1]||'')+'</th></tr>';
   var body = lojas.map(function(o){
     var cmp = o.v.slice(0, parcial ? nM-1 : nM), mx = Math.max.apply(null, cmp.concat([1]));
+    var pj = parcial && projAtiva() ? projMes(function(r){ return r.loja===o.k; }) : null;
     var tds = o.v.map(function(v,i){
       var a = v>0 ? 0.08 + 0.55*Math.min(1, v/mx) : 0.03;
-      return '<td style="background:rgba(34,211,238,'+a.toFixed(3)+')" title="'+o.k+' · '+REAL.monthLabels[i]+': '+fmtMoney(v)+'">'+(v>0?fmtCurto(v).replace('R$ ',''):'—')+'</td>';
+      var pv = pj && i===nM-1 && pj.real>0 ? v*pj.proj/pj.real : null;
+      return '<td style="background:rgba(34,211,238,'+a.toFixed(3)+')" title="'+o.k+' · '+REAL.monthLabels[i]+': '+fmtMoney(v)+(pv?' · projeção de fechamento '+fmtMoney(pv):'')+'">'+(v>0?fmtCurto(v).replace('R$ ',''):'—') +
+        (pv ? '<div class="proj-mini">proj. '+fmtCurto(pv).replace('R$ ','')+'</div>' : '')+'</td>';
     }).join('');
     var dlt = o.v[ult-1]>0 ? (o.v[ult]-o.v[ult-1])/o.v[ult-1]*100 : null;
     var fis = LOJA_INFO[o.k] ? LOJA_INFO[o.k].fisica : true;
@@ -3801,7 +3949,7 @@ function renderHeatLoja(){
       '<td class="tot" style="color:'+(dlt===null?'var(--text-muted)':(dlt>=0?'var(--good)':'var(--critical)'))+'">'+(dlt===null?'—':fmtPct(dlt))+'</td></tr>';
   }).join('');
   box.innerHTML = '<table class="heat"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
-  document.getElementById('heatNota').textContent = 'Valores em R$ (mil/mi). ' + (parcial ? '* mês em andamento, fora da escala de cor. ' : '') +
+  document.getElementById('heatNota').textContent = 'Valores em R$ (mil/mi). ' + (parcial ? '* mês em andamento, fora da escala de cor'+(projAtiva()?'; "proj." é a projeção de fechamento por dias úteis':'')+'. ' : '') +
     'Usa os filtros aplicados; o período selecionado não se aplica.';
 }
 
@@ -4040,6 +4188,7 @@ async function renderAll(refreshing){
 function renderTudo(refreshing){
   renderKpis(refreshing);
   if(refreshing) return;
+  if(!PESOS_PR) carregarPesos().then(function(p){ if(p){ renderMonthToDate(); renderMainChart(); renderMonthChart(); renderHeatLoja(); } });
   renderMonthToDate();
   renderAutoInsights();
   renderMainChart();
