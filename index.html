@@ -353,6 +353,13 @@ tr.vend-row, .vend-pt{ cursor:pointer; }
 .vr-bar i{ display:block; height:100%; background:var(--accent); border-radius:2px; }
 .vr-pct{ flex:0 0 auto; font-size:10.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
 .du-tab{ min-width:0 !important; }
+.rd-lbl{ cursor:pointer; transition:opacity .15s; }
+.rd-lbl:hover{ fill:var(--text); }
+.rd-lbl.rd-sel{ fill:var(--accent); }
+.rd-lbl.rd-on{ fill:var(--text); text-decoration:underline; }
+.rd-lbl.rd-off, .rd-sp.rd-off{ opacity:.3; }
+.rd-sp.rd-on, .rd-sp.rd-sel{ stroke:var(--accent); stroke-opacity:.6; }
+.rd-info{ grid-column:1/-1; font-size:11.5px; color:var(--text-muted); margin-top:4px; }
 .eixo-datas{ position:relative; height:16px; border-top:1px solid var(--border); margin-top:2px; }
 .eixo-datas span{ position:absolute; top:3px; font-size:9.5px; color:var(--text-muted); font-family:'JetBrains Mono', monospace; white-space:nowrap; }
 .proj-mini{ font-size:9px; font-style:italic; color:var(--text-muted); margin-top:1px; }
@@ -3039,7 +3046,7 @@ function renderVendConsult(){
     var maxVal = Math.max.apply(null, meVals.concat(peerVals,[1]));
     var axes = top10.map(function(t,i){
       var lbl = labelFn(t.key);
-      return {label: lbl.length>16 ? lbl.slice(0,16)+'…' : lbl, meVal:meVals[i], peerVal:peerVals[i], groupMax:maxVal, fmt:fmtMoney};
+      return {label: lbl.length>16 ? lbl.slice(0,16)+'…' : lbl, full:lbl, dim:dimKey, key:t.key, meVal:meVals[i], peerVal:peerVals[i], groupMax:maxVal, fmt:fmtMoney};
     });
     return radarChartSVG(axes, 320, 290);
   }
@@ -3047,12 +3054,13 @@ function renderVendConsult(){
   var radarCatSvg = buildDimRadar('categorias', groupFatByCategoria, function(k){ return k; });
   var radarProdSvg = buildDimRadar('produtos', groupFatByProduto, function(k){ return prodNameById[k]||k; });
   function dimRadarBlock(title, svg){
-    return '<div><h3 class="dh">'+title+'</h3>' +
+    return '<div class="rd-bloco"><h3 class="dh">'+title+'</h3>' +
       (svg ? '<div class="chart-wrap" style="display:flex; justify-content:center;">'+svg+'</div>'
            : '<p style="font-size:11px; color:var(--text-muted);">Sem dados suficientes no recorte.</p>') +
     '</div>';
   }
 
+  RD_SEL = null;
   box.innerHTML = kpisHtml +
     '<div class="grid-2">' +
       '<div><h3 class="dh">Ranking do grupo &middot; clique no cabeçalho para ordenar ou no vendedor para analisá-lo</h3><div class="table-scroll scroll-limit">'+rankHtml+'</div></div>' +
@@ -3108,6 +3116,7 @@ function renderVendConsult(){
         dimRadarBlock('Top 10 Marcas — FAT normalizado', radarMarcaSvg) +
         dimRadarBlock('Top 10 Categorias — FAT normalizado', radarCatSvg) +
         dimRadarBlock('Top 10 Produtos — FAT normalizado', radarProdSvg) +
+        '<p id="rdInfo" class="rd-info">Clique numa marca, categoria ou produto para destacar os relacionados nos outros dois radares.</p>' +
       '</div>' +
     '</div>';
 
@@ -3156,6 +3165,47 @@ function polarPt(cx,cy,r,angleDeg){
   var rad = (angleDeg-90)*Math.PI/180;
   return [cx + r*Math.cos(rad), cy + r*Math.sin(rad)];
 }
+/* ---- radares de marca/categoria/produto: clique num item destaca os relacionados nos outros dois ----
+   produto -> a marca e a categoria dele; marca ou categoria -> produtos e a outra dimensão pelo cadastro de produtos */
+var RD_SEL = null;
+function relRadar(dim, k){
+  var out = {marcas:{}, categorias:{}, produtos:{}};
+  if(dim==='produtos'){
+    var inf = PRODINFO[k];
+    if(inf){ out.marcas[dimNome('marca', inf.marca)] = 1; out.categorias[dimNome('categoria', inf.cat)] = 1; }
+    return out;
+  }
+  var tipo = dim==='marcas' ? 'marca' : 'categoria', campo = dim==='marcas' ? 'marca' : 'cat';
+  var oDim = dim==='marcas' ? 'categorias' : 'marcas', oTipo = dim==='marcas' ? 'categoria' : 'marca', oCampo = dim==='marcas' ? 'cat' : 'marca';
+  Object.keys(PRODINFO).forEach(function(id){
+    var inf = PRODINFO[id]; if(dimNome(tipo, inf[campo])!==k) return;
+    out[oDim][dimNome(oTipo, inf[oCampo])] = 1; out.produtos[id] = 1;
+  });
+  return out;
+}
+function destacarRadares(box, dim, k){
+  var els = box.querySelectorAll('.rd-lbl, .rd-sp'), info = document.getElementById('rdInfo');
+  if(RD_SEL && RD_SEL.dim===dim && RD_SEL.k===k){
+    RD_SEL = null;
+    Array.prototype.forEach.call(els, function(e){ e.classList.remove('rd-on','rd-off','rd-sel'); });
+    if(info) info.textContent = 'Clique numa marca, categoria ou produto para destacar os relacionados nos outros dois radares.';
+    return;
+  }
+  RD_SEL = {dim:dim, k:k};
+  var rel = relRadar(dim, k), n = {marcas:0, categorias:0, produtos:0};
+  Array.prototype.forEach.call(els, function(e){
+    var d = e.getAttribute('data-dim'), ek = e.getAttribute('data-k');
+    var sel = d===dim && ek===k, on = sel || (d!==dim && rel[d][ek]);
+    e.classList.toggle('rd-sel', sel); e.classList.toggle('rd-on', !!on && !sel); e.classList.toggle('rd-off', !on);
+    if(on && !sel && e.classList.contains('rd-lbl')) n[d]++;
+  });
+  var nome = dim==='produtos' ? (PRODINFO[k] ? prodRotulo(PRODINFO[k]) : k) : k;
+  var partes = [];
+  if(dim!=='marcas') partes.push(n.marcas+' marca'+(n.marcas===1?'':'s'));
+  if(dim!=='categorias') partes.push(n.categorias+' categoria'+(n.categorias===1?'':'s'));
+  if(dim!=='produtos') partes.push(n.produtos+' produto'+(n.produtos===1?'':'s'));
+  if(info) info.innerHTML = '<b>'+escapeHtml(nome)+'</b>: '+partes.join(' e ')+' relacionados entre os top 10'+(dim==='produtos'?'':' (pelo cadastro de produtos)')+'. Clique de novo para limpar.';
+}
 function radarChartSVG(axes, w, h){
   var cx=w/2, cy=h/2-4;
   var R = Math.min(w,h)/2 - 54;
@@ -3166,14 +3216,15 @@ function radarChartSVG(axes, w, h){
     var pts = axes.map(function(a,i){ var p=polarPt(cx,cy,R*f,i*step); return p[0]+','+p[1]; }).join(' ');
     return '<polygon points="'+pts+'" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="1"/>';
   }).join('');
+  function rdAttr(a){ return a.dim ? ' data-dim="'+a.dim+'" data-k="'+escapeHtml(String(a.key))+'"' : ''; }
   var axisLines = axes.map(function(a,i){
     var p = polarPt(cx,cy,R,i*step);
-    return '<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="rgba(255,255,255,.12)" stroke-width="1"/>';
+    return '<line'+(a.dim?' class="rd-sp"'+rdAttr(a):'')+' x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="rgba(255,255,255,.12)" stroke-width="1"/>';
   }).join('');
   var labels = axes.map(function(a,i){
     var p = polarPt(cx,cy,R+30,i*step);
     var anchor = Math.abs(p[0]-cx)<6 ? 'middle' : (p[0]>cx ? 'start':'end');
-    return '<text x="'+p[0]+'" y="'+p[1]+'" text-anchor="'+anchor+'" dominant-baseline="middle" font-size="10.5" font-weight="700" fill="var(--text-muted)" font-family="Manrope,sans-serif">'+a.label+'</text>';
+    return '<text'+(a.dim?' class="rd-lbl"'+rdAttr(a):'')+' x="'+p[0]+'" y="'+p[1]+'" text-anchor="'+anchor+'" dominant-baseline="middle" font-size="10.5" font-weight="700" fill="var(--text-muted)" font-family="Manrope,sans-serif">'+(a.dim?'<title>'+escapeHtml(a.full||a.label)+' · clique para ver os relacionados</title>':'')+a.label+'</text>';
   }).join('');
   function pctOf(a,key){ return Math.max(0,Math.min(100, a[key]/Math.max(1e-9,a.groupMax)*100)); }
   function seriesPoly(key, color, fillOpacity, dashed){
@@ -4431,6 +4482,10 @@ function bindEvents(){
     var card = document.getElementById('vendConsultSelect'); if(card) card.scrollIntoView({behavior:'smooth', block:'nearest'});
   }
   document.getElementById('vendConsultBody').addEventListener('click', cliqueVendedor);
+  document.getElementById('vendConsultBody').addEventListener('click', function(ev){
+    var el = ev.target.closest && ev.target.closest('.rd-lbl'); if(!el) return;
+    destacarRadares(document.getElementById('vendConsultBody'), el.getAttribute('data-dim'), el.getAttribute('data-k'));
+  });
   document.getElementById('vendCliBody').addEventListener('click', cliqueVendedor);
 
   // main chart metric + range
