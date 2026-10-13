@@ -353,6 +353,9 @@ tr.vend-row, .vend-pt{ cursor:pointer; }
 .vr-bar i{ display:block; height:100%; background:var(--accent); border-radius:2px; }
 .vr-pct{ flex:0 0 auto; font-size:10.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
 .du-tab{ min-width:0 !important; }
+.vend-sel-wrap{ display:flex; align-items:center; gap:8px; }
+.vend-pdf{ display:inline-flex; align-items:center; gap:5px; height:34px; padding:0 12px; border-radius:9px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text-2); font:600 12px Manrope,sans-serif; cursor:pointer; white-space:nowrap; }
+.vend-pdf:hover{ color:var(--accent); border-color:var(--accent); }
 .rd-lbl{ cursor:pointer; transition:opacity .15s; }
 .rd-lbl:hover{ fill:var(--text); }
 .rd-lbl.rd-sel{ fill:var(--accent); }
@@ -1405,7 +1408,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
           <div><h2>Consultoria de Vendedor</h2><div class="psub">Compare um vendedor com os demais, dentro dos filtros aplicados acima</div></div>
-          <select class="fsel" id="vendConsultSelect" style="min-width:220px;"></select>
+          <div class="vend-sel-wrap"><select class="fsel" id="vendConsultSelect" style="min-width:220px;"></select><button type="button" class="vend-pdf" id="vendPdfBtn" title="Salvar a consultoria deste vendedor em PDF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>PDF</button></div>
         </div>
         <div id="vendConsultBody"></div>
       </div>
@@ -3170,6 +3173,44 @@ function polarPt(cx,cy,r,angleDeg){
   var rad = (angleDeg-90)*Math.PI/180;
   return [cx + r*Math.cos(rad), cy + r*Math.sin(rad)];
 }
+/* ---- PDF da consultoria: abre só a consultoria do vendedor numa janela de impressão ("Salvar como PDF") ---- */
+function salvarConsultoriaPdf(){
+  var nome = state.vendConsultSel || '', body = document.getElementById('vendConsultBody'), cli = document.getElementById('vendCliBody');
+  if(!body || !body.querySelector('.kpi-card, table, svg')){ toast('A consultoria ainda está carregando.'); return; }
+  var w = window.open('', '_blank');
+  if(!w){ toast('O navegador bloqueou a janela do PDF. Libere pop-ups para este site e tente de novo.'); return; }
+  var css = Array.prototype.map.call(document.querySelectorAll('style'), function(s){ return s.textContent; }).join('\n');
+  var ps = document.getElementById('periodSelect'), per = ps ? ps.options[ps.selectedIndex].text : '';
+  var pi = document.getElementById('perInfo'); if(pi && pi.textContent.trim()) per += ' · '+pi.textContent.trim();
+  var filtros = Array.prototype.map.call(document.querySelectorAll('#activeTags .tag-chip'), function(c){ return c.textContent.replace('✕','').trim(); }).filter(Boolean);
+  var hoje = new Date();
+  var cab = '<div class="pdf-cab"><div><div class="pdf-marca">Nova Chevrolet · Peças · BI</div><h1>Consultoria de Vendedor · '+escapeHtml(nome)+'</h1>' +
+    '<div class="pdf-meta">Período: '+escapeHtml(per)+'</div>' +
+    '<div class="pdf-meta">Filtros: '+(filtros.length ? escapeHtml(filtros.join(' · ')) : 'nenhum')+'</div></div>' +
+    '<div class="pdf-meta" style="text-align:right">'+escapeHtml(cargaLabel(REAL.carga))+'<br>Gerado em '+fmtDateFull(hoje)+' às '+String(hoje.getHours()).padStart(2,'0')+':'+String(hoje.getMinutes()).padStart(2,'0')+'</div></div>';
+  var printCss = '@page{size:A4 landscape;margin:8mm;}' +
+    'html,body{height:auto!important;overflow:visible!important;background:var(--bg)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+    'body{display:block!important;padding:14px;margin:0;}' +
+    '.scroll-limit,.scroll-limit-sm,.table-scroll{max-height:none!important;overflow:visible!important;}' +
+    '.panel{margin-bottom:12px;break-inside:auto;} .grid-2,.grid-3,.kpi-card,svg{break-inside:avoid;}' +
+    '#rdInfo,.vend-pdf{display:none!important;} tr.vend-row,.vend-pt,.rd-lbl{cursor:default;}' +
+    '.pdf-cab{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;border-bottom:1px solid var(--border-strong);padding-bottom:10px;margin-bottom:12px;}' +
+    '.pdf-cab h1{font-family:Sora,sans-serif;font-size:20px;margin:2px 0 6px;color:var(--text);}' +
+    '.pdf-marca{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700;}' +
+    '.pdf-meta{font-size:11px;color:var(--text-2);line-height:1.6;}' +
+    '@media print{.pdf-dica{display:none;}} .pdf-dica{font-size:12px;color:var(--text-muted);margin-bottom:10px;}';
+  var tema = document.documentElement.getAttribute('data-theme');
+  var html = '<!doctype html><html lang="pt-BR"'+(tema?' data-theme="'+tema+'"':'')+'><head><meta charset="utf-8"><title>Consultoria - '+escapeHtml(nome)+'</title>' +
+    '<style>'+css+'</style><style>'+printCss+'</style></head><body>' +
+    '<div class="pdf-dica">Na janela de impressão, escolha "Salvar como PDF" e marque "Gráficos de fundo".</div>' + cab +
+    '<div class="panel">'+body.innerHTML+'</div>' +
+    (cli && cli.innerHTML.trim() ? '<div class="panel"><div class="panel-head"><div><h2>Faturamento &times; clientes atendidos</h2></div></div>'+cli.innerHTML+'</div>' : '') +
+    '</body></html>';
+  w.document.open(); w.document.write(html); w.document.close();
+  function imprimir(){ try{ w.focus(); w.print(); }catch(e){} }
+  if(w.document.fonts && w.document.fonts.ready) w.document.fonts.ready.then(function(){ setTimeout(imprimir, 300); });
+  else setTimeout(imprimir, 800);
+}
 /* ---- radares de marca/categoria/produto: clique num item destaca os relacionados nos outros dois ----
    produto -> a marca e a categoria dele; marca ou categoria -> produtos e a outra dimensão pelo cadastro de produtos */
 var RD_SEL = null;
@@ -4472,6 +4513,7 @@ function bindEvents(){
   });
 
   // consultoria de vendedor
+  document.getElementById('vendPdfBtn').addEventListener('click', salvarConsultoriaPdf);
   document.getElementById('vendConsultSelect').addEventListener('change', function(){
     state.vendConsultSel = this.value;
     renderVendConsult();
