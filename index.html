@@ -2931,6 +2931,12 @@ function renderVendConsult(){
     {label:'Margem bruta', meVal:me.margemPct, peerVal:peerAvgMargem, groupMax:Math.max(1,maxOf('margemPct')), fmt:function(v){return v.toFixed(1)+'%';}},
     {label:'Participação', meVal:share, peerVal:peerAvgShare, groupMax:Math.max(share,peerAvgShare,1)*1.15, fmt:function(v){return v.toFixed(1)+'%';}}
   ];
+  // clientes distintos atendidos no período (entra depois de Quantidade)
+  if(rows.some(function(r){ return r.cli>0; })){
+    var peerAvgCli = others.length ? others.reduce(function(s,r){ return s+(r.cli||0); },0)/others.length : 0;
+    radarAxes.splice(2, 0, {label:'Clientes', meVal:me.cli||0, peerVal:peerAvgCli,
+      groupMax:Math.max.apply(null, rows.map(function(r){ return r.cli||0; }).concat([1])), fmt:function(v){ return fmtUn(Math.round(v))+' clientes'; }});
+  }
   var radarSvg = radarChartSVG(radarAxes, 360, 300);
   var radarTable = radarAxes.map(function(a){
     return '<div class="radar-row"><span class="rr-label">'+a.label+'</span>' +
