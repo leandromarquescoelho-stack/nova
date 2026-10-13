@@ -1288,7 +1288,13 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Loja &times; mês</h2><div class="psub">Faturamento mensal de cada loja &middot; cor mais forte = mês mais alto daquela loja</div></div>
+          <div><h2>Loja &times; mês</h2><div class="psub" id="heatSub">Faturamento mensal de cada loja &middot; cor mais forte = mês mais alto daquela loja</div></div>
+          <select class="fsel" id="heatMetrica" aria-label="Métrica do Loja × mês">
+            <option value="fat">Faturamento</option>
+            <option value="margem">Margem</option>
+            <option value="tknf">Ticket médio NF</option>
+            <option value="tkcli">Ticket médio cliente</option>
+          </select>
         </div>
         <div class="table-scroll"><div id="heatLoja"></div></div>
         <p class="note-muted" id="heatNota"></p>
@@ -4067,8 +4073,20 @@ function renderMonthChart(){
 /* ============================================================
    MAPA DE CALOR LOJA × MÊS
    ============================================================ */
+/* métricas do Loja × mês: faturamento e margem saem do resumo; os tickets precisam de notas e clientes distintos (bi_loja_mes) */
+var HEAT_MET = {
+  fat:    {sub:'Faturamento mensal de cada loja', nota:'Valores em R$ (mil/mi).'},
+  margem: {sub:'Margem bruta mensal de cada loja (lucro bruto ÷ faturamento)', nota:'Margem bruta em % do faturamento; a última coluna mostra a diferença em pontos percentuais.'},
+  tknf:   {sub:'Ticket médio por nota fiscal de cada loja (faturamento ÷ notas)', nota:'Ticket = faturamento ÷ notas fiscais de venda do mês; no total, ÷ notas do ano todo.'},
+  tkcli:  {sub:'Ticket médio por cliente de cada loja (faturamento ÷ clientes atendidos)', nota:'Ticket = faturamento ÷ clientes distintos atendidos no mês; no total, ÷ clientes distintos do ano todo.'}
+};
+var heatMet = 'fat', HEAT_SEQ = 0;
 function renderHeatLoja(){
   var box = document.getElementById('heatLoja'); if(!box) return;
+  var sub = document.getElementById('heatSub');
+  if(sub) sub.innerHTML = HEAT_MET[heatMet].sub + ' &middot; cor mais forte = mês mais alto daquela loja';
+  HEAT_SEQ++;
+  if(heatMet!=='fat') return renderHeatRazao(box);
   var nM = REAL.months.length, m = {};
   if(salesFromResumo()){
     resumoRows().forEach(function(r){ (m[r.loja] = m[r.loja] || new Array(nM).fill(0))[r.mi] += r.fat; });
@@ -4097,8 +4115,69 @@ function renderHeatLoja(){
       '<td class="tot" style="color:'+(dlt===null?'var(--text-muted)':(dlt>=0?'var(--good)':'var(--critical)'))+'">'+(dlt===null?'—':fmtPct(dlt))+'</td></tr>';
   }).join('');
   box.innerHTML = '<table class="heat"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
-  document.getElementById('heatNota').textContent = 'Valores em R$ (mil/mi). ' + (parcial ? '* mês em andamento, fora da escala de cor'+(projAtiva()?'; "proj." é a projeção de fechamento por dias úteis':'')+'. ' : '') +
+  document.getElementById('heatNota').textContent = HEAT_MET.fat.nota + ' ' + (parcial ? '* mês em andamento, fora da escala de cor'+(projAtiva()?'; "proj." é a projeção de fechamento por dias úteis':'')+'. ' : '') +
     'Usa os filtros aplicados; o período selecionado não se aplica.';
+}
+
+// margem e tickets: razão por mês, total da loja e variação do último mês fechado; cor escalada entre o menor e o maior mês da loja
+function renderHeatRazao(box){
+  var nM = REAL.months.length, met = heatMet, seq = HEAT_SEQ;
+  function tabela(lin){
+    var parcial = !mesCompleto(), ult = parcial ? nM-2 : nM-1, pct = met==='margem';
+    var lojas = Object.keys(lin).map(function(k){ return lin[k]; }).filter(function(o){ return Math.abs(o.tf)>0.5; })
+      .sort(function(a,b){ return b.tf-a.tf; });
+    if(!lojas.length){ box.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">Sem dados para os filtros atuais.</p>'; return; }
+    function fmt(v){ return v===null ? '—' : (pct ? v.toFixed(1).replace('.',',')+'%' : fmtMoney(v)); }
+    var head = '<tr><th class="rl">Loja</th>' + REAL.monthLabels.map(function(l,i){ return '<th>'+l+(parcial && i===nM-1?'*':'')+'</th>'; }).join('') +
+      '<th>Total</th><th title="último mês fechado vs. o anterior">'+(REAL.monthLabels[ult]||'')+' vs. '+(REAL.monthLabels[ult-1]||'')+'</th></tr>';
+    var body = lojas.map(function(o){
+      var cmp = o.v.slice(0, parcial ? nM-1 : nM).filter(function(v){ return v!==null; }),
+          mx = cmp.length ? Math.max.apply(null, cmp) : 0, mn = cmp.length ? Math.min.apply(null, cmp) : 0;
+      var tds = o.v.map(function(v,i){
+        var a = v===null ? 0.03 : (parcial && i===nM-1 ? 0.08 : 0.08 + 0.55*(mx>mn ? (v-mn)/(mx-mn) : 1));
+        return '<td style="background:rgba(34,211,238,'+a.toFixed(3)+')" title="'+o.k+' · '+REAL.monthLabels[i]+': '+fmt(v)+(o.d[i]?' · '+o.d[i]:'')+'">'+fmt(v)+'</td>';
+      }).join('');
+      var a0 = o.v[ult-1], a1 = o.v[ult], dlt = (a0===null || a1===null) ? null : (pct ? a1-a0 : (a0>0 ? (a1-a0)/a0*100 : null));
+      var dTxt = dlt===null ? '—' : (pct ? (dlt>=0?'+':'')+dlt.toFixed(1).replace('.',',')+' p.p.' : fmtPct(dlt));
+      var fis = LOJA_INFO[o.k] ? LOJA_INFO[o.k].fisica : true;
+      return '<tr'+fkAttr('regiao', o.k)+'><td class="rl">'+(fis?'':'🛒 ')+o.k+'</td>'+tds+'<td class="tot">'+fmt(o.t)+'</td>' +
+        '<td class="tot" style="color:'+(dlt===null?'var(--text-muted)':(dlt>=0?'var(--good)':'var(--critical)'))+'">'+dTxt+'</td></tr>';
+    }).join('');
+    box.innerHTML = '<table class="heat"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
+    document.getElementById('heatNota').textContent = HEAT_MET[met].nota + ' ' + (parcial ? '* mês em andamento, até hoje e fora da escala de cor. ' : '') +
+      'Usa os filtros aplicados; o período selecionado não se aplica.';
+  }
+  function nova(k){ return {k:k, v:new Array(nM).fill(null), d:new Array(nM).fill(''), t:null, tf:0}; }
+  if(met==='margem'){
+    var s = {};
+    resumoRows().forEach(function(r){
+      var o = s[r.loja] = s[r.loja] || {f:new Array(nM).fill(0), l:new Array(nM).fill(0)};
+      o.f[r.mi] += r.fat; o.l[r.mi] += r.lb;
+    });
+    var lin = {};
+    Object.keys(s).forEach(function(k){
+      var o = s[k], x = lin[k] = nova(k), tf = 0, tl = 0;
+      o.f.forEach(function(f,i){ tf += f; tl += o.l[i]; if(f>0.5){ x.v[i] = o.l[i]/f*100; x.d[i] = 'lucro bruto '+fmtMoney(o.l[i])+' de '+fmtMoney(f); } });
+      x.tf = tf; x.t = tf>0.5 ? tl/tf*100 : null;
+    });
+    return tabela(lin);
+  }
+  box.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">Carregando notas e clientes…</p>';
+  rpcMemo('bi_loja_mes', {f: painelFiltros(null)}).then(function(rows){
+    if(seq!==HEAT_SEQ) return;
+    var lin = {};
+    (rows||[]).forEach(function(r){
+      var k = dimNome('loja', r[0]), x = lin[k] = lin[k] || nova(k), ft = c2(r[2]), n = met==='tknf' ? +r[4] : +r[5];
+      var v = n>0 ? ft/n : null, d = n>0 ? fmtMoney(ft)+' ÷ '+n.toLocaleString('pt-BR')+(met==='tknf'?' notas':' clientes') : '';
+      if(r[1]===null){ x.t = v; x.tf = ft; return; }
+      var mi = mesIdx(r[1]); if(mi<0) return;
+      x.v[mi] = v; x.d[mi] = d;
+    });
+    tabela(lin);
+  }).catch(function(){
+    if(seq!==HEAT_SEQ) return;
+    box.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">Não foi possível carregar os tickets agora. Tente de novo em instantes.</p>';
+  });
 }
 
 /* ============================================================
@@ -4580,6 +4659,7 @@ function bindEvents(){
 
   // category sort
   document.getElementById('catSort').addEventListener('change', function(){ state.catSort=this.value; renderCategoryList(); });
+  document.getElementById('heatMetrica').addEventListener('change', function(){ heatMet = this.value; renderHeatLoja(); });
   document.getElementById('giroSortBtn').addEventListener('click', function(){
     state.giroSortDesc = !state.giroSortDesc;
     this.innerHTML = 'Ordenar '+(state.giroSortDesc?'↓':'↑');
