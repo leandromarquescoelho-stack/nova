@@ -833,6 +833,10 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 /* ---- legenda de canais / barras empilhadas ---- */
 .leg-row{ display:flex; flex-wrap:wrap; gap:12px; font-size:11px; color:var(--text-2); margin-top:8px; }
 .leg-row i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+.mc-tg{ display:inline-flex; align-items:center; cursor:pointer; user-select:none; }
+.mc-tg input{ width:11px; height:11px; margin:0 5px 0 0; accent-color:var(--text-muted); cursor:pointer; opacity:.7; }
+.mc-tg.off{ opacity:.5; }
+.mc-av{ font-size:10px; color:var(--text-muted); margin-left:4px; }
 /* ---- mapa de calor ---- */
 .heat{ width:100%; border-collapse:separate; border-spacing:3px; font-size:11px; }
 .heat th{ color:var(--text-muted); font-weight:700; text-align:center; padding:4px 2px; white-space:nowrap; }
@@ -1227,7 +1231,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <!-- ---- evolução mensal por canal + margem ---- -->
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal &middot; linha = margem bruta %</div></div>
+          <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal &middot; linhas = indicadores marcados na legenda, cada um na própria escala</div></div>
         </div>
         <div class="chart-wrap"><div id="monthChart"></div></div>
         <div class="leg-row" id="monthLegend"></div>
@@ -4028,46 +4032,94 @@ function monthlyByCanal(){
   }
   return {byC:byC, lb:lb, tot:tot};
 }
+// séries que o usuário liga/desliga na legenda (guardadas no navegador)
+var MC_SHOW = {fat:true, mg:true, and:true, proj:true, cli:false, tknf:false, tkcli:false};
+try{ var _mc = JSON.parse(localStorage.getItem('nc_mc_show')||'null'); if(_mc) Object.keys(MC_SHOW).forEach(function(k){ if(typeof _mc[k]==='boolean') MC_SHOW[k] = _mc[k]; }); }catch(e){}
+var MC_LINHAS = [
+  {k:'mg',    nome:'Margem bruta %',       cor:'var(--text)',  fmt:function(v){ return v.toFixed(1)+'%'; }},
+  {k:'cli',   nome:'Qtde de clientes',     cor:'#f5a524',      fmt:function(v){ return Math.round(v).toLocaleString('pt-BR'); }},
+  {k:'tknf',  nome:'Ticket médio NF',      cor:'#a78bfa',      fmt:function(v){ return fmtMoney(v); }},
+  {k:'tkcli', nome:'Ticket médio cliente', cor:'#f472b6',      fmt:function(v){ return fmtMoney(v); }}
+];
+var MC_SEQ = 0, MC_PRONTO = {};
 function renderMonthChart(){
   var box = document.getElementById('monthChart'); if(!box) return;
-  var d = monthlyByCanal(), nM = REAL.months.length;
+  var seq = ++MC_SEQ, precisa = MC_SHOW.cli || MC_SHOW.tknf || MC_SHOW.tkcli;
+  if(!precisa) return desenharMonthChart(box, null, false);
+  var f = painelFiltros(null), k = 'bi_loja_mes|'+JSON.stringify({f:f});
+  var pr = rpcMemo('bi_loja_mes', {f:f});
+  if(!MC_PRONTO[k]) desenharMonthChart(box, null, 'carregando');
+  pr.then(function(rows){
+    MC_PRONTO[k] = true; if(seq!==MC_SEQ) return;
+    var nM = REAL.months.length, m = {ft:new Array(nM).fill(0), nn:new Array(nM).fill(0), nc:new Array(nM).fill(0)};
+    (rows||[]).forEach(function(r){ if(r[6]!==1) return; var mi = mesIdx(r[1]); if(mi<0) return; m.ft[mi] = c2(r[2]); m.nn[mi] = +r[4]; m.nc[mi] = +r[5]; });
+    desenharMonthChart(box, m, false);
+  }).catch(function(){ if(seq===MC_SEQ) desenharMonthChart(box, null, 'erro'); });
+}
+function desenharMonthChart(box, ex, aviso){
+  var d = monthlyByCanal(), nAll = REAL.months.length, parcial = !mesCompleto();
+  var nM = parcial && !MC_SHOW.and ? nAll-1 : nAll; // sem o mês em andamento, o gráfico vai até o último mês fechado
   var canais = Object.keys(d.byC).sort(function(a,b){ return d.byC[b].reduce(function(x,y){return x+y;},0) - d.byC[a].reduce(function(x,y){return x+y;},0); });
   var W=720, H=250, padL=54, padR=40, padT=22, padB=26, iw=W-padL-padR, ih=H-padT-padB;
-  var pmc = projAtiva() ? projMes() : null, projUlt = pmc && pmc.real>0 ? d.tot[nM-1]*pmc.proj/pmc.real : null;
-  var maxV = Math.max.apply(null, d.tot.concat([1, projUlt||0]))*1.12;
-  var mgs = d.tot.map(function(t,i){ return t>0 ? d.lb[i]/t*100 : null; });
-  var mgVals = mgs.filter(function(v){ return v!==null; });
-  var mgMax = Math.max.apply(null, mgVals.concat([1]))*1.15, mgMin = Math.max(0, Math.min.apply(null, mgVals.concat([mgMax]))*0.85);
-  var bw = iw/nM, parcial = !mesCompleto();
+  var temAnd = parcial && nM===nAll;
+  var pmc = temAnd && MC_SHOW.proj && projAtiva() ? projMes() : null, projUlt = pmc && pmc.real>0 ? d.tot[nAll-1]*pmc.proj/pmc.real : null;
+  var tot = d.tot.slice(0, nM);
+  var maxV = Math.max.apply(null, tot.concat([1, MC_SHOW.fat ? (projUlt||0) : 0]))*1.12;
+  var bw = iw/nM;
   function y(v){ return padT+ih-ih*v/maxV; }
-  function y2(v){ return padT+ih-ih*(v-mgMin)/((mgMax-mgMin)||1); }
+  var series = {
+    mg: tot.map(function(t,i){ return t>0 ? d.lb[i]/t*100 : null; }),
+    cli: ex ? ex.nc.slice(0,nM).map(function(n){ return n>0 ? n : null; }) : null,
+    tknf: ex ? ex.nn.slice(0,nM).map(function(n,i){ return n>0 ? ex.ft[i]/n : null; }) : null,
+    tkcli: ex ? ex.nc.slice(0,nM).map(function(n,i){ return n>0 ? ex.ft[i]/n : null; }) : null
+  };
   var out = '';
-  for(var g=0; g<=4; g++){ var gv=maxV*g/4; out += '<line x1="'+padL+'" y1="'+y(gv)+'" x2="'+(W-padR)+'" y2="'+y(gv)+'" stroke="var(--border)"/>' +
-    '<text x="'+(padL-8)+'" y="'+(y(gv)+3)+'" text-anchor="end" font-size="9.5" fill="var(--text-muted)" font-family="JetBrains Mono, monospace">'+fmtCurto(gv).replace('R$ ','')+'</text>'; }
+  if(MC_SHOW.fat){
+    for(var g=0; g<=4; g++){ var gv=maxV*g/4; out += '<line x1="'+padL+'" y1="'+y(gv)+'" x2="'+(W-padR)+'" y2="'+y(gv)+'" stroke="var(--border)"/>' +
+      '<text x="'+(padL-8)+'" y="'+(y(gv)+3)+'" text-anchor="end" font-size="9.5" fill="var(--text-muted)" font-family="JetBrains Mono, monospace">'+fmtCurto(gv).replace('R$ ','')+'</text>'; }
+  } else out += '<line x1="'+padL+'" y1="'+(padT+ih)+'" x2="'+(W-padR)+'" y2="'+(padT+ih)+'" stroke="var(--border)"/>';
   for(var mi=0; mi<nM; mi++){
-    var x0 = padL+mi*bw+bw*0.18, w = bw*0.64, acc = 0, last = parcial && mi===nM-1;
-    canais.forEach(function(c){
-      var v = d.byC[c][mi]; if(v<=0) return;
-      out += '<rect'+fkAttr('canal',c)+' x="'+x0+'" y="'+y(acc+v)+'" width="'+w+'" height="'+(y(acc)-y(acc+v))+'" fill="'+canalCor(c)+'" opacity="'+(last?(projUlt?0.8:0.45):0.9)+'"><title>'+REAL.monthLabels[mi]+' · '+c+': '+fmtMoney(v)+'</title></rect>';
-      acc += v;
-    });
-    if(last && projUlt && projUlt>acc){
-      out += '<rect x="'+x0+'" y="'+y(projUlt)+'" width="'+w+'" height="'+(y(acc)-y(projUlt))+'" fill="var(--text-muted)" fill-opacity="0.08" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3"><title>Projeção de fechamento: '+fmtMoney(projUlt)+' (realizado '+fmtMoney(acc)+')</title></rect>' +
-        '<text x="'+(x0+w/2)+'" y="'+(y(projUlt)-5)+'" text-anchor="middle" font-size="9" font-style="italic" fill="var(--text-muted)" font-family="JetBrains Mono, monospace">proj. '+fmtCurto(projUlt).replace('R$ ','')+'</text>' +
-        '<text x="'+(x0+w/2)+'" y="'+(y(acc)+11)+'" text-anchor="middle" font-size="9" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
-    } else
-    out += '<text x="'+(x0+w/2)+'" y="'+(y(acc)-5)+'" text-anchor="middle" font-size="9.5" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
+    var x0 = padL+mi*bw+bw*0.18, w = bw*0.64, acc = 0, last = temAnd && mi===nM-1;
+    if(MC_SHOW.fat){
+      canais.forEach(function(c){
+        var v = d.byC[c][mi]; if(v<=0) return;
+        out += '<rect'+fkAttr('canal',c)+' x="'+x0+'" y="'+y(acc+v)+'" width="'+w+'" height="'+(y(acc)-y(acc+v))+'" fill="'+canalCor(c)+'" opacity="'+(last?(projUlt?0.8:0.45):0.9)+'"><title>'+REAL.monthLabels[mi]+' · '+c+': '+fmtMoney(v)+'</title></rect>';
+        acc += v;
+      });
+      if(last && projUlt && projUlt>acc){
+        out += '<rect x="'+x0+'" y="'+y(projUlt)+'" width="'+w+'" height="'+(y(acc)-y(projUlt))+'" fill="var(--text-muted)" fill-opacity="0.08" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3"><title>Projeção de fechamento: '+fmtMoney(projUlt)+' (realizado '+fmtMoney(acc)+')</title></rect>' +
+          '<text x="'+(x0+w/2)+'" y="'+(y(projUlt)-5)+'" text-anchor="middle" font-size="9" font-style="italic" fill="var(--text-muted)" font-family="JetBrains Mono, monospace">proj. '+fmtCurto(projUlt).replace('R$ ','')+'</text>' +
+          '<text x="'+(x0+w/2)+'" y="'+(y(acc)+11)+'" text-anchor="middle" font-size="9" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
+      } else
+      out += '<text x="'+(x0+w/2)+'" y="'+(y(acc)-5)+'" text-anchor="middle" font-size="9.5" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
+    }
     out += '<text x="'+(x0+w/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="var(--text-muted)">'+REAL.monthLabels[mi]+(last?'*':'')+'</text>';
   }
-  var pts = mgs.map(function(v,i){ return v===null ? null : (padL+i*bw+bw/2)+','+y2(v); }).filter(Boolean);
-  out += '<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--text)" stroke-width="1.8" stroke-dasharray="1 0"/>';
-  mgs.forEach(function(v,i){ if(v===null) return; var cx=padL+i*bw+bw/2;
-    out += '<circle cx="'+cx+'" cy="'+y2(v)+'" r="3" fill="var(--text)"><title>Margem '+REAL.monthLabels[i]+': '+v.toFixed(1)+'%</title></circle>' +
-      '<text x="'+(cx+5)+'" y="'+(y2(v)-6)+'" font-size="9" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+v.toFixed(1)+'%</text>'; });
-  box.innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Faturamento mensal por canal">'+out+'</svg>';
-  document.getElementById('monthLegend').innerHTML = canais.map(function(c){ return '<span'+fkAttr('canal',c)+'><i style="background:'+canalCor(c)+'"></i>'+c+'</span>'; }).join('') +
-    '<span><i style="background:var(--text); height:2px; vertical-align:3px;"></i>Margem bruta %</span>' + (parcial ? '<span>* mês em andamento</span>' : '') +
-    (projUlt ? '<span class="proj-leg"><i class="proj-sw"></i>Projeção de fechamento (dias úteis)</span>' : '');
+  // cada linha tem a própria escala (do menor ao maior mês), sem eixo. Com várias linhas ligadas, o valor fica escrito só no último
+  // mês (os demais aparecem ao passar o mouse); o trecho até o mês em andamento é tracejado
+  var ativas = MC_LINHAS.filter(function(L){ return MC_SHOW[L.k] && series[L.k]; }).length, todosRot = ativas<=1 || (ativas===2 && nM<=12);
+  MC_LINHAS.forEach(function(L){
+    var s = series[L.k]; if(!MC_SHOW[L.k] || !s) return;
+    var vals = s.filter(function(v){ return v!==null; }); if(!vals.length) return;
+    var mx = Math.max.apply(null, vals)*1.15, mn = Math.max(0, Math.min.apply(null, vals)*0.85);
+    function y2(v){ return padT+ih-ih*(v-mn)/((mx-mn)||1); }
+    var pts = s.map(function(v,i){ return v===null ? null : (padL+i*bw+bw/2)+','+y2(v); });
+    var fech = (temAnd ? pts.slice(0, nM-1) : pts).filter(Boolean);
+    out += '<polyline points="'+fech.join(' ')+'" fill="none" stroke="'+L.cor+'" stroke-width="1.8"/>';
+    if(temAnd && pts[nM-1] && pts[nM-2]) out += '<polyline points="'+pts[nM-2]+' '+pts[nM-1]+'" fill="none" stroke="'+L.cor+'" stroke-width="1.5" stroke-dasharray="3 3"/>';
+    var ultI = -1; s.forEach(function(v,i){ if(v!==null) ultI = i; });
+    s.forEach(function(v,i){ if(v===null) return; var cx=padL+i*bw+bw/2;
+      out += '<circle cx="'+cx+'" cy="'+y2(v)+'" r="3" fill="'+L.cor+'"><title>'+L.nome+' · '+REAL.monthLabels[i]+(temAnd && i===nM-1?' (até hoje)':'')+': '+L.fmt(v)+'</title></circle>';
+      if(todosRot || i===ultI) out += '<text x="'+(cx+5)+'" y="'+(y2(v)-6)+'" font-size="9" fill="'+L.cor+'" fill-opacity="0.85" font-family="JetBrains Mono, monospace">'+L.fmt(v)+'</text>'; });
+  });
+  box.innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Evolução mensal por canal">'+out+'</svg>';
+  function chk(k, conteudo, extra){ return '<label class="mc-tg'+(MC_SHOW[k]?'':' off')+'"'+(extra||'')+'><input type="checkbox" data-mc="'+k+'"'+(MC_SHOW[k]?' checked':'')+'>'+conteudo+'</label>'; }
+  var linhaTxt = aviso==='carregando' ? ' <em class="mc-av">carregando…</em>' : (aviso==='erro' ? ' <em class="mc-av">indisponível</em>' : '');
+  document.getElementById('monthLegend').innerHTML =
+    chk('fat', 'Faturamento') + canais.map(function(c){ return '<span'+fkAttr('canal',c)+(MC_SHOW.fat?'':' style="opacity:.45"')+'><i style="background:'+canalCor(c)+'"></i>'+c+'</span>'; }).join('') +
+    MC_LINHAS.map(function(L){ return chk(L.k, '<i style="background:'+L.cor+'; height:2px; vertical-align:3px;"></i>'+L.nome + (L.k!=='mg' && MC_SHOW[L.k] ? linhaTxt : '')); }).join('') +
+    (parcial ? chk('and', '* mês em andamento') : '') +
+    (parcial && projAtiva() ? chk('proj', '<i class="proj-sw"></i>Projeção de fechamento (dias úteis)', ' style="font-style:italic;color:var(--text-muted)"') : '');
 }
 
 /* ============================================================
@@ -4167,6 +4219,7 @@ function renderHeatRazao(box){
     if(seq!==HEAT_SEQ) return;
     var lin = {};
     (rows||[]).forEach(function(r){
+      if(r[6]===1) return;
       var k = dimNome('loja', r[0]), x = lin[k] = lin[k] || nova(k), ft = c2(r[2]), n = met==='tknf' ? +r[4] : +r[5];
       var v = n>0 ? ft/n : null, d = n>0 ? fmtMoney(ft)+' ÷ '+n.toLocaleString('pt-BR')+(met==='tknf'?' notas':' clientes') : '';
       if(r[1]===null){ x.t = v; x.tf = ft; return; }
@@ -4659,6 +4712,12 @@ function bindEvents(){
 
   // category sort
   document.getElementById('catSort').addEventListener('change', function(){ state.catSort=this.value; renderCategoryList(); });
+  document.getElementById('monthLegend').addEventListener('change', function(e){
+    var k = e.target && e.target.getAttribute('data-mc'); if(!k) return;
+    MC_SHOW[k] = e.target.checked;
+    try{ localStorage.setItem('nc_mc_show', JSON.stringify(MC_SHOW)); }catch(err){}
+    renderMonthChart();
+  });
   document.getElementById('heatMetrica').addEventListener('change', function(){ heatMet = this.value; renderHeatLoja(); });
   document.getElementById('giroSortBtn').addEventListener('click', function(){
     state.giroSortDesc = !state.giroSortDesc;
