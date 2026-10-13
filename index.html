@@ -3199,12 +3199,26 @@ function salvarConsultoriaPdf(){
     '.pdf-marca{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700;}' +
     '.pdf-meta{font-size:11px;color:var(--text-2);line-height:1.6;}' +
     '@media print{.pdf-dica{display:none;}} .pdf-dica{font-size:12px;color:var(--text-muted);margin-bottom:10px;}';
+  // versão impressa: ranking e tabela de clientes só com o vendedor selecionado; radar logo abaixo do ranking
+  function soSelecionado(el){
+    Array.prototype.forEach.call(el.querySelectorAll('tr.vend-row'), function(tr){ if(tr.getAttribute('data-vend')!==nome) tr.remove(); });
+  }
+  var cBody = document.createElement('div'); cBody.innerHTML = body.innerHTML;
+  soSelecionado(cBody);
+  var g = cBody.querySelector('table') && cBody.querySelector('table').closest('.grid-2');
+  if(g){
+    g.style.gridTemplateColumns = '1fr';
+    var h = g.querySelector('h3.dh'); if(h) h.textContent = 'Posição no grupo';
+  }
+  var cCli = document.createElement('div'); cCli.innerHTML = cli ? cli.innerHTML : '';
+  soSelecionado(cCli);
+  Array.prototype.forEach.call(cCli.querySelectorAll('p'), function(p){ var b = p.querySelector('b'); if(b && /clientes e faturamento/.test(b.textContent)) p.remove(); });
   var tema = document.documentElement.getAttribute('data-theme');
   var html = '<!doctype html><html lang="pt-BR"'+(tema?' data-theme="'+tema+'"':'')+'><head><meta charset="utf-8"><title>Consultoria - '+escapeHtml(nome)+'</title>' +
     '<style>'+css+'</style><style>'+printCss+'</style></head><body>' +
     '<div class="pdf-dica">Na janela de impressão, escolha "Salvar como PDF" e marque "Gráficos de fundo".</div>' + cab +
-    '<div class="panel">'+body.innerHTML+'</div>' +
-    (cli && cli.innerHTML.trim() ? '<div class="panel"><div class="panel-head"><div><h2>Faturamento &times; clientes atendidos</h2></div></div>'+cli.innerHTML+'</div>' : '') +
+    '<div class="panel">'+cBody.innerHTML+'</div>' +
+    (cCli.innerHTML.trim() ? '<div class="panel"><div class="panel-head"><div><h2>Faturamento &times; clientes atendidos</h2></div></div>'+cCli.innerHTML+'</div>' : '') +
     '</body></html>';
   w.document.open(); w.document.write(html); w.document.close();
   function imprimir(){ try{ w.focus(); w.print(); }catch(e){} }
