@@ -184,6 +184,21 @@ svg text{font-family:'Manrope', sans-serif;}
 .tbtn svg{width:15px; height:15px; flex:none;}
 .tbtn.spinning svg{animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
+/* aguarde: logo se separa em três partes (símbolo, NOVA, gravata) e se junta de novo */
+#loadOverlay{ position:fixed; inset:0; z-index:9000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+  background:rgba(8,10,14,.72); backdrop-filter:blur(4px); opacity:0; visibility:hidden; transition:opacity .25s, visibility .25s; pointer-events:none; }
+#loadOverlay.on{ opacity:1; visibility:visible; pointer-events:auto; }
+.lo-logo{ position:relative; width:260px; aspect-ratio:480/58; }
+.lo-logo img{ position:absolute; inset:0; width:100%; height:100%; animation:loJunta 1.8s ease-in-out infinite; }
+.lo-logo .p1{ clip-path:inset(0 87% 0 0); --dx:-34px; --r:-14deg; }
+.lo-logo .p2{ clip-path:inset(0 38.5% 0 12.5%); --dx:0px; --r:0deg; animation-name:loMeio; }
+.lo-logo .p3{ clip-path:inset(0 0 0 61.5%); --dx:34px; --r:14deg; }
+@keyframes loJunta{ 0%,15%,85%,100%{ transform:none; opacity:1; } 45%,55%{ transform:translateX(var(--dx)) rotate(var(--r)); opacity:.55; } }
+@keyframes loMeio{ 0%,15%,85%,100%{ transform:none; opacity:1; } 45%,55%{ transform:scale(.92); opacity:.7; } }
+.lo-txt{ font-size:14px; letter-spacing:.12em; color:var(--text-2); font-weight:600; }
+.lo-txt i{ font-style:normal; animation:loPonto 1.2s infinite; } .lo-txt i:nth-child(2){ animation-delay:.2s; } .lo-txt i:nth-child(3){ animation-delay:.4s; }
+@keyframes loPonto{ 0%,60%,100%{ opacity:.2; } 30%{ opacity:1; } }
+@media (prefers-reduced-motion: reduce){ .lo-logo img{ animation:none; } }
 .badge-dot{position:absolute; top:6px; right:6px; width:7px; height:7px; border-radius:50%; background:var(--critical); border:1.5px solid var(--plane);}
 
 select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
@@ -4495,9 +4510,17 @@ function renderInsights(){
    ============================================================ */
 /* ---------- atualização: busca no banco os números do recorte (filtros + período) e redesenha tudo ---------- */
 var painelSeq = 0, painelChave = null, PAINEL_F = null;
+// aguarde com a logo animada: só aparece se a consulta passar de 250 ms (respostas em cache não piscam a tela)
+var LOAD_TIMER = null;
 function carregando(on){
   var app = document.getElementById('app'); if(!app) return;
   if(on) app.setAttribute('data-carregando', '1'); else app.removeAttribute('data-carregando');
+  var ov = document.getElementById('loadOverlay'); if(!ov) return;
+  clearTimeout(LOAD_TIMER);
+  if(on){
+    Array.prototype.forEach.call(ov.querySelectorAll('img'), function(im){ if(!im.getAttribute('src')) im.src = LOGO_PDF; });
+    LOAD_TIMER = setTimeout(function(){ if(app.hasAttribute('data-carregando')) ov.classList.add('on'); }, 250);
+  } else ov.classList.remove('on');
 }
 function passaEstoque(p){ return matchesFilters(p); }
 async function renderAll(refreshing){
@@ -5648,4 +5671,8 @@ document.getElementById('forgotBtn').addEventListener('click', async function(){
 })();
 </script>
 
+<div id="loadOverlay" role="status" aria-live="polite" aria-label="Aguarde, processando os filtros">
+  <div class="lo-logo"><img class="p1" alt=""><img class="p2" alt=""><img class="p3" alt=""></div>
+  <div class="lo-txt">Aguarde<i>.</i><i>.</i><i>.</i></div>
+</div>
 </body></html>
