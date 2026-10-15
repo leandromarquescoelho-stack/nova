@@ -1323,6 +1323,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div><h2>Loja &times; mês</h2><div class="psub" id="heatSub">Faturamento mensal de cada loja &middot; cor mais forte = mês mais alto daquela loja</div></div>
           <select class="fsel" id="heatMetrica" aria-label="Métrica do Loja × mês">
             <option value="fat">Faturamento</option>
+            <option value="qtd">Quantidade</option>
             <option value="margem">Margem</option>
             <option value="tknf">Ticket médio NF</option>
             <option value="tkcli">Ticket médio cliente</option>
@@ -4215,6 +4216,7 @@ function desenharMonthChart(box, ex, aviso){
 /* métricas do Loja × mês: faturamento e margem saem do resumo; os tickets precisam de notas e clientes distintos (bi_loja_mes) */
 var HEAT_MET = {
   fat:    {sub:'Faturamento mensal de cada loja', nota:'Valores em R$ (mil/mi).'},
+  qtd:    {sub:'Quantidade mensal vendida de cada loja (unidades)', nota:'Valores em unidades vendidas (mil/mi).'},
   margem: {sub:'Margem bruta mensal de cada loja (lucro bruto ÷ faturamento)', nota:'Margem bruta em % do faturamento; a última coluna mostra a diferença em pontos percentuais.'},
   tknf:   {sub:'Ticket médio por nota fiscal de cada loja (faturamento ÷ notas)', nota:'Ticket = faturamento ÷ notas fiscais de venda do mês; no total, ÷ notas do ano todo.'},
   tkcli:  {sub:'Ticket médio por cliente de cada loja (faturamento ÷ clientes atendidos)', nota:'Ticket = faturamento ÷ clientes distintos atendidos no mês; no total, ÷ clientes distintos do ano todo.'}
@@ -4225,12 +4227,15 @@ function renderHeatLoja(){
   var sub = document.getElementById('heatSub');
   if(sub) sub.innerHTML = HEAT_MET[heatMet].sub + ' &middot; cor mais forte = mês mais alto daquela loja';
   HEAT_SEQ++;
-  if(heatMet!=='fat') return renderHeatRazao(box);
-  var nM = REAL.months.length, m = {};
+  if(heatMet!=='fat' && heatMet!=='qtd') return renderHeatRazao(box);
+  // faturamento e quantidade: valores absolutos; a projeção da quantidade usa o mesmo fator de fechamento do faturamento da loja
+  var nM = REAL.months.length, m = {}, ehQtd = heatMet==='qtd';
+  function curto(v){ return ehQtd ? (Math.abs(v)>=1e6 ? (v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi' : (Math.abs(v)>=1e4 ? (v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:0})+' mil' : fmtUn(v))) : fmtCurto(v).replace('R$ ',''); }
+  function cheio(v){ return ehQtd ? fmtUn(v)+' un' : fmtMoney(v); }
   if(salesFromResumo()){
-    resumoRows().forEach(function(r){ (m[r.loja] = m[r.loja] || new Array(nM).fill(0))[r.mi] += r.fat; });
+    resumoRows().forEach(function(r){ (m[r.loja] = m[r.loja] || new Array(nM).fill(0))[r.mi] += ehQtd ? r.qtd : r.fat; });
   } else {
-    filteredProducts().forEach(function(p){ var a = m[p.regiao] = m[p.regiao] || new Array(nM).fill(0); p.mfat.forEach(function(f,i){ a[i]+=f; }); });
+    filteredProducts().forEach(function(p){ var a = m[p.regiao] = m[p.regiao] || new Array(nM).fill(0); (ehQtd ? (p.mqtd||[]) : p.mfat).forEach(function(f,i){ a[i]+=f; }); });
   }
   var parcial = !mesCompleto();
   var ult = parcial ? nM-2 : nM-1; // último mês fechado
@@ -4245,16 +4250,16 @@ function renderHeatLoja(){
     var tds = o.v.map(function(v,i){
       var a = v>0 ? 0.08 + 0.55*Math.min(1, v/mx) : 0.03;
       var pv = pj && i===nM-1 && pj.real>0 ? v*pj.proj/pj.real : null;
-      return '<td style="background:rgba(34,211,238,'+a.toFixed(3)+')" title="'+o.k+' · '+REAL.monthLabels[i]+': '+fmtMoney(v)+(pv?' · projeção de fechamento '+fmtMoney(pv):'')+'">'+(v>0?fmtCurto(v).replace('R$ ',''):'—') +
-        (pv ? '<div class="proj-mini">proj. '+fmtCurto(pv).replace('R$ ','')+'</div>' : '')+'</td>';
+      return '<td style="background:rgba(34,211,238,'+a.toFixed(3)+')" title="'+o.k+' · '+REAL.monthLabels[i]+': '+cheio(v)+(pv?' · projeção de fechamento '+cheio(pv):'')+'">'+(v>0?curto(v):'—') +
+        (pv ? '<div class="proj-mini">proj. '+curto(pv)+'</div>' : '')+'</td>';
     }).join('');
     var dlt = o.v[ult-1]>0 ? (o.v[ult]-o.v[ult-1])/o.v[ult-1]*100 : null;
     var fis = LOJA_INFO[o.k] ? LOJA_INFO[o.k].fisica : true;
-    return '<tr'+fkAttr('regiao', o.k)+'><td class="rl">'+(fis?'':'🛒 ')+o.k+'</td>'+tds+'<td class="tot">'+fmtCurto(o.t).replace('R$ ','')+'</td>' +
+    return '<tr'+fkAttr('regiao', o.k)+'><td class="rl">'+(fis?'':'🛒 ')+o.k+'</td>'+tds+'<td class="tot">'+curto(o.t)+'</td>' +
       '<td class="tot" style="color:'+(dlt===null?'var(--text-muted)':(dlt>=0?'var(--good)':'var(--critical)'))+'">'+(dlt===null?'—':fmtPct(dlt))+'</td></tr>';
   }).join('');
   box.innerHTML = '<table class="heat"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
-  document.getElementById('heatNota').textContent = HEAT_MET.fat.nota + ' ' + (parcial ? '* mês em andamento, fora da escala de cor'+(projAtiva()?'; "proj." é a projeção de fechamento por dias úteis':'')+'. ' : '') +
+  document.getElementById('heatNota').textContent = HEAT_MET[heatMet].nota + ' ' + (parcial ? '* mês em andamento, fora da escala de cor'+(projAtiva()?'; "proj." é a projeção de fechamento por dias úteis':'')+'. ' : '') +
     'Usa os filtros aplicados; o período selecionado não se aplica.';
 }
 
