@@ -311,6 +311,15 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
   padding:18px; box-shadow:var(--shadow-card); min-width:0;
 }
 .panel-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap;}
+/* copiar o card como imagem: ícone discreto, mais visível ao passar o mouse no card */
+.copy-img{ flex:none; width:26px; height:26px; margin-left:auto; border-radius:7px; border:1px solid transparent; background:transparent; color:var(--text-muted);
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer; opacity:.35; transition:opacity .15s, border-color .15s, color .15s; padding:0; }
+.panel:hover .copy-img{ opacity:.85; }
+.copy-img:hover{ opacity:1; color:var(--text); border-color:var(--border); }
+.copy-img.ok{ color:var(--good); opacity:1; }
+.copy-img.busy svg{ animation:spin 1s linear infinite; }
+@media (hover:none){ .copy-img{ opacity:.7; } }
+.panel-head > select + .copy-img, .panel-head > .vend-sel-wrap + .copy-img{ margin-left:0; }
 .panel-head h2{font-size:15px; font-weight:700;}
 .panel-head .psub{font-size:11.5px; color:var(--text-muted); margin-top:2px;}
 .seg{display:flex; gap:2px; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:2px;}
@@ -352,6 +361,8 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .scroll-limit::-webkit-scrollbar-thumb{ background:var(--surface-3); border-radius:6px; }
 .scroll-limit::-webkit-scrollbar-thumb:hover{ background:var(--text-muted); }
 .scroll-limit{ scrollbar-width:thin; scrollbar-color:var(--surface-3) transparent; }
+.capturando .scroll-limit, .capturando .scroll-limit-sm{ scrollbar-width:none; }
+.capturando .scroll-limit::-webkit-scrollbar, .capturando .scroll-limit-sm::-webkit-scrollbar{ display:none; }
 [data-fk]{ cursor:pointer; }
 [data-fk]:hover{ filter:brightness(1.15); }
 .barlist-row[data-fk]:hover .bl-label, .seller-row[data-fk]:hover .s-name{ color:var(--accent); }
@@ -2414,6 +2425,65 @@ function renderLojaList(){
 }
 
 /* ---------- cidades: ranking, concentração e maiores variações vs. período anterior ---------- */
+/* ---------- copiar card como imagem (PNG na área de transferência; se o navegador não deixar, baixa o arquivo) ----------
+   A imagem é gerada no próprio navegador: nada é enviado para fora e não há link público com os dados. */
+var H2I_PR = null;
+function carregarH2I(){
+  if(window.htmlToImage) return Promise.resolve(window.htmlToImage);
+  if(H2I_PR) return H2I_PR;
+  H2I_PR = new Promise(function(ok, falha){
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js';
+    s.onload = function(){ window.htmlToImage ? ok(window.htmlToImage) : falha(); };
+    s.onerror = function(){ H2I_PR = null; falha(); };
+    document.head.appendChild(s);
+  });
+  return H2I_PR;
+}
+var ICO_COPIA = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+var ICO_OK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function imagemDoCard(panel){
+  var fundo = getComputedStyle(document.body).backgroundColor || '#0b0e13';
+  var op = {pixelRatio: Math.max(2, window.devicePixelRatio||1), backgroundColor: fundo, cacheBust:false,
+    filter: function(n){ return !(n.classList && (n.classList.contains('copy-img') || n.classList.contains('vend-pdf'))); },
+    style: {margin:'0'}};
+  return carregarH2I().then(function(h){
+    panel.classList.add('capturando');
+    return h.toBlob(panel, op).catch(function(){ op.skipFonts = true; return h.toBlob(panel, op); })
+      .finally(function(){ panel.classList.remove('capturando'); });
+  });
+}
+function nomeArquivoCard(panel){
+  var t = panel.querySelector('h2'); t = t ? t.textContent : 'card';
+  return t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'').toLowerCase()+'.png';
+}
+function baixarBlob(blob, nome){
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome;
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+function copiarCard(btn){
+  var panel = btn.closest('.panel'); if(!panel || btn.classList.contains('busy')) return;
+  btn.classList.add('busy');
+  var pr = imagemDoCard(panel);
+  function fim(ok){ btn.classList.remove('busy'); if(ok){ btn.classList.add('ok'); btn.innerHTML = ICO_OK; setTimeout(function(){ btn.classList.remove('ok'); btn.innerHTML = ICO_COPIA; }, 1600); } }
+  var podeCopiar = navigator.clipboard && window.ClipboardItem && window.isSecureContext;
+  (podeCopiar ? navigator.clipboard.write([new ClipboardItem({'image/png': pr})]).then(function(){
+      toast('Imagem do card copiada. É só colar (Ctrl+V) no WhatsApp ou no e-mail.'); fim(true);
+    }) : Promise.reject()
+  ).catch(function(){
+    return pr.then(function(blob){ baixarBlob(blob, nomeArquivoCard(panel)); toast('Imagem do card baixada.'); fim(true); });
+  }).catch(function(){ fim(false); toast('Não foi possível gerar a imagem deste card.'); });
+}
+function iniciarCopiaCards(){
+  Array.prototype.forEach.call(document.querySelectorAll('.panel > .panel-head'), function(head){
+    if(head.querySelector('.copy-img')) return;
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'copy-img'; b.title = 'Copiar este card como imagem'; b.setAttribute('aria-label', b.title);
+    b.innerHTML = ICO_COPIA;
+    b.addEventListener('click', function(e){ e.stopPropagation(); copiarCard(b); });
+    head.appendChild(b);
+  });
+}
 // clientes distintos por cidade (bi_cidade_clientes); "média mês" = faturamento ÷ meses do período (mínimo 1)
 var cidadeModo = 'vol', CID_CLI = null, CID_CLI_K = null, CID_CLI_ERRO = false;
 function seta(g){
@@ -4141,19 +4211,20 @@ function canalCor(c){
   return CANAL_COR[c];
 }
 function monthlyByCanal(){
-  var nM = REAL.months.length, byC = {}, lb = new Array(nM).fill(0), tot = new Array(nM).fill(0);
-  function add(c, mi, f, l){ (byC[c] = byC[c] || new Array(nM).fill(0))[mi] += f; tot[mi]+=f; lb[mi]+=l; }
+  var nM = REAL.months.length, byC = {}, lb = new Array(nM).fill(0), tot = new Array(nM).fill(0), qt = new Array(nM).fill(0);
+  function add(c, mi, f, l, q){ (byC[c] = byC[c] || new Array(nM).fill(0))[mi] += f; tot[mi]+=f; lb[mi]+=l; qt[mi]+=q||0; }
   if(salesFromResumo()){
-    resumoRows().forEach(function(r){ add(r.canal, r.mi, r.fat, r.lb); });
+    resumoRows().forEach(function(r){ add(r.canal, r.mi, r.fat, r.lb, r.qtd); });
   } else {
-    filteredProducts().forEach(function(p){ var m=p.margemPct/100; p.mfat.forEach(function(f,mi){ add(p.canal||'N/D', mi, f, f*m); }); });
+    filteredProducts().forEach(function(p){ var m=p.margemPct/100; p.mfat.forEach(function(f,mi){ add(p.canal||'N/D', mi, f, f*m, (p.mqtd||[])[mi]); }); });
   }
-  return {byC:byC, lb:lb, tot:tot};
+  return {byC:byC, lb:lb, tot:tot, qt:qt};
 }
 // séries que o usuário liga/desliga na legenda (guardadas no navegador)
-var MC_SHOW = {fat:true, mg:true, and:true, proj:true, cli:false, tknf:false, tkcli:false};
+var MC_SHOW = {fat:true, qtd:false, mg:true, and:true, proj:true, cli:false, tknf:false, tkcli:false};
 try{ var _mc = JSON.parse(localStorage.getItem('nc_mc_show')||'null'); if(_mc) Object.keys(MC_SHOW).forEach(function(k){ if(typeof _mc[k]==='boolean') MC_SHOW[k] = _mc[k]; }); }catch(e){}
 var MC_LINHAS = [
+  {k:'qtd',   nome:'Quantidade',           cor:'#4ade80',      fmt:function(v){ return fmtUn(v)+' un'; }},
   {k:'mg',    nome:'Margem bruta %',       cor:'var(--text)',  fmt:function(v){ return v.toFixed(1)+'%'; }},
   {k:'cli',   nome:'Qtde de clientes',     cor:'#f5a524',      fmt:function(v){ return Math.round(v).toLocaleString('pt-BR'); }},
   {k:'tknf',  nome:'Ticket médio NF',      cor:'#a78bfa',      fmt:function(v){ return fmtMoney(v); }},
@@ -4186,6 +4257,7 @@ function desenharMonthChart(box, ex, aviso){
   var bw = iw/nM;
   function y(v){ return padT+ih-ih*v/maxV; }
   var series = {
+    qtd: d.qt.slice(0,nM).map(function(q){ return q>0 ? q : null; }),
     mg: tot.map(function(t,i){ return t>0 ? d.lb[i]/t*100 : null; }),
     cli: ex ? ex.nc.slice(0,nM).map(function(n){ return n>0 ? n : null; }) : null,
     tknf: ex ? ex.nn.slice(0,nM).map(function(n,i){ return n>0 ? ex.ft[i]/n : null; }) : null,
@@ -4235,7 +4307,7 @@ function desenharMonthChart(box, ex, aviso){
   var linhaTxt = aviso==='carregando' ? ' <em class="mc-av">carregando…</em>' : (aviso==='erro' ? ' <em class="mc-av">indisponível</em>' : '');
   document.getElementById('monthLegend').innerHTML =
     '<div class="mc-lin">' + chk('fat', 'Faturamento') + canais.map(function(c){ return '<span'+fkAttr('canal',c)+(MC_SHOW.fat?'':' style="opacity:.45"')+'><i style="background:'+canalCor(c)+'"></i>'+c+'</span>'; }).join('') + '</div>' +
-    '<div class="mc-lin">' + MC_LINHAS.map(function(L){ return chk(L.k, '<i style="background:'+L.cor+'; height:2px; vertical-align:3px;"></i>'+L.nome + (L.k!=='mg' && MC_SHOW[L.k] ? linhaTxt : '')); }).join('') +
+    '<div class="mc-lin">' + MC_LINHAS.map(function(L){ return chk(L.k, '<i style="background:'+L.cor+'; height:2px; vertical-align:3px;"></i>'+L.nome + (L.k!=='mg' && L.k!=='qtd' && MC_SHOW[L.k] ? linhaTxt : '')); }).join('') +
     (parcial ? chk('and', '* mês em andamento') : '') +
     (parcial && projAtiva() ? chk('proj', '<i class="proj-sw"></i>Projeção de fechamento (dias úteis)', ' style="font-style:italic;color:var(--text-muted)"') : '') + '</div>';
 }
@@ -4851,6 +4923,7 @@ function bindEvents(){
     renderMonthChart();
   });
   document.getElementById('cidadeModo').addEventListener('change', function(){ cidadeModo = this.value; renderCidades(); });
+  iniciarCopiaCards();
   document.getElementById('heatMetrica').addEventListener('change', function(){ heatMet = this.value; renderHeatLoja(); });
   document.getElementById('giroSortBtn').addEventListener('click', function(){
     state.giroSortDesc = !state.giroSortDesc;
