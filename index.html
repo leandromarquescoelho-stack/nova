@@ -411,6 +411,10 @@ tr.vend-row:hover td{ background:var(--surface-2); }
 .barlist-row .bl-fill{height:100%; border-radius:5px; background:linear-gradient(90deg, var(--accent-2), var(--accent)); transition:width .5s cubic-bezier(.4,0,.2,1);}
 .barlist-row .bl-val{font-size:11.5px; font-family:'JetBrains Mono',monospace; color:var(--text-2); text-align:right;}
 .barlist-row .bl-sub{font-size:10px; color:var(--text-muted); text-align:right; margin-top:1px;}
+/* cidades: valor e linha de apoio numa linha só, para caber ao menos 10 cidades sem rolar */
+#cidadeList .barlist-row{ grid-template-columns:minmax(90px,120px) minmax(40px,1fr) min(215px,52%); }
+#cidadeList .bl-sub{ white-space:nowrap; }
+@media (max-width:600px){ #cidadeList .bl-sub{ white-space:normal; } }
 .seta-up{color:var(--good);} .seta-dn{color:var(--critical);} .seta-eq{color:var(--warning);}
 
 /* stock health */
@@ -2447,6 +2451,11 @@ function imagemDoCard(panel){
   var op = {pixelRatio: Math.max(2, window.devicePixelRatio||1), backgroundColor: fundo, cacheBust:false,
     filter: function(n){ return !(n.classList && (n.classList.contains('copy-img') || n.classList.contains('vend-pdf'))); },
     style: {margin:'0'}};
+  // corta o espaço vazio no pé do card (quando a linha da grade é mais alta que o conteúdo)
+  var pr = panel.getBoundingClientRect(), fundoConteudo = 0;
+  Array.prototype.forEach.call(panel.children, function(c){ if(c.offsetParent!==null) fundoConteudo = Math.max(fundoConteudo, c.getBoundingClientRect().bottom - pr.top); });
+  var alt = Math.ceil(fundoConteudo + (parseFloat(getComputedStyle(panel).paddingBottom)||0));
+  if(alt>0 && alt < pr.height-4){ op.height = alt; op.style.height = alt+'px'; }
   return carregarH2I().then(function(h){
     panel.classList.add('capturando');
     return h.toBlob(panel, op).catch(function(){ op.skipFonts = true; return h.toBlob(panel, op); })
