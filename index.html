@@ -1312,7 +1312,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="panel-head"><div><h2>Cidades que mais compram</h2><div class="psub" id="cidadeSub">Faturamento no período &middot; participação &middot; clientes &middot; variação vs. período anterior &middot; clique para filtrar</div></div>
             <select class="fsel" id="cidadeModo" aria-label="Ordenar cidades por">
               <option value="vol">Por volume</option>
-              <option value="med">Por médio no período</option>
+              <option value="med">Por média mês no período</option>
             </select></div>
           <div class="barlist scroll-limit" id="cidadeList"></div>
           <p class="note-muted" id="cidadeNota"></p>
@@ -2414,7 +2414,7 @@ function renderLojaList(){
 }
 
 /* ---------- cidades: ranking, concentração e maiores variações vs. período anterior ---------- */
-// clientes distintos por cidade (bi_cidade_clientes): quantidade de clientes e faturamento médio por cliente
+// clientes distintos por cidade (bi_cidade_clientes); "média mês" = faturamento ÷ meses do período (mínimo 1)
 var cidadeModo = 'vol', CID_CLI = null, CID_CLI_K = null, CID_CLI_ERRO = false;
 function seta(g){
   if(g===null) return '<span class="seta-eq">sem base anterior</span>';
@@ -2436,16 +2436,16 @@ function renderCidades(){
   carregarCidCli();
   var m = agLista('cidade'), ks = Object.keys(m).filter(function(k){ return k!=='N/D' || m[k].fat>0.5; });
   var tot = 0, n = 0; ks.forEach(function(k){ if(m[k].fat>0.5){ tot += m[k].fat; n++; } });
-  var med = cidadeModo==='med' && !!CID_CLI;
+  var med = cidadeModo==='med', pr = periodRange(state.globalPeriod), meses = Math.max(1, (pr.end-pr.start+1)/30.44);
   var rows = ks.filter(function(k){ return m[k].fat>0.5; }).map(function(k){
-    var o = m[k], c = CID_CLI && CID_CLI[k], vm = c && c.n>0 ? o.fat/c.n : null, vmp = c && c.p>0 ? o.prevFat/c.p : null;
-    var g = med ? (vm!==null && vmp ? (vm-vmp)/vmp*100 : null) : (o.prevFat>0 ? (o.fat-o.prevFat)/o.prevFat*100 : null);
+    var o = m[k], c = CID_CLI && CID_CLI[k], vm = o.fat/meses;
+    var g = o.prevFat>0 ? (o.fat-o.prevFat)/o.prevFat*100 : null;
     var cli = c ? fmtUn(c.n)+(c.n===1?' cliente':' clientes') : (CID_CLI_ERRO ? 'clientes indisponível' : 'clientes …');
-    return {label:k, key:k, value: med ? (vm||0) : o.fat, display: med ? (vm===null?'—':fmtMoney(vm)) : fmtMoney(o.fat),
-      sub: (med ? fmtCurto(o.fat)+' · ' : (tot>0?(o.fat/tot*100).toFixed(1):'0')+'% · ')+cli+' · '+seta(g)};
+    return {label:k, key:k, value: med ? vm : o.fat, display: med ? fmtMoney(vm)+'/mês' : fmtMoney(o.fat),
+      sub: (med ? 'total '+fmtCurto(o.fat)+' · ' : (tot>0?(o.fat/tot*100).toFixed(1):'0')+'% · ')+cli+' · '+seta(g)};
   }).sort(function(a,b){ return b.value-a.value; });
   var sub = document.getElementById('cidadeSub');
-  if(sub) sub.innerHTML = (med ? 'Faturamento médio por cliente no período &middot; faturamento total' : 'Faturamento no período &middot; participação') +
+  if(sub) sub.innerHTML = (med ? 'Faturamento médio por mês no período ('+meses.toFixed(1).replace('.',',').replace(',0','')+(meses<1.5?' mês':' meses')+') &middot; total' : 'Faturamento no período &middot; participação') +
     ' &middot; clientes &middot; variação vs. período anterior &middot; clique para filtrar';
   renderBarList('cidadeList', rows.slice(0,30), {fk:'cidade'});
   var top5 = rows.slice(0,5).reduce(function(s,r){ return s+r.value; },0);
