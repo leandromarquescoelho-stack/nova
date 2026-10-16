@@ -2813,9 +2813,15 @@ function grupoLinha(r){
 }
 // soma real e projetada do mês atual para as linhas do resumo que passam na condição
 function projMes(cond){
-  var mi = monthIndexOfDay[TODAY_IDX], o = {real:0, proj:0};
-  var kc = projAtiva() ? fracaoConcluida().fat : 1;
-  RESUMO.forEach(function(r){ if(r.mi!==mi || (cond && !cond(r))) return; o.real += r.fat; var g = grupoLinha(r), pm = pesosMes(g.on, g.mun); o.proj += pm ? r.fat*kc*pm.tot/pm.el : r.fat; });
+  var mi = monthIndexOfDay[TODAY_IDX], o = {real:0, proj:0, realQ:0, projQ:0, realL:0, projL:0};
+  var kc = projAtiva() ? fracaoConcluida() : {fat:1, qtd:1, lb:1};
+  RESUMO.forEach(function(r){
+    if(r.mi!==mi || (cond && !cond(r))) return;
+    var g = grupoLinha(r), pm = pesosMes(g.on, g.mun), f = pm ? pm.tot/pm.el : 0;
+    o.real += r.fat; o.proj += pm ? r.fat*kc.fat*f : r.fat;
+    o.realQ += r.qtd; o.projQ += pm ? r.qtd*kc.qtd*f : r.qtd;
+    o.realL += r.lb; o.projL += pm ? r.lb*kc.lb*f : r.lb;
+  });
   return o;
 }
 // valores projetados dia a dia para o restante do mês (ritmo de cada grupo por peso × peso do dia)
@@ -4263,6 +4269,22 @@ function desenharMonthChart(box, ex, aviso){
     tknf: ex ? ex.nn.slice(0,nM).map(function(n,i){ return n>0 ? ex.ft[i]/n : null; }) : null,
     tkcli: ex ? ex.nc.slice(0,nM).map(function(n,i){ return n>0 ? ex.ft[i]/n : null; }) : null
   };
+  // ponto projetado do mês em andamento para cada linha: quantidade e margem pelo próprio ritmo; notas crescem no ritmo do faturamento
+  // (ticket NF fica igual ao de hoje). Clientes não somam dia a dia (o mesmo cliente volta), então saem do faturamento projetado
+  // dividido pelo ticket médio por cliente dos 3 últimos meses fechados, nunca abaixo dos clientes que já compraram
+  var pj = {};
+  if(pmc && pmc.real>0){
+    var u = nAll-1, fF = pmc.proj/pmc.real, fQ = pmc.realQ>0 ? pmc.projQ/pmc.realQ : fF, fL = pmc.realL ? pmc.projL/pmc.realL : fF;
+    if(series.qtd[u]!==null) pj.qtd = d.qt[u]*fQ;
+    if(series.mg[u]!==null) pj.mg = d.lb[u]*fL/(d.tot[u]*fF)*100;
+    if(series.tknf && series.tknf[u]!==null) pj.tknf = series.tknf[u];
+    if(series.cli && series.cli[u]!==null){
+      var tkH = series.tkcli.slice(Math.max(0,u-3), u).filter(function(v){ return v!==null; });
+      var ftP = ex.ft[u]*fF, tkM = tkH.length ? tkH.reduce(function(a,b){ return a+b; },0)/tkH.length : 0;
+      pj.cli = Math.max(series.cli[u], tkM>0 ? ftP/tkM : series.cli[u]*fF);
+      pj.tkcli = ftP/pj.cli;
+    }
+  }
   var out = '';
   if(MC_SHOW.fat){
     for(var g=0; g<=4; g++){ var gv=maxV*g/4; out += '<line x1="'+padL+'" y1="'+y(gv)+'" x2="'+(W-padR)+'" y2="'+y(gv)+'" stroke="var(--border)"/>' +
@@ -4291,13 +4313,21 @@ function desenharMonthChart(box, ex, aviso){
   MC_LINHAS.forEach(function(L){
     var s = series[L.k]; if(!MC_SHOW[L.k] || !s) return;
     var vals = s.filter(function(v){ return v!==null; }); if(!vals.length) return;
+    var vp = pj[L.k]; if(vp!=null) vals.push(vp);
     var mx = Math.max.apply(null, vals)*1.15, mn = Math.max(0, Math.min.apply(null, vals)*0.85);
     function y2(v){ return padT+ih-ih*(v-mn)/((mx-mn)||1); }
     var pts = s.map(function(v,i){ return v===null ? null : (padL+i*bw+bw/2)+','+y2(v); });
     var fech = (temAnd ? pts.slice(0, nM-1) : pts).filter(Boolean);
     out += '<polyline points="'+fech.join(' ')+'" fill="none" stroke="'+L.cor+'" stroke-width="1.8"/>';
-    if(temAnd && pts[nM-1] && pts[nM-2]) out += '<polyline points="'+pts[nM-2]+' '+pts[nM-1]+'" fill="none" stroke="'+L.cor+'" stroke-width="1.5" stroke-dasharray="3 3"/>';
-    var ultI = -1; s.forEach(function(v,i){ if(v!==null) ultI = i; });
+    var pxp = vp!=null ? (padL+(nM-1)*bw+bw/2)+','+y2(vp) : null;
+    if(temAnd && pts[nM-2] && (pxp || pts[nM-1])) out += '<polyline points="'+pts[nM-2]+' '+(pxp||pts[nM-1])+'" fill="none" stroke="'+L.cor+'" stroke-width="1.5" stroke-dasharray="3 3"/>';
+    if(pxp){
+      var cxp = padL+(nM-1)*bw+bw/2;
+      out += '<circle cx="'+cxp+'" cy="'+y2(vp)+'" r="3.5" fill="var(--surface)" stroke="'+L.cor+'" stroke-width="1.5"><title>'+L.nome+' · '+REAL.monthLabels[nM-1]+' projetado: '+L.fmt(vp)+(s[nM-1]!==null?' (até hoje: '+L.fmt(s[nM-1])+')':'')+'</title></circle>' +
+        '<text x="'+(cxp+5)+'" y="'+(y2(vp)-6)+'" font-size="9" font-style="italic" fill="'+L.cor+'" fill-opacity="0.85" font-family="JetBrains Mono, monospace">'+L.fmt(vp)+'</text>';
+      s = s.slice(); s[nM-1] = null; // o realizado parcial fica só na dica do ponto projetado
+    }
+    var ultI = -1; if(!pxp) s.forEach(function(v,i){ if(v!==null) ultI = i; });
     s.forEach(function(v,i){ if(v===null) return; var cx=padL+i*bw+bw/2;
       out += '<circle cx="'+cx+'" cy="'+y2(v)+'" r="3" fill="'+L.cor+'"><title>'+L.nome+' · '+REAL.monthLabels[i]+(temAnd && i===nM-1?' (até hoje)':'')+': '+L.fmt(v)+'</title></circle>';
       if(todosRot || i===ultI) out += '<text x="'+(cx+5)+'" y="'+(y2(v)-6)+'" font-size="9" fill="'+L.cor+'" fill-opacity="0.85" font-family="JetBrains Mono, monospace">'+L.fmt(v)+'</text>'; });
