@@ -400,6 +400,7 @@ tr.vend-row:hover td{ background:var(--surface-2); }
 .barlist-row .bl-fill{height:100%; border-radius:5px; background:linear-gradient(90deg, var(--accent-2), var(--accent)); transition:width .5s cubic-bezier(.4,0,.2,1);}
 .barlist-row .bl-val{font-size:11.5px; font-family:'JetBrains Mono',monospace; color:var(--text-2); text-align:right;}
 .barlist-row .bl-sub{font-size:10px; color:var(--text-muted); text-align:right; margin-top:1px;}
+.seta-up{color:var(--good);} .seta-dn{color:var(--critical);} .seta-eq{color:var(--warning);}
 
 /* stock health */
 .stock-donut-wrap{display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
@@ -1308,7 +1309,11 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <div class="grid-2">
         <div class="panel">
-          <div class="panel-head"><div><h2>Cidades que mais compram</h2><div class="psub">Faturamento no período &middot; participação &middot; variação vs. período anterior &middot; clique para filtrar</div></div></div>
+          <div class="panel-head"><div><h2>Cidades que mais compram</h2><div class="psub" id="cidadeSub">Faturamento no período &middot; participação &middot; clientes &middot; variação vs. período anterior &middot; clique para filtrar</div></div>
+            <select class="fsel" id="cidadeModo" aria-label="Ordenar cidades por">
+              <option value="vol">Por volume</option>
+              <option value="med">Por médio no período</option>
+            </select></div>
           <div class="barlist scroll-limit" id="cidadeList"></div>
           <p class="note-muted" id="cidadeNota"></p>
         </div>
@@ -2409,14 +2414,39 @@ function renderLojaList(){
 }
 
 /* ---------- cidades: ranking, concentração e maiores variações vs. período anterior ---------- */
+// clientes distintos por cidade (bi_cidade_clientes): quantidade de clientes e faturamento médio por cliente
+var cidadeModo = 'vol', CID_CLI = null, CID_CLI_K = null, CID_CLI_ERRO = false;
+function seta(g){
+  if(g===null) return '<span class="seta-eq">sem base anterior</span>';
+  if(Math.abs(g)<0.05) return '<span class="seta-eq">■ 0,0%</span>';
+  return '<span class="'+(g>0?'seta-up':'seta-dn')+'">'+(g>0?'▲ ':'▼ ')+Math.abs(g).toFixed(1).replace('.',',')+'%</span>';
+}
+function carregarCidCli(){
+  var p = painelPeriodo(), arg = {f: painelFiltros(null), per:{ini:p.ini, fim:p.fim, pini:p.pini, pfim:p.pfim}}, k = JSON.stringify(arg);
+  if(CID_CLI_K===k) return;
+  CID_CLI_K = k; CID_CLI = null; CID_CLI_ERRO = false;
+  rpcMemo('bi_cidade_clientes', arg).then(function(rows){
+    if(CID_CLI_K!==k) return;
+    CID_CLI = {}; (rows||[]).forEach(function(r){ CID_CLI[dimNome('cidade', r[0])] = {n:+r[1]||0, p:+r[2]||0}; });
+    renderCidades();
+  }).catch(function(){ if(CID_CLI_K===k){ CID_CLI_ERRO = true; renderCidades(); } });
+}
 function renderCidades(){
   var box = document.getElementById('cidadeList'); if(!box) return;
+  carregarCidCli();
   var m = agLista('cidade'), ks = Object.keys(m).filter(function(k){ return k!=='N/D' || m[k].fat>0.5; });
   var tot = 0, n = 0; ks.forEach(function(k){ if(m[k].fat>0.5){ tot += m[k].fat; n++; } });
+  var med = cidadeModo==='med' && !!CID_CLI;
   var rows = ks.filter(function(k){ return m[k].fat>0.5; }).map(function(k){
-    var o = m[k], g = o.prevFat>0 ? (o.fat-o.prevFat)/o.prevFat*100 : null;
-    return {label:k, key:k, value:o.fat, sub: (tot>0?(o.fat/tot*100).toFixed(1):'0')+'% · '+fmtUn(o.qtd)+' un · '+(g===null ? 'sem venda no período anterior' : (g>=0?'▲ ':'▼ ')+Math.abs(g).toFixed(1)+'%')};
+    var o = m[k], c = CID_CLI && CID_CLI[k], vm = c && c.n>0 ? o.fat/c.n : null, vmp = c && c.p>0 ? o.prevFat/c.p : null;
+    var g = med ? (vm!==null && vmp ? (vm-vmp)/vmp*100 : null) : (o.prevFat>0 ? (o.fat-o.prevFat)/o.prevFat*100 : null);
+    var cli = c ? fmtUn(c.n)+(c.n===1?' cliente':' clientes') : (CID_CLI_ERRO ? 'clientes indisponível' : 'clientes …');
+    return {label:k, key:k, value: med ? (vm||0) : o.fat, display: med ? (vm===null?'—':fmtMoney(vm)) : fmtMoney(o.fat),
+      sub: (med ? fmtCurto(o.fat)+' · ' : (tot>0?(o.fat/tot*100).toFixed(1):'0')+'% · ')+cli+' · '+seta(g)};
   }).sort(function(a,b){ return b.value-a.value; });
+  var sub = document.getElementById('cidadeSub');
+  if(sub) sub.innerHTML = (med ? 'Faturamento médio por cliente no período &middot; faturamento total' : 'Faturamento no período &middot; participação') +
+    ' &middot; clientes &middot; variação vs. período anterior &middot; clique para filtrar';
   renderBarList('cidadeList', rows.slice(0,30), {fk:'cidade'});
   var top5 = rows.slice(0,5).reduce(function(s,r){ return s+r.value; },0);
   var nota = document.getElementById('cidadeNota');
@@ -4820,6 +4850,7 @@ function bindEvents(){
     try{ localStorage.setItem('nc_mc_show', JSON.stringify(MC_SHOW)); }catch(err){}
     renderMonthChart();
   });
+  document.getElementById('cidadeModo').addEventListener('change', function(){ cidadeModo = this.value; renderCidades(); });
   document.getElementById('heatMetrica').addEventListener('change', function(){ heatMet = this.value; renderHeatLoja(); });
   document.getElementById('giroSortBtn').addEventListener('click', function(){
     state.giroSortDesc = !state.giroSortDesc;
