@@ -1275,7 +1275,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <!-- ---- evolução mensal por canal + margem ---- -->
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal &middot; linhas = indicadores marcados na legenda, cada um na própria escala</div></div>
+          <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal &middot; faixas abaixo = indicadores marcados na legenda, cada um na própria escala &middot; du = dias úteis</div></div>
         </div>
         <div class="chart-wrap"><div id="monthChart"></div></div>
         <div class="leg-row" id="monthLegend"></div>
@@ -4239,12 +4239,28 @@ function monthlyByCanal(){
 var MC_SHOW = {fat:true, qtd:false, mg:true, and:true, proj:true, cli:false, tknf:false, tkcli:false};
 try{ var _mc = JSON.parse(localStorage.getItem('nc_mc_show')||'null'); if(_mc) Object.keys(MC_SHOW).forEach(function(k){ if(typeof _mc[k]==='boolean') MC_SHOW[k] = _mc[k]; }); }catch(e){}
 var MC_LINHAS = [
-  {k:'qtd',   nome:'Quantidade',           cor:'#4ade80',      fmt:function(v){ return fmtUn(v)+' un'; }},
-  {k:'mg',    nome:'Margem bruta %',       cor:'var(--text)',  fmt:function(v){ return v.toFixed(1)+'%'; }},
-  {k:'cli',   nome:'Qtde de clientes',     cor:'#f5a524',      fmt:function(v){ return Math.round(v).toLocaleString('pt-BR'); }},
-  {k:'tknf',  nome:'Ticket médio NF',      cor:'#a78bfa',      fmt:function(v){ return fmtMoney(v); }},
-  {k:'tkcli', nome:'Ticket médio cliente', cor:'#f472b6',      fmt:function(v){ return fmtMoney(v); }}
+  {k:'qtd',   nome:'Quantidade',           curtoNome:'Quantidade',      cor:'#4ade80',     fmt:function(v){ return fmtUn(v)+' un'; }, curto:mcMil},
+  {k:'mg',    nome:'Margem bruta %',       curtoNome:'Margem bruta',    cor:'var(--text)', fmt:function(v){ return v.toFixed(1)+'%'; }, curto:function(v){ return v.toFixed(1).replace('.',',')+'%'; }},
+  {k:'cli',   nome:'Qtde de clientes',     curtoNome:'Clientes',        cor:'#f5a524',     fmt:function(v){ return Math.round(v).toLocaleString('pt-BR'); }, curto:mcMil},
+  {k:'tknf',  nome:'Ticket médio NF',      curtoNome:'Ticket NF',       cor:'#a78bfa',     fmt:function(v){ return fmtMoney(v); }, curto:function(v){ return mcMil(v); }},
+  {k:'tkcli', nome:'Ticket médio cliente', curtoNome:'Ticket cliente',  cor:'#f472b6',     fmt:function(v){ return fmtMoney(v); }, curto:function(v){ return mcMil(v); }}
 ];
+function mcMil(v){ return v>=1e6 ? (v/1e6).toFixed(1).replace('.',',')+' mi' : v>=1e4 ? Math.round(v/1e3)+' mil' : v>=1e3 ? (v/1e3).toFixed(1).replace('.',',')+' mil' : String(Math.round(v)); }
+// dias úteis de cada mês do gráfico: com uma só loja nos dados, o calendário dela (feriados municipais incluídos; marketplace = dias
+// corridos); com várias, só feriados nacionais e estaduais. No mês em andamento mostra "decorridos/total" até o último dia com venda
+function diasUteisMeses(nM){
+  var lojas = {}; RESUMO.forEach(function(r){ if(r.fat) lojas[r.loja] = 1; });
+  var ls = Object.keys(lojas), uma = ls.length===1 ? ls[0] : null;
+  var mun = uma && !(LOJA_INFO[uma] && !LOJA_INFO[uma].fisica) ? (LOJA_MUNICIPIO[uma] || null) : null;
+  var corridos = uma && LOJA_INFO[uma] && !LOJA_INFO[uma].fisica, ult = DAYS[TODAY_IDX];
+  function conta(a, b){ var c = contarDias(a, b, mun); return corridos ? c.corridos : c.uteis; }
+  var base = uma ? (corridos ? uma+' (dias corridos)' : uma+(mun ? ' · feriados de '+mun : '')) : 'várias lojas · só feriados nacionais e estaduais';
+  return REAL.months.slice(0, nM).map(function(k){
+    var p = k.split('-'), a = new Date(+p[0], +p[1]-1, 1), b = new Date(+p[0], +p[1], 0), tot = conta(a, b);
+    if(ult >= a && ult < b){ var dec = conta(a, ult); return {txt: dec+'/'+tot+' du', dica: dec+' de '+tot+' dias úteis até '+fmtDate(ult)+' · '+base}; }
+    return {txt: tot+' du', dica: tot+' dias úteis · '+base};
+  });
+}
 var MC_SEQ = 0, MC_PRONTO = {};
 function renderMonthChart(){
   var box = document.getElementById('monthChart'); if(!box) return;
@@ -4264,13 +4280,12 @@ function desenharMonthChart(box, ex, aviso){
   var d = monthlyByCanal(), nAll = REAL.months.length, parcial = !mesCompleto();
   var nM = parcial && !MC_SHOW.and ? nAll-1 : nAll; // sem o mês em andamento, o gráfico vai até o último mês fechado
   var canais = Object.keys(d.byC).sort(function(a,b){ return d.byC[b].reduce(function(x,y){return x+y;},0) - d.byC[a].reduce(function(x,y){return x+y;},0); });
-  var W=720, H=250, padL=54, padR=40, padT=22, padB=26, iw=W-padL-padR, ih=H-padT-padB;
+  var W=760, padL=118, padR=18, padT=24, iw=W-padL-padR;
   var temAnd = parcial && nM===nAll;
   var pmc = temAnd && MC_SHOW.proj && projAtiva() ? projMes() : null, projUlt = pmc && pmc.real>0 ? d.tot[nAll-1]*pmc.proj/pmc.real : null;
   var tot = d.tot.slice(0, nM);
   var maxV = Math.max.apply(null, tot.concat([1, MC_SHOW.fat ? (projUlt||0) : 0]))*1.12;
   var bw = iw/nM;
-  function y(v){ return padT+ih-ih*v/maxV; }
   var series = {
     qtd: d.qt.slice(0,nM).map(function(q){ return q>0 ? q : null; }),
     mg: tot.map(function(t,i){ return t>0 ? d.lb[i]/t*100 : null; }),
@@ -4294,11 +4309,21 @@ function desenharMonthChart(box, ex, aviso){
       pj.tkcli = ftP/pj.cli;
     }
   }
+  // layout: barras de faturamento no topo, eixo dos meses (com dias úteis) e, abaixo, uma faixa própria para cada indicador
+  // ligado — cada linha só usa a sua faixa, então nenhuma cruza com outra
+  var linhas = MC_LINHAS.filter(function(L){ return MC_SHOW[L.k] && series[L.k] && series[L.k].some(function(v){ return v!==null; }); });
+  var barH = MC_SHOW.fat ? 200 : 0, eixoH = 34, faixaH = 52, topoB = padT, baseB = topoB+barH;
+  var topoF = baseB+eixoH, H2 = topoF + linhas.length*faixaH + (linhas.length ? 4 : 0);
+  function y(v){ return baseB-barH*v/maxV; }
+  function xc(i){ return padL+i*bw+bw/2; }
   var out = '';
+  // coluna do mês em andamento levemente destacada de cima a baixo
+  if(temAnd) out += '<rect x="'+(padL+(nM-1)*bw)+'" y="'+(topoB-14)+'" width="'+bw+'" height="'+(H2-topoB+12)+'" rx="6" fill="var(--text-muted)" fill-opacity="0.06"/>';
   if(MC_SHOW.fat){
-    for(var g=0; g<=4; g++){ var gv=maxV*g/4; out += '<line x1="'+padL+'" y1="'+y(gv)+'" x2="'+(W-padR)+'" y2="'+y(gv)+'" stroke="var(--border)"/>' +
+    for(var g=0; g<=4; g++){ var gv=maxV*g/4; out += '<line x1="'+padL+'" y1="'+y(gv)+'" x2="'+(W-padR)+'" y2="'+y(gv)+'" stroke="var(--border)" stroke-opacity="'+(g?0.55:1)+'"/>' +
       '<text x="'+(padL-8)+'" y="'+(y(gv)+3)+'" text-anchor="end" font-size="9.5" fill="var(--text-muted)" font-family="JetBrains Mono, monospace">'+fmtCurto(gv).replace('R$ ','')+'</text>'; }
-  } else out += '<line x1="'+padL+'" y1="'+(padT+ih)+'" x2="'+(W-padR)+'" y2="'+(padT+ih)+'" stroke="var(--border)"/>';
+  } else out += '<line x1="'+padL+'" y1="'+baseB+'" x2="'+(W-padR)+'" y2="'+baseB+'" stroke="var(--border)"/>';
+  var du = diasUteisMeses(nM);
   for(var mi=0; mi<nM; mi++){
     var x0 = padL+mi*bw+bw*0.18, w = bw*0.64, acc = 0, last = temAnd && mi===nM-1;
     if(MC_SHOW.fat){
@@ -4308,40 +4333,49 @@ function desenharMonthChart(box, ex, aviso){
         acc += v;
       });
       if(last && projUlt && projUlt>acc){
-        out += '<rect x="'+x0+'" y="'+y(projUlt)+'" width="'+w+'" height="'+(y(acc)-y(projUlt))+'" fill="var(--text-muted)" fill-opacity="0.08" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3"><title>Projeção de fechamento: '+fmtMoney(projUlt)+' (realizado '+fmtMoney(acc)+')</title></rect>' +
+        out += '<rect x="'+x0+'" y="'+y(projUlt)+'" width="'+w+'" height="'+(y(acc)-y(projUlt))+'" rx="2" fill="var(--text-muted)" fill-opacity="0.08" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3"><title>Projeção de fechamento: '+fmtMoney(projUlt)+' (realizado '+fmtMoney(acc)+')</title></rect>' +
           '<text x="'+(x0+w/2)+'" y="'+(y(projUlt)-5)+'" text-anchor="middle" font-size="9" font-style="italic" fill="var(--text-muted)" font-family="JetBrains Mono, monospace">proj. '+fmtCurto(projUlt).replace('R$ ','')+'</text>' +
           '<text x="'+(x0+w/2)+'" y="'+(y(acc)+11)+'" text-anchor="middle" font-size="9" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
       } else
       out += '<text x="'+(x0+w/2)+'" y="'+(y(acc)-5)+'" text-anchor="middle" font-size="9.5" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
     }
-    out += '<text x="'+(x0+w/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="var(--text-muted)">'+REAL.monthLabels[mi]+(last?'*':'')+'</text>';
+    // ano só no primeiro mês e em janeiro, para os rótulos não se encostarem
+    var rotM = REAL.monthLabels[mi]; if(mi>0 && bw<44 && rotM.indexOf('Jan')!==0) rotM = rotM.split('/')[0];
+    out += '<text x="'+xc(mi)+'" y="'+(baseB+14)+'" text-anchor="middle" font-size="10" fill="var(--text-2)">'+rotM+(last?'*':'')+'</text>';
+    if(du[mi]) out += '<text x="'+xc(mi)+'" y="'+(baseB+26)+'" text-anchor="middle" font-size="8" fill="var(--text-muted)" fill-opacity="0.8"><title>'+du[mi].dica+'</title>'+du[mi].txt+'</text>';
   }
-  // cada linha tem a própria escala (do menor ao maior mês), sem eixo. Com várias linhas ligadas, o valor fica escrito só no último
-  // mês (os demais aparecem ao passar o mouse); o trecho até o mês em andamento é tracejado
-  var ativas = MC_LINHAS.filter(function(L){ return MC_SHOW[L.k] && series[L.k]; }).length, todosRot = ativas<=1 || (ativas===2 && nM<=12);
-  MC_LINHAS.forEach(function(L){
-    var s = series[L.k]; if(!MC_SHOW[L.k] || !s) return;
-    var vals = s.filter(function(v){ return v!==null; }); if(!vals.length) return;
-    var vp = pj[L.k]; if(vp!=null) vals.push(vp);
-    var mx = Math.max.apply(null, vals)*1.15, mn = Math.max(0, Math.min.apply(null, vals)*0.85);
-    function y2(v){ return padT+ih-ih*(v-mn)/((mx-mn)||1); }
-    var pts = s.map(function(v,i){ return v===null ? null : (padL+i*bw+bw/2)+','+y2(v); });
+  // faixas dos indicadores: escala própria (do menor ao maior mês) dentro da faixa; o trecho até o mês em andamento é tracejado
+  var rotTodos = bw >= 46;
+  linhas.forEach(function(L, li){
+    var s = series[L.k], vp = pj[L.k], t0 = topoF + li*faixaH, yA = t0+19, yB = t0+faixaH-9;
+    out += '<line x1="'+padL+'" y1="'+t0+'" x2="'+(W-padR)+'" y2="'+t0+'" stroke="var(--border)" stroke-opacity="0.7"/>' +
+      '<circle cx="'+8+'" cy="'+(t0+faixaH/2)+'" r="3.5" fill="'+L.cor+'"/>' +
+      '<text x="'+18+'" y="'+(t0+faixaH/2+3.5)+'" font-size="10" fill="var(--text-2)">'+L.curtoNome+'</text>';
+    var vals = s.filter(function(v){ return v!==null; }); if(vp!=null) vals.push(vp);
+    var mx = Math.max.apply(null, vals), mn = Math.min.apply(null, vals);
+    function y2(v){ return mx===mn ? (yA+yB)/2 : yB-(yB-yA)*(v-mn)/(mx-mn); }
+    var pts = s.map(function(v,i){ return v===null ? null : xc(i)+','+y2(v); });
     var fech = (temAnd ? pts.slice(0, nM-1) : pts).filter(Boolean);
-    out += '<polyline points="'+fech.join(' ')+'" fill="none" stroke="'+L.cor+'" stroke-width="1.8"/>';
-    var pxp = vp!=null ? (padL+(nM-1)*bw+bw/2)+','+y2(vp) : null;
+    // área suave sob a linha, só para dar corpo à faixa
+    var idx = []; (temAnd ? s.slice(0, nM-1) : s).forEach(function(v,i){ if(v!==null) idx.push(i); });
+    if(idx.length>1) out += '<path d="M'+xc(idx[0])+','+yB+' L'+idx.map(function(i){ return xc(i)+','+y2(s[i]); }).join(' L')+' L'+xc(idx[idx.length-1])+','+yB+' Z" fill="'+L.cor+'" fill-opacity="0.07"/>';
+    out += '<polyline points="'+fech.join(' ')+'" fill="none" stroke="'+L.cor+'" stroke-width="1.8" stroke-linejoin="round"/>';
+    var pxp = vp!=null ? xc(nM-1)+','+y2(vp) : null;
     if(temAnd && pts[nM-2] && (pxp || pts[nM-1])) out += '<polyline points="'+pts[nM-2]+' '+(pxp||pts[nM-1])+'" fill="none" stroke="'+L.cor+'" stroke-width="1.5" stroke-dasharray="3 3"/>';
+    // rótulos: todos quando há espaço; senão só o maior, o menor e o último mês
+    var iMax = -1, iMin = -1, iUlt = -1;
+    s.forEach(function(v,i){ if(v===null || (pxp && i===nM-1)) return; if(iMax<0 || v>s[iMax]) iMax = i; if(iMin<0 || v<s[iMin]) iMin = i; iUlt = i; });
+    function rot(i, v, ital){ return '<text x="'+xc(i)+'" y="'+(y2(v)-6)+'" text-anchor="middle" font-size="9"'+(ital?' font-style="italic"':'')+' fill="'+L.cor+'" font-family="JetBrains Mono, monospace">'+L.curto(v)+'</text>'; }
+    s.forEach(function(v,i){
+      if(v===null || (pxp && i===nM-1)) return;
+      out += '<circle cx="'+xc(i)+'" cy="'+y2(v)+'" r="2.6" fill="'+L.cor+'"><title>'+L.nome+' · '+REAL.monthLabels[i]+(temAnd && i===nM-1?' (até hoje)':'')+': '+L.fmt(v)+'</title></circle>';
+      if(rotTodos || i===iMax || i===iMin || (i===iUlt && !pxp)) out += rot(i, v);
+    });
     if(pxp){
-      var cxp = padL+(nM-1)*bw+bw/2;
-      out += '<circle cx="'+cxp+'" cy="'+y2(vp)+'" r="3.5" fill="var(--surface)" stroke="'+L.cor+'" stroke-width="1.5"><title>'+L.nome+' · '+REAL.monthLabels[nM-1]+' projetado: '+L.fmt(vp)+(s[nM-1]!==null?' (até hoje: '+L.fmt(s[nM-1])+')':'')+'</title></circle>' +
-        '<text x="'+(cxp+5)+'" y="'+(y2(vp)-6)+'" font-size="9" font-style="italic" fill="'+L.cor+'" fill-opacity="0.85" font-family="JetBrains Mono, monospace">'+L.fmt(vp)+'</text>';
-      s = s.slice(); s[nM-1] = null; // o realizado parcial fica só na dica do ponto projetado
+      out += '<circle cx="'+xc(nM-1)+'" cy="'+y2(vp)+'" r="3.2" fill="var(--surface)" stroke="'+L.cor+'" stroke-width="1.5"><title>'+L.nome+' · '+REAL.monthLabels[nM-1]+' projetado: '+L.fmt(vp)+(s[nM-1]!==null?' (até hoje: '+L.fmt(s[nM-1])+')':'')+'</title></circle>' + rot(nM-1, vp, true);
     }
-    var ultI = -1; if(!pxp) s.forEach(function(v,i){ if(v!==null) ultI = i; });
-    s.forEach(function(v,i){ if(v===null) return; var cx=padL+i*bw+bw/2;
-      out += '<circle cx="'+cx+'" cy="'+y2(v)+'" r="3" fill="'+L.cor+'"><title>'+L.nome+' · '+REAL.monthLabels[i]+(temAnd && i===nM-1?' (até hoje)':'')+': '+L.fmt(v)+'</title></circle>';
-      if(todosRot || i===ultI) out += '<text x="'+(cx+5)+'" y="'+(y2(v)-6)+'" font-size="9" fill="'+L.cor+'" fill-opacity="0.85" font-family="JetBrains Mono, monospace">'+L.fmt(v)+'</text>'; });
   });
-  box.innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Evolução mensal por canal">'+out+'</svg>';
+  box.innerHTML = '<svg viewBox="0 0 '+W+' '+H2+'" width="100%" role="img" aria-label="Evolução mensal por canal">'+out+'</svg>';
   function chk(k, conteudo, extra){ return '<label class="mc-tg'+(MC_SHOW[k]?'':' off')+'"'+(extra||'')+'><input type="checkbox" data-mc="'+k+'"'+(MC_SHOW[k]?' checked':'')+'>'+conteudo+'</label>'; }
   var linhaTxt = aviso==='carregando' ? ' <em class="mc-av">carregando…</em>' : (aviso==='erro' ? ' <em class="mc-av">indisponível</em>' : '');
   document.getElementById('monthLegend').innerHTML =
