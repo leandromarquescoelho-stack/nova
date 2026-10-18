@@ -77,6 +77,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b0f17">
+<script>try{ if(localStorage.getItem('nc_tema')==='light'){ document.documentElement.setAttribute('data-theme','light'); document.querySelector('meta[name="theme-color"]').setAttribute('content','#ffffff'); } }catch(e){}</script>
 </head><body>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -89,8 +90,8 @@
   --surface:#12161e;
   --surface-2:#171c26;
   --surface-3:#1d2330;
-  --border:rgba(255,255,255,.08);
-  --border-strong:rgba(255,255,255,.15);
+  --border:rgba(var(--ink),.08);
+  --border-strong:rgba(var(--ink),.15);
   --text:#f2f5f9;
   --text-2:#b6bfcc;
   --text-muted:#78808f;
@@ -108,11 +109,40 @@
   --radius-lg:18px;
   --radius-md:12px;
   --radius-sm:8px;
-  --shadow-card:0 1px 0 rgba(255,255,255,.03) inset, 0 10px 30px -14px rgba(0,0,0,.6);
+  --shadow-card:0 1px 0 rgba(var(--ink),.03) inset, 0 10px 30px -14px rgba(0,0,0,.6);
   --sidebar-w:248px;
   --sidebar-w-collapsed:76px;
+  --ink:255,255,255;          /* linhas e véus translúcidos */
+  --halo:0,0,0;               /* contorno de texto sobre barras */
+  --glass:rgba(10,13,18,.82); /* topo e barra de filtros ativos */
   font-size:14px;
 }
+/* modo claro: mesmas variáveis, tons claros; escolhido no botão do topo e guardado no navegador */
+:root[data-theme="light"]{
+  color-scheme: light;
+  --bg:#eef1f5;
+  --plane:#ffffff;
+  --surface:#ffffff;
+  --surface-2:#f4f6f9;
+  --surface-3:#e8ecf1;
+  --text:#0f172a;
+  --text-2:#334155;
+  --text-muted:#64748b;
+  --accent:#0891b2;
+  --accent-2:#2563eb;
+  --accent-glow:rgba(8,145,178,.22);
+  --good:#15803d;
+  --warning:#b7791f;
+  --critical:#dc2626;
+  --shadow-card:0 1px 2px rgba(15,23,42,.06), 0 8px 24px -16px rgba(15,23,42,.25);
+  --ink:15,23,42;
+  --halo:255,255,255;
+  --glass:rgba(255,255,255,.85);
+}
+:root[data-theme="light"] .kpi-card, :root[data-theme="light"] .panel{ box-shadow:var(--shadow-card); }
+.tema-ico-claro{ display:none; }
+:root[data-theme="light"] .tema-ico-claro{ display:block; }
+:root[data-theme="light"] .tema-ico-escuro{ display:none; }
 
 *{box-sizing:border-box;}
 html,body{height:100%;}
@@ -166,7 +196,7 @@ svg text{font-family:'Manrope', sans-serif;}
   background:linear-gradient(135deg, var(--accent), var(--accent-2));
   display:flex; align-items:center; justify-content:center;
   font-family:'Sora',sans-serif; font-weight:800; font-size:15px; color:var(--accent-ink);
-  box-shadow:0 0 0 1px rgba(255,255,255,.08), 0 8px 20px -8px var(--accent-glow);
+  box-shadow:0 0 0 1px rgba(var(--ink),.08), 0 8px 20px -8px var(--accent-glow);
 }
 .brand .name{white-space:nowrap; overflow:hidden;}
 .brand .name b{display:block; font-family:'Sora',sans-serif; font-weight:700; font-size:14.5px; letter-spacing:.01em;}
@@ -230,7 +260,7 @@ svg text{font-family:'Manrope', sans-serif;}
 /* ---- header ---- */
 .topbar{
   padding:14px 22px; padding-top:calc(14px + env(safe-area-inset-top,0px));
-  background:rgba(10,13,18,.82); backdrop-filter:blur(14px) saturate(140%);
+  background:var(--glass); backdrop-filter:blur(14px) saturate(140%);
   border-bottom:1px solid var(--border);
   display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
 }
@@ -665,7 +695,7 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
   display:flex; align-items:center; justify-content:center; padding:20px;
 }
 .login-card{
-  width:100%; max-width:380px; background:var(--surface); border:1px solid rgba(255,255,255,.08);
+  width:100%; max-width:380px; background:var(--surface); border:1px solid rgba(var(--ink),.08);
   border-radius:16px; padding:28px 26px 24px; box-shadow:0 30px 80px rgba(0,0,0,.5);
 }
 .login-brand{display:flex; align-items:center; gap:10px; margin-bottom:18px;}
@@ -681,7 +711,7 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .login-sub{font-size:12.5px; color:var(--text-muted); margin:0 0 18px;}
 .login-label{display:block; font-size:11px; font-weight:700; color:var(--text-2); text-transform:uppercase; letter-spacing:.04em; margin:14px 0 6px;}
 .login-input{
-  width:100%; box-sizing:border-box; padding:11px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.10);
+  width:100%; box-sizing:border-box; padding:11px 12px; border-radius:10px; border:1px solid rgba(var(--ink),.10);
   background:var(--surface-2); color:var(--text); font-size:14px; font-family:'Manrope',sans-serif;
 }
 .login-input:focus{outline:none; border-color:var(--accent);}
@@ -699,7 +729,7 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .login-help{display:none; margin-top:10px; padding:12px; border-radius:10px; background:var(--surface-2); font-size:11.5px; color:var(--text-2); line-height:1.65;}
 .login-help.open{display:block;}
 .login-help table{width:100%; border-collapse:collapse;}
-.login-help td{padding:3px 4px; font-family:'JetBrains Mono',monospace; font-size:11px; border-bottom:1px solid rgba(255,255,255,.06);}
+.login-help td{padding:3px 4px; font-family:'JetBrains Mono',monospace; font-size:11px; border-bottom:1px solid rgba(var(--ink),.06);}
 
 /* ---- Administração de usuários (papel BI) ---- */
 .u-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:14px; }
@@ -725,7 +755,7 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .u-fields{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .u-fields label, .u-invite-grid label{ display:flex; flex-direction:column; gap:5px; font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; min-width:0; }
 .u-fields input, .u-fields select, .u-invite-grid input, .u-invite-grid select{
-  width:100%; box-sizing:border-box; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.10);
+  width:100%; box-sizing:border-box; padding:8px 10px; border-radius:8px; border:1px solid rgba(var(--ink),.10);
   background:var(--surface); color:var(--text); font-size:12.5px; font-family:'Manrope',sans-serif; text-transform:none; letter-spacing:normal; font-weight:500;
 }
 .u-fields input:focus, .u-fields select:focus, .u-invite-grid input:focus, .u-invite-grid select:focus{ outline:none; border-color:var(--accent); }
@@ -753,14 +783,14 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .user-form-row{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:4px;}
 .user-form-row label{flex:1 1 180px; display:flex; flex-direction:column; font-size:11px; font-weight:700; color:var(--text-2); text-transform:uppercase; letter-spacing:.04em; gap:6px;}
 .user-form-row input, .user-form-row select{
-  width:100%; box-sizing:border-box; padding:10px 11px; border-radius:9px; border:1px solid rgba(255,255,255,.10);
+  width:100%; box-sizing:border-box; padding:10px 11px; border-radius:9px; border:1px solid rgba(var(--ink),.10);
   background:var(--surface-2); color:var(--text); font-size:13.5px; font-family:'Manrope',sans-serif; text-transform:none; letter-spacing:normal; font-weight:500;
 }
 .user-form-row input:focus, .user-form-row select:focus{outline:none; border-color:var(--accent);}
 table.users-table tbody tr{cursor:default;}
 table.users-table tbody tr:hover{background:transparent;}
 table.users-table .u-edit{
-  box-sizing:border-box; padding:6px 8px; border-radius:7px; border:1px solid rgba(255,255,255,.10);
+  box-sizing:border-box; padding:6px 8px; border-radius:7px; border:1px solid rgba(var(--ink),.10);
   background:var(--surface-2); color:var(--text); font-size:12px; font-family:'Manrope',sans-serif;
 }
 table.users-table .u-edit:focus{outline:none; border-color:var(--accent);}
@@ -790,7 +820,7 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 }
 .filter-rail-panel{
   position:absolute; top:0; right:14px; bottom:0; width:320px; max-width:calc(100vw - 40px);
-  background:var(--surface); border-left:1px solid rgba(255,255,255,.08);
+  background:var(--surface); border-left:1px solid rgba(var(--ink),.08);
   box-shadow:-24px 0 60px rgba(0,0,0,.45);
   padding:18px 16px; overflow-y:auto;
   opacity:0; visibility:hidden; transform:translateX(8px);
@@ -819,7 +849,7 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .frp-checkbox input{width:15px; height:15px; accent-color:var(--accent); cursor:pointer;}
 .active-tags-bar{
   min-height:1px; padding:0 22px;
-  background:rgba(10,13,18,.82); backdrop-filter:blur(14px) saturate(140%);
+  background:var(--glass); backdrop-filter:blur(14px) saturate(140%);
   border-bottom:1px solid var(--border);
 }
 .active-tags-bar .active-tags{ padding:10px 0; margin-top:0; flex:1; min-width:0; }
@@ -1130,6 +1160,10 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <button class="tbtn" id="refreshBtn">
           <svg viewBox="0 0 24 24" fill="none"><path d="M20 11A8 8 0 1 0 18.5 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 5v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Atualizar
+        </button>
+        <button class="tbtn icon-only" id="temaBtn" title="Modo claro / escuro" aria-label="Alternar modo claro e escuro">
+          <svg class="tema-ico-escuro" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="tema-ico-claro" viewBox="0 0 24 24" fill="none"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
         </button>
         <button class="tbtn icon-only" id="notifBtn" aria-label="Notificações">
           <svg viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -3242,10 +3276,10 @@ function renderVendConsult(){
     function xp(v){ return pad + (v/xMax)*(w-2*pad); }
     function yp(v){ return h-pad - ((v-yMin)/((yMax-yMin)||1))*(h-2*pad); }
     var mx = xs.reduce(function(s,v){return s+v;},0)/xs.length, my = ys.reduce(function(s,v){return s+v;},0)/ys.length;
-    var out = '<line x1="'+xp(mx)+'" y1="'+pad+'" x2="'+xp(mx)+'" y2="'+(h-pad)+'" stroke="rgba(255,255,255,.14)" stroke-dasharray="3,3"/>' +
-      '<line x1="'+pad+'" y1="'+yp(my)+'" x2="'+(w-pad)+'" y2="'+yp(my)+'" stroke="rgba(255,255,255,.14)" stroke-dasharray="3,3"/>' +
-      '<line x1="'+pad+'" y1="'+(h-pad)+'" x2="'+(w-pad)+'" y2="'+(h-pad)+'" stroke="rgba(255,255,255,.18)"/>' +
-      '<line x1="'+pad+'" y1="'+pad+'" x2="'+pad+'" y2="'+(h-pad)+'" stroke="rgba(255,255,255,.18)"/>';
+    var out = '<line x1="'+xp(mx)+'" y1="'+pad+'" x2="'+xp(mx)+'" y2="'+(h-pad)+'" stroke="rgba(var(--ink),.14)" stroke-dasharray="3,3"/>' +
+      '<line x1="'+pad+'" y1="'+yp(my)+'" x2="'+(w-pad)+'" y2="'+yp(my)+'" stroke="rgba(var(--ink),.14)" stroke-dasharray="3,3"/>' +
+      '<line x1="'+pad+'" y1="'+(h-pad)+'" x2="'+(w-pad)+'" y2="'+(h-pad)+'" stroke="rgba(var(--ink),.18)"/>' +
+      '<line x1="'+pad+'" y1="'+pad+'" x2="'+pad+'" y2="'+(h-pad)+'" stroke="rgba(var(--ink),.18)"/>';
     rows.forEach(function(r,i){
       var isMe = r.name===selName;
       out += '<circle class="vend-pt" data-vend="'+escapeHtml(r.name)+'" cx="'+xp(xs[i])+'" cy="'+yp(ys[i])+'" r="'+(isMe?7:4.5)+'" fill="'+(isMe?'var(--accent)':'var(--text-muted)')+'" fill-opacity="'+(isMe?1:0.6)+'"'+(isMe?' stroke="#fff" stroke-width="1.5"':'')+'>' +
@@ -3340,8 +3374,8 @@ function renderVendConsult(){
     '<div class="grid-2" style="margin-top:14px;">' +
       '<div>' +
         '<h3 class="dh">'+selName+' vs. média diária dos demais</h3>' +
-        '<div style="border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:8px; margin-bottom:6px;">'+sparkMe+'</div>' +
-        '<div style="border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:8px; opacity:.75;">'+sparkPeer+'</div>' +
+        '<div style="border:1px solid rgba(var(--ink),.06); border-radius:10px; padding:8px; margin-bottom:6px;">'+sparkMe+'</div>' +
+        '<div style="border:1px solid rgba(var(--ink),.06); border-radius:10px; padding:8px; opacity:.75;">'+sparkPeer+'</div>' +
         '<div style="padding:0 8px;">'+eixoDatasHtml(s0, s1)+'</div>' +
         '<p style="font-size:11px; color:var(--text-muted); margin-top:8px;">Acima: '+selName+'. Abaixo: média diária dos demais vendedores, sob os mesmos filtros.</p>' +
       '</div>' +
@@ -3481,7 +3515,7 @@ function salvarConsultoriaPdf(){
     '.pdf-logo{flex:none;height:34px;width:auto;max-width:none;object-fit:contain;display:block;}' +
     '.pdf-cab h1{font-family:Sora,sans-serif;font-size:22px;margin:4px 0 0;color:var(--text);}' +
     '.pdf-info{display:grid;grid-template-columns:1.3fr 1fr 1.4fr .8fr;gap:10px;margin-bottom:10px;}' +
-    '.pdf-cel{background:var(--surface-2,rgba(255,255,255,.04));border:1px solid var(--border);border-radius:8px;padding:7px 10px;}' +
+    '.pdf-cel{background:var(--surface-2,rgba(var(--ink),.04));border:1px solid var(--border);border-radius:8px;padding:7px 10px;}' +
     '.pdf-cel span{display:block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px;}' +
     '.pdf-cel b{font-size:11.5px;font-weight:600;color:var(--text);}' +
     '.pdf-filtros{border:1px solid var(--border);border-radius:8px;padding:7px 10px;margin-bottom:16px;font-size:10.5px;line-height:1.5;}' +
@@ -3567,12 +3601,12 @@ function radarChartSVG(axes, w, h){
   var rings = [0.25,0.5,0.75,1];
   var gridPolys = rings.map(function(f){
     var pts = axes.map(function(a,i){ var p=polarPt(cx,cy,R*f,i*step); return p[0]+','+p[1]; }).join(' ');
-    return '<polygon points="'+pts+'" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="1"/>';
+    return '<polygon points="'+pts+'" fill="none" stroke="rgba(var(--ink),.09)" stroke-width="1"/>';
   }).join('');
   function rdAttr(a){ return a.dim ? ' data-dim="'+a.dim+'" data-k="'+escapeHtml(String(a.key))+'"' : ''; }
   var axisLines = axes.map(function(a,i){
     var p = polarPt(cx,cy,R,i*step);
-    return '<line'+(a.dim?' class="rd-sp"'+rdAttr(a):'')+' x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="rgba(255,255,255,.12)" stroke-width="1"/>';
+    return '<line'+(a.dim?' class="rd-sp"'+rdAttr(a):'')+' x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="rgba(var(--ink),.12)" stroke-width="1"/>';
   }).join('');
   var labels = axes.map(function(a,i){
     var p = polarPt(cx,cy,R+30,i*step);
@@ -4431,7 +4465,7 @@ function desenharMonthChart(box, ex, aviso){
       if(last && projUlt && projUlt>acc){
         out += '<rect x="'+x0+'" y="'+y(projUlt)+'" width="'+w+'" height="'+(y(acc)-y(projUlt))+'" rx="2" fill="var(--text-muted)" fill-opacity="0.08" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3"><title>Projeção de fechamento: '+fmtMoney(projUlt)+' (realizado '+fmtMoney(acc)+')</title></rect>' +
           '<text x="'+(x0+w/2)+'" y="'+(y(projUlt)-5)+'" text-anchor="middle" font-size="9" font-style="italic" fill="var(--text-muted)" font-family="JetBrains Mono, monospace">proj. '+fmtCurto(projUlt).replace('R$ ','')+'</text>' +
-          '<text x="'+(x0+w/2)+'" y="'+(y(acc/2)+3)+'" text-anchor="middle" font-size="9.5" fill="var(--text)" stroke="rgba(0,0,0,.55)" stroke-width="3" stroke-linejoin="round" paint-order="stroke" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
+          '<text x="'+(x0+w/2)+'" y="'+(y(acc/2)+3)+'" text-anchor="middle" font-size="9.5" fill="var(--text)" stroke="rgba(var(--halo),.55)" stroke-width="3" stroke-linejoin="round" paint-order="stroke" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
       } else
       out += '<text x="'+(x0+w/2)+'" y="'+(y(acc)-5)+'" text-anchor="middle" font-size="9.5" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
     }
@@ -4937,6 +4971,13 @@ function bindEvents(){
   });
   document.getElementById('filtersBtn').addEventListener('click', function(){
     document.getElementById('filterRail').classList.toggle('pinned');
+  });
+  // modo claro / escuro: troca o atributo da página, guarda a escolha neste navegador (os gráficos usam as variáveis de cor)
+  document.getElementById('temaBtn').addEventListener('click', function(){
+    var claro = document.documentElement.getAttribute('data-theme') !== 'light';
+    if(claro) document.documentElement.setAttribute('data-theme','light'); else document.documentElement.removeAttribute('data-theme');
+    try{ localStorage.setItem('nc_tema', claro ? 'light' : 'dark'); }catch(e){}
+    var mt = document.querySelector('meta[name="theme-color"]'); if(mt) mt.setAttribute('content', claro ? '#ffffff' : '#0b0f17');
   });
   document.getElementById('notifBtn').addEventListener('click', function(){
     var n = filteredProducts().filter(function(p){ var st=stockStatus(p); return !p.isBucket && (st==='critico'||st==='zerado'); }).length;
