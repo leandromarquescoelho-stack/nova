@@ -836,8 +836,17 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .active-tags-bar:has(.active-tags:empty){ padding:0; border-bottom:none; }
 .active-tags-bar .active-tags:empty{ display:none; }
 @media (max-width:880px){
-  .filter-rail{ right:0 !important; }
-  .filter-rail-panel{ width:calc(100vw - 14px); max-width:340px; }
+  /* no celular a aba lateral some (cobria os cartões); os filtros abrem pelo botão "Filtros" do topo */
+  .filter-rail{ right:0 !important; width:0; }
+  .filter-rail-tab{ display:none; }
+  .filter-rail-panel{ right:0; width:calc(100vw - 24px); max-width:340px; }
+  .filter-rail:not(.pinned) .filter-rail-panel{ opacity:0; visibility:hidden; }
+  /* gráficos de linha do tempo: largura mínima legível, arrastando para o lado */
+  .chart-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin; padding-bottom:6px; }
+  .chart-scroll > .chart-wrap{ min-width:620px; }
+  .chart-scroll > .chart-wrap.chart-larga{ min-width:700px; }
+  /* menu lateral acima do fundo escurecido */
+  .sidebar{ z-index:80; }
 }
 
 /* ---- grupos de filtro multi-seleção, em sanfona (accordion) ---- */
@@ -1328,10 +1337,10 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
               </div>
             </div>
           </div>
-          <div class="chart-wrap">
+          <div class="chart-scroll"><div class="chart-wrap">
             <div id="mainChart"></div>
             <div class="chart-tip" id="mainTip"></div>
-          </div>
+          </div></div>
           <div class="legend" id="mainLegend"></div>
         </div>
 
@@ -1353,7 +1362,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <div class="panel-head">
           <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal &middot; margem acima e quantidade no meio das colunas, demais indicadores em faixas abaixo, cada um na própria escala &middot; du = dias úteis</div></div>
         </div>
-        <div class="chart-wrap"><div id="monthChart"></div></div>
+        <div class="chart-scroll"><div class="chart-wrap chart-larga"><div id="monthChart"></div></div></div>
         <div class="leg-row" id="monthLegend"></div>
       </div>
       </section>
@@ -1362,7 +1371,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <section class="view-panel" data-view-panel="vendas" style="display:none;">
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Vendas por Canal</h2><div class="psub">Participação de cada canal no faturamento do período Participação de cada canal no faturamento do período &middot; passe o mouse para ver os detalhesmiddot; canais pequenos aparecem com largura mínima Participação de cada canal no faturamento do período &middot; passe o mouse para ver os detalhesmiddot; passe o mouse para ver os detalhes</div></div>
+          <div><h2>Vendas por Canal</h2><div class="psub">Participação de cada canal no faturamento do período &middot; canais pequenos aparecem com largura mínima &middot; toque ou passe o mouse para ver os detalhes</div></div>
         </div>
         <div class="chart-wrap">
           <div class="canal-bar" id="canalBar"></div>
@@ -1486,10 +1495,10 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div><h2>Curva ABC</h2><div class="psub">Concentração de faturamento entre os produtos detalhados (cauda longa fora)</div></div>
         </div>
         <div class="abc-chips" id="abcChips"></div>
-        <div class="chart-wrap">
+        <div class="chart-scroll"><div class="chart-wrap">
           <div id="abcChart"></div>
           <div class="chart-tip" id="abcTip"></div>
-        </div>
+        </div></div>
       </div>
 
       <!-- ---- detailed table ---- -->
