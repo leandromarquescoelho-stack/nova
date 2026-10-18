@@ -5742,8 +5742,8 @@ document.getElementById('logoutBtn').addEventListener('click', async function(){
 
 /* ============================================================
    AGENTE DE IA ("Pergunte aos dados")
-   O navegador monta um resumo agregado do que o usuário vê (respeita filtros e perfil) e envia junto com a pergunta para a
-   Edge Function bi-ia, que guarda a chave da API e chama o modelo. Nenhuma linha de nota/cliente sai daqui.
+   A Edge Function bi-ia guarda a chave da API, chama o modelo e deixa ele consultar o banco pelas funções bi_ia_* com o token
+   do usuário (escopo dele). O navegador só envia a pergunta e o contexto da tela.
    ============================================================ */
 var IA_HIST = [], IA_OCUPADO = false;
 function iaAtiva(){ return !!(REAL && REAL.ia && REAL.ia.ativa); }
@@ -5753,61 +5753,21 @@ function iaAtualizarFab(){
   if(!iaAtiva()){ var p = document.getElementById('iaPainel'); if(p) p.classList.remove('on'); fab.classList.remove('aberto'); }
 }
 function r0(v){ return Math.round(v||0); }
+// contexto leve da tela: os números o agente busca no banco pelas próprias consultas (funções bi_ia_*, no escopo do usuário).
+// Aqui vão só o período e os filtros abertos, a projeção do mês e os dias úteis (calendário que o banco não tem)
 function montarContextoIA(){
   var pr = periodRange(state.globalPeriod), ps = document.getElementById('periodSelect'), nM = REAL.months.length;
   var filtros = {};
   TAG_DEFS.forEach(function(d){ var s = state[d[0]]||[]; if(s.length) filtros[d[1]] = s.slice(0,40).map(function(v){ return filtroRotulo(d[0], v); }).concat(s.length>40 ? ['… e mais '+(s.length-40)] : []); });
-  // mês a mês: total, por canal, por loja e por vendedor (faturamento, quantidade, lucro bruto)
-  var mes = REAL.months.map(function(k, i){ return {mes:REAL.monthLabels[i], chave:k, fat:0, qtd:0, lb:0, canal:{}, loja:{}}; }), vend = {};
-  RESUMO.forEach(function(r){
-    var m = mes[r.mi]; if(!m) return;
-    m.fat += r.fat; m.qtd += r.qtd; m.lb += r.lb;
-    var c = m.canal[r.canal] = m.canal[r.canal] || [0,0]; c[0] += r.fat; c[1] += r.lb;
-    var l = m.loja[r.loja] = m.loja[r.loja] || [0,0,0]; l[0] += r.fat; l[1] += r.qtd; l[2] += r.lb;
-    var v = vend[r.vendedor] = vend[r.vendedor] || {tot:0, m:new Array(nM).fill(0)}; v.tot += r.fat; v.m[r.mi] += r.fat;
-  });
-  var du = diasUteisMeses(nM);
-  mes.forEach(function(m, i){
-    m.fat = r0(m.fat); m.qtd = r0(m.qtd); m.lb = r0(m.lb); m.dias_uteis = du[i] ? du[i].txt : null;
-    Object.keys(m.canal).forEach(function(k){ m.canal[k] = m.canal[k].map(r0); });
-    Object.keys(m.loja).forEach(function(k){ m.loja[k] = m.loja[k].map(r0); });
-  });
-  var vendedores = Object.keys(vend).sort(function(a,b){ return vend[b].tot - vend[a].tot; }).slice(0,40)
-    .map(function(k){ return [k].concat(vend[k].m.map(r0)); });
-  // rankings do período selecionado vs. período anterior
-  var rank = {};
-  ['loja','canal','vendedor','categoria','marca','montadora','cidade'].forEach(function(t){
-    var m = agAtivos(t);
-    rank[t] = Object.keys(m).sort(function(a,b){ return m[b].fat - m[a].fat; }).slice(0, 40)
-      .map(function(k){ var o = m[k]; return [k, r0(o.fat), r0(o.qtd), r0(o.lb), r0(o.prevFat), r0(o.prevQtd), r0(o.prevLb)]; });
-  });
-  var ini = Math.max(0, TODAY_IDX-59), diario = [];
-  for(var i=ini; i<=TODAY_IDX; i++) diario.push([isoDia(DAYS[i]), DIA_SEMANA[DAYS[i].getDay()], r0(DAILY.fat[i]), r0(DAILY.qtd[i]), r0(DAILY.lb[i])]);
-  var prods = PRODUCTS.filter(function(p){ return !p.isBucket; });
-  function pl(p){ return [p.codigo, p.nome, p.marca, p.categoria, r0(p.fatP), r0(p.qtdP), r0(p.lbP), r0(p.fatPrev), r0(p.qtdPrev), p.estoqueAtual, r0(p.estCusto), p.giro, p.diasSemGiro]; }
-  var topVenda = prods.slice().sort(function(a,b){ return b.fatP - a.fatP; }).slice(0,50).map(pl);
-  var topEstoque = prods.filter(function(p){ return p.estCusto>0; }).sort(function(a,b){ return b.estCusto - a.estCusto; }).slice(0,40).map(pl);
-  var estCusto = 0, parados = 0, parCusto = 0;
-  prods.forEach(function(p){ estCusto += p.estCusto||0; if(p.parado){ parados++; parCusto += p.estCusto||0; } });
-  var pm = projAtiva() ? projMes() : null;
+  var du = diasUteisMeses(nM), pm = projAtiva() ? projMes() : null;
   return {
     hoje: isoDia(NOW), base_de_dados: cargaLabel(REAL.carga), ultimo_dia_com_venda: isoDia(DAYS[TODAY_IDX]),
     perfil: CURRENT_PROFILE ? (ROLE_LABEL[CURRENT_PROFILE.role]||CURRENT_PROFILE.role) : null,
-    periodo: {nome: ps ? ps.options[ps.selectedIndex].text : state.globalPeriod, de: isoDia(DAYS[pr.start]), ate: isoDia(DAYS[pr.end]),
-      anterior: pr.prevEnd>=0 ? {de: isoDia(DAYS[pr.prevStart]), ate: isoDia(DAYS[pr.prevEnd])} : null},
-    filtros: filtros,
-    legenda: {
-      meses: 'fat = faturamento R$, qtd = unidades, lb = lucro bruto R$ (margem = lb/fat). canal: {nome:[fat, lb]}, loja: {nome:[fat, qtd, lb]}. dias_uteis: "N du" ou "decorridos/total du" no mês em andamento',
-      vendedores_por_mes: '[vendedor, fat de cada mês na ordem de meses]',
-      rankings_periodo: '[nome, fat, qtd, lb, fat_anterior, qtd_anterior, lb_anterior] no período selecionado e no anterior de mesmo tamanho',
-      diario: '[data, dia da semana, fat, qtd, lb] dos últimos 60 dias',
-      produtos: '[código, nome, marca, categoria, fat_periodo, qtd_periodo, lb_periodo, fat_anterior, qtd_anterior, estoque_un, estoque_custo_R$, giro_anual, dias_sem_venda]'
-    },
-    mes_em_andamento: mesCompleto() ? null : {mes: REAL.monthLabels[nM-1], projecao_fechamento_fat: pm ? r0(pm.proj) : null, realizado_fat: pm ? r0(pm.real) : null,
-      projecao_qtd: pm ? r0(pm.projQ) : null, projecao_lb: pm ? r0(pm.projL) : null},
-    meses: mes, vendedores_por_mes: vendedores, rankings_periodo: rank, diario: diario,
-    estoque: {custo_total: r0(estCusto), itens_sem_giro: parados, custo_sem_giro: r0(parCusto)},
-    produtos_mais_vendidos: topVenda, produtos_maior_estoque: topEstoque
+    tela: {periodo: ps ? ps.options[ps.selectedIndex].text : state.globalPeriod, de: isoDia(DAYS[pr.start]), ate: isoDia(DAYS[pr.end]),
+      anterior: pr.prevEnd>=0 ? {de: isoDia(DAYS[pr.prevStart]), ate: isoDia(DAYS[pr.prevEnd])} : null, filtros: filtros},
+    dias_uteis_por_mes: REAL.months.map(function(k, i){ return [k, du[i] ? du[i].txt : null]; }),
+    mes_em_andamento: mesCompleto() ? null : {mes: REAL.months[nM-1], projecao_fechamento_fat: pm ? r0(pm.proj) : null, realizado_fat: pm ? r0(pm.real) : null,
+      obs: 'projeção por dias úteis com os filtros da tela; o último dia com venda pode estar incompleto'}
   };
 }
 function iaFormatar(t){
@@ -6113,12 +6073,12 @@ document.getElementById('forgotBtn').addEventListener('click', async function(){
 
 <button id="iaFab" type="button" aria-label="Pergunte aos dados"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.5l-.8-1.9-1.9-.8 1.9-.8z"/></svg><span>Pergunte aos dados</span></button>
 <div id="iaPainel" role="dialog" aria-label="Pergunte aos dados">
-  <div class="ia-cab"><div class="ia-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.5l-.8-1.9-1.9-.8 1.9-.8z"/></svg></div><div><h3>Pergunte aos dados</h3><p>Responde com base no que está na tela, com os filtros atuais</p></div>
+  <div class="ia-cab"><div class="ia-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.5l-.8-1.9-1.9-.8 1.9-.8z"/></svg></div><div><h3>Pergunte aos dados</h3><p>Consulta a base completa, dentro do que você tem acesso</p></div>
     <div class="ia-x"><button type="button" id="iaLimpar" title="Nova conversa">&#8634;</button><button type="button" id="iaFechar" title="Fechar">&#10005;</button></div></div>
   <div class="ia-msgs" id="iaMsgs"></div>
   <form class="ia-form" id="iaForm"><textarea id="iaTxt" rows="1" placeholder="Ex.: qual loja mais perdeu margem no período?" maxlength="2000"></textarea>
     <button type="submit" id="iaEnviar" aria-label="Enviar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></form>
-  <div class="ia-rodape">Respostas geradas por IA a partir dos dados agregados da tela. Confira os números importantes no painel.</div>
+  <div class="ia-rodape">Respostas geradas por IA consultando o banco. Confira os números importantes no painel.</div>
 </div>
 <div id="loadOverlay" role="status" aria-live="polite" aria-label="Aguarde, processando os filtros">
   <div class="lo-logo"><img class="p1" alt=""><img class="p2" alt=""></div>
