@@ -1275,7 +1275,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <!-- ---- evolução mensal por canal + margem ---- -->
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal &middot; faixas abaixo = indicadores marcados na legenda, cada um na própria escala &middot; du = dias úteis</div></div>
+          <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal &middot; margem acima e quantidade no meio das colunas, demais indicadores em faixas abaixo, cada um na própria escala &middot; du = dias úteis</div></div>
         </div>
         <div class="chart-wrap"><div id="monthChart"></div></div>
         <div class="leg-row" id="monthLegend"></div>
@@ -4284,7 +4284,9 @@ function desenharMonthChart(box, ex, aviso){
   var temAnd = parcial && nM===nAll;
   var pmc = temAnd && MC_SHOW.proj && projAtiva() ? projMes() : null, projUlt = pmc && pmc.real>0 ? d.tot[nAll-1]*pmc.proj/pmc.real : null;
   var tot = d.tot.slice(0, nM);
-  var maxV = Math.max.apply(null, tot.concat([1, MC_SHOW.fat ? (projUlt||0) : 0]))*1.12;
+  // com as barras ligadas, margem fica numa faixa acima delas e quantidade no meio delas; os demais indicadores vão para faixas abaixo
+  var ZONA_SOBRE = {mg:[0.86, 0.98], qtd:[0.28, 0.5]};
+  var maxV = Math.max.apply(null, tot.concat([1, MC_SHOW.fat ? (projUlt||0) : 0]))*(MC_SHOW.fat && MC_SHOW.mg ? 1.36 : 1.12);
   var bw = iw/nM;
   var series = {
     qtd: d.qt.slice(0,nM).map(function(q){ return q>0 ? q : null; }),
@@ -4311,8 +4313,10 @@ function desenharMonthChart(box, ex, aviso){
   }
   // layout: barras de faturamento no topo, eixo dos meses (com dias úteis) e, abaixo, uma faixa própria para cada indicador
   // ligado — cada linha só usa a sua faixa, então nenhuma cruza com outra
-  var linhas = MC_LINHAS.filter(function(L){ return MC_SHOW[L.k] && series[L.k] && series[L.k].some(function(v){ return v!==null; }); });
-  var barH = MC_SHOW.fat ? 200 : 0, eixoH = 34, faixaH = 52, topoB = padT, baseB = topoB+barH;
+  var ligadas = MC_LINHAS.filter(function(L){ return MC_SHOW[L.k] && series[L.k] && series[L.k].some(function(v){ return v!==null; }); });
+  var sobre = ligadas.filter(function(L){ return MC_SHOW.fat && ZONA_SOBRE[L.k]; });
+  var linhas = ligadas.filter(function(L){ return sobre.indexOf(L)===-1; });
+  var barH = MC_SHOW.fat ? (sobre.length ? 230 : 200) : 0, eixoH = 34, faixaH = 52, topoB = padT, baseB = topoB+barH;
   var topoF = baseB+eixoH, H2 = topoF + linhas.length*faixaH + (linhas.length ? 4 : 0);
   function y(v){ return baseB-barH*v/maxV; }
   function xc(i){ return padL+i*bw+bw/2; }
@@ -4320,7 +4324,9 @@ function desenharMonthChart(box, ex, aviso){
   // coluna do mês em andamento levemente destacada de cima a baixo
   if(temAnd) out += '<rect x="'+(padL+(nM-1)*bw)+'" y="'+(topoB-14)+'" width="'+bw+'" height="'+(H2-topoB+12)+'" rx="6" fill="var(--text-muted)" fill-opacity="0.06"/>';
   if(MC_SHOW.fat){
-    for(var g=0; g<=4; g++){ var gv=maxV*g/4; out += '<line x1="'+padL+'" y1="'+y(gv)+'" x2="'+(W-padR)+'" y2="'+y(gv)+'" stroke="var(--border)" stroke-opacity="'+(g?0.55:1)+'"/>' +
+    // grade só até a altura das colunas: acima delas fica a faixa da margem
+    var topoGrade = MC_SHOW.mg ? Math.max.apply(null, tot.concat([1, projUlt||0])) : maxV;
+    for(var g=0; g<=4; g++){ var gv=topoGrade*g/4; out += '<line x1="'+padL+'" y1="'+y(gv)+'" x2="'+(W-padR)+'" y2="'+y(gv)+'" stroke="var(--border)" stroke-opacity="'+(g?0.55:1)+'"/>' +
       '<text x="'+(padL-8)+'" y="'+(y(gv)+3)+'" text-anchor="end" font-size="9.5" fill="var(--text-muted)" font-family="JetBrains Mono, monospace">'+fmtCurto(gv).replace('R$ ','')+'</text>'; }
   } else out += '<line x1="'+padL+'" y1="'+baseB+'" x2="'+(W-padR)+'" y2="'+baseB+'" stroke="var(--border)"/>';
   var du = diasUteisMeses(nM);
@@ -4335,7 +4341,7 @@ function desenharMonthChart(box, ex, aviso){
       if(last && projUlt && projUlt>acc){
         out += '<rect x="'+x0+'" y="'+y(projUlt)+'" width="'+w+'" height="'+(y(acc)-y(projUlt))+'" rx="2" fill="var(--text-muted)" fill-opacity="0.08" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3"><title>Projeção de fechamento: '+fmtMoney(projUlt)+' (realizado '+fmtMoney(acc)+')</title></rect>' +
           '<text x="'+(x0+w/2)+'" y="'+(y(projUlt)-5)+'" text-anchor="middle" font-size="9" font-style="italic" fill="var(--text-muted)" font-family="JetBrains Mono, monospace">proj. '+fmtCurto(projUlt).replace('R$ ','')+'</text>' +
-          '<text x="'+(x0+w/2)+'" y="'+(y(acc)+11)+'" text-anchor="middle" font-size="9" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
+          '<text x="'+(x0+w/2)+'" y="'+(y(acc/2)+3)+'" text-anchor="middle" font-size="9.5" fill="var(--text)" stroke="rgba(0,0,0,.55)" stroke-width="3" stroke-linejoin="round" paint-order="stroke" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
       } else
       out += '<text x="'+(x0+w/2)+'" y="'+(y(acc)-5)+'" text-anchor="middle" font-size="9.5" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fmtCurto(acc).replace('R$ ','')+'</text>';
     }
@@ -4346,11 +4352,10 @@ function desenharMonthChart(box, ex, aviso){
   }
   // faixas dos indicadores: escala própria (do menor ao maior mês) dentro da faixa; o trecho até o mês em andamento é tracejado
   var rotTodos = bw >= 46;
-  linhas.forEach(function(L, li){
-    var s = series[L.k], vp = pj[L.k], t0 = topoF + li*faixaH, yA = t0+19, yB = t0+faixaH-9;
-    out += '<line x1="'+padL+'" y1="'+t0+'" x2="'+(W-padR)+'" y2="'+t0+'" stroke="var(--border)" stroke-opacity="0.7"/>' +
-      '<circle cx="'+8+'" cy="'+(t0+faixaH/2)+'" r="3.5" fill="'+L.cor+'"/>' +
-      '<text x="'+18+'" y="'+(t0+faixaH/2+3.5)+'" font-size="10" fill="var(--text-2)">'+L.curtoNome+'</text>';
+  // sobre as barras o texto ganha um contorno da cor do fundo para ficar legível em cima das cores dos canais
+  var HALO = ' stroke="var(--surface)" stroke-width="3" stroke-linejoin="round" paint-order="stroke"';
+  function desenharLinha(L, yA, yB, sobreBarras){
+    var s = series[L.k], vp = pj[L.k], halo = sobreBarras ? HALO : '';
     var vals = s.filter(function(v){ return v!==null; }); if(vp!=null) vals.push(vp);
     var mx = Math.max.apply(null, vals), mn = Math.min.apply(null, vals);
     function y2(v){ return mx===mn ? (yA+yB)/2 : yB-(yB-yA)*(v-mn)/(mx-mn); }
@@ -4358,14 +4363,14 @@ function desenharMonthChart(box, ex, aviso){
     var fech = (temAnd ? pts.slice(0, nM-1) : pts).filter(Boolean);
     // área suave sob a linha, só para dar corpo à faixa
     var idx = []; (temAnd ? s.slice(0, nM-1) : s).forEach(function(v,i){ if(v!==null) idx.push(i); });
-    if(idx.length>1) out += '<path d="M'+xc(idx[0])+','+yB+' L'+idx.map(function(i){ return xc(i)+','+y2(s[i]); }).join(' L')+' L'+xc(idx[idx.length-1])+','+yB+' Z" fill="'+L.cor+'" fill-opacity="0.07"/>';
-    out += '<polyline points="'+fech.join(' ')+'" fill="none" stroke="'+L.cor+'" stroke-width="1.8" stroke-linejoin="round"/>';
+    if(idx.length>1 && !sobreBarras) out += '<path d="M'+xc(idx[0])+','+yB+' L'+idx.map(function(i){ return xc(i)+','+y2(s[i]); }).join(' L')+' L'+xc(idx[idx.length-1])+','+yB+' Z" fill="'+L.cor+'" fill-opacity="0.07"/>';
+    out += '<polyline points="'+fech.join(' ')+'" fill="none" stroke="'+L.cor+'" stroke-width="'+(sobreBarras?2.2:1.8)+'" stroke-linejoin="round"/>';
     var pxp = vp!=null ? xc(nM-1)+','+y2(vp) : null;
     if(temAnd && pts[nM-2] && (pxp || pts[nM-1])) out += '<polyline points="'+pts[nM-2]+' '+(pxp||pts[nM-1])+'" fill="none" stroke="'+L.cor+'" stroke-width="1.5" stroke-dasharray="3 3"/>';
     // rótulos: todos quando há espaço; senão só o maior, o menor e o último mês
     var iMax = -1, iMin = -1, iUlt = -1;
     s.forEach(function(v,i){ if(v===null || (pxp && i===nM-1)) return; if(iMax<0 || v>s[iMax]) iMax = i; if(iMin<0 || v<s[iMin]) iMin = i; iUlt = i; });
-    function rot(i, v, ital){ return '<text x="'+xc(i)+'" y="'+(y2(v)-6)+'" text-anchor="middle" font-size="9"'+(ital?' font-style="italic"':'')+' fill="'+L.cor+'" font-family="JetBrains Mono, monospace">'+L.curto(v)+'</text>'; }
+    function rot(i, v, ital){ return '<text x="'+xc(i)+'" y="'+(y2(v)-6)+'" text-anchor="middle" font-size="9"'+(ital?' font-style="italic"':'')+' fill="'+L.cor+'"'+halo+' font-family="JetBrains Mono, monospace">'+L.curto(v)+'</text>'; }
     s.forEach(function(v,i){
       if(v===null || (pxp && i===nM-1)) return;
       out += '<circle cx="'+xc(i)+'" cy="'+y2(v)+'" r="2.6" fill="'+L.cor+'"><title>'+L.nome+' · '+REAL.monthLabels[i]+(temAnd && i===nM-1?' (até hoje)':'')+': '+L.fmt(v)+'</title></circle>';
@@ -4374,6 +4379,14 @@ function desenharMonthChart(box, ex, aviso){
     if(pxp){
       out += '<circle cx="'+xc(nM-1)+'" cy="'+y2(vp)+'" r="3.2" fill="var(--surface)" stroke="'+L.cor+'" stroke-width="1.5"><title>'+L.nome+' · '+REAL.monthLabels[nM-1]+' projetado: '+L.fmt(vp)+(s[nM-1]!==null?' (até hoje: '+L.fmt(s[nM-1])+')':'')+'</title></circle>' + rot(nM-1, vp, true);
     }
+  }
+  sobre.forEach(function(L){ var z = ZONA_SOBRE[L.k]; desenharLinha(L, y(maxV*z[1]), y(maxV*z[0]), true); });
+  linhas.forEach(function(L, li){
+    var t0 = topoF + li*faixaH;
+    out += '<line x1="'+padL+'" y1="'+t0+'" x2="'+(W-padR)+'" y2="'+t0+'" stroke="var(--border)" stroke-opacity="0.7"/>' +
+      '<circle cx="'+8+'" cy="'+(t0+faixaH/2)+'" r="3.5" fill="'+L.cor+'"/>' +
+      '<text x="'+18+'" y="'+(t0+faixaH/2+3.5)+'" font-size="10" fill="var(--text-2)">'+L.curtoNome+'</text>';
+    desenharLinha(L, t0+19, t0+faixaH-9, false);
   });
   box.innerHTML = '<svg viewBox="0 0 '+W+' '+H2+'" width="100%" role="img" aria-label="Evolução mensal por canal">'+out+'</svg>';
   function chk(k, conteudo, extra){ return '<label class="mc-tg'+(MC_SHOW[k]?'':' off')+'"'+(extra||'')+'><input type="checkbox" data-mc="'+k+'"'+(MC_SHOW[k]?' checked':'')+'>'+conteudo+'</label>'; }
