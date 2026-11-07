@@ -1664,9 +1664,16 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <div id="vendFunilBody"></div>
       </div>
 
+      <div class="panel" style="margin-bottom:14px;" id="vendRankPanel">
+        <div class="panel-head">
+          <div><h2>Ranking e comparação com o grupo</h2><div class="psub">Clique no cabeçalho para ordenar ou no vendedor para analisá-lo</div></div>
+        </div>
+        <div id="vendRankBody"></div>
+      </div>
+
       <div class="panel" style="margin-bottom:14px;" id="vendCliPanel">
         <div class="panel-head">
-          <div><h2>Faturamento &times; clientes atendidos</h2><div class="psub">Cada ponto é um vendedor &middot; clientes distintos no período, com os filtros aplicados &middot; clique num ponto para analisar o vendedor</div></div>
+          <div><h2>Faturamento &times; clientes atendidos e margem</h2><div class="psub">Cada ponto é um vendedor &middot; clientes distintos no período, com os filtros aplicados &middot; clique num ponto para analisar o vendedor</div></div>
         </div>
         <div id="vendCliBody"></div>
       </div>
@@ -3140,7 +3147,8 @@ function vcKpi(label, value, sub){
     '<div class="kdelta flat" style="margin-top:4px; white-space:normal;">'+sub+'</div></div>';
 }
 function renderVendConsult(){
-  var box = document.getElementById('vendConsultBody');
+  var box = document.getElementById('vendConsultBody'), rankBox = document.getElementById('vendRankBody');
+  rankBox.innerHTML = '';
   if(!VEND_PESSOAS.length){ box.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">Não há vendedores neste escopo de acesso.</p>'; return; }
   if(VEND_PESSOAS.indexOf(state.vendConsultSel)===-1) state.vendConsultSel = VEND_PESSOAS[0];
   var sel = document.getElementById('vendConsultSelect');
@@ -3443,9 +3451,15 @@ function renderVendConsult(){
   }
 
   RD_SEL = null;
-  box.innerHTML = kpisHtml +
+  var quadHtml = '<div><h3 class="dh">Quadrante margem &times; faturamento (todo o grupo)</h3>' +
+        '<div class="chart-wrap" style="display:flex; justify-content:center;">'+scatterSvg+'</div>' +
+        '<p style="font-size:11.5px; color:var(--text-2); margin-top:6px; line-height:1.6;">'+quadTexto+'</p>' +
+        '<p style="font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.6;">Cada ponto é um vendedor; as linhas tracejadas marcam a média do grupo. Clique num ponto para analisar o vendedor.</p>' +
+    '</div>';
+  box.innerHTML = kpisHtml;
+  rankBox.innerHTML =
     '<div class="grid-2">' +
-      '<div><h3 class="dh">Ranking do grupo &middot; clique no cabeçalho para ordenar ou no vendedor para analisá-lo</h3><div class="rank-vend-box">'+rankHtml+'</div></div>' +
+      '<div><h3 class="dh">Ranking do grupo</h3><div class="rank-vend-box">'+rankHtml+'</div></div>' +
       '<div>' +
         '<h3 class="dh">'+selName+' vs. média dos demais &middot; radar</h3>' +
         '<div class="radar-legend">' +
@@ -3474,14 +3488,6 @@ function renderVendConsult(){
       '</div>' +
     '</div>' +
     '<div style="margin-top:14px;">' +
-      '<div>' +
-        '<h3 class="dh">Quadrante margem &times; faturamento (todo o grupo)</h3>' +
-        '<div class="chart-wrap" style="display:flex; justify-content:center; max-width:560px; margin:0 auto;">'+scatterSvg+'</div>' +
-        '<p style="font-size:11.5px; color:var(--text-2); margin-top:6px; line-height:1.6;">'+quadTexto+'</p>' +
-        '<p style="font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.6;">Cada ponto é um vendedor; as linhas tracejadas marcam a média do grupo. Clique num ponto para analisar o vendedor.</p>' +
-      '</div>' +
-    '</div>' +
-    '<div style="margin-top:14px;">' +
       '<div class="radar-legend">' +
         '<span><i style="background:var(--accent);"></i>'+selName+'</span>' +
         '<span><i style="background:var(--text-muted);"></i>Média dos demais</span>' +
@@ -3501,7 +3507,7 @@ function renderVendConsult(){
   var cliBox = document.getElementById('vendCliBody');
   if(cliBox){
     var comCli = rows.filter(function(r){ return r.cli>0; });
-    if(!comCli.length){ cliBox.innerHTML = '<p class="note-muted">Sem dados de clientes para este recorte.</p>'; }
+    if(!comCli.length){ cliBox.innerHTML = '<div class="grid-2" style="margin-bottom:0;"><p class="note-muted">Sem dados de clientes para este recorte.</p>'+quadHtml+'</div>'; }
     else {
       var svgCli = dispersaoSVG(420, 270, function(r){ return r.cli; }, function(r){ return r.fat; }, 'clientes distintos', 'faturamento', fmtUn, fmtCurto);
       var mCli = avgOf('cli'), mFat = avgOf('fat');
@@ -3517,24 +3523,26 @@ function renderVendConsult(){
       var muitosCliBaixoFat = comCli.filter(function(r){ return r.cli>=mCli && r.fat<mFat; }).map(function(r){ return r.name; });
       var poucosCliAltoFat = comCli.filter(function(r){ return r.cli<mCli && r.fat>=mFat; }).map(function(r){ return r.name; });
       cliBox.innerHTML = '<div class="grid-2" style="margin-bottom:0;">' +
-        '<div><div class="chart-wrap" style="display:flex; justify-content:center;">'+svgCli+'</div>' +
+        '<div><h3 class="dh">Faturamento &times; clientes distintos</h3><div class="chart-wrap" style="display:flex; justify-content:center;">'+svgCli+'</div>' +
           '<p style="font-size:11.5px; color:var(--text-2); margin-top:6px; line-height:1.6;">'+meQ+'</p>' +
           (muitosCliBaixoFat.length ? '<p style="font-size:11.5px; color:var(--text-2); line-height:1.6;"><b>Muitos clientes e faturamento abaixo da média:</b> '+muitosCliBaixoFat.join(', ')+'.</p>' : '') +
           (poucosCliAltoFat.length ? '<p style="font-size:11.5px; color:var(--text-2); line-height:1.6;"><b>Poucos clientes e faturamento acima da média:</b> '+poucosCliAltoFat.join(', ')+'.</p>' : '') +
         '</div>' +
-        '<div class="table-scroll scroll-limit">'+tab+'</div>' +
-      '</div>';
+        quadHtml +
+      '</div>' +
+      '<div class="table-scroll scroll-limit" style="margin-top:14px;">'+tab+'</div>';
     }
   }
 
-  Array.prototype.forEach.call(box.querySelectorAll('[data-col]'), function(th){
+  Array.prototype.forEach.call(rankBox.querySelectorAll('[data-col]'), function(th){
     th.addEventListener('click', function(){
       var col = th.getAttribute('data-col');
       if(state.vendSortCol===col){ state.vendSortDir = state.vendSortDir==='asc' ? 'desc' : 'asc'; }
       else { state.vendSortCol = col; state.vendSortDir = col==='name' ? 'asc' : 'desc'; }
       renderVendConsult();
     });
-  });  var btTodos = box.querySelector('[data-vend-todos]');
+  });
+  var btTodos = rankBox.querySelector('[data-vend-todos]');
   if(btTodos) btTodos.addEventListener('click', function(){ state.vendRankTodos = !state.vendRankTodos; renderVendConsult(); });
 }
 
@@ -3754,7 +3762,7 @@ function salvarConsultoriaPdf(){
   function soSelecionado(el){
     Array.prototype.forEach.call(el.querySelectorAll('tr.vend-row'), function(tr){ if(tr.getAttribute('data-vend')!==nome) tr.remove(); });
   }
-  var cBody = document.createElement('div'); cBody.innerHTML = body.innerHTML;
+  var cBody = document.createElement('div'); cBody.innerHTML = body.innerHTML + (document.getElementById('vendRankBody')||{innerHTML:''}).innerHTML;
   soSelecionado(cBody);
   var g = cBody.querySelector('table') && cBody.querySelector('table').closest('.grid-2');
   if(g){
@@ -3770,7 +3778,7 @@ function salvarConsultoriaPdf(){
     '<style>'+css+'</style><style>'+printCss+'</style></head><body>' +
     '<div class="pdf-dica">Na janela de impressão, escolha "Salvar como PDF" e marque "Gráficos de fundo".</div>' + cab +
     '<div class="panel">'+cBody.innerHTML+'</div>' +
-    (cCli.innerHTML.trim() ? '<div class="panel"><div class="panel-head"><div><h2>Faturamento &times; clientes atendidos</h2></div></div>'+cCli.innerHTML+'</div>' : '') +
+    (cCli.innerHTML.trim() ? '<div class="panel"><div class="panel-head"><div><h2>Faturamento &times; clientes atendidos e margem</h2></div></div>'+cCli.innerHTML+'</div>' : '') +
     ((document.getElementById('vendInsBody')||{}).innerHTML ? '<div class="panel"><div class="panel-head"><div><h2>Análises não óbvias</h2></div></div>'+document.getElementById('vendInsBody').innerHTML+'</div>' : '') +
     '</body></html>';
   w.document.open(); w.document.write(html); w.document.close();
@@ -5341,14 +5349,14 @@ function bindEvents(){
     state.vendConsultSel = nome;
     document.getElementById('vendConsultSelect').value = nome;
     renderVendConsult();
-    var sc2 = document.querySelector('#vendConsultBody .table-scroll'); if(sc2) sc2.scrollTop = top;
+    var sc2 = document.querySelector('#vendRankBody .table-scroll'); if(sc2) sc2.scrollTop = top;
     var card = document.getElementById('vendConsultBody'); if(card) card.closest('.panel').scrollIntoView({behavior:'smooth', block:'nearest'});
   }
-  document.getElementById('vendConsultBody').addEventListener('click', cliqueVendedor);
+  document.getElementById('vendRankBody').addEventListener('click', cliqueVendedor);
   document.getElementById('vendFunilBody').addEventListener('click', cliqueFunil);
-  document.getElementById('vendConsultBody').addEventListener('click', function(ev){
+  document.getElementById('vendRankBody').addEventListener('click', function(ev){
     var el = ev.target.closest && ev.target.closest('.rd-lbl'); if(!el) return;
-    destacarRadares(document.getElementById('vendConsultBody'), el.getAttribute('data-dim'), el.getAttribute('data-k'));
+    destacarRadares(document.getElementById('vendRankBody'), el.getAttribute('data-dim'), el.getAttribute('data-k'));
   });
   document.getElementById('vendCliBody').addEventListener('click', cliqueVendedor);
 
