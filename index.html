@@ -3366,10 +3366,14 @@ function renderVendConsult(){
   /* ---- quadrante margem × faturamento: cada vendedor do grupo ---- */
   function avgOf(key){ return rows.reduce(function(s,r){return s+r[key];},0)/rows.length; }
   // gráfico de dispersão genérico: x/y por vendedor, linhas na média do grupo, ponto clicável
-  function dispersaoSVG(w, h, fx, fy, rotX, rotY, fmtX, fmtY){
+  function dispersaoSVG(w, h, fx, fy, rotX, rotY, fmtX, fmtY, xFaixa){
     var pad = 46, xs = rows.map(fx), ys = rows.map(fy);
-    var xMax = Math.max.apply(null, xs.concat([1]))*1.08, yMin = Math.min(0, Math.min.apply(null, ys)*1.15), yMax = Math.max.apply(null, ys.concat([1]))*1.12;
-    function xp(v){ return pad + (v/xMax)*(w-2*pad); }
+    var xMin = Math.min(0, Math.min.apply(null, xs)*1.15), xMax = Math.max.apply(null, xs.concat([1]))*1.08, yMin = Math.min(0, Math.min.apply(null, ys)*1.15), yMax = Math.max.apply(null, ys.concat([1]))*1.12;
+    if(xFaixa){ // eixo x pela faixa dos dados (margem), em vez de começar no zero
+      var lo = Math.min.apply(null, xs), hi = Math.max.apply(null, xs), folga = Math.max((hi-lo)*0.08, 0.5);
+      xMin = lo-folga; xMax = hi+folga;
+    }
+    function xp(v){ return pad + ((v-xMin)/((xMax-xMin)||1))*(w-2*pad); }
     function yp(v){ return h-pad - ((v-yMin)/((yMax-yMin)||1))*(h-2*pad); }
     var mx = xs.reduce(function(s,v){return s+v;},0)/xs.length, my = ys.reduce(function(s,v){return s+v;},0)/ys.length;
     var out = '<line x1="'+xp(mx)+'" y1="'+pad+'" x2="'+xp(mx)+'" y2="'+(h-pad)+'" stroke="rgba(var(--ink),.14)" stroke-dasharray="3,3"/>' +
@@ -3387,7 +3391,8 @@ function renderVendConsult(){
       '<text x="'+(w-pad)+'" y="'+(yp(my)-4)+'" text-anchor="end" font-size="9" fill="var(--text-muted)" font-family="Manrope,sans-serif">média '+fmtY(my)+'</text>';
     return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" role="img">'+out+'</svg>';
   }
-  var scatterSvg = dispersaoSVG(380, 250, function(r){ return r.fat; }, function(r){ return r.margemPct; }, 'faturamento', 'margem', fmtCurto, function(v){ return v.toFixed(1)+'%'; });
+  // faturamento sempre no eixo vertical, como no gráfico de clientes ao lado
+  var scatterSvg = dispersaoSVG(420, 270, function(r){ return r.margemPct; }, function(r){ return r.fat; }, 'margem', 'faturamento', function(v){ return v.toFixed(1)+'%'; }, fmtCurto, true);
   var fatAlto = me.fat >= avgOf('fat'), mgAlta = me.margemPct >= avgOf('margemPct');
   var quadTexto = selName+' está no quadrante de <b>faturamento '+(fatAlto?'acima':'abaixo')+'</b> e <b>margem '+(mgAlta?'acima':'abaixo')+'</b> da média do grupo ('+fmtMoney(me.fat)+' e '+me.margemPct.toFixed(1)+'%; médias '+fmtMoney(avgOf('fat'))+' e '+avgOf('margemPct').toFixed(1)+'%).';
 
