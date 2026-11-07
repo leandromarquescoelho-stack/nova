@@ -3534,7 +3534,7 @@ function renderVendFunil(){
   if(FUN.chave===chave && FUN.d){ desenharFunil(box); return; }
   var meu = ++FUN.req, grid = box.querySelector('.fun-grid');
   if(grid) grid.classList.add('carregando'); else box.innerHTML = '<p class="note-muted">Carregando o funil do vendedor…</p>';
-  rpcMemo('bi_vendedor_funil', {f:f, per:per, lim:12}).then(function(d){
+  rpcMemo('bi_vendedor_funil', {f:f, per:per, lim:10}).then(function(d){
     if(meu!==FUN.req) return;
     FUN.d = d || {}; FUN.chave = chave; FUN.per = per;
     if(state.currentView==='vendedores') desenharFunil(box);
@@ -3559,7 +3559,10 @@ function desenharFunil(box){
     var p = d[D.k] || {}, itens = p.itens || [], tot = c2(p.tot), gtot = c2(p.gtot), mx = itens.length ? c2(itens[0][3]) : 0;
     var selK = toSet(FUN.sel[D.k]), soma = 0;
     var linhas = itens.map(function(r){
-      var id = r[0], nm = r[1] || '—', ft = c2(r[3]), qt = n0(r[4]), lb = c2(r[5]); soma += ft;
+      var id = r[0], nm = r[1] || '—', ft = c2(r[3]);
+      // produto: só a descrição (tira o PN do começo quando o cadastro já traz "PN - descrição")
+      if(D.k==='produto'){ var pn = r[2] ? String(r[2]) : ''; if(pn && nm.indexOf(pn)===0) nm = nm.slice(pn.length).replace(/^\s*[-–]\s*/, '') || nm; nm = nm.replace(/^\d[\w.\/]*\s+-\s+/, '') || nm; }
+      var qt = n0(r[4]), lb = c2(r[5]); soma += ft;
       FUN.nomes[D.k+id] = nm;
       var part = tot>0 ? ft/tot*100 : 0, larg = mx>0 ? Math.max(14, ft/mx*100) : 14;
       var sub = part.toFixed(1).replace('.',',')+'%';
@@ -3595,7 +3598,7 @@ function serieFunil(s){
   if(!pts.length) return '<div class="fun-serie">'+cab+'<div class="fun-vazio">Sem vendas com esta combinação.</div></div>';
   function rot(k){ if(dia){ var a = String(k).split('-'); return a[2]+'/'+a[1]; } k = +k; return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][k%100-1]+'/'+String(Math.floor(k/100)).padStart(2,'0'); }
   function fv(v){ return fat ? (v>=1e5 ? fmtCurto(v) : fmtMoney(v)).replace('R$ ','') : fmtUn(v); }
-  var W = 1000, H = 220, pl = 12, pr = 12, pt = 22, pb = 26, iw = W-pl-pr, ih = H-pt-pb, n = pts.length, bw = iw/n;
+  var W = 1000, H = 140, pl = 12, pr = 12, pt = 22, pb = 26, iw = W-pl-pr, ih = H-pt-pb, n = pts.length, bw = iw/n;
   var mx = Math.max.apply(null, pts.map(function(p){ return p.v; }).concat([1])), med = pts.reduce(function(a,p){ return a+p.v; },0)/n;
   var passo = Math.max(1, Math.ceil(n/(dia?16:24))), rotulos = n <= (dia?31:24);
   var out = '';
