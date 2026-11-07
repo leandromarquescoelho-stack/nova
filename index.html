@@ -484,6 +484,12 @@ tr.vend-row, .vend-pt{ cursor:pointer; }
 .vr-pct{ flex:0 0 auto; font-size:10.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
 .du-tab{ min-width:0 !important; }
 .vend-sel-wrap{ display:flex; align-items:center; gap:8px; }
+.top-vend{ flex:1 1 300px; justify-content:center; min-width:0; }
+.top-vend[hidden]{ display:none; }
+.view-panel .panel{ scroll-margin-top:140px; }
+.top-vend label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); }
+.top-vend select{ width:min(340px, 100%); min-width:0; height:36px; font-weight:700; }
+@media (max-width:880px){ .top-vend{ order:3; flex-basis:100%; justify-content:flex-start; } .top-vend select{ flex:1; width:auto; } }
 .vend-pdf{ display:inline-flex; align-items:center; gap:5px; height:34px; padding:0 12px; border-radius:9px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text-2); font:600 12px Manrope,sans-serif; cursor:pointer; white-space:nowrap; }
 .vend-pdf:hover{ color:var(--accent); border-color:var(--accent); }
 .rd-lbl{ cursor:pointer; transition:opacity .15s; }
@@ -1173,6 +1179,8 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="updated"><span class="dot-live" id="liveDot"></span><span id="updatedText">Atualizado agora</span></div>
         </div>
       </div>
+      <!-- seletor do vendedor: fixo no topo enquanto a aba Vendedores está aberta -->
+      <div class="vend-sel-wrap top-vend" id="topVendSel" hidden><label for="vendConsultSelect">Vendedor</label><select class="fsel" id="vendConsultSelect"></select><button type="button" class="vend-pdf" id="vendPdfBtn" title="Salvar a consultoria deste vendedor em PDF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>PDF</button></div>
       <div class="topbar-right">
         <div class="scope-badge" id="scopeBadge" title="Escopo de acesso"></div>
         <select class="tbtn" id="periodSelect" aria-label="Selecionar período">
@@ -1621,7 +1629,6 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
           <div><h2>Consultoria de Vendedor</h2><div class="psub">Compare um vendedor com os demais, dentro dos filtros aplicados acima</div></div>
-          <div class="vend-sel-wrap"><select class="fsel" id="vendConsultSelect" style="min-width:220px;"></select><button type="button" class="vend-pdf" id="vendPdfBtn" title="Salvar a consultoria deste vendedor em PDF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>PDF</button></div>
         </div>
         <div id="vendConsultBody"></div>
       </div>
@@ -5109,6 +5116,7 @@ function bindEvents(){
     var meta = VIEW_META[view] || VIEW_META.dashboard;
     document.getElementById('viewTitle').textContent = meta.title;
     document.getElementById('viewSub').textContent = meta.sub;
+    document.getElementById('topVendSel').hidden = (view!=='vendedores');
     if(view==='vendedores'){ renderVendConsult(); }
     if(view==='insights'){ renderInsights(); }
     if(view==='diasuteis'){ renderDiasUteis(); }
@@ -5261,7 +5269,7 @@ function bindEvents(){
     document.getElementById('vendConsultSelect').value = nome;
     renderVendConsult();
     var sc2 = document.querySelector('#vendConsultBody .table-scroll'); if(sc2) sc2.scrollTop = top;
-    var card = document.getElementById('vendConsultSelect'); if(card) card.scrollIntoView({behavior:'smooth', block:'nearest'});
+    var card = document.getElementById('vendConsultBody'); if(card) card.closest('.panel').scrollIntoView({behavior:'smooth', block:'nearest'});
   }
   document.getElementById('vendConsultBody').addEventListener('click', cliqueVendedor);
   document.getElementById('vendFunilBody').addEventListener('click', cliqueFunil);
