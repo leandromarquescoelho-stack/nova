@@ -1032,6 +1032,8 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .fun-limpar{ border:0; background:transparent; color:var(--accent); font-weight:700; font-size:11px; cursor:pointer; padding:4px; }
 .fun-grid{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; transition:opacity .15s; }
 .fun-serie{ margin-top:14px; border:1px solid var(--border); border-radius:var(--radius-md); padding:12px; background:var(--surface-2); }
+.fun-col-g{ cursor:pointer; }
+.fun-col-g:hover rect + rect{ opacity:1; }
 .fun-serie-cab{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
 .fun-serie-cab h3{ font-size:13px; }
 .fun-grid.carregando{ opacity:.55; pointer-events:none; }
@@ -3513,7 +3515,19 @@ var LOGO_PDF = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAeAAAAA6CAYAAABoBo
 /* ---- funil do vendedor: 1º clientes, 2º marcas, 3º categorias, 4º produtos. Clicar num item filtra os outros dois (no banco, com os
    filtros do painel); cada funil ignora a própria seleção, então o item clicado continua à vista e destacado ---- */
 function funVazio(){ return {cliente:[], marca:[], categoria:[], produto:[]}; }
-var FUN = {base:null, sel:funVazio(), nomes:{}, req:0, d:null, chave:null, med:'fat'};
+var FUN = {base:null, sel:funVazio(), pk:null, nomes:{}, req:0, d:null, chave:null, med:'fat'};
+// coluna clicada no gráfico de vendas (dia 'aaaa-mm-dd' ou mês aamm) vira um período menor para os funis
+function funPerColuna(pk, per){
+  if(!pk) return per;
+  if(String(pk).indexOf('-')>0) return {ini:String(pk), fim:String(pk)};
+  var k = +pk, y = 2000+Math.floor(k/100), m = k%100, ult = new Date(y, m, 0).getDate();
+  var ini = y+'-'+String(m).padStart(2,'0')+'-01', fim = y+'-'+String(m).padStart(2,'0')+'-'+String(ult).padStart(2,'0');
+  return {ini: ini<per.ini ? per.ini : ini, fim: fim>per.fim ? per.fim : fim};
+}
+function funRotColuna(pk){
+  if(String(pk).indexOf('-')>0){ var a = String(pk).split('-'); return 'Dia: '+a[2]+'/'+a[1]+'/'+a[0]; }
+  var k = +pk; return 'Mês: '+['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][k%100-1]+'/'+(2000+Math.floor(k/100));
+}
 var FUN_DIMS = [
   {k:'cliente', t:'1º Clientes', nome:'Cliente', un:'clientes', cor:'var(--accent)'},
   {k:'marca',   t:'2º Marcas',   nome:'Marca',   un:'marcas',   cor:'var(--accent-2)'},
@@ -3527,16 +3541,21 @@ function renderVendFunil(){
   var fv = JSON.parse(JSON.stringify(PAINEL_F || painelFiltros(null))); delete fv.vendedor;
   var per = {ini: painelPeriodo().ini, fim: painelPeriodo().fim};
   var base = JSON.stringify([vid, fv, per]);
-  if(FUN.base!==base){ FUN.base = base; FUN.sel = funVazio(); } // outro vendedor ou filtro: começa sem seleção
+  if(FUN.base!==base){ FUN.base = base; FUN.sel = funVazio(); FUN.pk = null; } // outro vendedor ou filtro: começa sem seleção
   var f = JSON.parse(JSON.stringify(fv)); f.vendedor = [vid];
   FUN_DIMS.forEach(function(D){ if(FUN.sel[D.k].length) f[D.k] = FUN.sel[D.k].slice().sort(function(a,b){ return a-b; }); });
-  var chave = JSON.stringify([f, per]);
+  var perF = funPerColuna(FUN.pk, per);
+  var chave = JSON.stringify([f, per, perF]);
   if(FUN.chave===chave && FUN.d){ desenharFunil(box); return; }
   var meu = ++FUN.req, grid = box.querySelector('.fun-grid');
   if(grid) grid.classList.add('carregando'); else box.innerHTML = '<p class="note-muted">Carregando o funil do vendedor…</p>';
-  rpcMemo('bi_vendedor_funil', {f:f, per:per, lim:10}).then(function(d){
+  // com uma coluna clicada, os funis usam o período dela e o gráfico continua no período inteiro
+  var pedidos = [rpcMemo('bi_vendedor_funil', {f:f, per:perF, lim:10})];
+  if(FUN.pk) pedidos.push(rpcMemo('bi_vendedor_funil', {f:f, per:per, lim:10}));
+  Promise.all(pedidos).then(function(rs){
     if(meu!==FUN.req) return;
-    FUN.d = d || {}; FUN.chave = chave; FUN.per = per;
+    var d = Object.assign({}, rs[0] || {}); if(rs[1]) d.serie = rs[1].serie;
+    FUN.d = d; FUN.chave = chave; FUN.per = per;
     if(state.currentView==='vendedores') desenharFunil(box);
   }).catch(function(e){
     if(meu!==FUN.req) return;
@@ -3546,15 +3565,16 @@ function renderVendFunil(){
   });
 }
 function desenharFunil(box){
-  var d = FUN.d, temSel = FUN_DIMS.some(function(D){ return FUN.sel[D.k].length; });
+  var d = FUN.d, temSel = !!FUN.pk || FUN_DIMS.some(function(D){ return FUN.sel[D.k].length; });
   var chips = [];
+  if(FUN.pk) chips.push('<span class="fun-chip"><span>'+funRotColuna(FUN.pk)+'</span><button type="button" data-fun-tira="periodo" aria-label="Tirar filtro">&times;</button></span>');
   FUN_DIMS.forEach(function(D){ FUN.sel[D.k].forEach(function(id){
     var nm = FUN.nomes[D.k+id] || String(id);
     chips.push('<span class="fun-chip" title="'+escapeHtml(nm)+'"><span>'+D.nome+': '+escapeHtml(nm)+'</span>' +
       '<button type="button" data-fun-tira="'+D.k+'" data-fid="'+id+'" aria-label="Tirar filtro">&times;</button></span>');
   }); });
   var topo = '<div class="fun-top">' + (temSel ? 'Filtrando: '+chips.join('')+'<button type="button" class="fun-limpar" data-fun-limpar="1">Limpar</button>'
-    : 'Período e filtros do painel. Clique em um item para filtrar os outros funis.') + '</div>';
+    : 'Período e filtros do painel. Clique em um item ou numa coluna do gráfico para filtrar.') + '</div>';
   var cols = FUN_DIMS.map(function(D){
     var p = d[D.k] || {}, itens = p.itens || [], tot = c2(p.tot), gtot = c2(p.gtot), mx = itens.length ? c2(itens[0][3]) : 0;
     var selK = toSet(FUN.sel[D.k]), soma = 0;
@@ -3578,7 +3598,7 @@ function desenharFunil(box){
     }).join('');
     var rod = p.n>itens.length && tot>0 ? '<div class="fun-rodape">Os '+itens.length+' primeiros somam '+(soma/tot*100).toFixed(0)+'% do faturamento de '+fmtUn(p.n)+' '+D.un+'.</div>' : '';
     return '<div class="fun-col'+(FUN.sel[D.k].length?' tem-sel':'')+'"><h3>'+D.t+' <b>'+fmtUn(p.n||0)+'</b></h3>' +
-      '<div class="fun-sub">'+fmtMoney(tot)+' no período</div>' + (linhas || '<div class="fun-vazio">Sem vendas com esta combinação.</div>') + rod + '</div>';
+      '<div class="fun-sub">'+fmtMoney(tot)+(FUN.pk ? ' em '+funRotColuna(FUN.pk).replace(/^\S+ /,'') : ' no período')+'</div>' + (linhas || '<div class="fun-vazio">Sem vendas com esta combinação.</div>') + rod + '</div>';
   }).join('');
   box.innerHTML = topo + '<div class="fun-grid">' + cols + '</div>' + serieFunil(d.serie);
 }
@@ -3594,7 +3614,7 @@ function serieFunil(s){
   var pts = chaves.map(function(k){ var p = tem[k] || [k,0,0]; return {k:k, v: fat ? c2(p[1]) : n0(p[2]), f:c2(p[1]), q:n0(p[2])}; });
   if(!s.pts.length) pts = [];
   var seg = '<div class="seg fun-seg"><button type="button" data-fun-med="fat" aria-pressed="'+fat+'">Faturamento</button><button type="button" data-fun-med="qtd" aria-pressed="'+(!fat)+'">Peças</button></div>';
-  var cab = '<div class="fun-serie-cab"><div><h3>Vendas no período, por '+(dia?'dia':'mês')+'</h3><div class="fun-sub">Com as seleções dos funis acima</div></div>'+seg+'</div>';
+  var cab = '<div class="fun-serie-cab"><div><h3>Vendas no período, por '+(dia?'dia':'mês')+'</h3><div class="fun-sub">Com as seleções dos funis acima. Clique numa coluna para filtrar os funis por esse '+(dia?'dia':'mês')+'</div></div>'+seg+'</div>';
   if(!pts.length) return '<div class="fun-serie">'+cab+'<div class="fun-vazio">Sem vendas com esta combinação.</div></div>';
   function rot(k){ if(dia){ var a = String(k).split('-'); return a[2]+'/'+a[1]; } k = +k; return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][k%100-1]+'/'+String(Math.floor(k/100)).padStart(2,'0'); }
   function fv(v){ return fat ? (v>=1e5 ? fmtCurto(v) : fmtMoney(v)).replace('R$ ','') : fmtUn(v); }
@@ -3602,9 +3622,14 @@ function serieFunil(s){
   var mx = Math.max.apply(null, pts.map(function(p){ return p.v; }).concat([1])), med = pts.reduce(function(a,p){ return a+p.v; },0)/n;
   var passo = Math.max(1, Math.ceil(n/(dia?16:24))), rotulos = n <= (dia?31:24);
   var out = '';
+  var pk = FUN.pk ? String(FUN.pk) : null;
   pts.forEach(function(p, i){
-    var h = ih*p.v/mx, x = pl+i*bw+bw*0.14, w = bw*0.72, y = pt+ih-h;
-    out += '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+Math.max(0,h).toFixed(1)+'" rx="3" fill="var(--accent)" opacity="'+(p.v>=med?0.9:0.55)+'"><title>'+rot(p.k)+(dia?'/'+String(p.k).slice(0,4):'')+' · '+fmtMoney(p.f)+' · '+fmtUn(p.q)+' peças</title></rect>';
+    var h = ih*p.v/mx, x = pl+i*bw+bw*0.14, w = bw*0.72, y = pt+ih-h, sel = pk===String(p.k);
+    var op = pk ? (sel ? 1 : 0.22) : (p.v>=med ? 0.9 : 0.55);
+    var dica = rot(p.k)+(dia?'/'+String(p.k).slice(0,4):'')+' · '+fmtMoney(p.f)+' · '+fmtUn(p.q)+' peças · clique para '+(sel?'tirar o filtro':'filtrar os funis');
+    out += '<g class="fun-col-g'+(sel?' sel':'')+'" data-fun-pk="'+p.k+'"><title>'+dica+'</title>' +
+      '<rect x="'+(pl+i*bw).toFixed(1)+'" y="'+pt+'" width="'+bw.toFixed(1)+'" height="'+ih+'" fill="transparent"/>' +
+      '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+Math.max(0,h).toFixed(1)+'" rx="3" fill="'+(sel?'var(--warning)':'var(--accent)')+'" opacity="'+op+'"/></g>';
     if(rotulos && p.v>0) out += '<text x="'+(x+w/2).toFixed(1)+'" y="'+(y-5).toFixed(1)+'" text-anchor="middle" font-size="'+(n>20?8:9.5)+'" fill="var(--text-2)" font-family="JetBrains Mono, monospace">'+fv(p.v)+'</text>';
     if(i%passo===0) out += '<text x="'+(x+w/2).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">'+rot(p.k)+'</text>';
   });
@@ -3615,9 +3640,11 @@ function serieFunil(s){
   return '<div class="fun-serie">'+cab+'<div class="chart-scroll"><div class="chart-wrap"><svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Vendas no período">'+out+'</svg></div></div></div>';
 }
 function cliqueFunil(ev){
-  var b = ev.target.closest('[data-fun],[data-fun-tira],[data-fun-limpar],[data-fun-med]'); if(!b) return;
+  var b = ev.target.closest('[data-fun],[data-fun-tira],[data-fun-limpar],[data-fun-med],[data-fun-pk]'); if(!b) return;
   if(b.hasAttribute('data-fun-med')){ FUN.med = b.getAttribute('data-fun-med'); desenharFunil(document.getElementById('vendFunilBody')); return; }
-  if(b.hasAttribute('data-fun-limpar')) FUN.sel = funVazio();
+  if(b.hasAttribute('data-fun-pk')){ var k0 = b.getAttribute('data-fun-pk'); FUN.pk = FUN.pk===k0 ? null : k0; renderVendFunil(); return; }
+  if(b.getAttribute('data-fun-tira')==='periodo'){ FUN.pk = null; renderVendFunil(); return; }
+  if(b.hasAttribute('data-fun-limpar')){ FUN.sel = funVazio(); FUN.pk = null; }
   else {
     var k = b.getAttribute('data-fun') || b.getAttribute('data-fun-tira'), id = +b.getAttribute('data-fid'), a = FUN.sel[k], i = a.indexOf(id);
     if(i>=0) a.splice(i,1); else if(b.hasAttribute('data-fun')) a.push(id);
