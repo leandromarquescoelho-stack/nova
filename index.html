@@ -3544,11 +3544,11 @@ function renderVendConsult(){
       var col = th.getAttribute('data-col');
       if(state.vendSortCol===col){ state.vendSortDir = state.vendSortDir==='asc' ? 'desc' : 'asc'; }
       else { state.vendSortCol = col; state.vendSortDir = col==='name' ? 'asc' : 'desc'; }
-      renderVendConsult();
+      renderVendSemRolar();
     });
   });
   var btTodos = rankBox.querySelector('[data-vend-todos]');
-  if(btTodos) btTodos.addEventListener('click', function(){ state.vendRankTodos = !state.vendRankTodos; renderVendConsult(); });
+  if(btTodos) btTodos.addEventListener('click', function(){ state.vendRankTodos = !state.vendRankTodos; renderVendSemRolar(); });
 }
 
 /* ---------- radar SVG genérico (2 séries: selecionado vs. média dos demais) ---------- */
@@ -3579,6 +3579,15 @@ var FUN_DIMS = [
   {k:'categoria', t:'3º Categorias', nome:'Categoria', un:'categorias', cor:'var(--warning)'},
   {k:'produto', t:'4º Produtos', nome:'Produto', un:'produtos', cor:'var(--cat-c)'}
 ];
+// redesenha a aba Vendedores mantendo a posição da página e das tabelas com rolagem
+function renderVendSemRolar(){
+  var y = window.scrollY, tabs = Array.prototype.map.call(document.querySelectorAll('[data-view-panel="vendedores"] .table-scroll'), function(e){ return e.scrollTop; });
+  var main = document.querySelector('.main'); if(main) main.style.minHeight = main.offsetHeight+'px'; // segura a altura enquanto o conteúdo é trocado
+  renderVendConsult();
+  Array.prototype.forEach.call(document.querySelectorAll('[data-view-panel="vendedores"] .table-scroll'), function(e, i){ if(tabs[i]) e.scrollTop = tabs[i]; });
+  window.scrollTo(0, y);
+  setTimeout(function(){ if(main) main.style.minHeight = ''; }, 1500);
+}
 function renderVendFunil(){
   var box = document.getElementById('vendFunilBody'); if(!box) return;
   var vid = DIMI.vendedor ? DIMI.vendedor[state.vendConsultSel] : undefined;
@@ -5344,18 +5353,16 @@ function bindEvents(){
   document.getElementById('vendPdfBtn').addEventListener('click', salvarConsultoriaPdf);
   document.getElementById('vendConsultSelect').addEventListener('change', function(){
     state.vendConsultSel = this.value;
-    renderVendConsult();
+    renderVendSemRolar();
   });
   // clique numa linha do ranking troca o vendedor analisado (mantém a rolagem da tabela)
+  // a página fica onde está: nenhuma troca de vendedor rola a tela
   function cliqueVendedor(ev){
     var tr = ev.target.closest('tr.vend-row, .vend-pt'); if(!tr) return;
     var nome = tr.getAttribute('data-vend'); if(!nome || nome===state.vendConsultSel) return;
-    var sc = tr.closest('.table-scroll'), top = sc ? sc.scrollTop : 0;
     state.vendConsultSel = nome;
     document.getElementById('vendConsultSelect').value = nome;
-    renderVendConsult();
-    var sc2 = document.querySelector('#vendRankBody .table-scroll'); if(sc2) sc2.scrollTop = top;
-    var card = document.getElementById('vendConsultBody'); if(card) card.closest('.panel').scrollIntoView({behavior:'smooth', block:'nearest'});
+    renderVendSemRolar();
   }
   document.getElementById('vendRankBody').addEventListener('click', cliqueVendedor);
   document.getElementById('vendFunilBody').addEventListener('click', cliqueFunil);
