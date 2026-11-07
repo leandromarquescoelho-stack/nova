@@ -1033,6 +1033,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .fun-grid{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; transition:opacity .15s; }
 .fun-serie{ margin-top:14px; border:1px solid var(--border); border-radius:var(--radius-md); padding:12px; background:var(--surface-2); }
 .fun-col-g{ cursor:pointer; }
+.fun-lista{ max-height:162px; overflow-y:auto; overscroll-behavior:contain; padding-right:4px; scrollbar-width:thin; }
 .fun-col-g:hover rect + rect{ opacity:1; }
 .fun-serie-cab{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
 .fun-serie-cab h3{ font-size:13px; }
@@ -1262,6 +1263,12 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             <label>Até <input type="date" id="fAte"></label>
           </div>
           <div class="frp-per" id="perInfo"></div>
+          <label class="frp-label" style="margin-top:10px;">Dias da semana</label>
+          <div class="fgroup" id="semanaChips">
+            <button class="period-chip dia-chip" data-s="" aria-pressed="true">Todos os dias</button>
+            <button class="period-chip dia-chip" data-s="util">Segunda a sexta</button>
+            <button class="period-chip dia-chip" data-s="fds" title="Sábado e domingo">Fim de semana</button>
+          </div>
         </div>
 
         <div class="frp-label" style="margin-top:2px;">Dimensões &middot; clique para expandir &middot; selecione uma ou mais opções</div>
@@ -1894,6 +1901,7 @@ function painelFiltros(restrito){
     f[col] = ids.length ? ids.sort(function(a,b){ return a-b; }) : [-1];
   });
   FILTRO_ID.forEach(function(k){ if(state[k] && state[k].length) f[k] = state[k].map(Number).sort(function(a,b){ return a-b; }); });
+  if(state.diaSemana) f.semana = [state.diaSemana];
   if(restrito){
     var ids = Object.keys(restrito).map(Number);
     if(f.produto){ var r = toSet(f.produto); ids = ids.filter(function(id){ return r[id]; }); }
@@ -1901,6 +1909,8 @@ function painelFiltros(restrito){
   }
   return f;
 }
+var DIA_SEMANA_ROT = {util:'Segunda a sexta', fds:'Fim de semana'};
+function diaSemanaOk(dt){ var w = dt.getDay(); return state.diaSemana==='fds' ? (w===0||w===6) : (state.diaSemana==='util' ? (w>0&&w<6) : true); }
 function estoqueFiltrosAtivos(){ return !!(state.status.length || state.soParados || state.diasMin!==null); }
 function painelPeriodo(){
   var pr = periodRange(state.globalPeriod);
@@ -2144,6 +2154,7 @@ var state = {
   vendConsultSel:'',
   vendSortCol:'fat', vendSortDir:'desc',
   soParados:false,
+  diaSemana:'',   // filtro: '' todos os dias, 'util' segunda a sexta, 'fds' sábado e domingo
   diasMin:null,   // filtro: sem venda há pelo menos N dias
   simDias:90      // corte do simulador de estoque
 };
@@ -3550,8 +3561,8 @@ function renderVendFunil(){
   var meu = ++FUN.req, grid = box.querySelector('.fun-grid');
   if(grid) grid.classList.add('carregando'); else box.innerHTML = '<p class="note-muted">Carregando o funil do vendedor…</p>';
   // com uma coluna clicada, os funis usam o período dela e o gráfico continua no período inteiro
-  var pedidos = [rpcMemo('bi_vendedor_funil', {f:f, per:perF, lim:10})];
-  if(FUN.pk) pedidos.push(rpcMemo('bi_vendedor_funil', {f:f, per:per, lim:10}));
+  var pedidos = [rpcMemo('bi_vendedor_funil', {f:f, per:perF, lim:20})];
+  if(FUN.pk) pedidos.push(rpcMemo('bi_vendedor_funil', {f:f, per:per, lim:20}));
   Promise.all(pedidos).then(function(rs){
     if(meu!==FUN.req) return;
     var d = Object.assign({}, rs[0] || {}); if(rs[1]) d.serie = rs[1].serie;
@@ -3598,7 +3609,7 @@ function desenharFunil(box){
     }).join('');
     var rod = p.n>itens.length && tot>0 ? '<div class="fun-rodape">Os '+itens.length+' primeiros somam '+(soma/tot*100).toFixed(0)+'% do faturamento de '+fmtUn(p.n)+' '+D.un+'.</div>' : '';
     return '<div class="fun-col'+(FUN.sel[D.k].length?' tem-sel':'')+'"><h3>'+D.t+' <b>'+fmtUn(p.n||0)+'</b></h3>' +
-      '<div class="fun-sub">'+fmtMoney(tot)+(FUN.pk ? ' em '+funRotColuna(FUN.pk).replace(/^\S+ /,'') : ' no período')+'</div>' + (linhas || '<div class="fun-vazio">Sem vendas com esta combinação.</div>') + rod + '</div>';
+      '<div class="fun-sub">'+fmtMoney(tot)+(FUN.pk ? ' em '+funRotColuna(FUN.pk).replace(/^\S+ /,'') : ' no período')+'</div>' + (linhas ? '<div class="fun-lista">'+linhas+'</div>' : '<div class="fun-vazio">Sem vendas com esta combinação.</div>') + rod + '</div>';
   }).join('');
   box.innerHTML = topo + '<div class="fun-grid">' + cols + '</div>' + serieFunil(d.serie);
 }
@@ -3609,7 +3620,7 @@ function serieFunil(s){
   // completa os dias/meses sem venda com zero, para o eixo seguir o calendário do período
   var tem = {}; s.pts.forEach(function(p){ tem[p[0]] = p; });
   var chaves = [], a = new Date(FUN.per.ini+'T12:00:00'), b = new Date(FUN.per.fim+'T12:00:00');
-  if(dia) for(var t = new Date(a); t <= b; t.setDate(t.getDate()+1)) chaves.push(t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'));
+  if(dia){ for(var t = new Date(a); t <= b; t.setDate(t.getDate()+1)) if(diaSemanaOk(t)) chaves.push(t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')); }
   else for(var m = new Date(a.getFullYear(), a.getMonth(), 1); m <= b; m.setMonth(m.getMonth()+1)) chaves.push((m.getFullYear()-2000)*100+m.getMonth()+1);
   var pts = chaves.map(function(k){ var p = tem[k] || [k,0,0]; return {k:k, v: fat ? c2(p[1]) : n0(p[2]), f:c2(p[1]), q:n0(p[2])}; });
   if(!s.pts.length) pts = [];
@@ -3670,6 +3681,7 @@ function resumoFiltrosPdf(){
     }
     linhas.push('<div class="pdf-fl"><b>'+d[1]+'</b><div>'+txt+'</div></div>');
   });
+  if(state.diaSemana) linhas.push('<div class="pdf-fl"><b>Dias da semana</b><div><i>'+DIA_SEMANA_ROT[state.diaSemana]+'</i></div></div>');
   if(state.status && state.status.length) linhas.push('<div class="pdf-fl"><b>Status</b><div><i>'+state.status.map(function(v){ return STATUS_LABEL[v]; }).join(' · ')+'</i></div></div>');
   return '<div class="pdf-filtros"><span>Filtros aplicados</span>'+(linhas.length ? linhas.join('') : '<div class="pdf-fl"><b>Nenhum</b><div><i>todos os dados do período</i></div></div>')+'</div>';
 }
@@ -4322,6 +4334,7 @@ function renderActiveTags(){
   state.status.forEach(function(v){
     chips.push('<span class="tag-chip">Status: '+STATUS_LABEL[v]+'<button data-k="status" data-v="'+v+'">✕</button></span>');
   });
+  if(state.diaSemana) chips.push('<span class="tag-chip">Dias: '+DIA_SEMANA_ROT[state.diaSemana]+'<button data-k="diaSemana" data-v="">✕</button></span>');
   if(state.soParados) chips.push('<span class="tag-chip">Somente sem giro<button data-k="soParados" data-v="">✕</button></span>');
   if(state.diasMin!==null) chips.push('<span class="tag-chip">Sem venda há ≥ '+state.diasMin+' dias<button data-k="diasMin" data-v="">✕</button></span>');
   box.innerHTML = chips.join('');
@@ -4337,6 +4350,7 @@ function renderActiveTags(){
     b.addEventListener('click', function(){
       var key = b.getAttribute('data-k'), val = b.getAttribute('data-v');
       if(key==='soParados'){ state.soParados = false; }
+      else if(key==='diaSemana'){ state.diaSemana = ''; }
       else if(key==='diasMin'){ state.diasMin = null; }
       else { var arr = state[key], i = arr.indexOf(val); if(i!==-1) arr.splice(i,1); }
       syncFilterSelects();
@@ -4349,6 +4363,7 @@ function syncFilterSelects(){
   FILTER_KEYS.forEach(rebuildCheckGroup);
   BUSCA_KEYS.forEach(renderBuscaSel);
   document.getElementById('fParado').checked = state.soParados;
+  Array.prototype.forEach.call(document.querySelectorAll('.dia-chip'), function(c){ c.setAttribute('aria-pressed', String(c.getAttribute('data-s')===state.diaSemana)); });
   document.getElementById('fDiasMin').value = state.diasMin===null ? '' : state.diasMin;
 }
 
@@ -5186,9 +5201,9 @@ function bindEvents(){
   document.getElementById('refreshBtn').addEventListener('click', doRefresh);
 
   // period chips
-  Array.prototype.forEach.call(document.querySelectorAll('.period-chip'), function(chip){
+  Array.prototype.forEach.call(document.querySelectorAll('#periodChips .period-chip'), function(chip){
     chip.addEventListener('click', function(){
-      Array.prototype.forEach.call(document.querySelectorAll('.period-chip'), function(c){ c.setAttribute('aria-pressed','false'); });
+      Array.prototype.forEach.call(document.querySelectorAll('#periodChips .period-chip'), function(c){ c.setAttribute('aria-pressed','false'); });
       chip.setAttribute('aria-pressed','true');
       state.globalPeriod = chip.getAttribute('data-p');
       syncPeriodChips();
@@ -5268,7 +5283,13 @@ function bindEvents(){
     FILTER_KEYS.concat(BUSCA_KEYS).forEach(function(k){ state[k] = []; });
     if(CURRENT_USER && CURRENT_USER.escopo.tipo==='loja') state.regiao = [CURRENT_USER.escopo.loja];
     if(CURRENT_USER && CURRENT_USER.escopo.tipo==='vendedor') state.vendedor = [CURRENT_USER.escopo.vendedor];
-    state.soParados=false; state.diasMin=null;
+    state.soParados=false; state.diasMin=null; state.diaSemana='';
+    syncFilterSelects(); state.page=1; renderAll(false);
+  });
+  document.getElementById('semanaChips').addEventListener('click', function(ev){
+    var c = ev.target.closest('.dia-chip'); if(!c) return;
+    ev.stopPropagation();
+    state.diaSemana = c.getAttribute('data-s') || '';
     syncFilterSelects(); state.page=1; renderAll(false);
   });
 
@@ -5406,7 +5427,7 @@ function bindEvents(){
 }
 
 function syncPeriodChips(){
-  Array.prototype.forEach.call(document.querySelectorAll('.period-chip'), function(c){
+  Array.prototype.forEach.call(document.querySelectorAll('#periodChips .period-chip'), function(c){
     c.setAttribute('aria-pressed', c.getAttribute('data-p')===state.globalPeriod ? 'true':'false');
   });
   var sel = document.getElementById('periodSelect'); if(sel) sel.value = state.globalPeriod;
