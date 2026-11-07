@@ -1670,6 +1670,13 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
         <div id="vendCliBody"></div>
       </div>
+
+      <div class="panel" style="margin-bottom:14px;" id="vendInsPanel">
+        <div class="panel-head">
+          <div><h2>Análises não óbvias</h2><div class="psub">Leituras do vendedor selecionado que não aparecem à primeira vista</div></div>
+        </div>
+        <div id="vendInsBody"></div>
+      </div>
       </section>
 
       <!-- ============ INSIGHTS ============ -->
@@ -3466,16 +3473,12 @@ function renderVendConsult(){
         '<p style="font-size:11px; color:var(--text-muted); margin-top:10px; line-height:1.6;">O radar compara cada eixo contra o melhor valor do grupo inteiro (100% da escala) — quanto mais a área azul cobre o eixo, mais próximo do topo do grupo o vendedor está naquele quesito.</p>' +
       '</div>' +
     '</div>' +
-    '<div class="grid-2" style="margin-top:14px;">' +
+    '<div style="margin-top:14px;">' +
       '<div>' +
         '<h3 class="dh">Quadrante margem &times; faturamento (todo o grupo)</h3>' +
-        '<div class="chart-wrap" style="display:flex; justify-content:center;">'+scatterSvg+'</div>' +
+        '<div class="chart-wrap" style="display:flex; justify-content:center; max-width:560px; margin:0 auto;">'+scatterSvg+'</div>' +
         '<p style="font-size:11.5px; color:var(--text-2); margin-top:6px; line-height:1.6;">'+quadTexto+'</p>' +
         '<p style="font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.6;">Cada ponto é um vendedor; as linhas tracejadas marcam a média do grupo. Clique num ponto para analisar o vendedor.</p>' +
-      '</div>' +
-      '<div>' +
-        '<h3 class="dh">Análises não óbvias</h3>' +
-        insightsHtml +
       '</div>' +
     '</div>' +
     '<div style="margin-top:14px;">' +
@@ -3490,6 +3493,9 @@ function renderVendConsult(){
         '<p id="rdInfo" class="rd-info">Clique numa marca, categoria ou produto para destacar os relacionados nos outros dois radares.</p>' +
       '</div>' +
     '</div>';
+
+  // análises não óbvias: último painel da página
+  var insBox = document.getElementById('vendInsBody'); if(insBox) insBox.innerHTML = insightsHtml;
 
   /* ---- faturamento × clientes distintos (painel abaixo da consultoria) ---- */
   var cliBox = document.getElementById('vendCliBody');
@@ -3765,6 +3771,7 @@ function salvarConsultoriaPdf(){
     '<div class="pdf-dica">Na janela de impressão, escolha "Salvar como PDF" e marque "Gráficos de fundo".</div>' + cab +
     '<div class="panel">'+cBody.innerHTML+'</div>' +
     (cCli.innerHTML.trim() ? '<div class="panel"><div class="panel-head"><div><h2>Faturamento &times; clientes atendidos</h2></div></div>'+cCli.innerHTML+'</div>' : '') +
+    ((document.getElementById('vendInsBody')||{}).innerHTML ? '<div class="panel"><div class="panel-head"><div><h2>Análises não óbvias</h2></div></div>'+document.getElementById('vendInsBody').innerHTML+'</div>' : '') +
     '</body></html>';
   w.document.open(); w.document.write(html); w.document.close();
   function imprimir(){ try{ w.focus(); w.print(); }catch(e){} }
