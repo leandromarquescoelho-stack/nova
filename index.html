@@ -477,7 +477,22 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .barlist-row[data-fon] .bl-label::before, .seller-row[data-fon] .s-name::before{ content:'● '; }
 .canal-bar .seg[data-fk]{ cursor:pointer; }
 tr.vend-row, .vend-pt{ cursor:pointer; }
-.vr-cel{ display:flex; align-items:center; gap:8px; }
+.vr-cel{ display:flex; align-items:center; gap:8px; min-width:0; }
+/* ranking de vendedores: cabe na largura da coluna, sem rolagem lateral nem interna */
+.rank-vend-box{ border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
+table.data-table.rank-vend{ min-width:0; table-layout:fixed; }
+table.data-table.rank-vend thead th, table.data-table.rank-vend tbody td{ padding:5px 6px; overflow:hidden; text-overflow:ellipsis; }
+table.data-table.rank-vend thead th{ padding-top:8px; padding-bottom:8px; text-overflow:clip; }
+table.data-table.rank-vend thead th .sort-ico{ margin-left:2px; }
+table.data-table.rank-vend thead th{ position:static; }
+table.data-table.rank-vend td.mono{ text-align:right; } table.data-table.rank-vend td.mono:first-child{ text-align:left; }
+table.data-table.rank-vend thead th:nth-child(n+3){ text-align:right; }
+table.data-table.rank-vend thead th{ font-size:9.5px; letter-spacing:.02em; }
+table.data-table.rank-vend .vr-cel{ flex-wrap:wrap; row-gap:3px; column-gap:6px; }
+table.data-table.rank-vend .vr-nome{ flex:1 0 100%; }
+table.data-table.rank-vend .vr-bar{ flex:0 0 60px; }
+.vr-todos{ display:block; width:100%; padding:8px; border:0; border-top:1px solid var(--border); background:var(--surface-2); color:var(--accent); font:600 12px Manrope,sans-serif; cursor:pointer; }
+.vr-todos:hover{ background:var(--surface-3); }
 .vr-nome{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .vr-bar{ flex:0 0 48px; height:4px; border-radius:2px; background:var(--surface-3); overflow:hidden; opacity:.85; }
 .vr-bar i{ display:block; height:100%; background:var(--accent); border-radius:2px; }
@@ -2152,7 +2167,7 @@ var state = {
   page:1, pageSize:8,
   currentView:'dashboard',
   vendConsultSel:'',
-  vendSortCol:'fat', vendSortDir:'desc',
+  vendSortCol:'fat', vendSortDir:'desc', vendRankTodos:false,
   soParados:false,
   diaSemana:'',   // filtro: '' todos os dias, 'util' segunda a sexta, 'fds' sábado e domingo
   diasMin:null,   // filtro: sem venda há pelo menos N dias
@@ -3234,7 +3249,7 @@ function renderVendConsult(){
     {key:'fat', label:'Faturamento'},
     {key:'margemPct', label:'Margem'},
     {key:'qtd', label:'Qtd.'},
-    {key:'ticket', label:'Ticket médio'}
+    {key:'ticket', label:'Ticket'}
   ];
   var maxShare = Math.max.apply(null, rows.map(function(r){ return r.share; }).concat([0]));
   function buildVendRankTable(){
@@ -3247,8 +3262,11 @@ function renderVendConsult(){
       var ico = c.key ? (state.vendSortCol===c.key ? (state.vendSortDir==='asc'?'▲':'▼') : '▵') : '';
       return '<th'+(c.key?' data-col="'+c.key+'" data-active="'+(state.vendSortCol===c.key)+'"':'')+'>'+c.label+(c.key?' <span class="sort-ico">'+ico+'</span>':'')+'</th>';
     }).join('')+'</tr>';
+    // à vista: os 10 primeiros + o vendedor analisado; "ver todos" abre a lista inteira na página, sem barra de rolagem
+    var LIM_RANK = 10, total = sortedRows.length;
     var tbody = sortedRows.map(function(r,i){
       var isMe = r.name===selName;
+      if(!state.vendRankTodos && i>=LIM_RANK && !isMe) return '';
       return '<tr class="vend-row" data-vend="'+escapeHtml(r.name)+'"'+(isMe?' style="background:rgba(34,211,238,.08);"':' title="Clique para analisar este vendedor"')+'>' +
         '<td class="mono" style="color:var(--text-muted);">'+(i+1)+'</td>' +
         '<td class="prodcell"'+(isMe?' style="color:var(--accent);"':'')+'><div class="vr-cel"><span class="vr-nome">'+r.name+'</span>' +
@@ -3260,7 +3278,9 @@ function renderVendConsult(){
         '<td class="mono">'+fmtMoney2(r.ticket)+'</td>' +
       '</tr>';
     }).join('');
-    return '<table class="data-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table>';
+    var mais = total>LIM_RANK ? '<button type="button" class="vr-todos" data-vend-todos="1">'+(state.vendRankTodos ? 'Mostrar só os 10 primeiros' : 'Ver todos os '+total+' vendedores')+'</button>' : '';
+    return '<table class="data-table rank-vend"><colgroup><col style="width:32px"><col><col style="width:114px"><col style="width:72px"><col style="width:54px"><col style="width:82px"></colgroup>' +
+      '<thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table>' + mais;
   }
   var rankHtml = buildVendRankTable();
 
@@ -3420,7 +3440,7 @@ function renderVendConsult(){
   RD_SEL = null;
   box.innerHTML = kpisHtml +
     '<div class="grid-2">' +
-      '<div><h3 class="dh">Ranking do grupo &middot; clique no cabeçalho para ordenar ou no vendedor para analisá-lo</h3><div class="table-scroll scroll-limit">'+rankHtml+'</div></div>' +
+      '<div><h3 class="dh">Ranking do grupo &middot; clique no cabeçalho para ordenar ou no vendedor para analisá-lo</h3><div class="rank-vend-box">'+rankHtml+'</div></div>' +
       '<div>' +
         '<h3 class="dh">'+selName+' vs. média dos demais &middot; radar</h3>' +
         '<div class="radar-legend">' +
@@ -3514,7 +3534,8 @@ function renderVendConsult(){
       else { state.vendSortCol = col; state.vendSortDir = col==='name' ? 'asc' : 'desc'; }
       renderVendConsult();
     });
-  });
+  });  var btTodos = box.querySelector('[data-vend-todos]');
+  if(btTodos) btTodos.addEventListener('click', function(){ state.vendRankTodos = !state.vendRankTodos; renderVendConsult(); });
 }
 
 /* ---------- radar SVG genérico (2 séries: selecionado vs. média dos demais) ---------- */
