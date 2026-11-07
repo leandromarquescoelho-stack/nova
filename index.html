@@ -743,6 +743,8 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 }
 .login-btn:active{transform:translateY(1px);}
 .login-error{min-height:18px; color:var(--critical); font-size:12.5px; margin-top:10px; font-weight:600;}
+.login-voltar{ display:block; width:100%; margin-top:10px; height:42px; border-radius:10px; border:1px solid var(--border-strong); background:transparent; color:var(--text-2); font:600 13px Manrope,sans-serif; cursor:pointer; }
+.login-voltar:hover{ color:var(--text); border-color:var(--accent); }
 .login-help-btn{
   width:100%; margin-top:6px; background:none; border:none; color:var(--text-muted); font-size:11.5px;
   text-decoration:underline; cursor:pointer; padding:4px 0; font-family:'Manrope',sans-serif;
@@ -1129,6 +1131,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
     <input class="login-input" id="newPass2" type="password" autocomplete="new-password">
     <button class="login-btn" type="submit">Salvar e entrar</button>
     <div class="login-error" id="setPassError"></div>
+    <button class="login-voltar" type="button" id="setPassVoltar" style="display:none;">&larr; Voltar à página anterior</button>
   </form>
 </div>
 
@@ -6324,6 +6327,7 @@ function askNewPassword(user, mode){
   var f = document.getElementById('setPassForm');
   f.style.display = '';
   f.querySelector('.login-btn').textContent = passMode === 'troca' ? 'Salvar nova senha' : 'Salvar e entrar';
+  document.getElementById('setPassVoltar').style.display = passMode === 'troca' ? '' : 'none';
   document.getElementById('newPass').value = ''; document.getElementById('newPass2').value = '';
   document.getElementById('setPassError').textContent = '';
 }
@@ -6356,14 +6360,15 @@ document.getElementById('changePassBtn').addEventListener('click', async functio
   var user = sess && sess.data && sess.data.session && sess.data.session.user;
   if(user) askNewPassword(user, 'troca');
 });
-// cancelar a troca: Esc volta ao painel
-document.addEventListener('keydown', function(e){
-  if(e.key === 'Escape' && passMode === 'troca' && document.getElementById('setPassForm').style.display !== 'none'){
-    document.getElementById('setPassForm').style.display = 'none';
-    document.getElementById('loginForm').style.display = '';
-    document.getElementById('loginScreen').style.display = 'none';
-  }
-});
+// cancelar a troca: botão "Voltar" ou Esc voltam ao painel, onde o usuário estava
+function cancelarTrocaSenha(){
+  if(passMode !== 'troca' || document.getElementById('setPassForm').style.display === 'none') return;
+  document.getElementById('setPassForm').style.display = 'none';
+  document.getElementById('loginForm').style.display = '';
+  document.getElementById('loginScreen').style.display = 'none';
+}
+document.getElementById('setPassVoltar').addEventListener('click', cancelarTrocaSenha);
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') cancelarTrocaSenha(); });
 
 document.getElementById('forgotBtn').addEventListener('click', async function(){
   errEl.textContent = '';
