@@ -3342,8 +3342,6 @@ function renderVendConsult(){
       '</div>';
     }).join('');
   }
-  var marcaMixHtml = mixRows(me.marcas, groupFatByMarca);
-  var catMixHtml = mixRows(me.categorias, groupFatByCategoria);
 
   /* ---- concentração (HHI): quão dependente o vendedor é de poucas marcas/categorias ---- */
   var peerAvgMarcaHHI = others.length ? others.reduce(function(s,r){return s+r.marcaHHI;},0)/others.length : 0;
@@ -3467,10 +3465,6 @@ function renderVendConsult(){
         '<p style="font-size:12.5px; color:var(--text-2); line-height:1.7;">'+verdict+'</p>' +
         '<p style="font-size:11px; color:var(--text-muted); margin-top:10px; line-height:1.6;">O radar compara cada eixo contra o melhor valor do grupo inteiro (100% da escala) — quanto mais a área azul cobre o eixo, mais próximo do topo do grupo o vendedor está naquele quesito.</p>' +
       '</div>' +
-    '</div>' +
-    '<div class="grid-2" style="margin-top:14px;">' +
-      '<div><h3 class="dh">Mix de marcas — '+selName+' vs. participação no grupo</h3><div class="barlist scroll-limit-sm">'+(marcaMixHtml||'<p style="font-size:11px;color:var(--text-muted);">Sem dados de marca no recorte.</p>')+'</div></div>' +
-      '<div><h3 class="dh">Mix de categorias — '+selName+' vs. participação no grupo</h3><div class="barlist scroll-limit-sm">'+(catMixHtml||'<p style="font-size:11px;color:var(--text-muted);">Sem dados de categoria no recorte.</p>')+'</div></div>' +
     '</div>' +
     '<div class="grid-2" style="margin-top:14px;">' +
       '<div>' +
