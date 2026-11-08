@@ -3775,28 +3775,34 @@ function salvarConsultoriaPdf(){
     '.pdf-marca{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700;}' +
     '.pdf-meta{font-size:11px;color:var(--text-2);line-height:1.6;}' +
     '@media print{.pdf-dica{display:none;}} .pdf-dica{font-size:12px;color:var(--text-muted);margin-bottom:10px;}';
-  // versão impressa: ranking e tabela de clientes só com o vendedor selecionado; radar logo abaixo do ranking
-  function soSelecionado(el){
-    Array.prototype.forEach.call(el.querySelectorAll('tr.vend-row'), function(tr){ if(tr.getAttribute('data-vend')!==nome) tr.remove(); });
+  // versão impressa: as mesmas seções e a mesma ordem da aba (consultoria, funil, ranking, clientes e margem, análises)
+  function copia(id){ var el = document.getElementById(id), d = document.createElement('div'); d.innerHTML = el ? el.innerHTML : ''; return d; }
+  function limpa(d){ Array.prototype.forEach.call(d.querySelectorAll('.vr-todos,.fun-limpar,[data-fun-tira],#rdInfo,.fun-seg button[aria-pressed="false"]'), function(x){ x.remove(); }); return d; }
+  // tabelas longas: os 10 primeiros e o vendedor analisado
+  function top10(d){
+    Array.prototype.forEach.call(d.querySelectorAll('table'), function(t){
+      Array.prototype.forEach.call(t.querySelectorAll('tbody tr.vend-row'), function(tr, i){ if(i>=10 && tr.getAttribute('data-vend')!==nome) tr.remove(); });
+    });
+    return d;
   }
-  var cBody = document.createElement('div'); cBody.innerHTML = body.innerHTML + (document.getElementById('vendRankBody')||{innerHTML:''}).innerHTML;
-  soSelecionado(cBody);
-  var g = cBody.querySelector('table') && cBody.querySelector('table').closest('.grid-2');
-  if(g){
-    g.style.gridTemplateColumns = '1fr';
-    var h = g.querySelector('h3.dh'); if(h) h.textContent = 'Posição no grupo';
-    if(g.children[1]) g.children[1].classList.add('pdf-radar'); // radar ao lado da sua tabela
-  }
-  var cCli = document.createElement('div'); cCli.innerHTML = cli ? cli.innerHTML : '';
-  soSelecionado(cCli);
-  Array.prototype.forEach.call(cCli.querySelectorAll('p'), function(p){ var b = p.querySelector('b'); if(b && /clientes e faturamento/.test(b.textContent)) p.remove(); });
+  function painel(titulo, d, cls){ return d.innerHTML.trim() ? '<div class="panel'+(cls?' '+cls:'')+'">'+(titulo ? '<div class="panel-head"><div><h2>'+titulo+'</h2></div></div>' : '')+d.innerHTML+'</div>' : ''; }
+  var cKpi = limpa(copia('vendConsultBody'));
+  var cFun = limpa(copia('vendFunilBody'));
+  var cRank = top10(limpa(copia('vendRankBody')));
+  var cCli = top10(limpa(copia('vendCliBody')));
+  var cIns = limpa(copia('vendInsBody'));
+  printCss += '.fun-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;} .fun-lista{max-height:none!important;overflow:visible!important;}' +
+    '.fun-row{grid-template-columns:minmax(0,1fr) 92px!important;cursor:default;} .fun-col{break-inside:avoid;} .fun-serie{break-inside:avoid;} .fun-col-g{cursor:default;}' +
+    '.fun-lista .fun-row:nth-child(n+9){display:none;} .fun-row{padding:1px 0!important;} .fun-barra{height:22px!important;} .fun-serie{margin-top:8px!important;padding:8px!important;} .fun-serie svg{max-height:120px;} .rank-vend-box{overflow:visible;} .fun-top{margin-bottom:8px;}';
   var tema = document.documentElement.getAttribute('data-theme');
   var html = '<!doctype html><html lang="pt-BR"'+(tema?' data-theme="'+tema+'"':'')+'><head><meta charset="utf-8"><title>Consultoria - '+escapeHtml(nome)+'</title>' +
     '<style>'+css+'</style><style>'+printCss+'</style></head><body>' +
     '<div class="pdf-dica">Na janela de impressão, escolha "Salvar como PDF" e marque "Gráficos de fundo".</div>' + cab +
-    '<div class="panel">'+cBody.innerHTML+'</div>' +
-    (cCli.innerHTML.trim() ? '<div class="panel"><div class="panel-head"><div><h2>Faturamento &times; clientes atendidos e margem</h2></div></div>'+cCli.innerHTML+'</div>' : '') +
-    ((document.getElementById('vendInsBody')||{}).innerHTML ? '<div class="panel"><div class="panel-head"><div><h2>Análises não óbvias</h2></div></div>'+document.getElementById('vendInsBody').innerHTML+'</div>' : '') +
+    painel('', cKpi) +
+    painel('Funil do vendedor: clientes, marcas, categorias e produtos', cFun) +
+    painel('Ranking e comparação com o grupo', cRank, 'pdf-sec') +
+    painel('Faturamento &times; clientes atendidos e margem', cCli, 'pdf-sec') +
+    painel('Análises não óbvias', cIns) +
     '</body></html>';
   w.document.open(); w.document.write(html); w.document.close();
   function imprimir(){ try{ w.focus(); w.print(); }catch(e){} }
