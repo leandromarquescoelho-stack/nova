@@ -1384,7 +1384,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             <div class="fcheck-list" id="fcheck-status"></div>
           </div>
           <label class="frp-checkbox"><input type="checkbox" id="fParado"> Somente itens sem giro (parados)</label>
-          <label class="frp-dias">Sem venda há pelo menos <input type="number" id="fDiasMin" min="0" step="1" placeholder="—" inputmode="numeric"> dias</label>
+          <label class="frp-dias">Sem venda ou compra há pelo menos <input type="number" id="fDiasMin" min="0" step="1" placeholder="—" inputmode="numeric"> dias</label>
         </div>
       </div>
     </div>
@@ -1549,7 +1549,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <div class="panel-head">
           <div><h2>Simulador de estoque sem movimento</h2><div class="psub" id="simSub">Quanto do estoque está há X dias ou mais sem vender</div></div>
           <div class="sim-ctl">
-            <label>Sem venda há <input type="number" id="simDias" min="0" step="1" value="90" inputmode="numeric"> dias ou mais</label>
+            <label>Sem venda ou compra há <input type="number" id="simDias" min="0" step="1" value="90" inputmode="numeric"> dias ou mais</label>
             <div class="seg" id="simChips">
               <button data-d="30">30</button><button data-d="60">60</button><button data-d="90">90</button><button data-d="180">180</button><button data-d="270">270</button><button data-d="365">365</button>
             </div>
@@ -4389,7 +4389,7 @@ function renderActiveTags(){
   });
   if(state.diaSemana) chips.push('<span class="tag-chip">Dias: '+DIA_SEMANA_ROT[state.diaSemana]+'<button data-k="diaSemana" data-v="">✕</button></span>');
   if(state.soParados) chips.push('<span class="tag-chip">Somente sem giro<button data-k="soParados" data-v="">✕</button></span>');
-  if(state.diasMin!==null) chips.push('<span class="tag-chip">Sem venda há ≥ '+state.diasMin+' dias<button data-k="diasMin" data-v="">✕</button></span>');
+  if(state.diasMin!==null) chips.push('<span class="tag-chip">Sem movimento há ≥ '+state.diasMin+' dias<button data-k="diasMin" data-v="">✕</button></span>');
   box.innerHTML = chips.join('');
   var bar = document.getElementById('activeTagsBar');
   if(bar){
@@ -5809,10 +5809,9 @@ async function renderUsersAdmin(){
   }
 })();
 /* ---------- links das planilhas (tabela bi_fonte; RLS: só perfil BI) ---------- */
+// um só arquivo (infobi) com as abas de vendas, vendedores, estoque, catálogo e marcas
 var FONTE_PAPEIS = [
-  {papel:'vendas', rotulo:'Vendas', obrig:true},
-  {papel:'estoque', rotulo:'Estoque', obrig:true},
-  {papel:'metas', rotulo:'Metas (opcional)', obrig:false}
+  {papel:'infobi', rotulo:'Arquivo infobi<div style="font-weight:400; font-size:11px; color:var(--text-muted);">vendas, vendedores, estoque, catálogo e marcas</div>', obrig:true}
 ];
 function abreviarLink(link){
   if(!link) return '';
@@ -5827,7 +5826,7 @@ function validarLink(link){
   try{ u = new URL(link); } catch(e){ return 'Link inválido.'; }
   if(u.protocol !== 'https:') return 'O link precisa começar com https://';
   if(!/sharepoint\.com$|onedrive\.live\.com$|1drv\.ms$/i.test(u.host)) return 'Use um link do OneDrive / SharePoint.';
-  if(/\/:f:\//.test(u.pathname)) return 'Esse é o link de uma pasta. Compartilhe cada planilha (arquivo) separadamente.';
+  if(/\/:f:\//.test(u.pathname)) return 'Esse é o link de uma pasta. Compartilhe o arquivo infobi em si.';
   return '';
 }
 function fmtDataHora(iso){
@@ -5844,7 +5843,10 @@ async function renderFontesAdmin(){
   var res = await supa.from('bi_fonte').select('papel,link,ativo,atualizado_em');
   if(res.error){ wrap.innerHTML = '<div class="login-error">Erro ao carregar os links: '+escapeHtml(res.error.message)+'</div>'; return; }
   var atual = {}; (res.data||[]).forEach(function(r){ atual[r.papel] = r; });
-  var rows = FONTE_PAPEIS.map(function(f){
+  // links do formato antigo (uma planilha por papel) aparecem só para poder removê-los
+  var papeis = FONTE_PAPEIS.concat(Object.keys(atual).filter(function(p){ return !FONTE_PAPEIS.some(function(f){ return f.papel===p; }); })
+    .map(function(p){ return {papel:p, rotulo:escapeHtml(p.charAt(0).toUpperCase()+p.slice(1))+'<div style="font-weight:400; font-size:11px; color:var(--text-muted);">formato antigo, não é mais usado</div>', antigo:true}; }));
+  var rows = papeis.map(function(f){
     var r = atual[f.papel];
     return '<tr data-papel="'+f.papel+'">'+
       '<td><b>'+f.rotulo+'</b></td>'+

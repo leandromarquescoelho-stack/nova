@@ -715,6 +715,8 @@ def main():
         cur = conn.cursor()
         cur.execute("select papel, link from public.bi_fonte where ativo and coalesce(link, '') <> ''")
         links = dict(cur.fetchall())
+        if 'infobi' in mapa:  # arquivo único: os links antigos (vendas/estoque) não são mais baixados
+            links = {k: x for k, x in links.items() if k == 'infobi'}
     if a.pasta_local:
         fonte = FonteLocal(a.pasta_local)
     elif links:
@@ -736,6 +738,9 @@ def main():
                                               'md5': None}}, str(ex))
         raise
     log(f'{len(arquivos)} planilha(s) na pasta')
+
+    if 'infobi' in mapa:  # arquivo único com todas as abas (carga por período)
+        return main_infobi(a, conn, db_url, fonte, arquivos, mapa, loja_info)
 
     usados = {}
     for papel in ('vendas', 'estoque', 'metas'):
@@ -787,6 +792,33 @@ def main():
         if conn is not None and not a.simular:
             registrar_erro(db_url, usados, msg)
         # o detalhe fica só no banco; o log público mostra apenas o tipo do erro
+        log(f'falha na carga ({type(ex).__name__}); detalhe registrado em bi_carga_controle')
+        sys.exit(1)
+
+
+def main_infobi(a, conn, db_url, fonte, arquivos, mapa, loja_info):
+    from carga_infobi import gravar_infobi, ler_abas, preparar, regras_infobi
+    spec = mapa['infobi']
+    arq = escolher(arquivos, spec.get('arquivo', 'infobi'))
+    if arq is None:
+        raise SystemExit('arquivo infobi não encontrado.')
+    if conn is not None and not a.forcar and ja_carregado(conn.cursor(), arq):
+        log('arquivo sem alteração desde a última carga; nada a fazer')
+        return
+    try:
+        nome, buf = fonte.baixar(arq)
+        dfs = ler_abas(nome, buf, spec)
+        regras = regras_infobi(mapa)
+        if a.simular:
+            v, e, prod, cli = preparar(dfs, regras)
+            log(f'simulação: {len(v)} vendas, {len(prod)} produtos, {len(cli)} clientes, {len(e)} itens de estoque '
+                f'({int(e["parado"].sum())} parados); nada gravado')
+            return
+        gravar_infobi(conn, dfs, regras, loja_info, arq)
+        log('carga concluída')
+    except Exception as ex:  # noqa: BLE001
+        if conn is not None and not a.simular:
+            registrar_erro(db_url, {'infobi': arq}, f'{type(ex).__name__}: {ex}')
         log(f'falha na carga ({type(ex).__name__}); detalhe registrado em bi_carga_controle')
         sys.exit(1)
 

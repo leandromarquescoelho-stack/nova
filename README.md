@@ -64,8 +64,10 @@ Onde fica cada coisa:
 
 Em vez do aplicativo do TI, a carga pode baixar cada planilha por um link "Qualquer pessoa" do OneDrive, guardado na tabela `bi_fonte` do Supabase (nunca no código nem no GitHub).
 
-1. No OneDrive, em cada planilha (vendas, estoque e, se houver, metas): Compartilhar > "Qualquer pessoa com o link" > **Pode exibir** > Copiar link. Para atualizar, substitua o arquivo mantendo o mesmo nome; assim o link continua o mesmo.
-2. No painel, entre com um usuário de perfil **BI** e abra **Links das planilhas** no menu. Cole o link de cada planilha e salve. A mesma tela mostra o histórico das últimas cargas.
+1. No OneDrive, no arquivo **infobi** (abas vendas, vendedores, estoque, catálogo e marcas): Compartilhar > "Qualquer pessoa com o link" > **Pode exibir** > Copiar link. Para atualizar, substitua o arquivo mantendo o mesmo nome; assim o link continua o mesmo.
+2. No painel, entre com um usuário de perfil **BI** e abra **Links das planilhas** no menu. Cole o link do arquivo e salve. A mesma tela mostra o histórico das últimas cargas.
+
+Carga por período (arquivo infobi): cada carga substitui no banco só as vendas entre a primeira e a última data do arquivo; o restante do histórico fica guardado. Assim, depois da carga histórica, basta um arquivo com os últimos 30 dias. Vendas de anos anteriores a 2026 ficam resumidas por dia (sem número de NF). O estoque é trocado inteiro, a não ser que o arquivo seja de um período anterior ao que já está no banco. Peça parada = tem saldo e está sem venda e sem compra há mais de 270 dias.
 3. No GitHub, só o segredo `SUPABASE_DB_URL` é necessário.
 
 Os links ficam na tabela `bi_fonte`, que só o perfil BI lê e altera (regra no banco); na tela o link salvo aparece abreviado. Cuidado: quem tiver o link baixa a planilha, então não envie o link por e-mail ou chat. Para cortar o acesso, desative o link no OneDrive (Gerenciar acesso) e cadastre um novo.
