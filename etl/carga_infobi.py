@@ -28,13 +28,17 @@ def copiar_tab(cur, tabela, df):
         cp.write(buf.getvalue())
 
 CORTE = date(2026, 1, 1)  # mesmo limite das constraints de bi_venda_det / bi_venda_hist
-COLS_DET = ['dia', 'mes'] + DIMS + ['produto', 'cliente', 'nf', 'qtd', 'fat', 'custo', 'lb']
-COLS_HIST = ['dia', 'mes'] + DIMS + ['produto', 'cliente', 'qtd', 'fat', 'custo', 'lb']
-ATRIB = ('categoria', 'subcategoria', 'marca', 'montadora', 'linha', 'classificacao')
+# dimensões da venda no arquivo infobi: as da base + condição de pagamento, grupo de cliente, pessoa (F/J) e grupo de peça
+DIMS_I = DIMS + ['condicao', 'grupo_cliente', 'pessoa', 'grupo_peca']
+COLS_DET = ['dia', 'mes'] + DIMS_I + ['produto', 'cliente', 'nf', 'qtd', 'fat', 'custo', 'lb']
+COLS_HIST = ['dia', 'mes'] + DIMS_I + ['produto', 'cliente', 'qtd', 'fat', 'custo', 'lb']
+ATRIB = ('categoria', 'subcategoria', 'marca', 'montadora', 'linha', 'classificacao', 'grupo_peca')
+PESSOA = {'F': 'PESSOA FÍSICA', 'J': 'PESSOA JURÍDICA'}
 ABAS_OBRIG = ('vendas', 'estoque', 'catalogo', 'marcas', 'vendedores')
 # colunas que podem faltar conforme a versão do arquivo (no formato com a aba transacionadores, os dados do
 # cliente e o nome do vendedor saíram da aba vendas)
-COLS_OPCIONAIS = {'razao', 'cidade', 'tipo_cliente', 'nome_vendedor', 'equipe', 'codigo_loja', 'subcategoria'}
+COLS_OPCIONAIS = {'razao', 'cidade', 'tipo_cliente', 'nome_vendedor', 'equipe', 'codigo_loja', 'subcategoria',
+                  'prazo', 'grupo_cliente', 'pessoa', 'funcao', 'grupo_peca'}
 
 
 def ler_abas(nome, buf, spec):
@@ -82,7 +86,7 @@ def preparar(dfs, regras):
         v[c] = numero(v[c]) if c in v else 0.0
     if 'lb' not in dfs['vendas']:
         v['lb'] = v['fat'] - v['custo']
-    for c in ('loja', 'canal', 'emitente', 'origem', 'linha', 'tipo_cliente', 'cidade', 'razao'):
+    for c in ('loja', 'canal', 'emitente', 'origem', 'linha', 'tipo_cliente', 'cidade', 'razao', 'grupo_cliente', 'pessoa'):
         v[c] = texto(v[c]) if c in v else None
     v['codcli'] = sku_texto(v['codcli']).fillna('0') if 'codcli' in v else '0'
     v['nf'] = numero(v['nf']).astype('int64') if 'nf' in v else 0
@@ -94,9 +98,19 @@ def preparar(dfs, regras):
         tra['cod'] = _chave(tra['cod'])
         tra = tra.dropna(subset=['cod']).drop_duplicates('cod').set_index('cod')
         cod_v = _chave(v['codcli'])
-        for c in ('razao', 'cidade', 'tipo_cliente'):
+        for c in ('razao', 'cidade', 'tipo_cliente', 'grupo_cliente', 'pessoa'):
             if c in tra:
                 v[c] = v[c].fillna(cod_v.map(texto(tra[c])))
+    v['pessoa'] = v['pessoa'].map(lambda x: PESSOA.get(normaliza(x), x) if isinstance(x, str) else x)
+
+    # condição de pagamento: código PRAZO da venda -> aba condicao_pagto (no formato antigo o PRAZO já vinha em texto)
+    prazo = sku_texto(v['prazo']) if 'prazo' in v else pd.Series(None, index=v.index, dtype=object)
+    if 'condicao_pagto' in dfs:
+        cp = dfs['condicao_pagto'].copy()
+        cp['prazo'] = sku_texto(cp['prazo'])
+        cp = cp.dropna(subset=['prazo']).drop_duplicates('prazo').set_index('prazo')
+        prazo = prazo.map(texto(cp['condicao'])).fillna(prazo)
+    v['condicao'] = prazo
 
     # vendedor: nome da aba vendedores pelo RE; sem cadastro, o nome da venda sem o número do RE no fim
     ven = dfs['vendedores'].copy()
@@ -124,10 +138,10 @@ def preparar(dfs, regras):
     mar = dfs['marcas'].copy()
     mar['linha'] = texto(mar['linha'])
     mar = mar.dropna(subset=['linha']).drop_duplicates('linha').set_index('linha')
-    for c in ('marca', 'classificacao'):
+    for c in ('marca', 'classificacao', 'grupo_peca'):
         col = texto(mar[c]) if c in mar else pd.Series(None, index=mar.index)
         v[c] = v['linha'].map(col)
-    for c in DIMS:
+    for c in DIMS_I:
         v[c] = v[c].fillna('N/D')
 
     # estoque
@@ -163,7 +177,7 @@ def preparar(dfs, regras):
     prod['linha'] = linha_p
     for c in ('categoria', 'subcategoria', 'montadora'):
         prod[c] = texto(cat[c]).reindex(skus) if c in cat else None
-    for c in ('marca', 'classificacao'):
+    for c in ('marca', 'classificacao', 'grupo_peca'):
         prod[c] = prod['linha'].map(texto(mar[c])) if c in mar else None
     for c in ATRIB:
         prod[c] = prod[c].fillna('N/D')
@@ -173,6 +187,23 @@ def preparar(dfs, regras):
     cli = v.sort_values('data').groupby('codcli').agg(razao=('razao', 'last'), tipo_cliente=('tipo_cliente', 'last'),
                                                       cidade=('cidade', 'last'))
     return v, e, prod, cli
+
+
+def equipes_vendedores(dfs):
+    """Vendedor -> equipe e função (aba vendedores). Equipe com código de loja (U000xx) vira o nome da loja."""
+    ven = dfs['vendedores']
+    if 'equipe' not in ven:
+        return pd.DataFrame(columns=['vendedor', 'equipe', 'funcao'])
+    eq = pd.DataFrame({'vendedor': texto(ven['nome']), 'equipe': texto(ven['equipe']),
+                       'funcao': texto(ven['funcao']) if 'funcao' in ven else None}).dropna(subset=['vendedor'])
+    eq = eq[eq['equipe'].notna() | eq['funcao'].notna()]
+    eq = eq.drop_duplicates('vendedor')
+    est = dfs['estoque']
+    if 'codigo_loja' in est:
+        cod = pd.DataFrame({'c': texto(est['codigo_loja']), 'n': texto(est['loja'])}).dropna().drop_duplicates('c')
+        nomes = dict(zip(cod['c'], cod['n']))
+        eq['equipe'] = eq['equipe'].map(lambda x: nomes.get(x, x))
+    return eq
 
 
 # ---------------------------------------------------------------- códigos fixos
@@ -221,7 +252,10 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
                     (arq['id'], arq['nome'], arq['modificado'], arq['md5']))
         id_carga = cur.fetchone()[0]
 
-        valores = {t: set(v[t].unique()) for t in DIMS}
+        valores = {t: set(v[t].unique()) for t in DIMS_I}
+        ven_eq = equipes_vendedores(dfs)
+        valores['equipe'] = set(ven_eq['equipe'].dropna())
+        valores['funcao'] = set(ven_eq['funcao'].dropna())
         for t in ATRIB:
             valores[t] |= set(prod[t].unique())
         valores['loja'] |= set(e['loja'].unique())
@@ -255,7 +289,7 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
 
         # vendas do período do arquivo
         out = pd.DataFrame({'dia': v['data'].dt.date, 'mes': (v['data'].dt.year - 2000) * 100 + v['data'].dt.month})
-        for t in DIMS:
+        for t in DIMS_I:
             out[t] = v[t].map(dims[t]).astype('int64')
         out['produto'] = v['sku'].map(pid).astype('int64')
         out['cliente'] = v['codcli'].map(cid).astype('int64')
@@ -296,7 +330,7 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         cur.execute("""delete from public.bi_produto p where not exists (select 1 from public.bi_venda v where v.produto = p.id)
                        and not exists (select 1 from public.bi_estoque e where e.produto = p.id)""")
         cur.execute('delete from public.bi_cliente c where not exists (select 1 from public.bi_venda v where v.cliente = c.id)')
-        usos = {t: [f'select distinct {t} from public.bi_venda'] for t in DIMS}
+        usos = {t: [f'select distinct {t} from public.bi_venda'] for t in DIMS_I}
         for t in ATRIB:
             usos[t].append(f'select distinct {t} from public.bi_produto')
         usos['loja'].append('select distinct loja from public.bi_estoque')
@@ -305,18 +339,13 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         for t, qs in usos.items():
             cur.execute(f"delete from public.bi_dim d where d.tipo = %s and d.id not in ({' union '.join(qs)})", (t,))
 
-        # equipe de cada vendedor (aba vendedores), usada para liberar usuários por equipe
-        ven = dfs['vendedores']
-        if 'equipe' in ven:
-            eq = pd.DataFrame({'vendedor': texto(ven['nome']), 'equipe': texto(ven['equipe'])}).dropna().drop_duplicates('vendedor')
-            est_raw = dfs['estoque']
-            if 'codigo_loja' in est_raw:  # equipe com código de loja (U000xx) aparece com o nome da loja
-                cod = pd.DataFrame({'c': texto(est_raw['codigo_loja']), 'n': texto(est_raw['loja'])}).dropna().drop_duplicates('c')
-                nomes = dict(zip(cod['c'], cod['n']))
-                eq['equipe'] = eq['equipe'].map(lambda x: nomes.get(x, x))
+        # equipe e função de cada vendedor (aba vendedores): liberação de usuários e filtros por equipe/função
+        if len(ven_eq):
             cur.execute('delete from public.bi_vendedor_equipe')
-            cur.executemany('insert into public.bi_vendedor_equipe (vendedor, equipe) values (%s, %s)',
-                            list(eq.itertuples(index=False, name=None)))
+            cur.executemany('insert into public.bi_vendedor_equipe (vendedor, equipe, funcao) values (%s, %s, %s)',
+                            [(a, b, None if pd.isna(c) else c) for a, b, c in ven_eq[['vendedor', 'equipe', 'funcao']].itertuples(index=False)])
+        for t, col in (('equipe', 'equipe'), ('funcao', 'funcao')):
+            cur.execute(f"delete from public.bi_dim where tipo = %s and valor not in (select {col} from public.bi_vendedor_equipe where {col} is not null)", (t,))
 
         cur.execute('delete from public.bi_vendedor_loja')
         cur.execute("""insert into public.bi_vendedor_loja (vendedor, loja)
