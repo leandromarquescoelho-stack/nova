@@ -32,6 +32,9 @@ COLS_DET = ['dia', 'mes'] + DIMS + ['produto', 'cliente', 'nf', 'qtd', 'fat', 'c
 COLS_HIST = ['dia', 'mes'] + DIMS + ['produto', 'cliente', 'qtd', 'fat', 'custo', 'lb']
 ATRIB = ('categoria', 'subcategoria', 'marca', 'montadora', 'linha', 'classificacao')
 ABAS_OBRIG = ('vendas', 'estoque', 'catalogo', 'marcas', 'vendedores')
+# colunas que podem faltar conforme a versão do arquivo (no formato com a aba transacionadores, os dados do
+# cliente e o nome do vendedor saíram da aba vendas)
+COLS_OPCIONAIS = {'razao', 'cidade', 'tipo_cliente', 'nome_vendedor', 'equipe', 'codigo_loja', 'subcategoria'}
 
 
 def ler_abas(nome, buf, spec):
@@ -43,10 +46,22 @@ def ler_abas(nome, buf, spec):
         raise ValueError(f'mapa_colunas.infobi sem as abas {faltam}')
     engine = 'pyxlsb' if nome.lower().endswith('.xlsb') else None
     nomes = {papel: s.get('aba', papel) for papel, s in abas.items()}
+    existentes = {normaliza(x): x for x in pd.ExcelFile(buf, engine=engine).sheet_names}
+    buf.seek(0)
+    faltam = [papel for papel in ABAS_OBRIG if normaliza(nomes[papel]) not in existentes]
+    if faltam:
+        raise ValueError(f'arquivo sem as abas {faltam}')
+    # abas opcionais (ex.: transacionadores) que o arquivo não tiver são ignoradas
+    nomes = {papel: existentes[normaliza(a)] for papel, a in nomes.items() if normaliza(a) in existentes}
     lidas = pd.read_excel(buf, sheet_name=list(nomes.values()), engine=engine)
     out = {}
-    for papel, s in abas.items():
-        out[papel] = renomear(lidas[nomes[papel]], s['colunas'], papel)
+    for papel, a in nomes.items():
+        df = lidas[a]
+        reais = {normaliza(c) for c in df.columns}
+        # colunas opcionais que mudam entre versões do arquivo: entram só se existirem
+        colunas = {k: c for k, c in abas[papel]['colunas'].items()
+                   if k not in COLS_OPCIONAIS or (c and normaliza(c) in reais)}
+        out[papel] = renomear(df, colunas, papel)
         log(f'{papel}: {len(out[papel])} linhas lidas')
     return out
 
@@ -72,13 +87,26 @@ def preparar(dfs, regras):
     v['codcli'] = sku_texto(v['codcli']).fillna('0') if 'codcli' in v else '0'
     v['nf'] = numero(v['nf']).astype('int64') if 'nf' in v else 0
 
+    # aba transacionadores (clientes e também funcionários, pelo código): razão social, município e tipo do cliente
+    tra = None
+    if 'transacionadores' in dfs:
+        tra = dfs['transacionadores'].copy()
+        tra['cod'] = _chave(tra['cod'])
+        tra = tra.dropna(subset=['cod']).drop_duplicates('cod').set_index('cod')
+        cod_v = _chave(v['codcli'])
+        for c in ('razao', 'cidade', 'tipo_cliente'):
+            if c in tra:
+                v[c] = v[c].fillna(cod_v.map(texto(tra[c])))
+
     # vendedor: nome da aba vendedores pelo RE; sem cadastro, o nome da venda sem o número do RE no fim
     ven = dfs['vendedores'].copy()
     ven['re'] = _chave(ven['re'])
     ven = ven.dropna(subset=['re']).drop_duplicates('re').set_index('re')['nome']
     ven = texto(ven)
     re_v = _chave(v['re']) if 're' in v else pd.Series(None, index=v.index)
-    nome_v = texto(v['nome_vendedor']) if 'nome_vendedor' in v else pd.Series(None, index=v.index)
+    nome_v = texto(v['nome_vendedor']) if 'nome_vendedor' in v else pd.Series(None, index=v.index, dtype=object)
+    if tra is not None and 'razao' in tra:  # formato novo: o nome do funcionário vem da aba transacionadores pelo RE
+        nome_v = nome_v.fillna(re_v.map(texto(tra['razao'])))
     # a venda traz "NOME RE" (ex.: "VENDEDOR ECOMMERCE V-ECOM"): tira o RE do fim
     sufixo = ' ' + re_v.fillna('')
     tem = pd.Series([isinstance(n, str) and r != ' ' and normaliza(n).endswith(r) for n, r in zip(nome_v, sufixo)], index=v.index)
@@ -276,6 +304,19 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         usos['cidade'].append('select distinct cidade from public.bi_cliente')
         for t, qs in usos.items():
             cur.execute(f"delete from public.bi_dim d where d.tipo = %s and d.id not in ({' union '.join(qs)})", (t,))
+
+        # equipe de cada vendedor (aba vendedores), usada para liberar usuários por equipe
+        ven = dfs['vendedores']
+        if 'equipe' in ven:
+            eq = pd.DataFrame({'vendedor': texto(ven['nome']), 'equipe': texto(ven['equipe'])}).dropna().drop_duplicates('vendedor')
+            est_raw = dfs['estoque']
+            if 'codigo_loja' in est_raw:  # equipe com código de loja (U000xx) aparece com o nome da loja
+                cod = pd.DataFrame({'c': texto(est_raw['codigo_loja']), 'n': texto(est_raw['loja'])}).dropna().drop_duplicates('c')
+                nomes = dict(zip(cod['c'], cod['n']))
+                eq['equipe'] = eq['equipe'].map(lambda x: nomes.get(x, x))
+            cur.execute('delete from public.bi_vendedor_equipe')
+            cur.executemany('insert into public.bi_vendedor_equipe (vendedor, equipe) values (%s, %s)',
+                            list(eq.itertuples(index=False, name=None)))
 
         cur.execute('delete from public.bi_vendedor_loja')
         cur.execute("""insert into public.bi_vendedor_loja (vendedor, loja)
