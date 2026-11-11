@@ -1380,6 +1380,16 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="grupo_peca" placeholder="Buscar..." autocomplete="off"></div>
           <div class="fcheck-list scroll-limit-sm" id="fcheck-grupo_peca"></div>
         </div>
+        <div class="fcheck-group" data-key="aplicacao">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Aplicação (Chevrolet / multimarcas)<b class="fch-count" id="fcount-aplicacao"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="aplicacao">todos</button><button type="button" class="fcheck-clear" data-key="aplicacao">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="aplicacao" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-aplicacao"></div>
+        </div>
+        <div class="fcheck-group" data-key="curva_gm">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Curva GM<b class="fch-count" id="fcount-curva_gm"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="curva_gm">todos</button><button type="button" class="fcheck-clear" data-key="curva_gm">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="curva_gm" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-curva_gm"></div>
+        </div>
         <div class="fcheck-group" data-key="vendedor">
           <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Vendedor<b class="fch-count" id="fcount-vendedor"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="vendedor">todos</button><button type="button" class="fcheck-clear" data-key="vendedor">limpar</button></span></div>
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="vendedor" placeholder="Buscar..." autocomplete="off"></div>
@@ -1919,7 +1929,7 @@ function dimNome(t, id){
 }
 function dimLista(t){ return ((META.dims && META.dims[t]) || []).map(function(x){ return x[1]; }); }
 var PRODINFO = {};
-(META.produtos||[]).forEach(function(r){ PRODINFO[r[0]] = {pn:r[1], nome:r[2], cat:r[3], marca:r[4], mont:r[5], linha:r[6], classif:r[7], subcat:r[8], gpeca:r[9]}; });
+(META.produtos||[]).forEach(function(r){ PRODINFO[r[0]] = {pn:r[1], nome:r[2], cat:r[3], marca:r[4], mont:r[5], linha:r[6], classif:r[7], subcat:r[8], gpeca:r[9], aplic:r[10], curva:r[11]}; });
 
 /* ---------- estoque por loja x produto (data da última venda e compra) ---------- */
 var EST = REAL.est || {};
@@ -1951,12 +1961,12 @@ function estoqueDe(pid, lset){
 /* ---------- filtros do painel -> colunas da base (o estado guarda nomes; o banco recebe códigos) ---------- */
 var FILTRO_COL = {regiao:'loja', canal:'canal', emitente:'emitente', origem:'origem', vendedor:'vendedor', linha:'linha',
   marca:'marca', categoria:'categoria', modelo:'montadora', classificacao:'classificacao', subcategoria:'subcategoria', tipo_cliente:'tipo_cliente', cidade:'cidade',
-  grupo_cliente:'grupo_cliente', pessoa:'pessoa', condicao:'condicao', equipe:'equipe', funcao:'funcao', grupo_peca:'grupo_peca'};
+  grupo_cliente:'grupo_cliente', pessoa:'pessoa', condicao:'condicao', equipe:'equipe', funcao:'funcao', grupo_peca:'grupo_peca', aplicacao:'aplicacao', curva_gm:'curva_gm'};
 var FILTRO_ID = ['produto','cliente','nf']; // estes guardam o próprio código
 // filtros que só existem na venda: com eles ativos, itens que só têm estoque saem da lista
 var SO_VENDA = ['vendedor','canal','origem','emitente','tipo_cliente','cidade','grupo_cliente','pessoa','condicao','equipe','funcao','cliente','nf'];
 // atributos do produto (valem também para itens só com estoque)
-var ATRIB_PROD = [['categoria','categoria','cat'],['marca','marca','marca'],['modelo','montadora','mont'],['linha','linha','linha'],['classificacao','classificacao','classif'],['subcategoria','subcategoria','subcat'],['grupo_peca','grupo_peca','gpeca']];
+var ATRIB_PROD = [['categoria','categoria','cat'],['marca','marca','marca'],['modelo','montadora','mont'],['linha','linha','linha'],['classificacao','classificacao','classif'],['subcategoria','subcategoria','subcat'],['grupo_peca','grupo_peca','gpeca'],['aplicacao','aplicacao','aplic'],['curva_gm','curva_gm','curva']];
 function painelFiltros(restrito){
   var f = {};
   Object.keys(FILTRO_COL).forEach(function(k){
@@ -2204,7 +2214,7 @@ var STATUS_ICON = { normal:'🟢', atencao:'🟡', critico:'🔴', zerado:'⚫' 
 var state = {
   marca:[], categoria:[], modelo:[], vendedor:[], regiao:[], canal:[], origem:[], status:[],
   emitente:[], linha:[], tipo_cliente:[], cidade:[], classificacao:[], subcategoria:[],
-  grupo_cliente:[], pessoa:[], condicao:[], equipe:[], funcao:[], grupo_peca:[],
+  grupo_cliente:[], pessoa:[], condicao:[], equipe:[], funcao:[], grupo_peca:[], aplicacao:[], curva_gm:[],
   produto:[], cliente:[], nf:[],   // códigos (busca)
   globalPeriod:'30d',
   perIni:null, perFim:null,        // período personalizado (índices do calendário)
@@ -2592,7 +2602,7 @@ function fkAttr(key, val){
 }
 var FK_LABEL = {marca:'Marca', categoria:'Categoria', modelo:'Montadora', vendedor:'Vendedor', regiao:'Loja', canal:'Canal', origem:'Origem',
   emitente:'Emitente', linha:'Linha', tipo_cliente:'Tipo de cliente', cidade:'Cidade', classificacao:'Classificação', subcategoria:'Subcategoria',
-  grupo_cliente:'Grupo de cliente', pessoa:'Pessoa', condicao:'Condição de pagamento', equipe:'Equipe', funcao:'Função', grupo_peca:'Grupo de peça',
+  grupo_cliente:'Grupo de cliente', pessoa:'Pessoa', condicao:'Condição de pagamento', equipe:'Equipe', funcao:'Função', grupo_peca:'Grupo de peça', aplicacao:'Aplicação', curva_gm:'Curva GM',
   produto:'Produto', cliente:'Razão', nf:'NF'};
 // rótulos dos filtros que guardam códigos (produto, cliente, NF)
 var BUSCA_LBL = {produto:{}, cliente:{}, nf:{}};
@@ -4305,7 +4315,7 @@ function fillSelect(id, values, placeholder){
   sel.innerHTML = '<option value="">'+placeholder+'</option>' + values.map(function(v){ return '<option value="'+v+'">'+v+'</option>'; }).join('');
 }
 /* ---- filtros multi-seleção (checkbox) ---- */
-var FILTER_KEYS = ['marca','categoria','modelo','vendedor','regiao','canal','origem','emitente','linha','classificacao','subcategoria','tipo_cliente','cidade','grupo_cliente','pessoa','condicao','equipe','funcao','grupo_peca','status'];
+var FILTER_KEYS = ['marca','categoria','modelo','vendedor','regiao','canal','origem','emitente','linha','classificacao','subcategoria','tipo_cliente','cidade','grupo_cliente','pessoa','condicao','equipe','funcao','grupo_peca','aplicacao','curva_gm','status'];
 var BUSCA_KEYS = ['produto','cliente','nf'];
 // opções dos filtros em ordem alfabética (status mantém a ordem de gravidade)
 function ordemAZ(a){ return a.slice().sort(function(x,y){ return String(x).localeCompare(String(y), 'pt-BR', {sensitivity:'base', numeric:true}); }); }
@@ -4410,7 +4420,7 @@ var TAG_DEFS = [
     ['marca','Marca'],['categoria','Categoria'],['modelo','Montadora'],['vendedor','Vendedor'],
     ['regiao','Loja'],['canal','Canal'],['origem','Origem'],['emitente','Emitente'],['linha','Linha'],
     ['classificacao','Classificação'],['subcategoria','Subcategoria'],['tipo_cliente','Tipo de cliente'],['cidade','Cidade'],
-    ['grupo_cliente','Grupo de cliente'],['pessoa','Pessoa'],['condicao','Condição de pagamento'],['equipe','Equipe'],['funcao','Função'],['grupo_peca','Grupo de peça'],
+    ['grupo_cliente','Grupo de cliente'],['pessoa','Pessoa'],['condicao','Condição de pagamento'],['equipe','Equipe'],['funcao','Função'],['grupo_peca','Grupo de peça'],['aplicacao','Aplicação'],['curva_gm','Curva GM'],
     ['produto','Produto'],['cliente','Razão'],['nf','NF']
   ];
 function renderActiveTags(){

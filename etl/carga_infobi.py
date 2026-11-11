@@ -29,16 +29,16 @@ def copiar_tab(cur, tabela, df):
 
 CORTE = date(2026, 1, 1)  # mesmo limite das constraints de bi_venda_det / bi_venda_hist
 # dimensões da venda no arquivo infobi: as da base + condição de pagamento, grupo de cliente, pessoa (F/J) e grupo de peça
-DIMS_I = DIMS + ['condicao', 'grupo_cliente', 'pessoa', 'grupo_peca']
+DIMS_I = DIMS + ['condicao', 'grupo_cliente', 'pessoa', 'grupo_peca', 'aplicacao', 'curva_gm']
 COLS_DET = ['dia', 'mes'] + DIMS_I + ['produto', 'cliente', 'nf', 'qtd', 'fat', 'custo', 'lb']
 COLS_HIST = ['dia', 'mes'] + DIMS_I + ['produto', 'cliente', 'qtd', 'fat', 'custo', 'lb']
-ATRIB = ('categoria', 'subcategoria', 'marca', 'montadora', 'linha', 'classificacao', 'grupo_peca')
+ATRIB = ('categoria', 'subcategoria', 'marca', 'montadora', 'linha', 'classificacao', 'grupo_peca', 'aplicacao', 'curva_gm')
 PESSOA = {'F': 'PESSOA FÍSICA', 'J': 'PESSOA JURÍDICA'}
 ABAS_OBRIG = ('vendas', 'estoque', 'catalogo', 'marcas', 'vendedores')
 # colunas que podem faltar conforme a versão do arquivo (no formato com a aba transacionadores, os dados do
 # cliente e o nome do vendedor saíram da aba vendas)
 COLS_OPCIONAIS = {'razao', 'cidade', 'tipo_cliente', 'nome_vendedor', 'equipe', 'codigo_loja', 'subcategoria',
-                  'prazo', 'grupo_cliente', 'pessoa', 'funcao', 'grupo_peca'}
+                  'prazo', 'grupo_cliente', 'pessoa', 'funcao', 'grupo_peca', 'aplicacao', 'curva_gm'}
 
 
 def ler_abas(nome, buf, spec):
@@ -132,7 +132,7 @@ def preparar(dfs, regras):
     cat = dfs['catalogo'].copy()
     cat['sku'] = sku_texto(cat['sku'])
     cat = cat.dropna(subset=['sku']).drop_duplicates('sku').set_index('sku')
-    for c in ('categoria', 'subcategoria', 'montadora'):
+    for c in ('categoria', 'subcategoria', 'montadora', 'aplicacao'):
         col = texto(cat[c]) if c in cat else pd.Series(None, index=cat.index)
         v[c] = v['sku'].map(col)
     mar = dfs['marcas'].copy()
@@ -141,6 +141,13 @@ def preparar(dfs, regras):
     for c in ('marca', 'classificacao', 'grupo_peca'):
         col = texto(mar[c]) if c in mar else pd.Series(None, index=mar.index)
         v[c] = v['linha'].map(col)
+    # curva GM (letra do estoque, igual em todas as lojas): atributo do produto, entra na venda pelo PN
+    est0 = dfs['estoque']
+    if 'curva_gm' in est0:
+        curva = pd.DataFrame({'sku': sku_texto(est0['sku']), 'c': texto(est0['curva_gm'])}).dropna().drop_duplicates('sku').set_index('sku')['c']
+    else:
+        curva = pd.Series(dtype=object)
+    v['curva_gm'] = v['sku'].map(curva)
     for c in DIMS_I:
         v[c] = v[c].fillna('N/D')
 
@@ -175,8 +182,9 @@ def preparar(dfs, regras):
     linha_p = linha_p.reindex(skus).fillna(e.dropna(subset=['linha']).drop_duplicates('sku').set_index('sku')['linha'])
     prod = pd.DataFrame(index=skus)
     prod['linha'] = linha_p
-    for c in ('categoria', 'subcategoria', 'montadora'):
+    for c in ('categoria', 'subcategoria', 'montadora', 'aplicacao'):
         prod[c] = texto(cat[c]).reindex(skus) if c in cat else None
+    prod['curva_gm'] = curva.reindex(skus)
     for c in ('marca', 'classificacao', 'grupo_peca'):
         prod[c] = prod['linha'].map(texto(mar[c])) if c in mar else None
     for c in ATRIB:

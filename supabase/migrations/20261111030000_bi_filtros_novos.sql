@@ -1,13 +1,17 @@
--- Filtros novos: condição de pagamento, grupo de cliente, pessoa física/jurídica e grupo de peça (colunas da venda),
+-- Filtros novos: condição de pagamento, grupo de cliente, pessoa física/jurídica, grupo de peça, aplicação
+-- (Chevrolet / multimarcas) e curva GM (colunas da venda; os três últimos também no cadastro do produto),
 -- equipe de venda e função do vendedor (pelo cadastro atual da aba vendedores, sem coluna na venda).
 
 alter table public.bi_venda_det add column if not exists condicao smallint not null default 0,
   add column if not exists grupo_cliente smallint not null default 0, add column if not exists pessoa smallint not null default 0,
-  add column if not exists grupo_peca smallint not null default 0;
+  add column if not exists grupo_peca smallint not null default 0,
+  add column if not exists aplicacao smallint not null default 0, add column if not exists curva_gm smallint not null default 0;
 alter table public.bi_venda_hist add column if not exists condicao smallint not null default 0,
   add column if not exists grupo_cliente smallint not null default 0, add column if not exists pessoa smallint not null default 0,
-  add column if not exists grupo_peca smallint not null default 0;
-alter table public.bi_produto add column if not exists grupo_peca smallint not null default 0;
+  add column if not exists grupo_peca smallint not null default 0,
+  add column if not exists aplicacao smallint not null default 0, add column if not exists curva_gm smallint not null default 0;
+alter table public.bi_produto add column if not exists grupo_peca smallint not null default 0,
+  add column if not exists aplicacao smallint not null default 0, add column if not exists curva_gm smallint not null default 0;
 alter table public.bi_vendedor_equipe add column if not exists funcao text;
 alter table public.bi_vendedor_equipe alter column equipe drop not null;
 create or replace function public.bi_equipes()
@@ -16,11 +20,11 @@ as $$ select coalesce(json_agg(e order by e), '[]') from (select distinct equipe
 
 create or replace view public.bi_venda with (security_invoker = true) as
   select dia, mes, loja, canal, emitente, origem, vendedor, linha, marca, categoria, montadora, classificacao,
-         tipo_cliente, cidade, produto, cliente, nf, qtd, fat, custo, lb, subcategoria, condicao, grupo_cliente, pessoa, grupo_peca
+         tipo_cliente, cidade, produto, cliente, nf, qtd, fat, custo, lb, subcategoria, condicao, grupo_cliente, pessoa, grupo_peca, aplicacao, curva_gm
     from public.bi_venda_det
   union all
   select dia, mes, loja, canal, emitente, origem, vendedor, linha, marca, categoria, montadora, classificacao,
-         tipo_cliente, cidade, produto, cliente, 0, qtd, fat, custo, lb, subcategoria, condicao, grupo_cliente, pessoa, grupo_peca
+         tipo_cliente, cidade, produto, cliente, 0, qtd, fat, custo, lb, subcategoria, condicao, grupo_cliente, pessoa, grupo_peca, aplicacao, curva_gm
     from public.bi_venda_hist;
 revoke all on public.bi_venda from anon, authenticated;
 
@@ -44,7 +48,7 @@ begin
     end if;
   end if;
   foreach k in array array['loja','canal','emitente','origem','vendedor','linha','marca','categoria','subcategoria','montadora',
-                           'classificacao','tipo_cliente','cidade','condicao','grupo_cliente','pessoa','grupo_peca','produto','cliente','nf'] loop
+                           'classificacao','tipo_cliente','cidade','condicao','grupo_cliente','pessoa','grupo_peca','aplicacao','curva_gm','produto','cliente','nf'] loop
     continue when k = ignorar;
     arr := f -> k;
     if arr is not null and jsonb_typeof(arr) = 'array' and jsonb_array_length(arr) > 0 then
@@ -91,12 +95,13 @@ begin
                   when grouping(classificacao)=0 then 'classificacao' when grouping(tipo_cliente)=0 then 'tipo_cliente'
                   when grouping(cidade)=0 then 'cidade' when grouping(condicao)=0 then 'condicao'
                   when grouping(grupo_cliente)=0 then 'grupo_cliente' when grouping(pessoa)=0 then 'pessoa'
-                  when grouping(grupo_peca)=0 then 'grupo_peca' else 'mes' end tipo,
+                  when grouping(grupo_peca)=0 then 'grupo_peca' when grouping(aplicacao)=0 then 'aplicacao'
+                  when grouping(curva_gm)=0 then 'curva_gm' else 'mes' end tipo,
              coalesce(loja, canal, emitente, origem, vendedor, linha, marca, categoria, subcategoria, montadora, classificacao, tipo_cliente, cidade,
-                      condicao, grupo_cliente, pessoa, grupo_peca, mes) id
+                      condicao, grupo_cliente, pessoa, grupo_peca, aplicacao, curva_gm, mes) id
       from public.bi_venda where %s
       group by grouping sets ((loja),(canal),(emitente),(origem),(vendedor),(linha),(marca),(categoria),(subcategoria),(montadora),
-                              (classificacao),(tipo_cliente),(cidade),(condicao),(grupo_cliente),(pessoa),(grupo_peca),(mes))
+                              (classificacao),(tipo_cliente),(cidade),(condicao),(grupo_cliente),(pessoa),(grupo_peca),(aplicacao),(curva_gm),(mes))
     ),
     -- equipe e função: dos vendedores que aparecem no escopo
     gv as (
@@ -113,11 +118,11 @@ begin
                  from ga g join public.bi_dim d on d.tipo = g.tipo and d.id = g.id group by g.tipo) z),
       'meses', (select json_agg(id order by id) from g where tipo = 'mes'),
       'dias', (select json_build_array(min(dia), max(dia)) from public.bi_venda),
-      'produtos', (select json_agg(json_build_array(p.id, p.pn, p.nome, p.categoria, p.marca, p.montadora, p.linha, p.classificacao, p.subcategoria, p.grupo_peca))
+      'produtos', (select json_agg(json_build_array(p.id, p.pn, p.nome, p.categoria, p.marca, p.montadora, p.linha, p.classificacao, p.subcategoria, p.grupo_peca, p.aplicacao, p.curva_gm))
                    from public.bi_produto p),
       'dimTodas', (select json_object_agg(tipo, vals) from (
                  select d.tipo, json_agg(json_build_array(d.id, d.valor)) vals from public.bi_dim d
-                 where d.tipo in ('categoria','subcategoria','marca','montadora','linha','classificacao','grupo_peca','loja') group by d.tipo) z)
+                 where d.tipo in ('categoria','subcategoria','marca','montadora','linha','classificacao','grupo_peca','aplicacao','curva_gm','loja') group by d.tipo) z)
     )$q$, w) into res;
   insert into public.bi_cache (chave, valor) values (ck, res) on conflict do nothing;
   return res;
