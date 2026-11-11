@@ -1764,6 +1764,8 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="u-abas u-esc" id="uiLojas" data-grp="lojas"></div>
           <div class="u-abas-label u-esc">Canais liberados</div>
           <div class="u-abas u-esc" id="uiCanais" data-grp="canais"></div>
+          <div class="u-abas-label u-esc-eq">Equipes de venda liberadas</div>
+          <div class="u-abas u-esc-eq" id="uiEquipes" data-grp="equipes"></div>
           <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px;">
             <button class="login-btn" type="submit" style="max-width:200px; margin:0;">Enviar convite</button>
             <button class="tbtn" type="button" id="uiCancel">Cancelar</button>
@@ -5630,6 +5632,15 @@ var ABAS = [
 var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
 var ROLE_COR = {bi:'linear-gradient(135deg,#22d3ee,#3b82f6)', diretoria:'linear-gradient(135deg,#a78bfa,#6366f1)', gerencia:'linear-gradient(135deg,#fab219,#d9772e)', vendedor:'linear-gradient(135deg,#1fc46a,#1fb08a)'};
 var USERS_CACHE = [], USERS_TEM_ABAS = false, USERS_TEM_ESCOPO = false, USERS_FILTRO = 'todos';
+// equipes de venda (aba vendedores do arquivo infobi); nulo no perfil = todas
+var EQUIPES = [], USERS_TEM_EQUIPES = false;
+function equipesDoPerfil(p){ var e = listaPerfil(p.equipes); return e.length ? e : EQUIPES.slice(); }
+function equipesChips(sel, disabled){
+  if(!USERS_TEM_EQUIPES || !EQUIPES.length) return '';
+  var eu = uniaoOrd(EQUIPES, sel);
+  return '<div class="u-abas-label">Equipes de venda liberadas</div><div class="u-abas" data-grp="equipes">'+chipsHtml(eu.map(function(v){ return {k:v, t:v}; }), sel, disabled)+'</div>';
+}
+function equipesPayload(role, sel){ return (role==='bi' || !EQUIPES.length || contemTodos(sel, EQUIPES)) ? null : sel; }
 // guias que o perfil pode abrir (vazio/nulo = todas)
 function abasDoPerfil(p){ return (p && Array.isArray(p.abas) && p.abas.length) ? p.abas.filter(function(k){ return ABAS_TODAS.indexOf(k)!==-1; }) : ABAS_TODAS.slice(); }
 function chipsHtml(items, sel, disabled){
@@ -5686,6 +5697,7 @@ function userCard(p){
     '</div>' +
     (USERS_TEM_ABAS ? '<div class="u-abas-label">Guias liberadas</div><div class="u-abas" data-grp="abas">'+abasChips(abas, p.role==='bi')+'</div>' : '') +
     (USERS_TEM_ESCOPO ? escopoChips(p.role==='bi' ? uniaoOrd(lojasUniverso(), listaPerfil(p.lojas)) : lojasDoPerfil(p), p.role==='bi' ? canaisUniverso() : canaisDoPerfil(p), p.role==='bi') : '') +
+    equipesChips(p.role==='bi' ? EQUIPES.slice() : equipesDoPerfil(p), p.role==='bi') +
     '<div class="u-foot"><span class="when">Criado em '+fmtDateShort(p.created_at)+'</span>' +
       (ehEu ? '' : '<label class="u-switch" title="Acesso liberado"><input type="checkbox" class="u-active" '+(p.active?'checked':'')+'><i></i>Acesso</label>') +
       (st.c==='pend' ? '<button class="tbtn primary u-liberar" type="button">Liberar acesso</button>' : '') +
@@ -5704,6 +5716,7 @@ function validaEscopo(payload){
   if(payload.role==='gerencia' && !payload.loja) return 'Escolha a loja da gerência.';
   if(payload.lojas && !payload.lojas.length) return 'Libere pelo menos uma loja.';
   if(payload.canais && !payload.canais.length) return 'Libere pelo menos um canal.';
+  if(payload.equipes && !payload.equipes.length) return 'Libere pelo menos uma equipe de venda.';
   if(payload.role==='vendedor' && !payload.vendedor_nome) return 'Informe o vendedor como aparece nos dados.';
   if(payload.role==='vendedor' && VEND_PESSOAS.indexOf(payload.vendedor_nome)===-1 && SELLERS.indexOf(payload.vendedor_nome)===-1)
     return 'Esse nome não aparece nas vendas; o usuário veria o painel vazio. Escolha um nome da lista.';
@@ -5726,6 +5739,7 @@ async function salvarCard(card, liberar){
     payload.lojas = esc.lojas; payload.canais = esc.canais;
     if(role==='gerencia') payload.loja = (esc.lojas||[])[0] || null;
   }
+  if(USERS_TEM_EQUIPES && EQUIPES.length) payload.equipes = equipesPayload(role, grpSel(card,'equipes'));
   if(USERS_TEM_ABAS){ var ab = grpSel(card,'abas'); payload.abas = (role==='bi' || ab.length===ABAS_TODAS.length) ? null : ab; if(role!=='bi' && !ab.length) payload.abas = []; }
   var erro = validaEscopo(payload);
   if(erro){ msg.style.color='var(--critical)'; msg.textContent = erro; return; }
@@ -5744,7 +5758,7 @@ function renderUsersList(){
     if(USERS_FILTRO==='pendentes' && st!=='pend') return false;
     if(USERS_FILTRO==='ativos' && st!=='ok') return false;
     if(!q) return true;
-    return normSearch([p.full_name,p.email,p.loja,p.vendedor_nome,ROLE_LABEL[p.role]].concat(listaPerfil(p.lojas), listaPerfil(p.canais)).join(' ')).indexOf(q)!==-1;
+    return normSearch([p.full_name,p.email,p.loja,p.vendedor_nome,ROLE_LABEL[p.role]].concat(listaPerfil(p.lojas), listaPerfil(p.canais), listaPerfil(p.equipes)).join(' ')).indexOf(q)!==-1;
   }).sort(function(a,b){
     var o = {pend:0, ok:1, off:2}; var d = o[statusUser(a).c]-o[statusUser(b).c];
     return d || String(a.full_name||a.email).localeCompare(String(b.full_name||b.email));
@@ -5777,6 +5791,11 @@ async function renderUsersAdmin(){
   USERS_CACHE = res.data;
   USERS_TEM_ABAS = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'abas'); });
   USERS_TEM_ESCOPO = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'lojas') && Object.prototype.hasOwnProperty.call(p, 'canais'); });
+  USERS_TEM_EQUIPES = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'equipes'); });
+  if(USERS_TEM_EQUIPES && !EQUIPES.length){ try{ EQUIPES = (await window.__NC_rpc('bi_equipes')) || []; } catch(e){ EQUIPES = []; } }
+  var uiEq = document.getElementById('uiEquipes');
+  if(uiEq && !uiEq.dataset.built && EQUIPES.length){ uiEq.innerHTML = chipsHtml(EQUIPES.map(function(v){ return {k:v,t:v}; }), EQUIPES, false); bindAbas(uiEq); uiEq.dataset.built = '1'; }
+  Array.prototype.forEach.call(document.querySelectorAll('#userInviteForm .u-esc-eq'), function(el){ el.style.display = (USERS_TEM_EQUIPES && EQUIPES.length) ? '' : 'none'; });
   var uiLj = document.getElementById('uiLojas'), uiCn = document.getElementById('uiCanais');
   if(uiLj && !uiLj.dataset.built){
     uiLj.innerHTML = chipsHtml(lojasUniverso().map(function(v){ return {k:v,t:v}; }), [], false); bindAbas(uiLj);
@@ -5913,7 +5932,7 @@ if(uiRoleEl){
     if(uiLj && uiLj.dataset.built){
       Array.prototype.forEach.call(uiLj.querySelectorAll('.u-aba'), function(b){ b.setAttribute('aria-pressed', role==='gerencia' ? 'false' : 'true'); });
     }
-    Array.prototype.forEach.call(document.querySelectorAll('#uiLojas .u-aba, #uiCanais .u-aba'), function(b){ b.disabled = role==='bi'; if(role==='bi') b.setAttribute('aria-pressed','true'); });
+    Array.prototype.forEach.call(document.querySelectorAll('#uiLojas .u-aba, #uiCanais .u-aba, #uiEquipes .u-aba'), function(b){ b.disabled = role==='bi'; if(role==='bi') b.setAttribute('aria-pressed','true'); });
   });
   uiRoleEl.dispatchEvent(new Event('change'));
 }
@@ -5934,7 +5953,8 @@ if(userInviteFormEl){
     if(abasConv && abasConv.length===ABAS_TODAS.length) abasConv = null;
     var escConv = USERS_TEM_ESCOPO ? escopoPayload(role, grpSel(userInviteFormEl,'lojas'), grpSel(userInviteFormEl,'canais')) : {lojas:null, canais:null};
     if(USERS_TEM_ESCOPO && role==='gerencia') loja = (escConv.lojas||[])[0] || '';
-    var erroEsc = validaEscopo({role:role, loja: role==='gerencia' ? loja : null, vendedor_nome: role==='vendedor' ? vendedorNome : null, abas: abasConv, lojas: escConv.lojas, canais: escConv.canais});
+    var eqConv = (USERS_TEM_EQUIPES && EQUIPES.length) ? equipesPayload(role, grpSel(userInviteFormEl,'equipes')) : null;
+    var erroEsc = validaEscopo({role:role, loja: role==='gerencia' ? loja : null, vendedor_nome: role==='vendedor' ? vendedorNome : null, abas: abasConv, lojas: escConv.lojas, canais: escConv.canais, equipes: eqConv});
     if(erroEsc){ msg.style.color='var(--critical)'; msg.textContent = erroEsc; return; }
     try{
       var sess = await supa.auth.getSession();
@@ -5955,11 +5975,13 @@ if(userInviteFormEl){
       if(abasConv) extra.abas = abasConv;
       if(escConv.lojas) extra.lojas = escConv.lojas;
       if(escConv.canais) extra.canais = escConv.canais;
+      if(eqConv) extra.equipes = eqConv;
       if(Object.keys(extra).length){ await supa.from('profiles').update(extra).eq('email', email); }
       msg.style.color = 'var(--good)';
       msg.textContent = 'Convite enviado para '+email+'.';
       userInviteFormEl.reset();
       var uiA2 = document.getElementById('uiAbas'); uiA2.innerHTML = abasChips(ABAS_TODAS, false); bindAbas(uiA2);
+      var uiE2 = document.getElementById('uiEquipes'); if(uiE2 && EQUIPES.length){ uiE2.innerHTML = chipsHtml(EQUIPES.map(function(v){ return {k:v,t:v}; }), EQUIPES, false); bindAbas(uiE2); }
       var uiC2 = document.getElementById('uiCanais'); if(uiC2 && USERS_TEM_ESCOPO){ uiC2.innerHTML = chipsHtml(canaisUniverso().map(function(v){ return {k:v,t:v}; }), canaisUniverso(), false); bindAbas(uiC2); }
       document.getElementById('uiRole').dispatchEvent(new Event('change'));
       renderUsersAdmin();
@@ -6292,7 +6314,11 @@ async function enter(authUser){
   }
   busy('Carregando dados…');
   var real;
-  try{ real = await loadData(); }
+  try{
+    // um tempo esgotado no banco (8 s) costuma passar na segunda tentativa: tenta mais uma vez antes de avisar
+    try{ real = await loadData(); }
+    catch(ex1){ if(ex1 && ex1.message==='sem_dados') throw ex1; busy('Carregando dados… (segunda tentativa)'); await new Promise(function(r){ setTimeout(r, 1500); }); real = await loadData(); }
+  }
   catch(ex){
     errEl.textContent = 'Não foi possível carregar os dados do painel. Tente novamente ou contate o BI.';
     busy(null); return;
