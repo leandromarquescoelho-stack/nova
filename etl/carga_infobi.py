@@ -351,7 +351,8 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         if len(ven_eq):
             cur.execute('delete from public.bi_vendedor_equipe')
             cur.executemany('insert into public.bi_vendedor_equipe (vendedor, equipe, funcao) values (%s, %s, %s)',
-                            [(a, b, None if pd.isna(c) else c) for a, b, c in ven_eq[['vendedor', 'equipe', 'funcao']].itertuples(index=False)])
+                            [(a, None if pd.isna(b) else b, None if pd.isna(c) else c)
+                             for a, b, c in ven_eq[['vendedor', 'equipe', 'funcao']].itertuples(index=False)])
         for t, col in (('equipe', 'equipe'), ('funcao', 'funcao')):
             cur.execute(f"delete from public.bi_dim where tipo = %s and valor not in (select {col} from public.bi_vendedor_equipe where {col} is not null)", (t,))
 
