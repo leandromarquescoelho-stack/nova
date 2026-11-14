@@ -1739,6 +1739,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <div class="panel-head">
           <div><h2>Loja &times; mês</h2><div class="psub" id="heatSub">Faturamento mensal de cada loja &middot; cor mais forte = mês mais alto daquela loja</div></div>
           <div class="heat-ctl">
+          <select class="fsel" id="heatCor" aria-label="Cores do quadro" title="Cores do quadro"><option value="neutra">Cores neutras</option><option value="calor">Cores de calor</option></select>
           <select class="fsel" id="heatCmp" aria-label="Meses comparados na coluna de crescimento" title="Meses comparados na coluna de crescimento"></select>
           <select class="fsel" id="heatMetrica" aria-label="Métrica do Loja × mês">
             <option value="fat">Faturamento</option>
@@ -5168,7 +5169,14 @@ var HEAT_MET = {
   tknf:   {sub:'Ticket médio por nota fiscal de cada loja (faturamento ÷ notas)', nota:'Ticket = faturamento ÷ notas fiscais de venda do mês; no total, ÷ notas do ano todo.'},
   tkcli:  {sub:'Ticket médio por cliente de cada loja (faturamento ÷ clientes atendidos)', nota:'Ticket = faturamento ÷ clientes distintos atendidos no mês; no total, ÷ clientes distintos do ano todo.'}
 };
-var heatMet = 'fat', HEAT_SEQ = 0, heatCmp = '';
+var heatMet = 'fat', HEAT_SEQ = 0, heatCmp = '', heatCor = 'neutra';
+try{ heatCor = localStorage.getItem('heatCor') || 'neutra'; }catch(e){}
+// cor da célula: a vai de 0.03 (sem valor) a 0.63 (mês mais alto); "calor" vai do amarelo (baixo) ao vermelho (alto)
+function heatBg(a){
+  if(heatCor!=='calor' || a<0.05) return 'rgba(34,211,238,'+a.toFixed(3)+')';
+  var t = Math.max(0, Math.min(1, (a-0.08)/0.55));
+  return 'hsla('+Math.round(58-58*t)+',92%,'+Math.round(52-8*t)+'%,'+(0.22+0.58*t).toFixed(3)+')';
+}
 // coluna de crescimento: qual mês contra o anterior (o mês em andamento entra pela projeção ou até hoje)
 function heatComparacao(nM, parcial, comProj){
   var sel = document.getElementById('heatCmp'), L = REAL.monthLabels, ops = [];
@@ -5215,7 +5223,7 @@ function renderHeatLoja(){
     var tds = o.v.map(function(v,i){
       var a = v>0 ? 0.08 + 0.55*Math.min(1, v/mx) : 0.03;
       var pv = pj && i===nM-1 && pj.real>0 ? v*pj.proj/pj.real : null;
-      return '<td style="background:rgba(34,211,238,'+a.toFixed(3)+')" title="'+o.k+' · '+REAL.monthLabels[i]+': '+cheio(v)+(pv?' · projeção de fechamento '+cheio(pv):'')+'">'+(v>0?curto(v):'—') +
+      return '<td style="background:'+heatBg(a)+'" title="'+o.k+' · '+REAL.monthLabels[i]+': '+cheio(v)+(pv?' · projeção de fechamento '+cheio(pv):'')+'">'+(v>0?curto(v):'—') +
         (pv ? '<div class="proj-mini">proj. '+curto(pv)+'</div>' : '')+'</td>';
     }).join('');
     var va = cp ? o.v[cp.a] : 0, vb = cp ? o.v[cp.b] : 0;
@@ -5246,7 +5254,7 @@ function renderHeatRazao(box){
           mx = cmp.length ? Math.max.apply(null, cmp) : 0, mn = cmp.length ? Math.min.apply(null, cmp) : 0;
       var tds = o.v.map(function(v,i){
         var a = v===null ? 0.03 : (parcial && i===nM-1 ? 0.08 : 0.08 + 0.55*(mx>mn ? (v-mn)/(mx-mn) : 1));
-        return '<td style="background:rgba(34,211,238,'+a.toFixed(3)+')" title="'+o.k+' · '+REAL.monthLabels[i]+': '+fmt(v)+(o.d[i]?' · '+o.d[i]:'')+'">'+fmt(v)+'</td>';
+        return '<td style="background:'+heatBg(a)+'" title="'+o.k+' · '+REAL.monthLabels[i]+': '+fmt(v)+(o.d[i]?' · '+o.d[i]:'')+'">'+fmt(v)+'</td>';
       }).join('');
       var a0 = cp ? o.v[cp.b] : null, a1 = cp ? o.v[cp.a] : null, dlt = (a0===null || a1===null) ? null : (pct ? a1-a0 : (a0>0 ? (a1-a0)/a0*100 : null));
       var dTxt = dlt===null ? '—' : (pct ? (dlt>=0?'+':'')+dlt.toFixed(1).replace('.',',')+' p.p.' : fmtPct(dlt));
@@ -6651,6 +6659,8 @@ function bindEvents(){
   document.getElementById('cidadeModo').addEventListener('change', function(){ cidadeModo = this.value; renderCidades(); });
   iniciarCopiaCards();
   document.getElementById('heatMetrica').addEventListener('change', function(){ heatMet = this.value; renderHeatLoja(); });
+  var hc = document.getElementById('heatCor'); hc.value = heatCor;
+  hc.addEventListener('change', function(){ heatCor = this.value; try{ localStorage.setItem('heatCor', heatCor); }catch(e){} renderHeatLoja(); });
   document.getElementById('heatCmp').addEventListener('change', function(){ heatCmp = this.value; renderHeatLoja(); });
   document.getElementById('giroSortBtn').addEventListener('click', function(){
     state.giroSortDesc = !state.giroSortDesc;
