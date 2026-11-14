@@ -30,8 +30,8 @@ jobs:
           python-version: '3.12'
       - name: Instalar dependências
         run: |
-          pip install "psycopg[binary]" playwright
-          python -m playwright install --with-deps chromium
+          pip install "psycopg[binary]==3.2.3"
+          if [ "${{ github.event.inputs.modo }}" = "sonda" ]; then pip install playwright && python -m playwright install --with-deps chromium; fi
       - name: Sondar os sites
         if: ${{ github.event.inputs.modo == 'sonda' }}
         run: python etl/concorrencia_probe.py
