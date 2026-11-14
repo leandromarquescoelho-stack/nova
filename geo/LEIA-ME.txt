@@ -1,0 +1,5 @@
+Contornos dos municípios por estado (UF.json), usados no mapa da guia Vendas > Regiões.
+Contornos: malha municipal do IBGE, via github.com/tbrugz/geodata-br, simplificada (tolerância ~400 m, coordenadas com 3 casas).
+População: Censo 2022 (IBGE). Frota: automóveis + motocicletas (Denatran), ou o valor do painel de referência quando havia.
+Formato: [nome normalizado, nome, código IBGE, [lat, lng], polígonos, população, frota].
+Não contém dados de venda.

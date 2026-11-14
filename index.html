@@ -5918,6 +5918,7 @@ function vxRegioes(){
   vxTabelaCidades(cids, null);
   Promise.all([vxLeafletLib()].concat(ufs.map(function(uf){ return vxGeoUF(uf).catch(function(){ return null; }); }))).then(function(){
     if(seq!==VX.mapSeq || state.currentView!=='vendas' || VX.aba!=='regioes') return;
+    if(!ufs.some(function(uf){ return VX.geo[uf]; })){ msg.hidden = false; msg.textContent = 'Não foi possível carregar os contornos dos municípios agora. A tabela abaixo continua valendo.'; return; }
     msg.hidden = true;
     vxDesenharMapa(cids, total, ufs, fora);
   }).catch(function(){ if(seq===VX.mapSeq){ msg.hidden = false; msg.textContent = 'Não foi possível carregar o mapa agora. A tabela abaixo continua valendo.'; } });
@@ -5932,6 +5933,7 @@ function vxTabelaCidades(cids, info){
   vxTabela('vxTR', [VX_COL.rk, {k:'nome', t:'Cidade', td:function(r){ return '<td class="nm">'+escapeHtml(r.nome)+'</td>'; }}, {k:'uf', t:'UF', td:function(r){ return '<td class="mn">'+r.uf+'</td>'; }},
     VX_COL.fat, VX_COL.lb, VX_COL.qtd, VX_COL.mg, VX_COL.sh, VX_COL.vr,
     {k:'pop', t:'População', td:function(r){ return '<td class="mn">'+(r.pop ? vxN(r.pop) : '—')+'</td>'; }},
+    {k:'frota', t:'Frota', td:function(r){ return '<td class="mn">'+(r.frota ? vxN(r.frota) : '—')+'</td>'; }},
     {k:'hab', t:'R$/mil hab.', td:function(r){ return '<td class="mn">'+(r.hab!==null ? vxM(r.hab) : '—')+'</td>'; }}], cids, {fk:'cidade', barra:VX_PAL.cy, limite:500});
 }
 function vxDesenharMapa(cids, total, ufs, fora){
@@ -5940,10 +5942,11 @@ function vxDesenharMapa(cids, total, ufs, fora){
     VX.map = L.map('vxMap', {preferCanvas:true, zoomControl:true, attributionControl:true, minZoom:3});
     VX.map.attributionControl.setPrefix(false);
   }
-  var tema = claro ? 'light_all' : 'dark_all';
+  // fundo do mapa: Esri (cinza escuro ou claro), livre e sem chave de acesso
+  var tema = claro ? 'Light' : 'Dark';
   if(VX.tilesTema!==tema){
     if(VX.tiles) VX.map.removeLayer(VX.tiles);
-    VX.tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/'+tema+'/{z}/{x}/{y}{r}.png', {maxZoom:18, subdomains:'abcd', attribution:'&copy; OpenStreetMap &middot; &copy; CARTO'}).addTo(VX.map);
+    VX.tiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_'+tema+'_Gray_Base/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, attribution:'Esri, HERE, Garmin, &copy; OpenStreetMap'}).addTo(VX.map);
     VX.tilesTema = tema;
   }
   VX.map.invalidateSize();
@@ -5968,7 +5971,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
   document.getElementById('vxMapLeg').innerHTML = esc.leg.map(function(x){ return '<span><i style="background:'+x[0]+'"></i>'+x[1]+'</span>'; }).join('') +
     '<span><i style="background:'+(claro?'#cbd5e1':'#2a3a4a')+'; border:1px solid '+(claro?'#94a3b8':'#3d5068')+'"></i>Sem vendas</span>';
   var sub = document.getElementById('vxMapSub');
-  if(sub) sub.textContent = {fat:'Faturamento por município', margem:'Margem bruta por município', var:'Variação do faturamento vs. período anterior de mesmo tamanho', hab:'Faturamento por mil habitantes (municípios com população conhecida)'}[met]+' · passe o mouse para ver os detalhes · clique para filtrar';
+  if(sub) sub.textContent = {fat:'Faturamento por município', margem:'Margem bruta por município', var:'Variação do faturamento vs. período anterior de mesmo tamanho', hab:'Faturamento por mil habitantes (população do Censo 2022)'}[met]+' · passe o mouse para ver os detalhes · clique para filtrar';
   var nota = document.getElementById('vxMapNota');
   if(nota) nota.innerHTML = fora.length ? 'Estados com menos de 0,5% do faturamento ficam fora do mapa para ele abrir rápido ('+fora.sort().join(', ')+'); as cidades deles estão na tabela.' : '';
   // camada única em canvas com todos os municípios dos estados carregados
