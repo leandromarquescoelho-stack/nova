@@ -11,7 +11,7 @@ import gzip, html as H, json, os, re, sys, time, urllib.parse, urllib.request
 import psycopg
 
 UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
-PAUSA = 0.8
+PAUSA = 0.5
 
 
 def get(url, n=3_000_000):
@@ -52,6 +52,21 @@ def jsonld_produtos(page):
                 if x.get('@type') == 'Product':
                     out.append(x)
                 pilha.extend(v for v in x.values() if isinstance(v, (dict, list)))
+    return out
+
+
+def ld_regex(page):
+    # JSON-LD que não abre como JSON (aspas soltas na descrição): lê os campos direto do texto
+    out = []
+    for m in re.finditer(r'<script[^>]+application/ld\+json[^>]*>(.*?)</script>', page, re.S | re.I):
+        t = m.group(1)
+        if '"Product"' not in t:
+            continue
+        def campo(k):
+            mm = re.search(r'"' + k + r'"\s*:\s*"?([^",}]+)', t)
+            return mm.group(1).strip() if mm else ''
+        out.append({'@type': 'Product', 'name': campo('name'), 'sku': campo('sku'), 'mpn': campo('mpn'),
+                    'offers': {'price': campo('price'), 'availability': campo('availability')}})
     return out
 
 
@@ -98,10 +113,12 @@ def nossa(cs):
 
 # ---------------- Accioly (Tray) ----------------
 ACC_NAV = None
+ACC_DBG = {'buscas': 0, 'sem_200': 0, 'links': 0, 'paginas': 0, 'com_produto': 0}
 
 
 def acc_links(term):
     st, body = get('https://www.acciolygm.com.br/loja/busca.php?loja=476243&palavra_busca=' + urllib.parse.quote(term))
+    ACC_DBG['buscas'] += 1; ACC_DBG['sem_200'] += st != 200
     return list(dict.fromkeys(re.findall(r'href="(https://www\.acciolygm\.com\.br/[a-z0-9\-]+)"', body)))
 
 
@@ -109,10 +126,13 @@ def accioly(cs):
     global ACC_NAV
     if ACC_NAV is None:
         ACC_NAV = set(acc_links('zzqxw9'))  # links de menu/rodapé, presentes em toda busca
-    links = [l for l in acc_links(cs[0]) if l not in ACC_NAV][:5]
+    links = [l for l in acc_links(cs[0]) if l not in ACC_NAV][:4]
+    ACC_DBG['links'] += len(links)
     for l in links:
         st, page = get(l)
-        for p in jsonld_produtos(page):
+        prods = jsonld_produtos(page) or ld_regex(page)
+        ACC_DBG['paginas'] += 1; ACC_DBG['com_produto'] += bool(prods)
+        for p in prods:
             ids = {norm(p.get('mpn', '')), norm(p.get('sku', '')), norm(p.get('gtin13', ''))}
             nome = norm(p.get('name', ''))
             if ids & set(cs) or any(c in nome for c in cs):
@@ -151,13 +171,15 @@ def carrera(cs):
         if not u:
             continue
         st, page = get(u)
-        for p in jsonld_produtos(page):
+        for p in (jsonld_produtos(page) or ld_regex(page)):
+            ids = {norm(p.get('mpn', '')), norm(p.get('sku', ''))}
+            titulo = H.unescape(p.get('name', ''))
+            # o código precisa estar no nome do produto ou no sku/mpn (o fim do endereço sozinho pode ser outro número)
+            if not (ids & set(cs) or any(re.search(r'(?<![0-9A-Z])0*' + c + r'(?![0-9A-Z])', titulo.upper()) for c in cs)):
+                continue
             preco, disp = oferta(p)
             if preco:
-                return dict(preco=preco, lista=None, disp=disp, titulo=H.unescape(p.get('name', '')), url=u, conf='codigo')
-        mm = re.search(r'"price_number"\s*:\s*([\d.]+)', page) or re.search(r'itemprop="price"\s+content="([\d.]+)"', page)
-        if mm:
-            return dict(preco=float(mm.group(1)), lista=None, disp=None, titulo=None, url=u, conf='codigo')
+                return dict(preco=preco, lista=None, disp=disp, titulo=titulo, url=u, conf='codigo')
     return None
 
 
@@ -197,6 +219,7 @@ def main():
             with con.cursor() as cur:
                 cur.executemany("""insert into public.bi_concorrencia (site, pn, preco, preco_lista, disponivel, titulo, url, confianca)
                                    values (%s,%s,%s,%s,%s,%s,%s,%s) on conflict (site, pn) do nothing""", linhas)
+        print('accioly (diagnóstico):', ACC_DBG, flush=True)
         print('gravado: ' + ', '.join(f'{k} {v}' for k, v in achou.items()), flush=True)
 
 
