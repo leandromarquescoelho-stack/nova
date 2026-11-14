@@ -1,10 +1,10 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* ---------- agente de IA: botão flutuante e painel de conversa ---------- */
 #iaFab{ position:fixed; right:22px; bottom:22px; z-index:800; display:none; align-items:center; gap:8px; height:46px; padding:0 18px 0 14px;
-  border-radius:999px; border:1px solid rgba(34,211,238,.35); color:var(--accent-ink); font-weight:700; font-size:13px; cursor:pointer;
-  background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:0 10px 30px -8px var(--accent-glow), 0 2px 8px rgba(0,0,0,.4); transition:transform .15s, box-shadow .15s; }
+  border-radius:999px; border:1px solid rgba(242,200,17,.55); color:#171717; font-weight:700; font-size:13px; cursor:pointer;
+  background:linear-gradient(135deg,#F2C811,#E09B00); box-shadow:0 10px 30px -8px rgba(242,200,17,.55), 0 2px 8px rgba(0,0,0,.4); transition:transform .15s, box-shadow .15s; }
 #iaFab.on{ display:inline-flex; }
-#iaFab:hover{ transform:translateY(-2px); box-shadow:0 14px 34px -8px var(--accent-glow), 0 2px 8px rgba(0,0,0,.4); }
+#iaFab:hover{ transform:translateY(-2px); box-shadow:0 14px 34px -8px rgba(242,200,17,.7), 0 2px 8px rgba(0,0,0,.4); }
 #iaFab svg{ width:18px; height:18px; }
 #iaFab.aberto{ display:none; }
 #iaPainel{ position:fixed; right:18px; bottom:18px; z-index:850; width:min(440px, calc(100vw - 24px)); height:min(640px, calc(100vh - 36px));
@@ -14,8 +14,8 @@
 @keyframes iaEntra{ from{ opacity:0; transform:translateY(10px) scale(.98); } to{ opacity:1; transform:none; } }
 .ia-cab{ display:flex; align-items:center; gap:10px; padding:14px 14px 12px 16px; border-bottom:1px solid var(--border);
   background:linear-gradient(180deg, rgba(34,211,238,.07), transparent); }
-.ia-cab .ia-ico{ width:30px; height:30px; border-radius:9px; display:grid; place-items:center; color:var(--accent-ink);
-  background:linear-gradient(135deg,var(--accent),var(--accent-2)); flex:none; }
+.ia-cab .ia-ico{ width:30px; height:30px; border-radius:9px; display:grid; place-items:center; color:#171717;
+  background:linear-gradient(135deg,#F2C811,#E09B00); flex:none; }
 .ia-cab .ia-ico svg{ width:16px; height:16px; }
 .ia-cab h3{ margin:0; font-size:14px; }
 .ia-cab p{ margin:1px 0 0; font-size:11px; color:var(--text-muted); }
@@ -47,8 +47,8 @@
 .ia-form textarea{ flex:1; resize:none; min-height:40px; max-height:120px; padding:10px 12px; border-radius:12px; border:1px solid var(--border-strong);
   background:var(--surface-2); color:var(--text); font:inherit; font-size:13px; line-height:1.4; outline:none; }
 .ia-form textarea:focus{ border-color:rgba(34,211,238,.55); }
-.ia-form button{ width:40px; height:40px; flex:none; border-radius:12px; border:0; cursor:pointer; color:var(--accent-ink);
-  background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:grid; place-items:center; }
+.ia-form button{ width:40px; height:40px; flex:none; border-radius:12px; border:0; cursor:pointer; color:#171717;
+  background:linear-gradient(135deg,#F2C811,#E09B00); display:grid; place-items:center; }
 .ia-form button:disabled{ opacity:.4; cursor:default; }
 .ia-form button svg{ width:16px; height:16px; }
 .ia-rodape{ font-size:10px; color:var(--text-muted); text-align:center; padding:0 12px 9px; background:var(--plane); }
@@ -1067,6 +1067,10 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cli-termo button{text-align:left; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:11px; padding:9px 11px; cursor:pointer; font:inherit;}
 .cli-termo button[aria-pressed="true"]{border-color:var(--accent); box-shadow:0 0 0 2px rgba(34,211,238,.18);}
 .cli-termo .t{font-size:12px; font-weight:700;} .cli-termo .n{font-size:18px; font-weight:800; font-family:'JetBrains Mono',monospace; margin-top:2px;} .cli-termo .s{font-size:11px; color:var(--text-muted);}
+#termoBalao{position:fixed; z-index:2000; display:none; max-width:340px; background:var(--surface); border:1px solid var(--border-strong); border-radius:10px; padding:9px 12px; box-shadow:0 10px 30px rgba(0,0,0,.45); font-size:12px; color:var(--text-2); line-height:1.5; pointer-events:none;}
+#termoBalao b{display:block; color:var(--text); font-weight:700; margin-bottom:3px;}
+#termoBalao div{font-size:11px; color:var(--text-muted);}
+.termo[data-tip]{cursor:help;}
 .termo{display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap;}
 .termo.esquentando{background:rgba(31,196,106,.15); color:var(--good);} .termo.estavel{background:rgba(59,130,246,.14); color:#60a5fa;}
 .termo.esfriando{background:rgba(245,165,36,.16); color:var(--warning);} .termo.novo{background:rgba(34,211,238,.14); color:var(--accent);}
@@ -5591,13 +5595,49 @@ function cliLinhaObj(r){
     fp:c2(r[9]), lp:c2(r[10]), f12:c2(r[11]), med:c2(r[12]), mg: r[13]===null ? null : +r[13], ult:r[14], dias:+r[15], ncomp:+r[16]||0,
     intv: r[17]===null ? null : +r[17], termo:r[18], f90:c2(r[19]), f180:c2(r[20])};
 }
+// motivo do termômetro para este cliente (mesma regra do banco: 90 dias vs. 90 anteriores, intervalo normal de compra)
+function termoMotivo(c){
+  var f90 = c.f90||0, f180 = c.f180||0, pct = f180>0 ? f90/f180*100 : null;
+  var vol = pct===null ? '' : 'Volume dos últimos 90 dias ('+fmtMoney(f90)+') = '+pct.toFixed(0)+'% dos 90 anteriores ('+fmtMoney(f180)+')';
+  var dias = c.dias===1 ? '1 dia' : c.dias+' dias';
+  switch(c.termo){
+    case 'disponivel': return 'Sem comprar há '+dias+', mais de 60.';
+    case 'novo': return 'Primeira compra nos últimos 60 dias.';
+    case 'esfriando':
+      if(pct!==null && pct<60) return vol+', abaixo do corte de 60%.';
+      return 'Sem comprar há '+dias+', mais que o dobro do intervalo normal dele'+(c.intv?' (compra a cada '+c.intv+' dias)':'')+'.';
+    case 'esquentando': return vol+', acima de 130%.';
+    case 'estavel': return pct===null ? 'Sem compras nos 90 dias anteriores para comparar.' : vol+', entre 60% e 130%.';
+    case 'ocasional': return 'Cliente do e-commerce sem comprar há '+dias+' e com até 3 compras em 12 meses.';
+  }
+  return TERMO[c.termo] ? TERMO[c.termo].d : '';
+}
 function termoTip(c){
-  var t = TERMO[c.termo] ? TERMO[c.termo].d : '';
-  t += ' · últimos 90 dias: '+fmtMoney(c.f90)+' · 90 anteriores: '+fmtMoney(c.f180);
-  if(c.intv) t += ' · compra a cada '+c.intv+' dias em média';
+  var t = termoMotivo(c);
+  if(c.ncomp) t += '\nCompras em '+c.ncomp+' dias nos últimos 12 meses'+(c.intv?', a cada '+(c.intv==1?'1 dia':c.intv+' dias')+' em média':'')+'. Última há '+(c.dias===1?'1 dia':c.dias+' dias')+'.';
+  t += '\nRegra: '+(TERMO[c.termo] ? TERMO[c.termo].d : '');
   return t;
 }
-function termoHtml(c){ var d = TERMO[c.termo] || {t:c.termo, ico:''}; return '<span class="termo '+c.termo+'" title="'+escapeHtml(termoTip(c))+'">'+d.ico+' '+d.t+'</span>'; }
+function termoHtml(c){ var d = TERMO[c.termo] || {t:c.termo, ico:''}; return '<span class="termo '+c.termo+'" data-tip="'+escapeHtml(termoTip(c))+'" tabindex="0">'+d.ico+' '+d.t+'</span>'; }
+// balão do motivo: posição fixa para não ser cortado pela rolagem da tabela
+(function(){
+  var tip = null;
+  function mostra(el){
+    if(!tip){ tip = document.createElement('div'); tip.id = 'termoBalao'; document.body.appendChild(tip); }
+    var linhas = el.getAttribute('data-tip').split('\n');
+    tip.innerHTML = '<b>'+escapeHtml(linhas[0])+'</b>'+linhas.slice(1).map(function(l){ return '<div>'+escapeHtml(l)+'</div>'; }).join('');
+    tip.style.display = 'block';
+    var r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    var x = Math.min(Math.max(8, r.left), window.innerWidth - w - 8), y = r.bottom + 8;
+    if(y + h > window.innerHeight - 8) y = r.top - h - 8;
+    tip.style.left = x+'px'; tip.style.top = y+'px';
+  }
+  function esconde(){ if(tip) tip.style.display = 'none'; }
+  document.addEventListener('mouseover', function(e){ var el = e.target.closest && e.target.closest('.termo[data-tip]'); if(el) mostra(el); else esconde(); });
+  document.addEventListener('focusin', function(e){ var el = e.target.closest && e.target.closest('.termo[data-tip]'); if(el) mostra(el); });
+  document.addEventListener('focusout', esconde);
+  window.addEventListener('scroll', esconde, true);
+})();
 // filtros da aba Clientes: escolhe vários e aplica de uma vez
 function cliPendente(on){
   var b = document.getElementById('cliAplicar'); if(!b) return;
