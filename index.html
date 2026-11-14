@@ -463,6 +463,13 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 #vxMapTip .tg span:nth-child(even){font-family:'JetBrains Mono',monospace; text-align:right;}
 #vxMapTip .sep{grid-column:1/-1; height:1px; background:var(--border); margin:3px 0;}
 #vxMapTip .sv{background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); border-radius:6px; padding:4px 8px; color:var(--vx-am-t); margin-bottom:6px;}
+.vx-full-btn{display:inline-flex; align-items:center; gap:6px; font:inherit; font-size:12px; font-weight:700; padding:6px 11px; border-radius:8px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); cursor:pointer;}
+.vx-full-btn:hover{border-color:var(--vx-cy); color:var(--vx-cy-t);}
+#vxMapCard:fullscreen, #vxMapCard.vx-full{display:flex; flex-direction:column; margin:0; border-radius:0; padding:16px 18px; background:var(--surface); overflow:auto;}
+#vxMapCard.vx-full{position:fixed; inset:0; z-index:2000;}
+#vxMapCard:fullscreen #vxMapWrap, #vxMapCard.vx-full #vxMapWrap{flex:1; height:auto; min-height:300px;}
+#vxMapWrap .leaflet-control-attribution{background:rgba(0,0,0,.35); color:var(--text-muted); font-size:10px;}
+:root[data-theme="light"] #vxMapWrap .leaflet-control-attribution{background:rgba(255,255,255,.7);}
 .vx-map-msg{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:900; pointer-events:none; font-size:13px;}
 .vx-map-msg[hidden]{display:none;}
 .vx-loja-pin{background:var(--vx-pu); border:2px solid #fff; border-radius:50%; box-shadow:0 0 0 3px rgba(124,58,237,.35);}
@@ -1664,7 +1671,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <div class="vx-tc" data-vxpainel="regioes" hidden>
         <div class="vx-kpis" id="vxRegKpis"></div>
-        <div class="vx-card">
+        <div class="vx-card" id="vxMapCard">
           <div class="vx-map-top">
             <div><div class="vx-ct">Mapa de Calor &mdash; Municípios</div><div class="vx-cs" id="vxMapSub">Passe o mouse para ver os detalhes &middot; clique no município para filtrar</div></div>
             <div class="vx-map-ctl">
@@ -1675,6 +1682,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
                 <option value="hab">Faturamento por mil habitantes</option>
               </select></label>
               <label class="vx-chk"><input type="checkbox" id="vxMapLojas" checked> Lojas</label>
+              <button type="button" class="vx-full-btn" id="vxMapFull" title="Ver o mapa em tela cheia" aria-label="Ver o mapa em tela cheia"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tela cheia</span></button>
             </div>
           </div>
           <div class="vx-leg" id="vxMapLeg"></div>
@@ -6039,7 +6047,27 @@ function vxDesenharMapa(cids, total, ufs, fora){
     else VX.map.setView([-22.5,-48.5], 6);
   }
 }
+function vxTelaCheia(){
+  var card = document.getElementById('vxMapCard'), btn = document.getElementById('vxMapFull');
+  var cheia = document.fullscreenElement===card || card.classList.contains('vx-full');
+  if(cheia){
+    if(document.fullscreenElement) document.exitFullscreen(); else { card.classList.remove('vx-full'); vxAoTrocarTela(); }
+  } else if(card.requestFullscreen){
+    card.requestFullscreen().catch(function(){ card.classList.add('vx-full'); vxAoTrocarTela(); });
+  } else { card.classList.add('vx-full'); vxAoTrocarTela(); }
+}
+// ajusta o mapa e o texto do botão ao entrar ou sair da tela cheia
+function vxAoTrocarTela(){
+  var card = document.getElementById('vxMapCard'), btn = document.getElementById('vxMapFull');
+  var cheia = document.fullscreenElement===card || card.classList.contains('vx-full');
+  btn.querySelector('span').textContent = cheia ? 'Sair da tela cheia' : 'Tela cheia';
+  btn.title = cheia ? 'Sair da tela cheia (Esc)' : 'Ver o mapa em tela cheia';
+  setTimeout(function(){ if(VX.map) VX.map.invalidateSize(); }, 150);
+}
 function vxLigar(){
+  document.getElementById('vxMapFull').addEventListener('click', vxTelaCheia);
+  document.addEventListener('fullscreenchange', vxAoTrocarTela);
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ var c = document.getElementById('vxMapCard'); if(c.classList.contains('vx-full')){ c.classList.remove('vx-full'); vxAoTrocarTela(); } } });
   document.getElementById('vxAbas').addEventListener('click', function(ev){
     var b = ev.target.closest('[data-vxaba]'); if(b) vxTrocarAba(b.getAttribute('data-vxaba'));
   });
