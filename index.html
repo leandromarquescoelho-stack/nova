@@ -5967,7 +5967,7 @@ function vxTabelaCidades(cids, info){
   vxTabela('vxTR', [VX_COL.rk, {k:'nome', t:'Cidade', td:function(r){ return '<td class="nm">'+escapeHtml(r.nome)+'</td>'; }}, {k:'uf', t:'UF', td:function(r){ return '<td class="mn">'+r.uf+'</td>'; }},
     VX_COL.fat, VX_COL.lb, VX_COL.qtd, VX_COL.mg, VX_COL.sh, VX_COL.vr,
     {k:'pop', t:'População', td:function(r){ return '<td class="mn">'+(r.pop ? vxN(r.pop) : '—')+'</td>'; }},
-    {k:'frota', t:'Frota', td:function(r){ return '<td class="mn">'+(r.frota ? vxN(r.frota) : '—')+'</td>'; }},
+    {k:'frota', t:'Automóveis', td:function(r){ return '<td class="mn">'+(r.frota ? vxN(r.frota) : '—')+'</td>'; }},
     {k:'hab', t:'R$/mil hab.', td:function(r){ return '<td class="mn">'+(r.hab!==null ? vxM(r.hab) : '—')+'</td>'; }}], cids, {fk:'cidade', barra:VX_PAL.cy, limite:500});
 }
 function vxDesenharMapa(cids, total, ufs, fora){
@@ -6044,8 +6044,8 @@ function vxDesenharMapa(cids, total, ufs, fora){
       tip.innerHTML = '<div class="tn" style="color:'+cor+'">'+escapeHtml(f[1])+' <span style="color:var(--text-muted); font-size:10.5px; font-weight:500;">('+ft.properties.uf+')</span></div>' +
         (o ? '<div class="tg">'+linhaTip('Faturamento', vxM(o.fat))+linhaTip('Lucro bruto', '<span style="color:var(--vx-gr-t)">'+vxM(o.lb)+'</span>')+linhaTip('Margem', vxP(o.mg))+
           linhaTip('Volume', vxN(o.qtd)+' un.')+linhaTip('Var. anterior', seta(o.vr))+linhaTip('Share', (total>0?(o.fat/total*100).toFixed(2).replace('.',','):'0')+'%')+
-          '<div class="sep"></div>'+linhaTip('População', pop)+linhaTip('Frota', fro)+(f[5] ? linhaTip('R$ por mil hab.', vxM(o.fat/f[5]*1000)) : '')+(f[6] ? linhaTip('Peças por mil veíc.', (o.qtd/f[6]*1000).toFixed(1).replace('.',',')) : '')+'</div>'
-          : '<div class="sv">Sem vendas no filtro atual</div><div class="tg">'+linhaTip('População', pop)+linhaTip('Frota', fro)+'</div>');
+          '<div class="sep"></div>'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+(f[5] ? linhaTip('R$ por mil hab.', vxM(o.fat/f[5]*1000)) : '')+(f[6] ? linhaTip('Peças por mil autos', (o.qtd/f[6]*1000).toFixed(1).replace('.',',')) : '')+'</div>'
+          : '<div class="sv">Sem vendas no filtro atual</div><div class="tg">'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+'</div>');
       tip.style.display = 'block'; mover(e);
     });
     ly.on('mousemove', mover);
@@ -6081,7 +6081,7 @@ function vxQuadroHtml(q){
   function ln(a, b){ return '<tr><td>'+a+'</td><td>'+b+'</td></tr>'; }
   var h = '<div class="vx-q"><div class="vx-q-t">'+escapeHtml(f[1])+' <span>('+pr.uf+')</span></div>';
   if(!o){
-    return h+'<div class="vx-q-sv">Sem vendas no filtro atual</div><table>'+ln('População', f[5]?vxN(f[5]):'—')+ln('Frota', f[6]?vxN(f[6]):'—')+'</table></div>';
+    return h+'<div class="vx-q-sv">Sem vendas no filtro atual</div><table>'+ln('População', f[5]?vxN(f[5]):'—')+ln('Automóveis', f[6]?vxN(f[6]):'—')+'</table></div>';
   }
   var cli = null, cliP = null;
   if(CID_CLI){ cli = 0; cliP = 0; o.nomes.forEach(function(n){ var c = CID_CLI[n]; if(c){ cli += c.n; cliP += c.p; } }); }
@@ -6100,7 +6100,7 @@ function vxQuadroHtml(q){
     ln('Share', (q.total>0 ? (o.fat/q.total*100).toFixed(2).replace('.',',') : '0')+'%') +
     ln('População', f[5] ? vxN(f[5]) : '—') +
     ln('Clientes por mil hab.', cli!==null && f[5] ? (cli/f[5]*1000).toFixed(2).replace('.',',') : '—') +
-    ln('Frota', f[6] ? vxN(f[6]) : '—') +
+    ln('Automóveis', f[6] ? vxN(f[6]) : '—') +
     '</table>' + (cli!==null && cliP ? '<div class="vx-q-n">Período anterior: '+vxN(cliP)+' clientes, ticket '+vxM(tkP)+'</div>' : '') +
     '<button type="button" class="vx-q-b" data-vxfiltra="'+escapeHtml(o.nomes[0])+'">Filtrar o painel por esta cidade</button></div>';
   return h;
