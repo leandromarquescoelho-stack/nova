@@ -948,6 +948,10 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .termo.esfriando{background:rgba(245,165,36,.16); color:var(--warning);} .termo.novo{background:rgba(34,211,238,.14); color:var(--accent);}
 .termo.disponivel{background:rgba(239,68,68,.14); color:var(--critical);} .termo.ocasional{background:rgba(148,163,184,.16); color:var(--text-muted);}
 @media (max-width:900px){.cli-termo{grid-template-columns:repeat(2,minmax(0,1fr));}}
+.sub-abas{display:flex; gap:4px; margin-top:8px;}
+.sub-abas[hidden]{display:none;}
+.sub-abas button{border:1px solid var(--border); background:var(--surface); color:var(--text-muted); border-radius:9px; padding:6px 14px; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer;}
+.sub-abas button[aria-pressed="true"]{background:rgba(34,211,238,.12); border-color:rgba(34,211,238,.5); color:var(--accent);}
 .pares-ctl{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:-4px 0 12px;}
 .pares-ctl:empty{display:none;}
 .pares-ctl .pc-l{font-size:12px; color:var(--text-muted); font-weight:600;}
@@ -1228,6 +1232,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <h1 id="viewTitle">Dashboard</h1>
           <div class="sub" id="viewSub">Visão geral de vendas e estoque</div>
           <div class="updated"><span class="dot-live" id="liveDot"></span><span id="updatedText">Atualizado agora</span></div>
+          <div class="sub-abas" id="cliAbas" hidden><button type="button" data-cliaba="analise" aria-pressed="true">Análise de clientes</button><button type="button" data-cliaba="disp" aria-pressed="false">Clientes Disponíveis</button></div>
         </div>
       </div>
       <!-- seletor do vendedor: fixo no topo enquanto a aba Vendedores está aberta -->
@@ -1767,7 +1772,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <section class="view-panel" data-view-panel="clientes" style="display:none;">
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Análise de clientes</h2><div class="psub">Responsável = vendedor que mais faturou para o cliente nos últimos 12 meses &middot; filtros do painel valem aqui (o de vendedor vira responsável)</div></div>
+          <div><h2 id="cliTitulo">Análise de clientes</h2><div class="psub">Responsável = vendedor que mais faturou para o cliente nos últimos 12 meses &middot; filtros do painel valem aqui (o de vendedor vira responsável)</div></div>
         </div>
         <div class="cli-filtros" id="cliFiltros">
           <input type="text" class="cli-busca" id="cliBusca" placeholder="Razão social ou código" autocomplete="off">
@@ -1787,14 +1792,16 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           </select></label>
           <button type="button" class="clear-filters" id="cliLimpar">Limpar</button><button type="button" class="aplicar-filtros" id="cliAplicar" title="Atualiza a lista com todos os filtros escolhidos">Aplicar</button>
         </div>
+        <div data-cliaba-painel="analise">
         <div class="cli-termo" id="cliTermo"></div>
         <div class="table-scroll scroll-limit" id="cliTabela"></div>
         <div class="note-muted" id="cliNota" style="margin-top:8px;"></div>
+        </div>
       </div>
 
-      <div class="panel" style="margin-bottom:14px;">
+      <div class="panel" style="margin-bottom:14px; display:none;" data-cliaba-painel="disp">
         <div class="panel-head">
-          <div><h2>Clientes disponíveis para outros vendedores</h2><div class="psub">Política: cliente com mais de 60 dias sem compra fica disponível &middot; do e-commerce, só os recorrentes (mais de 3 compras em 12 meses) &middot; maiores compradores primeiro</div></div>
+          <div><h2>Clientes Disponíveis</h2><div class="psub">Política: cliente com mais de 60 dias sem compra fica disponível &middot; do e-commerce, só os recorrentes (mais de 3 compras em 12 meses) &middot; maiores compradores primeiro</div></div>
           <button class="tbtn" id="cliExport" type="button">
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Exportar Excel
@@ -5355,6 +5362,14 @@ function cliLigar(){
     renderClientes(); // cards do termômetro filtram na hora (aplica junto o que estiver escolhido)
   });
   document.getElementById('cliExport').addEventListener('click', exportarDisponiveis);
+  // abas da tela Clientes (os filtros valem para as duas)
+  document.getElementById('cliAbas').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-cliaba]'); if(!b) return;
+    var aba = b.getAttribute('data-cliaba');
+    Array.prototype.forEach.call(this.querySelectorAll('[data-cliaba]'), function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-cliaba-painel]'), function(p){ p.style.display = p.getAttribute('data-cliaba-painel')===aba ? '' : 'none'; });
+    document.getElementById('cliTitulo').textContent = aba==='disp' ? 'Filtros dos clientes' : 'Análise de clientes';
+  });
 }
 function cliOpts(extra){
   var o = {ordem: CLI.ordem};
@@ -5586,6 +5601,7 @@ function bindEvents(){
     document.getElementById('viewTitle').textContent = meta.title;
     document.getElementById('viewSub').textContent = meta.sub;
     document.getElementById('topVendSel').hidden = (view!=='vendedores');
+    document.getElementById('cliAbas').hidden = (view!=='clientes');
     if(VIEWS_COM_PRODUTOS.indexOf(view)!==-1 && !PRODUTOS_NO_PAINEL){ state.page = 1; renderAll(false); }
     if(view==='clientes'){ renderClientes(); }
     if(view==='vendas'){ renderCidades(); }
