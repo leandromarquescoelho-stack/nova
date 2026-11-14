@@ -2640,13 +2640,26 @@ function sparklineSVG(values, w, h, color, fill){
 /* ============================================================
    RENDER: KPIs
    ============================================================ */
+// verdadeiro quando o filtro deixa só vendas online (canal e-commerce ou só lojas de marketplace)
+function mediaSoOnline(){
+  if(state.canal.length && state.canal.every(function(c){ return c===CANAL_ONLINE; })) return true;
+  if(state.regiao.length && state.regiao.every(function(l){ return LOJA_INFO[l] && !LOJA_INFO[l].fisica; })) return true;
+  return false;
+}
 function computeKpis(){
   var pr = periodRange(state.globalPeriod);
   var sd = salesDaily();
   var fat=sumRange(sd.fat, pr.start, pr.end), prevFat=sumRange(sd.fat, pr.prevStart, pr.prevEnd);
   var lb=sumRange(sd.lb, pr.start, pr.end), prevLb=sumRange(sd.lb, pr.prevStart, pr.prevEnd);
-  function diasVenda(a, b){ var n=0; for(var i=Math.max(0,a); i<=b && i<N_DAYS; i++){ if(sd.fat[i]>0) n++; } return n; }
-  var dv = diasVenda(pr.start, pr.end), dvp = pr.prevEnd>=0 ? diasVenda(pr.prevStart, pr.prevEnd) : 0;
+  // média diária: só e-commerce/marketplace = dias corridos; qualquer outro canal junto = dias úteis (feriados nacionais e estaduais)
+  var soOnline = mediaSoOnline();
+  function diasMedia(a, b){
+    a = Math.max(0, a); b = Math.min(b, TODAY_IDX, N_DAYS-1);
+    if(b < a) return 0;
+    var c = contarDias(DAYS[a], DAYS[b], null);
+    return soOnline ? c.corridos : c.uteis;
+  }
+  var dv = diasMedia(pr.start, pr.end), dvp = pr.prevEnd>=0 ? diasMedia(pr.prevStart, pr.prevEnd) : 0;
   var K = KPI_DB;
   // estoque: com produtos carregados respeita também os filtros de estoque; senão vem pronto do banco
   var estValor = 0, estQtd = 0, temEst = false;
@@ -2662,7 +2675,7 @@ function computeKpis(){
   return {
     pr:pr, fat:fat, prevFat:prevFat, lb:lb, prevLb:prevLb,
     margem: fat>0 ? lb/fat*100 : 0, prevMargem: prevFat>0 ? prevLb/prevFat*100 : 0,
-    media: dv ? fat/dv : 0, prevMedia: dvp ? prevFat/dvp : 0, dv:dv, dvp:dvp,
+    media: dv ? fat/dv : 0, prevMedia: dvp ? prevFat/dvp : 0, dv:dv, dvp:dvp, soOnline:soOnline,
     nf: K ? +K.nf||0 : null, nfp: K ? +K.nfp||0 : null, cli: K ? +K.cli||0 : null, clip: K ? +K.clip||0 : null,
     temEst:temEst, estValor:estValor, estQtd:estQtd, giro:giro, cobertura: giro>0 ? 365/giro : null,
     spark: sd.fat.slice(Math.max(0,TODAY_IDX-13), TODAY_IDX+1)
@@ -2717,7 +2730,8 @@ function renderKpis(refreshing){
   kpiEls.margem.d.innerHTML = deltaArrow(dMargem)+' '+(dMargem>=0?'+':'')+dMargem.toFixed(1)+' p.p. · LB '+fmtMoney(k.lb);
 
   countUp(kpiEls.media.v, k.media, fmtMoney);
-  delta(kpiEls.media.d, varPct(k.media, k.prevMedia), '· '+k.dv+(k.dv===1?' dia':' dias')+' com venda');
+  delta(kpiEls.media.d, varPct(k.media, k.prevMedia), '· '+k.dv+(k.dv===1?' dia':' dias')+(k.soOnline ? (k.dv===1?' corrido':' corridos') : (k.dv===1?' útil':' úteis')));
+  kpiEls.media.d.title = k.soOnline ? 'Só e-commerce: faturamento ÷ dias corridos do período' : 'Faturamento ÷ dias úteis do período (seg. a sex., sem feriados). Com e-commerce junto de outros canais, prevalecem os dias úteis; só e-commerce usa dias corridos.';
 
   if(k.nf!==null){
     var tk = k.nf>0 ? k.fat/k.nf : 0, tkp = k.nfp>0 ? k.prevFat/k.nfp : 0;
