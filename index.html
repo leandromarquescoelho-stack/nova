@@ -3468,7 +3468,37 @@ function carregarH2I(){
 }
 var ICO_COPIA = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 var ICO_OK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+// no celular o card é estreito e tabelas/gráficos largos ficam em caixas com rolagem: para a foto, abre tudo
+// (sem rolagem e na largura total do conteúdo) e desfaz logo depois
+function expandirParaCaptura(panel){
+  var mudou = [];
+  function guarda(el){ mudou.push([el, el.getAttribute('style')]); }
+  [panel].concat(Array.prototype.slice.call(panel.querySelectorAll('*'))).forEach(function(el){
+    if(el.offsetParent===null && el!==panel) return;
+    var cs = getComputedStyle(el), ox = cs.overflowX, oy = cs.overflowY;
+    var corta = function(o){ return o==='auto' || o==='scroll' || o==='hidden' || o==='clip'; };
+    var largo = corta(ox) && el.scrollWidth > el.clientWidth + 1, alto = corta(oy) && el.scrollHeight > el.clientHeight + 1;
+    if(!largo && !alto) return;
+    guarda(el);
+    el.style.overflow = 'visible'; el.style.maxWidth = 'none';
+    if(alto){ el.style.maxHeight = 'none'; el.style.height = 'auto'; }
+  });
+  // largura: a do conteúdo mais largo (medida depois de abrir as caixas)
+  var pr = panel.getBoundingClientRect(), dir = pr.right;
+  Array.prototype.forEach.call(panel.querySelectorAll('*'), function(el){
+    if(el.offsetParent===null) return;
+    var r = el.getBoundingClientRect(); if(r.width && r.right > dir) dir = r.right;
+  });
+  var pad = parseFloat(getComputedStyle(panel).paddingRight)||0;
+  var larg = Math.ceil(dir - pr.left + (dir > pr.right ? pad : 0));
+  if(larg > pr.width + 1){
+    if(mudou.every(function(m){ return m[0]!==panel; })) guarda(panel);
+    panel.style.width = larg+'px'; panel.style.maxWidth = 'none'; panel.style.overflow = 'visible';
+  }
+  return function(){ mudou.reverse().forEach(function(m){ if(m[1]===null) m[0].removeAttribute('style'); else m[0].setAttribute('style', m[1]); }); };
+}
 function imagemDoCard(panel){
+  var desfaz = expandirParaCaptura(panel);
   var fundo = getComputedStyle(document.body).backgroundColor || '#0b0e13';
   var op = {pixelRatio: Math.max(2, window.devicePixelRatio||1), backgroundColor: fundo, cacheBust:false,
     filter: function(n){ return !(n.classList && (n.classList.contains('copy-img') || n.classList.contains('vend-pdf'))); },
@@ -3478,11 +3508,12 @@ function imagemDoCard(panel){
   Array.prototype.forEach.call(panel.children, function(c){ if(c.offsetParent!==null) fundoConteudo = Math.max(fundoConteudo, c.getBoundingClientRect().bottom - pr.top); });
   var alt = Math.ceil(fundoConteudo + (parseFloat(getComputedStyle(panel).paddingBottom)||0));
   if(alt>0 && alt < pr.height-4){ op.height = alt; op.style.height = alt+'px'; }
+  op.width = Math.ceil(pr.width); op.style.width = op.width+'px';
   return carregarH2I().then(function(h){
     panel.classList.add('capturando');
     return h.toBlob(panel, op).catch(function(){ op.skipFonts = true; return h.toBlob(panel, op); })
-      .finally(function(){ panel.classList.remove('capturando'); });
-  });
+      .finally(function(){ panel.classList.remove('capturando'); desfaz(); });
+  }, function(e){ desfaz(); throw e; });
 }
 function nomeArquivoCard(panel){
   var t = panel.querySelector('h2'); t = t ? t.textContent : 'card';
