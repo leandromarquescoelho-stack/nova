@@ -896,6 +896,16 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .u-card{ background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:12px; min-width:0; }
 .u-card.pend{ border-color:rgba(250,178,25,.45); }
 .u-card.off{ opacity:.72; }
+.u-mini{ cursor:pointer; gap:6px; padding:11px 13px; transition:border-color .15s, transform .15s; }
+.u-mini:hover, .u-mini:focus-visible{ border-color:rgba(34,211,238,.45); outline:none; transform:translateY(-1px); }
+.u-mini .u-av{ width:34px; height:34px; font-size:12.5px; border-radius:10px; }
+.u-resumo{ font-size:11.5px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-left:45px; }
+.u-resumo b{ color:var(--text-2); font-weight:700; }
+.u-pop-bg{ position:fixed; inset:0; z-index:80; background:rgba(4,6,9,.55); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; padding:16px; }
+.u-pop{ position:relative; width:min(560px,100%); max-height:calc(100vh - 32px); overflow:auto; border-radius:16px; box-shadow:0 18px 50px rgba(0,0,0,.35); }
+.u-pop .u-card{ background:var(--surface); }
+.u-pop-x{ position:absolute; top:10px; right:10px; z-index:1; width:30px; height:30px; border-radius:9px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-2); font-size:16px; cursor:pointer; line-height:1; }
+.u-pop .u-top{ padding-right:36px; }
 .u-top{ display:flex; gap:11px; align-items:center; min-width:0; }
 .u-av{ width:40px; height:40px; border-radius:12px; flex:none; display:flex; align-items:center; justify-content:center; font-family:'Sora',sans-serif; font-weight:800; font-size:14px; color:#04141a; }
 .u-id{ min-width:0; flex:1; }
@@ -7580,6 +7590,42 @@ function userCard(p){
       '<span class="u-msg"></span></div>' +
   '</div>';
 }
+function userResumo(p){
+  var st = statusUser(p), ehEu = CURRENT_PROFILE && CURRENT_PROFILE.id===p.id;
+  var bi = p.role==='bi';
+  var nLj = bi ? lojasUniverso().length : lojasDoPerfil(p).length, nCn = bi ? canaisUniverso().length : canaisDoPerfil(p).length;
+  var nAb = abasDoPerfil(p).length;
+  var partes = ['<b>'+escapeHtml(ROLE_LABEL[p.role]||p.role||'')+'</b>'];
+  if(p.role==='vendedor' && p.vendedor_nome) partes.push(escapeHtml(p.vendedor_nome));
+  if(USERS_TEM_ESCOPO) partes.push(nLj===1 ? escapeHtml(lojasDoPerfil(p)[0]||'1 loja') : nLj+' lojas', nCn+' canais');
+  if(USERS_TEM_ABAS) partes.push(nAb+' guias');
+  return '<div class="u-card u-mini '+(st.c==='pend'?'pend':(st.c==='off'?'off':''))+'" data-id="'+p.id+'" tabindex="0" role="button" title="Clique para abrir o cadastro">' +
+    '<div class="u-top"><div class="u-av" style="background:'+(ROLE_COR[p.role]||ROLE_COR.vendedor)+'">'+escapeHtml(iniciais(p.full_name||p.email))+'</div>' +
+      '<div class="u-id"><b>'+escapeHtml(p.full_name||'(sem nome)')+(ehEu?' · você':'')+'</b><span>'+escapeHtml(p.email)+'</span></div>' +
+      '<span class="u-pill '+st.c+'">'+st.t+'</span></div>' +
+    '<div class="u-resumo">'+partes.join(' · ')+'</div></div>';
+}
+function fecharUserPop(){
+  var bg = document.getElementById('uPopBg'); if(bg) bg.remove();
+  document.removeEventListener('keydown', escUserPop);
+}
+function escUserPop(e){ if(e.key==='Escape') fecharUserPop(); }
+function abrirUserPop(id){
+  var p = USERS_CACHE.find(function(x){ return String(x.id)===String(id); }); if(!p) return;
+  fecharUserPop();
+  var bg = document.createElement('div'); bg.id = 'uPopBg'; bg.className = 'u-pop-bg';
+  bg.innerHTML = '<div class="u-pop" role="dialog" aria-modal="true"><button type="button" class="u-pop-x" aria-label="Fechar">×</button>'+userCard(p)+'</div>';
+  document.body.appendChild(bg);
+  bg.addEventListener('click', function(e){ if(e.target===bg) fecharUserPop(); });
+  bg.querySelector('.u-pop-x').addEventListener('click', fecharUserPop);
+  document.addEventListener('keydown', escUserPop);
+  var card = bg.querySelector('.u-card');
+  bindAbas(card); ajustaEscopo(card);
+  card.querySelector('.u-role').addEventListener('change', function(){ ajustaEscopo(card); });
+  card.querySelector('.u-save').addEventListener('click', function(){ salvarCard(card, false); });
+  var lib = card.querySelector('.u-liberar'); if(lib) lib.addEventListener('click', function(){ salvarCard(card, true); });
+  var nm = card.querySelector('.u-nome'); if(nm) nm.focus();
+}
 function ajustaEscopo(card){
   var role = card.querySelector('.u-role').value;
   var lw = card.querySelector('.u-loja-w'); if(lw) lw.style.display = role==='gerencia' ? '' : 'none';
@@ -7623,6 +7669,7 @@ async function salvarCard(card, liberar){
   var upd = await supa.from('profiles').update(payload).eq('id', id);
   if(upd.error){ msg.style.color='var(--critical)'; msg.textContent = 'Erro ao salvar: '+upd.error.message; return; }
   toast(liberar ? 'Acesso liberado.' : 'Usuário atualizado.');
+  fecharUserPop();
   renderUsersAdmin();
 }
 function renderUsersList(){
@@ -7638,12 +7685,11 @@ function renderUsersList(){
     var o = {pend:0, ok:1, off:2}; var d = o[statusUser(a).c]-o[statusUser(b).c];
     return d || String(a.full_name||a.email).localeCompare(String(b.full_name||b.email));
   });
-  wrap.innerHTML = lista.length ? lista.map(userCard).join('') : '<p class="note-muted">Nenhum usuário encontrado.</p>';
-  Array.prototype.forEach.call(wrap.querySelectorAll('.u-card'), function(card){
-    bindAbas(card); ajustaEscopo(card);
-    card.querySelector('.u-role').addEventListener('change', function(){ ajustaEscopo(card); });
-    card.querySelector('.u-save').addEventListener('click', function(){ salvarCard(card, false); });
-    var lib = card.querySelector('.u-liberar'); if(lib) lib.addEventListener('click', function(){ salvarCard(card, true); });
+  wrap.innerHTML = lista.length ? lista.map(userResumo).join('') : '<p class="note-muted">Nenhum usuário encontrado.</p>';
+  Array.prototype.forEach.call(wrap.querySelectorAll('.u-mini'), function(card){
+    var abrir = function(){ abrirUserPop(card.getAttribute('data-id')); };
+    card.addEventListener('click', abrir);
+    card.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); abrir(); } });
   });
 }
 function renderUsersStats(){
