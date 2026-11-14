@@ -13,6 +13,19 @@ API = 'https://dados.transportes.gov.br/api/3/action/'
 MESES = {'janeiro': 1, 'fevereiro': 2, 'marco': 3, 'abril': 4, 'maio': 5, 'junho': 6, 'julho': 7, 'agosto': 8,
          'setembro': 9, 'outubro': 10, 'novembro': 11, 'dezembro': 12}
 UFS = {'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'}
+NOME_UF = {'acre':'AC','alagoas':'AL','amazonas':'AM','amapa':'AP','bahia':'BA','ceara':'CE','distrito federal':'DF','espirito santo':'ES',
+  'goias':'GO','maranhao':'MA','minas gerais':'MG','mato grosso do sul':'MS','mato grosso':'MT','para':'PA','paraiba':'PB','pernambuco':'PE',
+  'piaui':'PI','parana':'PR','rio de janeiro':'RJ','rio grande do norte':'RN','rondonia':'RO','roraima':'RR','rio grande do sul':'RS',
+  'santa catarina':'SC','sergipe':'SE','sao paulo':'SP','tocantins':'TO'}
+
+
+def sigla(v):
+    v = str(v).strip().strip('"')
+    if v.upper() in UFS:
+        return v.upper()
+    return NOME_UF.get(re.sub(r'\s+', ' ', sem_acento(v)).strip())
+
+
 SAIDA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'geo', 'frota.json')
 
 
@@ -114,13 +127,18 @@ def chevrolet(rs):
             iq = len(cab) - 1 if not any('qtd' in x or 'quant' in x for x in cab) else next(k for k, x in enumerate(cab) if 'qtd' in x or 'quant' in x)
             print('colunas:', cab)
             continue
-        if len(c) <= max(iu, im, ik, iq) or c[iu] not in UFS:
+        if i <= 3:
+            print('amostra:', c)
+        if len(c) <= max(iu, im, ik, iq):
+            continue
+        uf = sigla(c[iu])
+        if not uf:
             continue
         try:
             q = int(float(c[iq].replace('.', '').replace(',', '.') or 0))
         except ValueError:
             continue
-        k = c[iu] + '|' + norm(c[im])
+        k = uf + '|' + norm(c[im])
         tot[k] = tot.get(k, 0) + q
         mm = c[ik].upper()
         if mm.startswith('GM/') or mm.startswith('CHEV') or mm.startswith('I/GM') or mm.startswith('I/CHEV') or mm.startswith('GM '):
@@ -128,6 +146,30 @@ def chevrolet(rs):
     os.unlink(arq)
     print('marca-modelo', ref, len(tot), 'municípios; Chevrolet total', sum(chev.values()), 'de', sum(tot.values()))
     return ref, {k: (tot[k], chev.get(k, 0)) for k in tot}
+
+
+def automoveis_govbr():
+    """Páginas anuais da Senatran no gov.br: links de planilhas de frota por município e tipo."""
+    import subprocess
+    cand = []
+    ano = date.today().year
+    for a in (ano, ano - 1):
+        for base in ('https://www.gov.br/transportes/pt-br/assuntos/transito/conteudo-Senatran/frota-de-veiculos-%d' % a,
+                     'https://www.gov.br/transportes/pt-br/pt-br/assuntos/transito/conteudo-Senatran/frota-de-veiculos-%d' % a):
+            r = subprocess.run(['curl', '-fsSL', '-A', 'Mozilla/5.0', '--max-time', '60', base], capture_output=True)
+            if r.returncode != 0:
+                print('gov.br sem página', base); continue
+            html = r.stdout.decode('utf-8', 'ignore')
+            for href, txt in re.findall(r'href="([^"]+)"[^>]*>(.*?)</a>', html, flags=re.S):
+                t = sem_acento(href + ' ' + re.sub('<[^>]+>', ' ', txt))
+                if 'munic' in t and 'tipo' in t and re.search(r'\.(xlsx|xls|csv|zip)(/|$|\?)', href.lower()):
+                    d = mes_do_nome(t) or date(a, 1, 1)
+                    u = href if href.startswith('http') else 'https://www.gov.br' + href
+                    print('gov.br:', d, u)
+                    cand.append((d, u))
+            if cand:
+                break
+    return cand
 
 
 def automoveis(rs):
@@ -140,6 +182,8 @@ def automoveis(rs):
             d = mes_do_nome(t)
             if d:
                 cand.append((d, r['url']))
+    if not cand:
+        cand = automoveis_govbr()
     if not cand:
         print('nenhuma planilha de frota por município e tipo encontrada')
         return None, {}
@@ -157,8 +201,8 @@ def automoveis(rs):
     iu, im, ia = cab.index('uf'), next(k for k, x in enumerate(cab) if 'munic' in x), cab.index('automovel')
     out = {}
     for _, row in bruto.iloc[h + 1:].iterrows():
-        uf = str(row[iu]).strip().upper()
-        if uf not in UFS:
+        uf = sigla(row[iu])
+        if not uf:
             continue
         try:
             out[uf + '|' + norm(row[im])] = int(float(str(row[ia]).replace('.', '').replace(',', '.')))
@@ -178,7 +222,10 @@ def main():
     for (pk, n), u in sorted(tipos.items()):
         if pk == 'registro-nacional-de-veiculos-automotores-renavam':
             print('arquivo:', n, '|', u)
-    ref_a, auto = automoveis(rs)
+    try:
+        ref_a, auto = automoveis(rs)
+    except Exception as e:  # sem a planilha de tipos, segue só com a Chevrolet
+        print('automóveis: falhou', repr(e)); ref_a, auto = None, {}
     ref_c, mm = chevrolet(rs)
     if not auto and not mm:
         sys.exit('nada encontrado no portal: o layout pode ter mudado')
