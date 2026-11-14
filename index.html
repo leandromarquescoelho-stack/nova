@@ -1072,6 +1072,21 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cli-termo .t{font-size:12px; font-weight:700;} .cli-termo .n{font-size:18px; font-weight:800; font-family:'JetBrains Mono',monospace; margin-top:2px;} .cli-termo .s{font-size:11px; color:var(--text-muted);}
 .cli-tab td.cli-cid, .cli-tab td.cli-resp{width:1%; max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .cli-tab td.cli-resp .note-muted{overflow:hidden; text-overflow:ellipsis;}
+.msel-l{display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--text-muted); font-weight:600;}
+.msel{position:relative; min-width:150px;}
+.msel-b{width:100%; text-align:left; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px; padding-right:28px; position:relative;}
+.msel-b span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px;}
+.msel-b::after{content:''; position:absolute; right:12px; top:50%; width:7px; height:7px; border-right:1.6px solid currentColor; border-bottom:1.6px solid currentColor; transform:translateY(-70%) rotate(45deg); opacity:.7;}
+.msel.ativo .msel-b{border-color:var(--accent); color:var(--text);}
+.msel-p{position:absolute; top:calc(100% + 6px); left:0; z-index:120; width:max(100%, 260px); background:var(--surface); border:1px solid var(--border-strong); border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,.4); padding:8px;}
+.msel-p[hidden]{display:none;}
+.msel-q{width:100%; box-sizing:border-box; padding:7px 9px; border-radius:7px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font:inherit; font-size:12px;}
+.msel-acoes{display:flex; justify-content:space-between; margin:6px 2px;}
+.msel-acoes button{border:0; background:none; color:var(--accent); font:inherit; font-size:11.5px; font-weight:700; cursor:pointer; padding:2px 0;}
+.msel-lista{max-height:260px; overflow:auto;}
+.msel .msel-i{display:flex; flex-direction:row; align-items:center; gap:8px; padding:5px 6px; border-radius:6px; font-size:12.5px; color:var(--text); font-weight:500; cursor:pointer;}
+.msel-i:hover{background:var(--surface-2);}
+.msel-i input{accent-color:var(--accent); width:14px; height:14px; margin:0; flex:none;}
 #termoBalao{position:fixed; z-index:2000; display:none; max-width:340px; background:var(--surface); border:1px solid var(--border-strong); border-radius:10px; padding:9px 12px; box-shadow:0 10px 30px rgba(0,0,0,.45); font-size:12px; color:var(--text-2); line-height:1.5; pointer-events:none;}
 #termoBalao b{display:block; color:var(--text); font-weight:700; margin-bottom:3px;}
 #termoBalao div{font-size:11px; color:var(--text-muted);}
@@ -1931,12 +1946,12 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
         <div class="cli-filtros" id="cliFiltros">
           <input type="text" class="cli-busca" id="cliBusca" placeholder="Razão social ou código" autocomplete="off">
-          <label>Tipo<select class="fsel" id="cliTipo"></select></label>
-          <label>Grupo<select class="fsel" id="cliGrupo"></select></label>
-          <label>Pessoa<select class="fsel" id="cliPessoa"></select></label>
-          <label>Cidade<select class="fsel" id="cliCidade"></select></label>
-          <label>Responsável<select class="fsel" id="cliVend"></select></label>
-          <label>Equipe<select class="fsel" id="cliEquipe"></select></label>
+          <div class="msel-l">Tipo<div class="msel" id="cliTipo"></div></div>
+          <div class="msel-l">Grupo<div class="msel" id="cliGrupo"></div></div>
+          <div class="msel-l">Pessoa<div class="msel" id="cliPessoa"></div></div>
+          <div class="msel-l">Cidade<div class="msel" id="cliCidade"></div></div>
+          <div class="msel-l">Responsável<div class="msel" id="cliVend"></div></div>
+          <div class="msel-l">Equipe<div class="msel" id="cliEquipe"></div></div>
           <label>Ordenar<select class="fsel" id="cliOrdem">
             <option value="fat">Maior volume no período</option>
             <option value="dias">Mais dias sem compra</option>
@@ -5555,7 +5570,54 @@ function carregando(on){
 /* ============================================================
    CLIENTES — carteira, termômetro de compras e disponíveis (política de 60 dias)
    ============================================================ */
-var CLI = {busca:'', tipo:'', grupo:'', pessoa:'', cidade:'', vend:'', equipe:'', termo:[], ordem:'fat'}, CLI_SEQ = 0, CLI_LIG = false;
+var CLI = {busca:'', tipo:[], grupo:[], pessoa:[], cidade:[], vend:[], equipe:[], termo:[], ordem:'fat'}, CLI_SEQ = 0, CLI_LIG = false;
+// caixa de seleção múltipla (marcar quantos quiser): botão com o resumo + lista com busca e caixas de marcar
+var MSEL = {};
+function mselMontar(id, chave, opcoes, vazio){
+  var el = document.getElementById(id); if(!el) return;
+  MSEL[id] = {chave:chave, opcoes:opcoes, vazio:vazio};
+  el.innerHTML = '<button type="button" class="fsel msel-b" aria-haspopup="listbox"><span></span></button>' +
+    '<div class="msel-p" hidden><input type="text" class="msel-q" placeholder="Buscar…" autocomplete="off">' +
+    '<div class="msel-acoes"><button type="button" data-a="todos">Marcar todos</button><button type="button" data-a="limpar">Limpar</button></div>' +
+    '<div class="msel-lista">' + opcoes.map(function(o){ return '<label class="msel-i"><input type="checkbox" value="'+escapeHtml(String(o[0]))+'"><span>'+escapeHtml(String(o[1]))+'</span></label>'; }).join('') + '</div></div>';
+  var b = el.querySelector('.msel-b'), pn = el.querySelector('.msel-p'), q = el.querySelector('.msel-q');
+  b.addEventListener('click', function(){
+    var abrir = pn.hidden;
+    Object.keys(MSEL).forEach(function(k){ var o = document.getElementById(k); if(o) o.querySelector('.msel-p').hidden = true; });
+    pn.hidden = !abrir; if(abrir){ q.value = ''; mselFiltrar(el, ''); q.focus(); }
+  });
+  q.addEventListener('input', function(){ mselFiltrar(el, q.value); });
+  q.addEventListener('keydown', function(e){ e.stopPropagation(); if(e.key==='Escape'){ pn.hidden = true; b.focus(); } });
+  el.querySelector('.msel-lista').addEventListener('change', function(){ mselLer(id); });
+  el.querySelector('.msel-acoes').addEventListener('click', function(ev){
+    var a = ev.target.getAttribute('data-a'); if(!a) return;
+    Array.prototype.forEach.call(el.querySelectorAll('.msel-i'), function(l){ if(a==='limpar' || l.style.display!=='none') l.querySelector('input').checked = (a==='todos'); });
+    mselLer(id);
+  });
+  mselResumo(id);
+}
+function mselFiltrar(el, txt){
+  var t = vxSemAcento(txt||'');
+  Array.prototype.forEach.call(el.querySelectorAll('.msel-i'), function(l){ l.style.display = !t || vxSemAcento(l.textContent).indexOf(t)!==-1 ? '' : 'none'; });
+}
+function mselLer(id){
+  var m = MSEL[id], el = document.getElementById(id);
+  CLI[m.chave] = Array.prototype.map.call(el.querySelectorAll('.msel-i input:checked'), function(i){ return i.value; });
+  mselResumo(id); cliPendente(true);
+}
+function mselResumo(id){
+  var m = MSEL[id], el = document.getElementById(id), v = CLI[m.chave] || [];
+  Array.prototype.forEach.call(el.querySelectorAll('.msel-i input'), function(i){ i.checked = v.indexOf(i.value)!==-1; });
+  var nomes = m.opcoes.filter(function(o){ return v.indexOf(String(o[0]))!==-1; }).map(function(o){ return String(o[1]); });
+  var sp = el.querySelector('.msel-b span');
+  sp.textContent = !nomes.length ? m.vazio : (nomes.length===1 ? nomes[0] : 'Vários ('+nomes.length+')');
+  el.querySelector('.msel-b').title = nomes.length ? nomes.join(', ') : m.vazio;
+  el.classList.toggle('ativo', nomes.length>0);
+}
+document.addEventListener('click', function(ev){
+  if(ev.target.closest && ev.target.closest('.msel')) return;
+  Object.keys(MSEL).forEach(function(k){ var o = document.getElementById(k); if(o){ var pn = o.querySelector('.msel-p'); if(pn) pn.hidden = true; } });
+});
 var TERMO = {
   esquentando:{t:'Esquentando', ico:'🔥', d:'Comprou mais nos últimos 90 dias do que nos 90 anteriores (+30%)'},
   estavel:{t:'Estável', ico:'🙂', d:'Compras no ritmo de sempre'},
@@ -5565,26 +5627,23 @@ var TERMO = {
   ocasional:{t:'Ocasional e-commerce', ico:'🛒', d:'Cliente do e-commerce com mais de 60 dias sem compra e até 3 compras em 12 meses: não entra nos disponíveis'}
 };
 var TERMO_ORD = ['esquentando','estavel','esfriando','novo','disponivel','ocasional'];
-function cliOpcoes(id, tipo, vazio){
-  var el = document.getElementById(id); if(!el) return;
+function cliOpcoes(id, tipo, vazio, chave){
   var lista = ((META.dims && META.dims[tipo]) || []).slice().sort(function(a,b){ return String(a[1]).localeCompare(String(b[1]), 'pt-BR'); });
-  el.innerHTML = '<option value="">'+vazio+'</option>' + lista.map(function(x){ return '<option value="'+x[0]+'">'+escapeHtml(String(x[1]))+'</option>'; }).join('');
+  mselMontar(id, chave, lista, vazio);
 }
 function cliLigar(){
   if(CLI_LIG) return; CLI_LIG = true;
-  cliOpcoes('cliTipo', 'tipo_cliente', 'Todos'); cliOpcoes('cliGrupo', 'grupo_cliente', 'Todos'); cliOpcoes('cliPessoa', 'pessoa', 'Todas');
-  cliOpcoes('cliCidade', 'cidade', 'Todas'); cliOpcoes('cliVend', 'vendedor', 'Todos');
-  var eqs = Object.keys(toSet(Object.keys(vendEquipes()).map(function(n){ return vendEquipes()[n]; }))).sort();
-  document.getElementById('cliEquipe').innerHTML = '<option value="">Todas</option>' + eqs.map(function(e){ return '<option value="'+escapeHtml(e)+'">'+escapeHtml(e)+'</option>'; }).join('');
-  [['cliTipo','tipo'],['cliGrupo','grupo'],['cliPessoa','pessoa'],['cliCidade','cidade'],['cliVend','vend'],['cliEquipe','equipe'],['cliOrdem','ordem']].forEach(function(x){
-    document.getElementById(x[0]).addEventListener('change', function(){ CLI[x[1]] = this.value; cliPendente(true); });
-  });
+  cliOpcoes('cliTipo', 'tipo_cliente', 'Todos', 'tipo'); cliOpcoes('cliGrupo', 'grupo_cliente', 'Todos', 'grupo'); cliOpcoes('cliPessoa', 'pessoa', 'Todas', 'pessoa');
+  cliOpcoes('cliCidade', 'cidade', 'Todas', 'cidade'); cliOpcoes('cliVend', 'vendedor', 'Todos', 'vend');
+  var eqs = Object.keys(toSet(Object.keys(vendEquipes()).map(function(n){ return vendEquipes()[n]; }))).filter(Boolean).sort();
+  mselMontar('cliEquipe', 'equipe', eqs.map(function(e){ return [e, e]; }), 'Todas');
+  document.getElementById('cliOrdem').addEventListener('change', function(){ CLI.ordem = this.value; cliPendente(true); });
   document.getElementById('cliBusca').addEventListener('input', function(){ CLI.busca = this.value.trim(); cliPendente(true); });
   document.getElementById('cliBusca').addEventListener('keydown', function(e){ e.stopPropagation(); if(e.key==='Enter') renderClientes(); });
   document.getElementById('cliAplicar').addEventListener('click', function(){ renderClientes(); });
   document.getElementById('cliLimpar').addEventListener('click', function(){
-    CLI = {busca:'', tipo:'', grupo:'', pessoa:'', cidade:'', vend:'', equipe:'', termo:[], ordem:'fat'};
-    ['cliTipo','cliGrupo','cliPessoa','cliCidade','cliVend','cliEquipe'].forEach(function(id){ document.getElementById(id).value = ''; });
+    CLI = {busca:'', tipo:[], grupo:[], pessoa:[], cidade:[], vend:[], equipe:[], termo:[], ordem:'fat'};
+    Object.keys(MSEL).forEach(mselResumo);
     document.getElementById('cliOrdem').value = 'fat'; document.getElementById('cliBusca').value = '';
     renderClientes();
   });
@@ -5612,8 +5671,8 @@ var CLI_ABA = 'analise';
 function cliOpts(extra){
   var o = {ordem: CLI.ordem};
   if(CLI.busca) o.busca = CLI.busca;
-  [['tipo','tipo'],['grupo','grupo'],['pessoa','pessoa'],['cidade','cidade'],['vend','vend']].forEach(function(x){ if(CLI[x[0]]!=='') o[x[1]] = [+CLI[x[0]]]; });
-  if(CLI.equipe) o.equipe = [CLI.equipe];
+  [['tipo','tipo'],['grupo','grupo'],['pessoa','pessoa'],['cidade','cidade'],['vend','vend']].forEach(function(x){ if(CLI[x[0]].length) o[x[1]] = CLI[x[0]].map(Number); });
+  if(CLI.equipe.length) o.equipe = CLI.equipe.slice();
   if(CLI.termo.length) o.termo = CLI.termo.slice().sort();
   Object.keys(extra||{}).forEach(function(k){ o[k] = extra[k]; });
   return o;
