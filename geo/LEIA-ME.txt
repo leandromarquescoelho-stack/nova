@@ -1,0 +1,4 @@
+Contornos dos municípios por estado (UF.json), usados no mapa da guia Vendas > Regiões.
+Fonte: malha municipal do IBGE, via github.com/tbrugz/geodata-br, simplificada (tolerância ~400 m, coordenadas com 3 casas).
+Formato: [nome normalizado, nome, código IBGE, [lat, lng], polígonos, população, frota]; população e frota (dados públicos) só em parte dos municípios.
+Não contém dados de venda.

@@ -394,6 +394,80 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 #kpi-critico::before{ background:var(--critical); }
 #kpi-giro::before{ background:var(--good); }
 
+/* ---- Vendas em abas (visual inspirado no painel "Performance de Peças": ciano, roxo, âmbar, verde e vermelho) ---- */
+:root{ --vx-cy:#00e5ff; --vx-pu:#7c3aed; --vx-am:#f59e0b; --vx-gr:#10b981; --vx-re:#ef4444;
+  --vx-cy-t:#00e5ff; --vx-pu-t:#a78bfa; --vx-am-t:#f59e0b; --vx-gr-t:#10b981; --vx-re-t:#ef4444; --vx-grid:#1d2d42; --vx-tick:#94a3b8; }
+:root[data-theme="light"]{ --vx-cy-t:#0e7490; --vx-pu-t:#6d28d9; --vx-am-t:#b45309; --vx-gr-t:#047857; --vx-re-t:#b91c1c; --vx-grid:#e2e8f0; --vx-tick:#475569; }
+.vx-kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:13px;}
+.vx-kpi{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:13px 15px 12px 17px; position:relative; overflow:hidden;}
+.vx-kpi::before{content:""; position:absolute; left:0; top:0; width:3px; height:100%;}
+.vx-kpi.k0::before{background:var(--vx-cy);} .vx-kpi.k1::before{background:var(--vx-pu);} .vx-kpi.k2::before{background:var(--vx-am);} .vx-kpi.k3::before{background:var(--vx-gr);}
+.vx-kl{font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.14em; margin-bottom:4px;}
+.vx-kv{font-family:'Sora',sans-serif; font-size:21px; font-weight:700; letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.vx-ks{font-size:11px; color:var(--text-muted); margin-top:2px;}
+.vx-abas{display:flex; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:3px; margin-bottom:13px; width:fit-content; max-width:100%; flex-wrap:wrap;}
+.vx-abas button{font:inherit; font-size:12.5px; font-weight:600; padding:6px 13px; border:none; background:transparent; color:var(--text-muted); border-radius:7px; cursor:pointer; white-space:nowrap; transition:background .15s, color .15s;}
+.vx-abas button:hover{color:var(--text);}
+.vx-abas button[aria-pressed="true"]{background:var(--vx-pu); color:#fff;}
+.vx-tc[hidden]{display:none;}
+.vx-g2{display:grid; grid-template-columns:1fr 1fr; gap:13px; margin-bottom:13px;}
+.vx-card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:15px; margin-bottom:13px; min-width:0;}
+.vx-g2 .vx-card{margin-bottom:0;}
+.vx-ct{font-family:'Sora',sans-serif; font-size:13.5px; font-weight:700; margin-bottom:2px;}
+.vx-cs{font-size:11px; color:var(--text-muted); margin-bottom:10px;}
+.vx-cw{position:relative; height:300px;}
+.vx-cw .vx-vazio{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--text-muted);}
+.vx-leg{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-muted);}
+.vx-leg span{display:inline-flex; align-items:center; gap:5px;}
+.vx-leg i{width:11px; height:11px; border-radius:3px; display:inline-block;}
+.vx-scroll{max-height:340px; overflow:auto; border-radius:8px;}
+.vx-tbl{width:100%; border-collapse:collapse; font-size:12px;}
+.vx-tbl thead th{font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); padding:8px 10px; text-align:left; background:var(--surface-2); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:1; white-space:nowrap; cursor:pointer; user-select:none;}
+.vx-tbl thead th:hover{color:var(--vx-cy-t);}
+.vx-tbl thead th .ord{margin-left:4px; font-size:9px; opacity:.3;} .vx-tbl thead th .ord.on{opacity:1; color:var(--vx-cy-t);}
+.vx-tbl tbody tr{border-bottom:1px solid var(--border);}
+.vx-tbl tbody tr:hover{background:rgba(0,229,255,.04);}
+.vx-tbl tbody tr[data-fon]{background:rgba(0,229,255,.09);}
+.vx-tbl tbody tr[data-foff]{opacity:.45;}
+.vx-tbl td{padding:8px 10px; vertical-align:middle; white-space:nowrap;}
+.vx-tbl td.nm{white-space:normal; min-width:140px; font-weight:700;}
+.vx-tbl .mn{font-family:'JetBrains Mono',monospace; font-size:11.5px; font-variant-numeric:tabular-nums;}
+.vx-tbl .rk{color:var(--text-muted);}
+.vx-tbl .lb{color:var(--vx-gr-t);}
+.vx-bdg{display:inline-block; padding:2px 7px; border-radius:20px; font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:600;}
+.vx-bdg.bg{background:rgba(16,185,129,.13); color:var(--vx-gr-t);} .vx-bdg.bc{background:rgba(0,229,255,.12); color:var(--vx-cy-t);}
+.vx-bdg.bmb{background:rgba(34,211,238,.12); color:var(--vx-cy-t);} .vx-bdg.ba{background:rgba(245,158,11,.13); color:var(--vx-am-t);}
+.vx-bdg.br{background:rgba(239,68,68,.13); color:var(--vx-re-t);} .vx-bdg.bp{background:rgba(124,58,237,.14); color:var(--vx-pu-t);}
+.vx-bm{height:4px; background:var(--border-strong); border-radius:3px; overflow:hidden; width:60px; display:inline-block; margin-left:6px; vertical-align:middle;}
+.vx-bm b{display:block; height:100%; border-radius:3px;}
+.vx-ins-head{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:11px; flex-wrap:wrap;}
+.vx-ctx{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--vx-cy-t); background:rgba(0,229,255,.07); border:1px solid rgba(0,229,255,.18); border-radius:6px; padding:3px 10px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.vx-ins{display:grid; grid-template-columns:repeat(3,1fr); gap:11px;}
+.vx-in{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:15px; transition:border-color .2s, transform .2s;}
+.vx-in:hover{border-color:rgba(0,229,255,.25); transform:translateY(-1px);}
+.vx-in .ico{width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; margin-bottom:9px;}
+.vx-in .tt{font-family:'Sora',sans-serif; font-size:13px; font-weight:700; margin-bottom:5px;}
+.vx-in .bd{font-size:12px; color:var(--text-2); line-height:1.55;}
+.vx-in .bd b{color:var(--text);}
+.vx-map-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;}
+.vx-map-ctl{display:flex; gap:12px; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--text-muted);}
+.vx-map-ctl label{display:inline-flex; align-items:center; gap:6px;}
+.vx-chk input{accent-color:var(--vx-cy);}
+#vxMapWrap{position:relative; width:100%; height:560px; border-radius:10px; overflow:hidden; border:1px solid var(--border); margin-top:10px; background:var(--surface-2);}
+#vxMap{width:100%; height:100%;}
+#vxMapWrap .leaflet-container{background:var(--surface-2); font:inherit;}
+#vxMapTip{position:absolute; z-index:1000; background:var(--surface); border:1px solid var(--border-strong); border-radius:10px; padding:10px 13px; pointer-events:none; display:none; min-width:200px; max-width:260px; box-shadow:0 6px 24px rgba(0,0,0,.35); font-size:11.5px;}
+#vxMapTip .tn{font-family:'Sora',sans-serif; font-weight:700; font-size:13px; margin-bottom:6px;}
+#vxMapTip .tg{display:grid; grid-template-columns:auto auto; gap:3px 14px;}
+#vxMapTip .tg span:nth-child(odd){color:var(--text-muted);}
+#vxMapTip .tg span:nth-child(even){font-family:'JetBrains Mono',monospace; text-align:right;}
+#vxMapTip .sep{grid-column:1/-1; height:1px; background:var(--border); margin:3px 0;}
+#vxMapTip .sv{background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); border-radius:6px; padding:4px 8px; color:var(--vx-am-t); margin-bottom:6px;}
+.vx-map-msg{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:900; pointer-events:none; font-size:13px;}
+.vx-map-msg[hidden]{display:none;}
+.vx-loja-pin{background:var(--vx-pu); border:2px solid #fff; border-radius:50%; box-shadow:0 0 0 3px rgba(124,58,237,.35);}
+@media(max-width:1100px){ .vx-kpis{grid-template-columns:1fr 1fr;} .vx-g2{grid-template-columns:1fr;} .vx-ins{grid-template-columns:1fr 1fr;} }
+@media(max-width:640px){ .vx-ins{grid-template-columns:1fr;} #vxMapWrap{height:420px;} .vx-kv{font-size:18px;} }
 /* ---- insights automáticos (cards com achados gerados a partir dos dados filtrados) ---- */
 .ins-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
 @media (max-width:1100px){ .ins-grid{ grid-template-columns:1fr 1fr; } }
@@ -1235,7 +1309,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <h1 id="viewTitle">Dashboard</h1>
           <div class="sub" id="viewSub">Visão geral de vendas e estoque</div>
           <div class="updated"><span class="dot-live" id="liveDot"></span><span id="updatedText">Atualizado agora</span></div>
-          <div class="sub-abas" id="cliAbas" hidden><button type="button" data-cliaba="analise" aria-pressed="true">Análise de clientes</button><button type="button" data-cliaba="disp" aria-pressed="false">Clientes Disponíveis</button></div>
+          <div class="sub-abas" id="cliAbas" hidden><button type="button" data-cliaba="analise" aria-pressed="true">Análise de clientes</button><button type="button" data-cliaba="disp" aria-pressed="false">Clientes Disponíveis</button><button type="button" data-cliaba="cidades" aria-pressed="false">Cidades que mais compram</button><button type="button" data-cliaba="cidmov" aria-pressed="false">Cidades que mais mudaram</button></div>
         </div>
       </div>
       <!-- seletor do vendedor: fixo no topo enquanto a aba Vendedores está aberta -->
@@ -1540,60 +1614,77 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <!-- ============ VENDAS ============ -->
       <section class="view-panel" data-view-panel="vendas" style="display:none;">
-      <div class="panel" style="margin-bottom:14px;">
-        <div class="panel-head">
-          <div><h2>Vendas por Canal</h2><div class="psub">Participação de cada canal no faturamento do período &middot; canais pequenos aparecem com largura mínima &middot; toque ou passe o mouse para ver os detalhes</div></div>
-        </div>
-        <div class="chart-wrap">
-          <div class="canal-bar" id="canalBar"></div>
-          <div class="chart-tip" id="canalTip"></div>
-        </div>
-        <div class="canal-cards" id="canalCards"></div>
+      <div class="vx-kpis" id="vxKpis"></div>
+      <div class="vx-abas" id="vxAbas" role="tablist">
+        <button type="button" data-vxaba="lojas" aria-pressed="true">&#127978; Lojas</button>
+        <button type="button" data-vxaba="marcas" aria-pressed="false">&#127991;&#65039; Marcas</button>
+        <button type="button" data-vxaba="grupos" aria-pressed="false">&#128230; Grupos</button>
+        <button type="button" data-vxaba="produtos" aria-pressed="false">&#128297; Produtos</button>
+        <button type="button" data-vxaba="insights" aria-pressed="false">&#128161; Insights</button>
+        <button type="button" data-vxaba="regioes" aria-pressed="false">&#128506;&#65039; Regiões</button>
+        <button type="button" data-vxaba="lojames" aria-pressed="false">&#128197; Loja &times; Mês</button>
       </div>
 
-      <div class="grid-2">
-        <div class="panel">
-          <div class="panel-head">
-            <div><h2>Vendas por Loja</h2><div class="psub">Lojas físicas e marketplaces (🛒) &middot; faturamento no período</div></div>
+      <div class="vx-tc" data-vxpainel="lojas">
+        <div class="vx-g2">
+          <div class="vx-card"><div class="vx-ct">Faturamento por Loja</div><div class="vx-cs">Cor da barra = canal principal da loja &middot; clique para filtrar</div><div class="vx-cw"><canvas id="vxLF"></canvas></div><div class="vx-leg" id="vxLojaLeg"></div></div>
+          <div class="vx-card"><div class="vx-ct">Margem % por Loja</div><div class="vx-cs">Rentabilidade &middot; verde/ciano acima de 15%, âmbar de 10% a 15%, vermelho abaixo de 10%</div><div class="vx-cw"><canvas id="vxLM"></canvas></div></div>
+        </div>
+        <div class="vx-card"><div class="vx-ct">Tabela &mdash; Lojas</div><div class="vx-cs">Dados filtrados &middot; clique no cabeçalho para ordenar e na linha para filtrar</div><div class="vx-scroll"><table class="vx-tbl" id="vxTL"></table></div></div>
+      </div>
+
+      <div class="vx-tc" data-vxpainel="marcas" hidden>
+        <div class="vx-g2">
+          <div class="vx-card"><div class="vx-ct">Top Marcas &mdash; Faturamento</div><div class="vx-cs">Concentração de receita &middot; 15 maiores</div><div class="vx-cw"><canvas id="vxMF"></canvas></div></div>
+          <div class="vx-card"><div class="vx-ct">Margem % por Marca</div><div class="vx-cs">Rentabilidade das 15 maiores</div><div class="vx-cw"><canvas id="vxMM"></canvas></div></div>
+        </div>
+        <div class="vx-card"><div class="vx-ct">Tabela &mdash; Marcas</div><div class="vx-cs" id="vxTMsub">Todas as marcas com venda</div><div class="vx-scroll"><table class="vx-tbl" id="vxTM"></table></div></div>
+      </div>
+
+      <div class="vx-tc" data-vxpainel="grupos" hidden>
+        <div class="vx-g2">
+          <div class="vx-card"><div class="vx-ct">Top Grupos &mdash; Faturamento</div><div class="vx-cs">Mix de produtos (categoria) &middot; 15 maiores</div><div class="vx-cw"><canvas id="vxGF"></canvas></div></div>
+          <div class="vx-card"><div class="vx-ct">Margem % por Grupo</div><div class="vx-cs">Rentabilidade dos 15 maiores</div><div class="vx-cw"><canvas id="vxGM"></canvas></div></div>
+        </div>
+        <div class="vx-card"><div class="vx-ct">Tabela &mdash; Grupos</div><div class="vx-cs">Todos os grupos com venda</div><div class="vx-scroll"><table class="vx-tbl" id="vxTG"></table></div></div>
+      </div>
+
+      <div class="vx-tc" data-vxpainel="produtos" hidden>
+        <div class="vx-g2">
+          <div class="vx-card"><div class="vx-ct">Top Produtos &mdash; Faturamento</div><div class="vx-cs">Por código de produto &middot; 15 maiores</div><div class="vx-cw"><canvas id="vxPF"></canvas></div></div>
+          <div class="vx-card"><div class="vx-ct">Top Produtos &mdash; Margem %</div><div class="vx-cs">Maiores margens entre os 100 que mais faturam</div><div class="vx-cw"><canvas id="vxPM"></canvas></div></div>
+        </div>
+        <div class="vx-card"><div class="vx-ct">Tabela &mdash; Produtos</div><div class="vx-cs">100 maiores &middot; clique no cabeçalho para ordenar</div><div class="vx-scroll"><table class="vx-tbl" id="vxTP"></table></div></div>
+      </div>
+
+      <div class="vx-tc" data-vxpainel="insights" hidden>
+        <div class="vx-ins-head"><div class="vx-ct" style="font-size:14px;">Insights da seleção atual</div><div class="vx-ctx" id="vxInsCtx">Todos os filtros ativos</div></div>
+        <div class="vx-ins" id="vxIns"></div>
+      </div>
+
+      <div class="vx-tc" data-vxpainel="regioes" hidden>
+        <div class="vx-kpis" id="vxRegKpis"></div>
+        <div class="vx-card">
+          <div class="vx-map-top">
+            <div><div class="vx-ct">Mapa de Calor &mdash; Municípios</div><div class="vx-cs" id="vxMapSub">Passe o mouse para ver os detalhes &middot; clique no município para filtrar</div></div>
+            <div class="vx-map-ctl">
+              <label>Cor por<select class="fsel" id="vxMapMetrica">
+                <option value="fat">Faturamento</option>
+                <option value="margem">Margem %</option>
+                <option value="var">Variação vs. período anterior</option>
+                <option value="hab">Faturamento por mil habitantes</option>
+              </select></label>
+              <label class="vx-chk"><input type="checkbox" id="vxMapLojas" checked> Lojas</label>
+            </div>
           </div>
-          <div class="barlist scroll-limit" id="lojaList"></div>
-          <p class="note-muted" id="lojaFonte"></p>
+          <div class="vx-leg" id="vxMapLeg"></div>
+          <div id="vxMapWrap"><div id="vxMap"></div><div id="vxMapTip"></div><div class="vx-map-msg status-txt" id="vxMapMsg">Carregando mapa…</div></div>
+          <p class="note-muted" id="vxMapNota"></p>
         </div>
-        <div class="panel">
-          <div class="panel-head">
-            <div><h2>Top Produtos</h2><div class="psub">Ranking por faturamento no período &middot; tendência = últimos 7 dias vs. 7 anteriores</div></div>
-          </div>
-          <div id="topProducts" class="scroll-limit"></div>
-        </div>
+        <div class="vx-card"><div class="vx-ct">Tabela &mdash; Cidades</div><div class="vx-cs">Clique no cabeçalho para ordenar e na linha para filtrar</div><div class="vx-scroll" style="max-height:380px;"><table class="vx-tbl" id="vxTR"></table></div></div>
       </div>
 
-      <div class="grid-2">
-        <div class="panel">
-          <div class="panel-head"><div><h2>Vendas por Marca</h2><div class="psub">Faturamento &middot; quantidade &middot; participação</div></div></div>
-          <div class="barlist scroll-limit" id="brandList"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-head"><div><h2>Vendas por Montadora</h2><div class="psub">Fabricante do veículo de aplicação da peça</div></div></div>
-          <div class="barlist scroll-limit" id="modelList"></div>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <div class="panel">
-          <div class="panel-head"><div><h2>Cidades que mais compram</h2><div class="psub" id="cidadeSub">Faturamento no período &middot; participação &middot; clientes &middot; variação vs. período anterior &middot; clique para filtrar</div></div>
-            <select class="fsel" id="cidadeModo" aria-label="Ordenar cidades por">
-              <option value="vol">Por volume</option>
-              <option value="med">Por média mês no período</option>
-            </select></div>
-          <div class="barlist scroll-limit" id="cidadeList"></div>
-          <p class="note-muted" id="cidadeNota"></p>
-        </div>
-        <div class="panel">
-          <div class="panel-head"><div><h2>Cidades que mais mudaram</h2><div class="psub">Maiores ganhos e perdas em R$ vs. período anterior de mesmo tamanho</div></div></div>
-          <div id="cidadeMov"></div>
-        </div>
-      </div>
-
+      <div class="vx-tc" data-vxpainel="lojames" hidden>
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
           <div><h2>Loja &times; mês</h2><div class="psub" id="heatSub">Faturamento mensal de cada loja &middot; cor mais forte = mês mais alto daquela loja</div></div>
@@ -1607,6 +1698,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
         <div class="table-scroll"><div id="heatLoja"></div></div>
         <p class="note-muted" id="heatNota"></p>
+      </div>
       </div>
       </section>
 
@@ -1762,7 +1854,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <!-- ============ CLIENTES ============ -->
       <section class="view-panel" data-view-panel="clientes" style="display:none;">
-      <div class="panel" style="margin-bottom:14px;">
+      <div class="panel" style="margin-bottom:14px;" id="cliPainelFiltros">
         <div class="panel-head">
           <div><h2 id="cliTitulo">Análise de clientes</h2><div class="psub">Responsável = vendedor que mais faturou para o cliente nos últimos 12 meses &middot; filtros do painel valem aqui (o de vendedor vira responsável)</div></div>
         </div>
@@ -1802,6 +1894,19 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <div class="sim-kpis" id="cliDispKpis"></div>
         <div class="table-scroll scroll-limit" id="cliDisp"></div>
       </div>
+        <div class="panel" style="margin-bottom:14px; display:none;" data-cliaba-painel="cidades">
+          <div class="panel-head"><div><h2>Cidades que mais compram</h2><div class="psub" id="cidadeSub">Faturamento no período &middot; participação &middot; clientes &middot; variação vs. período anterior &middot; clique para filtrar</div></div>
+            <select class="fsel" id="cidadeModo" aria-label="Ordenar cidades por">
+              <option value="vol">Por volume</option>
+              <option value="med">Por média mês no período</option>
+            </select></div>
+          <div class="barlist scroll-limit" id="cidadeList"></div>
+          <p class="note-muted" id="cidadeNota"></p>
+        </div>
+        <div class="panel" style="margin-bottom:14px; display:none;" data-cliaba-painel="cidmov">
+          <div class="panel-head"><div><h2>Cidades que mais mudaram</h2><div class="psub">Maiores ganhos e perdas em R$ vs. período anterior de mesmo tamanho</div></div></div>
+          <div id="cidadeMov"></div>
+        </div>
       </section>
 
       <!-- ============ INSIGHTS ============ -->
@@ -2015,7 +2120,7 @@ var REF_DIA = DAYS[N_DAYS-1];
 // cadastro de produtos e estoque item a item: só quando uma aba precisa (o dashboard não precisa)
 var PROD_OK = false, PROD_PR = null;
 var VIEWS_COM_PRODUTOS = ['estoque','vendedores','insights'];
-function precisaProdutos(){ return VIEWS_COM_PRODUTOS.indexOf(state.currentView)!==-1 || estoqueFiltrosAtivos() || state.produto.length>0; }
+function precisaProdutos(){ return VIEWS_COM_PRODUTOS.indexOf(state.currentView)!==-1 || (state.currentView==='vendas' && VX.aba==='produtos') || estoqueFiltrosAtivos() || state.produto.length>0; }
 function carregarProdutos(){
   if(PROD_OK) return Promise.resolve();
   if(PROD_PR) return PROD_PR;
@@ -2720,7 +2825,7 @@ document.addEventListener('click', function(ev){
 function renderBarList(containerId, rows, opts){
   opts = opts||{};
   var max = Math.max.apply(null, rows.map(function(r){return r.value;})) || 1;
-  var box = document.getElementById(containerId);
+  var box = document.getElementById(containerId); if(!box) return;
   box.innerHTML = rows.map(function(r){
     var display = r.display!==undefined ? r.display : (opts.fmt ? opts.fmt(r.value) : fmtMoney(r.value));
     return '<div class="barlist-row" data-key="'+(r.key||'')+'"'+(opts.fk ? fkAttr(opts.fk, r.key!==undefined ? r.key : r.label) : '')+'>' +
@@ -2779,7 +2884,7 @@ function renderLojaList(){
   }
   renderBarList('lojaList', rowsOf(lojaMap, true), {fk:'regiao'});
   renderCanalBar(canalMap);
-  document.getElementById('lojaFonte').textContent = 'Totais exatos de cada loja e canal, com todos os filtros aplicados. Clique para filtrar.';
+  var lf = document.getElementById('lojaFonte'); if(lf) lf.textContent = 'Totais exatos de cada loja e canal, com todos os filtros aplicados. Clique para filtrar.';
 }
 
 /* ---------- cidades: ranking, concentração e maiores variações vs. período anterior ---------- */
@@ -4190,7 +4295,7 @@ function renderTopProducts(){
     return {p:p, fat:fat, trend:trend};
   }).sort(function(a,b){ return b.fat-a.fat; }).slice(0,30);
 
-  var box = document.getElementById('topProducts');
+  var box = document.getElementById('topProducts'); if(!box) return;
   if(!rows.length){ box.innerHTML='<p style="color:var(--text-muted); font-size:12.5px;">Sem dados para os filtros atuais.</p>'; return; }
   box.innerHTML = rows.map(function(r,i){
     return '<div class="rank-row" data-id="'+r.p.id+'">' +
@@ -5361,8 +5466,13 @@ function cliLigar(){
     Array.prototype.forEach.call(this.querySelectorAll('[data-cliaba]'), function(x){ x.setAttribute('aria-pressed', String(x===b)); });
     Array.prototype.forEach.call(document.querySelectorAll('[data-cliaba-painel]'), function(p){ p.style.display = p.getAttribute('data-cliaba-painel')===aba ? '' : 'none'; });
     document.getElementById('cliTitulo').textContent = aba==='disp' ? 'Filtros dos clientes' : 'Análise de clientes';
+    var cid = aba==='cidades' || aba==='cidmov';
+    document.getElementById('cliPainelFiltros').style.display = cid ? 'none' : '';
+    CLI_ABA = aba;
+    if(cid) renderCidades();
   });
 }
+var CLI_ABA = 'analise';
 function cliOpts(extra){
   var o = {ordem: CLI.ordem};
   if(CLI.busca) o.busca = CLI.busca;
@@ -5472,6 +5582,468 @@ function exportarDisponiveis(){
     .then(function(){ bt.disabled = false; });
 }
 function passaEstoque(p){ return matchesFilters(p); }
+/* ============================================================
+   VENDAS EM ABAS — Lojas, Marcas, Grupos, Produtos, Insights, Regiões e Loja × mês
+   Visual inspirado no painel "Performance de Peças" (Chart.js e Leaflet carregados só quando a guia abre).
+   Os números vêm do mesmo resumo do painel (bi_painel), já com todos os filtros.
+   ============================================================ */
+var VX = {aba:'lojas', sort:{}, ch:{}, map:null, tiles:null, tilesTema:null, camada:null, pinos:null, geo:{}, geoPr:{}, munMemo:{}, mapSeq:0, mapFit:null};
+var VX_PAL = {cy:'#00e5ff', pu:'#7c3aed', am:'#f59e0b', gr:'#10b981', re:'#ef4444'};
+var VX_CANAL = {ATACADO:'#00e5ff', OFICINA:'#f59e0b', ECOMMERCE:'#7c3aed', ACESSORIOS:'#10b981'};
+var VX_LIBS = {};
+function vxScript(url, glob){
+  if(window[glob]) return Promise.resolve(window[glob]);
+  if(VX_LIBS[url]) return VX_LIBS[url];
+  VX_LIBS[url] = new Promise(function(ok, falha){
+    var sc = document.createElement('script'); sc.src = url;
+    sc.onload = function(){ window[glob] ? ok(window[glob]) : falha(new Error(glob)); };
+    sc.onerror = function(){ VX_LIBS[url] = null; falha(new Error(glob)); };
+    document.head.appendChild(sc);
+  });
+  return VX_LIBS[url];
+}
+function vxChartLib(){ return vxScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js', 'Chart'); }
+function vxLeafletLib(){
+  if(!document.getElementById('vxLeafletCss')){
+    var l = document.createElement('link'); l.id = 'vxLeafletCss'; l.rel = 'stylesheet';
+    l.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(l);
+  }
+  return vxScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js', 'L');
+}
+function vxClaro(){ return document.documentElement.getAttribute('data-theme')==='light'; }
+function vxVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+// formatos curtos no estilo do painel de referência (R$ 3,72M · R$ 576,7K)
+function vxM(n){
+  var a = Math.abs(n), s = n<0 ? '-' : '';
+  var t = a>=1e6 ? (a/1e6).toFixed(2)+'M' : (a>=1e3 ? (a/1e3).toFixed(1)+'K' : a.toFixed(0));
+  return s+'R$ '+t.replace('.', ',');
+}
+function vxP(n){ return (n||0).toFixed(2).replace('.', ',')+'%'; }
+function vxN(n){ return Math.round(n||0).toLocaleString('pt-BR'); }
+function vxMc(m){ return m>=40 ? '#10b981' : m>=25 ? '#00e5ff' : m>=15 ? '#22d3ee' : m>=10 ? '#f59e0b' : '#ef4444'; }
+function vxBdg(m){ var c = m>=40 ? 'bg' : m>=25 ? 'bc' : m>=15 ? 'bmb' : m>=10 ? 'ba' : 'br'; return '<span class="vx-bdg '+c+'">'+vxP(m)+'</span>'; }
+function vxVarPct(a, b){ return b>0.5 ? (a-b)/b*100 : null; }
+
+// linhas de uma dimensão do resumo (todas as opções, sem o próprio filtro, para comparar e trocar)
+function vxLinhas(t){
+  var m = agLista(t), tot = 0, out = [];
+  Object.keys(m).forEach(function(k){ if(m[k].fat>0.5) tot += m[k].fat; });
+  Object.keys(m).forEach(function(k){
+    var o = m[k]; if(o.fat<=0.5) return;
+    out.push({k:k, fat:o.fat, lb:o.lb, qtd:o.qtd, prev:o.prevFat, mg: o.fat>0 ? o.lb/o.fat*100 : 0, sh: tot>0 ? o.fat/tot*100 : 0, vr: vxVarPct(o.fat, o.prevFat)});
+  });
+  out.sort(function(a,b){ return b.fat-a.fat; });
+  out.total = tot;
+  return out;
+}
+// totais do recorte (com todos os filtros)
+function vxTotais(){
+  var m = agMap('canal'), o = {fat:0, lb:0, qtd:0, prev:0, prevLb:0, prevQtd:0};
+  Object.keys(m).forEach(function(k){ var x = m[k]; o.fat += x.fat; o.lb += x.lb; o.qtd += x.qtd; o.prev += x.prevFat; o.prevLb += x.prevLb; o.prevQtd += x.prevQtd; });
+  o.mg = o.fat>0 ? o.lb/o.fat*100 : 0; o.prevMg = o.prev>0 ? o.prevLb/o.prev*100 : 0;
+  return o;
+}
+// canal em que cada loja mais vende (para colorir as barras)
+function vxCanalDaLoja(){
+  var m = {};
+  RESUMO.forEach(function(r){ var x = m[r.loja] || (m[r.loja] = {}); x[r.canal] = (x[r.canal]||0) + r.fat; });
+  var out = {};
+  Object.keys(m).forEach(function(l){ var best = null; Object.keys(m[l]).forEach(function(c){ if(best===null || m[l][c]>m[l][best]) best = c; }); out[l] = best; });
+  return out;
+}
+function vxFiltrosTexto(){
+  var partes = [];
+  Object.keys(FK_LABEL).forEach(function(k){ if(state[k] && state[k].length) partes.push(FK_LABEL[k]+': '+state[k].length); });
+  var pr = periodRange(state.globalPeriod);
+  return (partes.length ? partes.join(' · ') : 'Todos os filtros ativos') + ' · ' + fmtDataCurta(pr.start) + ' a ' + fmtDataCurta(pr.end);
+}
+function fmtDataCurta(i){ var d = DAYS[Math.max(0, Math.min(N_DAYS-1, i))]; return d ? String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear() : ''; }
+
+/* ---------- gráficos ---------- */
+function vxDestruir(id){ if(VX.ch[id]){ VX.ch[id].destroy(); delete VX.ch[id]; } }
+function vxCores(base, keys, fk){
+  var sel = fk && state[fk] && state[fk].length ? state[fk] : null;
+  return keys.map(function(k, i){ var c = Array.isArray(base) ? base[i] : base; return sel && sel.indexOf(k)===-1 ? c+'55' : c; });
+}
+function vxGrafico(id, tipo, labels, vals, cores, opt){
+  vxDestruir(id);
+  var el = document.getElementById(id); if(!el) return;
+  var wrap = el.parentNode, vz = wrap.querySelector('.vx-vazio');
+  if(!labels.length){ el.style.display = 'none'; if(!vz){ vz = document.createElement('div'); vz.className = 'vx-vazio'; wrap.appendChild(vz); } vz.textContent = 'Sem dados para os filtros atuais.'; return; }
+  el.style.display = ''; if(vz) vz.remove();
+  if(!window.Chart){ vxChartLib().then(function(){ vxGrafico(id, tipo, labels, vals, cores, opt); }).catch(function(){
+    el.style.display = 'none'; var v = document.createElement('div'); v.className = 'vx-vazio'; v.textContent = 'Não foi possível carregar o gráfico agora.'; wrap.appendChild(v); }); return; }
+  var grid = vxVar('--vx-grid'), tick = vxVar('--vx-tick'), muted = vxVar('--text-muted');
+  var horiz = opt.horiz, fmtV = opt.fmt || vxM;
+  var eixoValor = {grid:{color:grid}, border:{display:false}, ticks:{color:muted, font:{family:'JetBrains Mono', size:10}, callback:function(v){ return opt.pct ? v+'%' : vxM(v).replace('R$ ',''); }}};
+  var eixoCat = {grid:{display:false}, border:{display:false}, ticks:{color:tick, font:{family:'JetBrains Mono', size:10}, autoSkip:false, maxRotation:horiz?0:40,
+    callback:function(v){ var s = this.getLabelForValue(v); return s.length>22 ? s.slice(0,21)+'…' : s; }}};
+  VX.ch[id] = new Chart(el.getContext('2d'), {type:'bar',
+    data:{labels:labels, datasets:[{data:vals, backgroundColor:cores, borderRadius:3, borderSkipped:false, maxBarThickness:horiz?18:34}]},
+    options:{indexAxis: horiz ? 'y' : 'x', responsive:true, maintainAspectRatio:false, animation:{duration:350},
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(c){ return ' '+(opt.pct ? vxP(c.parsed[horiz?'x':'y']) : fmtMoney(c.parsed[horiz?'x':'y'])); }}}},
+      onClick: opt.fk ? function(_, els){ if(els.length) toggleFiltro(opt.fk, opt.keys[els[0].index]); } : undefined,
+      onHover: opt.fk ? function(e, els){ e.native.target.style.cursor = els.length ? 'pointer' : 'default'; } : undefined,
+      scales: horiz ? {x:eixoValor, y:eixoCat} : {x:eixoCat, y:eixoValor}}});
+}
+
+/* ---------- tabelas ordenáveis ---------- */
+// cols: [{k, t, td(r,i,ctx) -> html, num:true}] ; o: {fk, chave(r), barra(cor), padrao:{col,asc}}
+function vxTabela(id, cols, rows, o){
+  var el = document.getElementById(id); if(!el) return;
+  var st = VX.sort[id] || (VX.sort[id] = o.padrao || {col:'fat', asc:false});
+  var arr = rows.slice();
+  arr.sort(function(a,b){
+    var x = a[st.col], y = b[st.col];
+    if(x===null || x===undefined) x = st.asc ? Infinity : -Infinity;
+    if(y===null || y===undefined) y = st.asc ? Infinity : -Infinity;
+    if(typeof x==='string'){ var c = x.localeCompare(y, 'pt-BR'); return st.asc ? c : -c; }
+    return st.asc ? x-y : y-x;
+  });
+  if(o.limite) arr = arr.slice(0, o.limite);
+  var mx = 0; rows.forEach(function(r){ if(r.fat>mx) mx = r.fat; }); mx = mx || 1;
+  var ctx = {mx:mx, cor:o.barra || VX_PAL.cy};
+  var head = '<thead><tr>'+cols.map(function(c){
+    if(!c.k) return '<th>'+c.t+'</th>';
+    var on = st.col===c.k;
+    return '<th data-vxcol="'+c.k+'">'+c.t+'<span class="ord'+(on?' on':'')+'">'+(on ? (st.asc?'▲':'▼') : '⇅')+'</span></th>';
+  }).join('')+'</tr></thead>';
+  var body = arr.length ? arr.map(function(r, i){
+    var fk = o.fk ? fkAttr(o.fk, o.chave ? o.chave(r) : r.k) : '';
+    return '<tr'+fk+'>'+cols.map(function(c){ return c.td(r, i, ctx); }).join('')+'</tr>';
+  }).join('') : '<tr><td colspan="'+cols.length+'" style="text-align:center; padding:26px; color:var(--text-muted);">Sem dados para os filtros atuais.</td></tr>';
+  el.innerHTML = head+'<tbody>'+body+'</tbody>';
+  el.onclick = function(ev){
+    var th = ev.target.closest('th[data-vxcol]'); if(!th) return;
+    var col = th.getAttribute('data-vxcol');
+    if(st.col===col) st.asc = !st.asc; else { st.col = col; st.asc = (col==='k' || col==='nome' || col==='uf'); }
+    vxTabela(id, cols, rows, o);
+  };
+}
+var VX_COL = {
+  rk: {t:'#', td:function(r,i){ return '<td class="mn rk">'+String(i+1).padStart(2,'0')+'</td>'; }},
+  fat: {k:'fat', t:'Fat', td:function(r){ return '<td class="mn">'+vxM(r.fat)+'</td>'; }},
+  lb: {k:'lb', t:'LB', td:function(r){ return '<td class="mn lb">'+vxM(r.lb)+'</td>'; }},
+  qtd: {k:'qtd', t:'Vol.', td:function(r){ return '<td class="mn">'+vxN(r.qtd)+'</td>'; }},
+  mg: {k:'mg', t:'Margem %', td:function(r){ return '<td>'+vxBdg(r.mg)+'</td>'; }},
+  sh: {k:'sh', t:'Share', td:function(r,i,c){ return '<td><span class="mn rk">'+r.sh.toFixed(1).replace('.',',')+'%</span><span class="vx-bm"><b style="width:'+(r.fat/c.mx*100).toFixed(0)+'%; background:'+c.cor+'"></b></span></td>'; }},
+  vr: {k:'vr', t:'Var. ant.', td:function(r){ return '<td class="mn">'+seta(r.vr)+'</td>'; }}
+};
+function vxColNome(t){ return {k:'k', t:t, td:function(r){ return '<td class="nm">'+escapeHtml(r.k)+'</td>'; }}; }
+
+/* ---------- KPIs ---------- */
+function vxKpiHtml(cls, rot, val, sub){ return '<div class="vx-kpi '+cls+'"><div class="vx-kl">'+rot+'</div><div class="vx-kv">'+val+'</div><div class="vx-ks">'+sub+'</div></div>'; }
+function vxRenderKpis(){
+  var t = vxTotais(), box = document.getElementById('vxKpis'); if(!box) return;
+  var vf = vxVarPct(t.fat, t.prev), vq = vxVarPct(t.qtd, t.prevQtd), dm = t.prev>0 ? t.mg - t.prevMg : null;
+  box.innerHTML = vxKpiHtml('k0', 'Faturamento', vxM(t.fat), (vf===null ? 'sem base anterior' : seta(vf)+' vs. período anterior')) +
+    vxKpiHtml('k1', 'Lucro bruto', vxM(t.lb), 'Margem: '+vxP(t.mg)) +
+    vxKpiHtml('k2', 'Volume', vxN(t.qtd), 'unidades vendidas'+(vq===null ? '' : ' · '+seta(vq))) +
+    vxKpiHtml('k3', 'Margem geral', vxP(t.mg), 'LB: '+vxM(t.lb)+(dm===null ? '' : ' · <span class="'+(dm>=0?'seta-up':'seta-dn')+'">'+(dm>=0?'+':'')+dm.toFixed(2).replace('.',',')+' p.p.</span>'));
+}
+
+/* ---------- abas ---------- */
+function renderVendasAbas(){
+  if(state.currentView!=='vendas') return;
+  vxRenderKpis();
+  var a = VX.aba;
+  if(a==='lojas') vxLojas();
+  else if(a==='marcas') vxDimensao('marca', 'Marca', 'vxMF', 'vxMM', 'vxTM', VX_PAL.cy, VX_PAL.pu);
+  else if(a==='grupos') vxDimensao('categoria', 'Grupo', 'vxGF', 'vxGM', 'vxTG', VX_PAL.re, VX_PAL.am);
+  else if(a==='produtos') vxProdutos();
+  else if(a==='insights') vxInsights();
+  else if(a==='regioes') vxRegioes();
+  else if(a==='lojames') renderHeatLoja();
+}
+function vxTrocarAba(aba){
+  VX.aba = aba;
+  Array.prototype.forEach.call(document.querySelectorAll('#vxAbas [data-vxaba]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-vxaba')===aba)); });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-vxpainel]'), function(p){ p.hidden = p.getAttribute('data-vxpainel')!==aba; });
+  if(aba==='produtos' && !PRODUTOS_NO_PAINEL){ document.getElementById('vxTP').innerHTML = '<tbody><tr><td class="status-txt" style="padding:20px;">Carregando produtos…</td></tr></tbody>'; renderAll(false); return; }
+  renderVendasAbas();
+}
+
+function vxLojas(){
+  var rows = vxLinhas('loja'), cdl = vxCanalDaLoja();
+  rows.forEach(function(r){ r.canal = cdl[r.k] || ''; r.mkt = LOJA_INFO[r.k] && !LOJA_INFO[r.k].fisica; });
+  var keys = rows.map(function(r){ return r.k; });
+  var coresCanal = rows.map(function(r){ return VX_CANAL[r.canal] || VX_PAL.cy; });
+  vxGrafico('vxLF', 'bar', keys, rows.map(function(r){ return r.fat; }), vxCores(coresCanal, keys, 'regiao'), {horiz:true, fk:'regiao', keys:keys});
+  vxGrafico('vxLM', 'bar', keys, rows.map(function(r){ return +r.mg.toFixed(2); }), vxCores(rows.map(function(r){ return vxMc(r.mg); }), keys, 'regiao'), {pct:true, fk:'regiao', keys:keys});
+  var usados = {}; rows.forEach(function(r){ if(r.canal) usados[r.canal] = true; });
+  var leg = document.getElementById('vxLojaLeg');
+  if(leg) leg.innerHTML = Object.keys(usados).map(function(c){ return '<span><i style="background:'+(VX_CANAL[c]||VX_PAL.cy)+'"></i>'+escapeHtml(c)+'</span>'; }).join('');
+  var BC = {ATACADO:'bc', OFICINA:'ba', ECOMMERCE:'bp', ACESSORIOS:'bg'};
+  vxTabela('vxTL', [VX_COL.rk, {k:'k', t:'Loja', td:function(r){ return '<td class="nm">'+(r.mkt?'🛒 ':'')+escapeHtml(r.k)+'</td>'; }},
+    {k:'canal', t:'Canal', td:function(r){ return '<td>'+(r.canal ? '<span class="vx-bdg '+(BC[r.canal]||'bc')+'">'+escapeHtml(r.canal)+'</span>' : '')+'</td>'; }},
+    VX_COL.fat, VX_COL.lb, VX_COL.qtd, VX_COL.mg, VX_COL.sh, VX_COL.vr], rows, {fk:'regiao', barra:VX_PAL.cy});
+}
+function vxDimensao(t, rot, idF, idM, idT, corF, corBarra){
+  var rows = vxLinhas(t).filter(function(r){ return r.k!=='N/D' || r.fat>0.5; });
+  var top = rows.slice(0, 15), keys = top.map(function(r){ return r.k; });
+  var fk = t==='categoria' ? 'categoria' : t;
+  vxGrafico(idF, 'bar', keys, top.map(function(r){ return r.fat; }), vxCores(corF, keys, fk), {horiz:true, fk:fk, keys:keys});
+  vxGrafico(idM, 'bar', keys, top.map(function(r){ return +r.mg.toFixed(2); }), vxCores(top.map(function(r){ return vxMc(r.mg); }), keys, fk), {pct:true, fk:fk, keys:keys});
+  vxTabela(idT, [VX_COL.rk, vxColNome(rot), VX_COL.fat, VX_COL.lb, VX_COL.qtd, VX_COL.mg, VX_COL.sh, VX_COL.vr], rows, {fk:fk, barra:corBarra, limite:300});
+}
+function vxProdutos(){
+  if(!PRODUTOS_NO_PAINEL) return;
+  var tot = 0, rows = [];
+  filteredProducts().forEach(function(p){
+    if(p.isBucket || !(p.fatP>0.005)) return;
+    tot += p.fatP;
+    rows.push({k:p.codigo, nome:p.nome, marca:p.marca, grupo:p.categoria, fat:p.fatP, lb:p.lbP, qtd:p.qtdP, mg: p.fatP>0 ? p.lbP/p.fatP*100 : 0, vr: vxVarPct(p.fatP, p.fatPrev)});
+  });
+  rows.forEach(function(r){ r.sh = tot>0 ? r.fat/tot*100 : 0; });
+  rows.sort(function(a,b){ return b.fat-a.fat; });
+  var top = rows.slice(0, 15);
+  vxGrafico('vxPF', 'bar', top.map(function(r){ return r.k; }), top.map(function(r){ return r.fat; }), VX_PAL.am, {horiz:true});
+  var pm = rows.slice(0, 100).sort(function(a,b){ return b.mg-a.mg; }).slice(0, 15);
+  vxGrafico('vxPM', 'bar', pm.map(function(r){ return r.k; }), pm.map(function(r){ return +r.mg.toFixed(2); }), pm.map(function(r){ return vxMc(r.mg); }), {horiz:true, pct:true});
+  vxTabela('vxTP', [VX_COL.rk, {k:'k', t:'Código', td:function(r){ return '<td class="mn">'+escapeHtml(r.k)+'</td>'; }},
+    {k:'nome', t:'Produto', td:function(r){ return '<td class="nm" style="font-weight:600;">'+escapeHtml(r.nome)+'</td>'; }},
+    {k:'marca', t:'Marca', td:function(r){ return '<td>'+escapeHtml(r.marca||'')+'</td>'; }},
+    VX_COL.fat, VX_COL.lb, VX_COL.qtd, VX_COL.mg, VX_COL.sh, VX_COL.vr], rows, {barra:VX_PAL.am, limite:100});
+}
+
+/* ---------- insights ---------- */
+function vxInsights(){
+  var box = document.getElementById('vxIns'); if(!box) return;
+  document.getElementById('vxInsCtx').textContent = vxFiltrosTexto();
+  var t = vxTotais();
+  if(!(t.fat>0.5)){ box.innerHTML = '<p class="note-muted">Sem vendas para os filtros atuais.</p>'; return; }
+  var lojas = vxLinhas('loja'), grupos = vxLinhas('categoria').filter(function(r){ return r.k!=='N/D'; }),
+      marcas = vxLinhas('marca').filter(function(r){ return r.k!=='N/D' && r.k!=='Diversas'; }),
+      vends = vxLinhas('vendedor').filter(function(r){ return isPessoa(r.k) && !/^VENDEDOR /.test(r.k); }), cids = vxLinhas('cidade').filter(function(r){ return r.k!=='N/D'; });
+  function relev(a){ return a.filter(function(r){ return r.sh>=1; }); }
+  var L = [], m = t.mg/100;
+  var best = lojas[0], pior = relev(lojas).slice().sort(function(a,b){ return a.mg-b.mg; })[0];
+  if(best) L.push({i:'🏆', c:'0,229,255', t:'Melhor loja: '+best.k, b:'<b>'+escapeHtml(best.k)+'</b> faturou '+vxM(best.fat)+' ('+best.sh.toFixed(1).replace('.',',')+'% do total) com margem de <b>'+vxP(best.mg)+'</b>.'});
+  if(pior && lojas.length>1) L.push({i:'⚠️', c:'239,68,68', t:'Menor margem: '+pior.k, b:'<b>'+escapeHtml(pior.k)+'</b> opera com <b>'+vxP(pior.mg)+'</b> de margem, '+(t.mg-pior.mg).toFixed(1).replace('.',',')+' p.p. abaixo da média, em '+vxM(pior.fat)+' de faturamento.'});
+  var gm = relev(grupos).slice().sort(function(a,b){ return b.mg-a.mg; })[0];
+  if(gm) L.push({i:'📦', c:'16,185,129', t:'Grupo mais rentável: '+gm.k, b:'<b>'+escapeHtml(gm.k)+'</b> tem margem de <b>'+vxP(gm.mg)+'</b> com '+vxM(gm.fat)+'. Entre os grupos com pelo menos 1% do faturamento.'});
+  if(vends[0]) L.push({i:'👤', c:'0,229,255', t:'Maior faturamento: '+vends[0].k, b:'<b>'+escapeHtml(vends[0].k)+'</b> vendeu '+vxM(vends[0].fat)+' com margem de <b>'+vxP(vends[0].mg)+'</b>.'});
+  var vm = relev(vends).slice().sort(function(a,b){ return b.mg-a.mg; })[0];
+  if(vm) L.push({i:'🎯', c:'124,58,237', t:'Melhor margem: '+vm.k, b:'<b>'+escapeHtml(vm.k)+'</b> tem <b>'+vxP(vm.mg)+'</b> de margem em '+vxM(vm.fat)+'. Entre os vendedores com pelo menos 1% do faturamento.'});
+  // preço: +5% no mesmo volume; desconto: volume extra para manter o lucro bruto (custo unitário constante)
+  L.push({i:'📈', c:'16,185,129', t:'Aumento de 5% gera +'+vxM(t.fat*0.05)+' de LB', b:'No mesmo volume, 5% a mais no preço viram lucro: o LB iria de '+vxM(t.lb)+' para <b>'+vxM(t.lb+t.fat*0.05)+'</b> e a margem para <b>'+vxP((t.lb+t.fat*0.05)/(t.fat*1.05)*100)+'</b>.'});
+  if(m>0.1){
+    var vol10 = (m/(m-0.1)-1)*100, vol5 = m>0.05 ? (m/(m-0.05)-1)*100 : null;
+    L.push({i:'🔢', c:'245,158,11', t:'Desconto de 10% exige +'+vol10.toFixed(0)+'% de volume', b:'Com margem de '+vxP(t.mg)+', dar 10% de desconto obriga a vender <b>'+vol10.toFixed(0)+'% mais peças</b> só para manter o mesmo lucro bruto'+(vol5!==null ? ' (5% de desconto exige +'+vol5.toFixed(0)+'%)' : '')+'.'});
+  } else L.push({i:'🔢', c:'239,68,68', t:'Margem não comporta 10% de desconto', b:'Com margem de '+vxP(t.mg)+', um desconto de 10% deixa a venda no prejuízo: nenhum volume compensa.'});
+  if(marcas[0]){
+    var top3 = marcas.slice(0,3).reduce(function(s,r){ return s+r.sh; }, 0);
+    L.push({i:'💡', c:'239,68,68', t:'Top marca: '+marcas[0].k, b:'<b>'+escapeHtml(marcas[0].k)+'</b> representa '+marcas[0].sh.toFixed(1).replace('.',',')+'% do faturamento e as 3 maiores somam <b>'+top3.toFixed(1).replace('.',',')+'%</b>. '+(top3>50 ? 'Dependência alta de poucas marcas.' : 'Receita bem distribuída entre marcas.')});
+  }
+  var baixa = relev(grupos).filter(function(r){ return r.mg<10; }).slice(0,3);
+  L.push({i:'🔍', c:'245,158,11', t:'Atenção: margem abaixo de 10%', b: baixa.length ? baixa.map(function(r){ return '<b>'+escapeHtml(r.k)+'</b> ('+vxP(r.mg)+')'; }).join(', ')+'.' : 'Nenhum grupo relevante abaixo de 10% na seleção atual.'});
+  // o que não é óbvio: quem mais puxou para cima e para baixo vs. o período anterior
+  function mov(a){ return a.filter(function(r){ return r.prev>0.5 || r.fat>0.5; }).map(function(r){ return {k:r.k, d:r.fat-r.prev, r:r}; }); }
+  var mm = mov(marcas).sort(function(a,b){ return b.d-a.d; });
+  if(mm.length && mm[0].d>0) L.push({i:'🚀', c:'16,185,129', t:'Marca que mais cresceu: '+mm[0].k, b:'<b>'+escapeHtml(mm[0].k)+'</b> ganhou <b>+'+vxM(mm[0].d)+'</b> vs. o período anterior de mesmo tamanho ('+seta(mm[0].r.vr)+').'});
+  var gq = mov(grupos).sort(function(a,b){ return a.d-b.d; });
+  if(gq.length && gq[0].d<0) L.push({i:'📉', c:'239,68,68', t:'Grupo que mais caiu: '+gq[0].k, b:'<b>'+escapeHtml(gq[0].k)+'</b> perdeu <b>'+vxM(-gq[0].d)+'</b> vs. o período anterior ('+seta(gq[0].r.vr)+'). Vale olhar ruptura de estoque e preço.'});
+  // margem caindo com faturamento subindo: cresce "comprando" venda
+  var mc = relev(grupos).filter(function(r){ var a = agLista('categoria')[r.k]; return a && a.prevFat>0.5 && r.fat>a.prevFat && (a.prevLb/a.prevFat*100 - r.mg)>=2; })
+    .sort(function(a,b){ return b.fat-a.fat; })[0];
+  if(mc){ var ap = agLista('categoria')[mc.k]; L.push({i:'🧭', c:'124,58,237', t:'Cresce perdendo margem: '+mc.k, b:'<b>'+escapeHtml(mc.k)+'</b> faturou mais que no período anterior, mas a margem caiu de '+vxP(ap.prevLb/ap.prevFat*100)+' para <b>'+vxP(mc.mg)+'</b>. Pode ser desconto demais para crescer.'}); }
+  var cq = mov(cids).sort(function(a,b){ return a.d-b.d; });
+  if(cq.length && cq[0].d<0) L.push({i:'🗺️', c:'245,158,11', t:'Cidade que mais caiu: '+cq[0].k.replace(/^[A-Z]{2} - /,''), b:'<b>'+escapeHtml(cq[0].k)+'</b> comprou <b>'+vxM(-cq[0].d)+'</b> a menos que no período anterior. Veja os clientes da cidade na guia Clientes.'});
+  box.innerHTML = L.map(function(x){
+    return '<div class="vx-in"><div class="ico" style="background:rgba('+x.c+',.12)">'+x.i+'</div><div class="tt">'+escapeHtml(x.t)+'</div><div class="bd">'+x.b+'</div></div>';
+  }).join('');
+}
+
+/* ---------- regiões: mapa de calor dos municípios ----------
+   Contornos dos municípios (IBGE, via geodata-br) simplificados e guardados em geo/UF.json:
+   [nome normalizado, nome, código IBGE, [lat, lng], polígonos, população, frota]. Só os estados com venda relevante são baixados. */
+var VX_ALIAS = {MOGIMIRIM:'MOJIMIRIM', EMBUDASARTES:'EMBU', PARATI:'PARATY', BUZIOS:'ARMACAODOSBUZIOS', CAMPOS:'CAMPOSDOSGOYTACAZES', SAOPAULOSP:'SAOPAULO',
+  BARAOGERALDO:'CAMPINAS', SOUSAS:'CAMPINAS', BONFIMPAULISTA:'RIBEIRAOPRETO', SAOBERNADODOCAMPO:'SAOBERNARDODOCAMPO', SANTANADOPARNAIBA:'SANTANADEPARNAIBA',
+  SANTAROSAVITERBO:'SANTAROSADEVITERBO', SAOLUIZDOPARAITINGA:'SAOLUISDOPARAITINGA', MARIPORA:'MAIRIPORA', LUIZANTONIO:'LUISANTONIO'};
+function vxSemAcento(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase(); }
+function vxGeoUF(uf){
+  if(VX.geoPr[uf]) return VX.geoPr[uf];
+  VX.geoPr[uf] = fetch('geo/'+uf+'.json').then(function(r){ if(!r.ok) throw new Error('geo'); return r.json(); }).then(function(lista){
+    var idx = {}; lista.forEach(function(f){ idx[f[0]] = f; });
+    VX.geo[uf] = {lista:lista, idx:idx}; return VX.geo[uf];
+  }).catch(function(e){ VX.geoPr[uf] = null; throw e; });
+  return VX.geoPr[uf];
+}
+// nome da cidade no cadastro ("SP - SAO JOSE DOS CAMPOS", às vezes cortado em 20 letras ou com "?" no lugar do acento) -> município
+function vxMunicipio(nome){
+  if(VX.munMemo.hasOwnProperty(nome)) return VX.munMemo[nome];
+  var uf = nome.slice(0,2), g = VX.geo[uf]; if(!g) return null;
+  var raw = nome.slice(5).trim(), s = vxSemAcento(raw);
+  s = s.replace(/^STA[ .]+/, 'SANTA ').replace(/ STA[ .]+/, ' SANTA ').replace(/^ESP[ .]+/, 'ESPIRITO ').replace(/\(.*$/, '');
+  var pat = s.replace(/[?¿]/g, '.').replace(/[^A-Z0-9.]/g, '');
+  pat = VX_ALIAS[pat] || pat;
+  var f = g.idx[pat] || null;
+  if(!f && pat){
+    var corte = raw.length>=20 || raw.indexOf('(')!==-1, rx = new RegExp('^'+pat+(corte ? '' : '$')), achou = [];
+    for(var i=0; i<g.lista.length && achou.length<2; i++) if(rx.test(g.lista[i][0])) achou.push(g.lista[i]);
+    if(achou.length===1) f = achou[0];
+  }
+  VX.munMemo[nome] = f;
+  return f;
+}
+function vxQuantis(vals, n){
+  var v = vals.slice().sort(function(a,b){ return a-b; }), q = [];
+  for(var i=1; i<n; i++) q.push(v[Math.min(v.length-1, Math.floor(v.length*i/n))]);
+  return q;
+}
+var VX_ESCALA = ['#10b981', '#22d3ee', '#f59e0b', '#f97316', '#dc2626'];
+function vxEscala(met, cidades){
+  if(met==='margem') return {cor:function(c){ return vxMc(c.mg); }, leg:[['#ef4444','abaixo de 10%'],['#f59e0b','10% a 15%'],['#22d3ee','15% a 25%'],['#00e5ff','25% a 40%'],['#10b981','40% ou mais']]};
+  if(met==='var') return {cor:function(c){ if(c.vr===null) return '#7c3aed'; return c.vr<=-30 ? '#dc2626' : c.vr<=-5 ? '#f97316' : c.vr<5 ? '#94a3b8' : c.vr<30 ? '#22d3ee' : '#10b981'; },
+    leg:[['#dc2626','caiu 30% ou mais'],['#f97316','caiu 5% a 30%'],['#94a3b8','estável'],['#22d3ee','cresceu 5% a 30%'],['#10b981','cresceu 30% ou mais'],['#7c3aed','sem compra no período anterior']]};
+  var val = met==='hab' ? function(c){ return c.pop>0 ? c.fat/c.pop*1000 : null; } : function(c){ return c.fat; };
+  var vs = cidades.map(val).filter(function(x){ return x!==null && x>0; });
+  if(!vs.length) return {cor:function(){ return VX_ESCALA[0]; }, leg:[]};
+  var q = vxQuantis(vs, 5), fm = met==='hab' ? function(x){ return vxM(x)+'/mil hab.'; } : vxM;
+  var rot = ['até '+fm(q[0]), fm(q[0])+' a '+fm(q[1]), fm(q[1])+' a '+fm(q[2]), fm(q[2])+' a '+fm(q[3]), 'acima de '+fm(q[3])];
+  var leg = VX_ESCALA.map(function(c, i){ return [c, ['Baixo','Médio-baixo','Médio','Alto','Muito alto'][i]+' ('+rot[i]+')']; });
+  if(met==='hab') leg.push(['#64748b', 'população não disponível']);
+  return {cor:function(c){ var x = val(c); if(x===null) return '#64748b'; var i = 0; while(i<4 && x>q[i]) i++; return VX_ESCALA[i]; }, leg:leg};
+}
+function vxRegioes(){
+  var cids = vxLinhas('cidade').filter(function(r){ return r.k!=='N/D' && /^[A-Z]{2} - /.test(r.k); });
+  var total = vxLinhas('cidade').total || 0;
+  // estados que entram no mapa: ao menos 0,5% do faturamento, mais o estado das lojas
+  var porUF = {}; cids.forEach(function(r){ var uf = r.k.slice(0,2); porUF[uf] = (porUF[uf]||0) + r.fat; });
+  var ufs = Object.keys(porUF).filter(function(uf){ return uf!=='EX' && (porUF[uf] >= total*0.005 || uf==='SP'); });
+  if(ufs.indexOf('SP')===-1) ufs.push('SP');
+  var fora = Object.keys(porUF).filter(function(uf){ return uf!=='EX' && ufs.indexOf(uf)===-1; });
+  var seq = ++VX.mapSeq, msg = document.getElementById('vxMapMsg');
+  msg.hidden = false; msg.textContent = 'Carregando mapa…';
+  vxTabelaCidades(cids, null);
+  Promise.all([vxLeafletLib()].concat(ufs.map(function(uf){ return vxGeoUF(uf).catch(function(){ return null; }); }))).then(function(){
+    if(seq!==VX.mapSeq || state.currentView!=='vendas' || VX.aba!=='regioes') return;
+    msg.hidden = true;
+    vxDesenharMapa(cids, total, ufs, fora);
+  }).catch(function(){ if(seq===VX.mapSeq){ msg.hidden = false; msg.textContent = 'Não foi possível carregar o mapa agora. A tabela abaixo continua valendo.'; } });
+}
+function vxTabelaCidades(cids, info){
+  cids.forEach(function(r){
+    var f = info ? vxMunicipio(r.k) : null;
+    r.uf = r.k.slice(0,2); r.nome = f ? f[1] : r.k.slice(5);
+    if(f){ r.pop = f[5]||0; r.frota = f[6]||0; }
+    r.hab = r.pop>0 ? r.fat/r.pop*1000 : null;
+  });
+  vxTabela('vxTR', [VX_COL.rk, {k:'nome', t:'Cidade', td:function(r){ return '<td class="nm">'+escapeHtml(r.nome)+'</td>'; }}, {k:'uf', t:'UF', td:function(r){ return '<td class="mn">'+r.uf+'</td>'; }},
+    VX_COL.fat, VX_COL.lb, VX_COL.qtd, VX_COL.mg, VX_COL.sh, VX_COL.vr,
+    {k:'pop', t:'População', td:function(r){ return '<td class="mn">'+(r.pop ? vxN(r.pop) : '—')+'</td>'; }},
+    {k:'hab', t:'R$/mil hab.', td:function(r){ return '<td class="mn">'+(r.hab!==null ? vxM(r.hab) : '—')+'</td>'; }}], cids, {fk:'cidade', barra:VX_PAL.cy, limite:500});
+}
+function vxDesenharMapa(cids, total, ufs, fora){
+  var claro = vxClaro();
+  if(!VX.map){
+    VX.map = L.map('vxMap', {preferCanvas:true, zoomControl:true, attributionControl:true, minZoom:3});
+    VX.map.attributionControl.setPrefix(false);
+  }
+  var tema = claro ? 'light_all' : 'dark_all';
+  if(VX.tilesTema!==tema){
+    if(VX.tiles) VX.map.removeLayer(VX.tiles);
+    VX.tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/'+tema+'/{z}/{x}/{y}{r}.png', {maxZoom:18, subdomains:'abcd', attribution:'&copy; OpenStreetMap &middot; &copy; CARTO'}).addTo(VX.map);
+    VX.tilesTema = tema;
+  }
+  VX.map.invalidateSize();
+  // soma por município (nomes diferentes no cadastro podem cair no mesmo município)
+  var porMun = {}, mapeado = 0;
+  cids.forEach(function(r){
+    var f = vxMunicipio(r.k); if(!f) return;
+    var o = porMun[f[2]] || (porMun[f[2]] = {f:f, uf:r.k.slice(0,2), nomes:[], fat:0, lb:0, qtd:0, prev:0});
+    o.nomes.push(r.k); o.fat += r.fat; o.lb += r.lb; o.qtd += r.qtd; o.prev += r.prev; mapeado += r.fat;
+  });
+  var lista = Object.keys(porMun).map(function(id){ var o = porMun[id]; o.mg = o.fat>0 ? o.lb/o.fat*100 : 0; o.vr = vxVarPct(o.fat, o.prev); o.pop = o.f[5]||0; o.frota = o.f[6]||0; return o; });
+  lista.sort(function(a,b){ return b.fat-a.fat; });
+  vxTabelaCidades(cids, true);
+  // KPIs
+  var top5 = lista.slice(0,5).reduce(function(s,o){ return s+o.fat; }, 0);
+  document.getElementById('vxRegKpis').innerHTML =
+    vxKpiHtml('k0', 'Cidades com venda', vxN(cids.length), vxN(lista.length)+' no mapa') +
+    vxKpiHtml('k1', 'Faturamento no mapa', vxM(mapeado), (total>0 ? (mapeado/total*100).toFixed(1).replace('.',',') : '0')+'% do total') +
+    vxKpiHtml('k2', 'Maior cidade', lista[0] ? escapeHtml(lista[0].f[1]) : '—', lista[0] ? vxM(lista[0].fat)+' · '+lista[0].uf : '') +
+    vxKpiHtml('k3', '5 maiores somam', (total>0 ? (top5/total*100).toFixed(1).replace('.',',') : '0')+'%', 'concentração do faturamento');
+  var met = document.getElementById('vxMapMetrica').value, esc = vxEscala(met, lista);
+  document.getElementById('vxMapLeg').innerHTML = esc.leg.map(function(x){ return '<span><i style="background:'+x[0]+'"></i>'+x[1]+'</span>'; }).join('') +
+    '<span><i style="background:'+(claro?'#cbd5e1':'#2a3a4a')+'; border:1px solid '+(claro?'#94a3b8':'#3d5068')+'"></i>Sem vendas</span>';
+  var sub = document.getElementById('vxMapSub');
+  if(sub) sub.textContent = {fat:'Faturamento por município', margem:'Margem bruta por município', var:'Variação do faturamento vs. período anterior de mesmo tamanho', hab:'Faturamento por mil habitantes (municípios com população conhecida)'}[met]+' · passe o mouse para ver os detalhes · clique para filtrar';
+  var nota = document.getElementById('vxMapNota');
+  if(nota) nota.innerHTML = fora.length ? 'Estados com menos de 0,5% do faturamento ficam fora do mapa para ele abrir rápido ('+fora.sort().join(', ')+'); as cidades deles estão na tabela.' : '';
+  // camada única em canvas com todos os municípios dos estados carregados
+  var feats = [], vendaPorId = {}, maxF = lista.length ? lista[0].fat : 1;
+  lista.forEach(function(o){ vendaPorId[o.f[2]] = o; });
+  ufs.forEach(function(uf){
+    var g = VX.geo[uf]; if(!g) return;
+    g.lista.forEach(function(f){
+      feats.push({type:'Feature', properties:{id:f[2], uf:uf}, geometry: f[4].length===1 ? {type:'Polygon', coordinates:f[4][0]} : {type:'MultiPolygon', coordinates:f[4]}});
+    });
+  });
+  var semCor = claro ? '#cbd5e1' : '#2a3a4a', linha = claro ? 'rgba(15,23,42,.18)' : 'rgba(255,255,255,.12)';
+  function estilo(ft){
+    var o = vendaPorId[ft.properties.id];
+    if(!o) return {fillColor:semCor, color:linha, weight:.4, fillOpacity:claro?.45:.5, opacity:.7};
+    var op = met==='fat' ? .45+Math.pow(o.fat/maxF, .5)*.45 : .78;
+    return {fillColor:esc.cor(o), color:claro?'rgba(15,23,42,.35)':'rgba(255,255,255,.22)', weight:.7, fillOpacity:op, opacity:.9};
+  }
+  if(VX.camada) VX.map.removeLayer(VX.camada);
+  var tip = document.getElementById('vxMapTip'), wrap = document.getElementById('vxMapWrap');
+  function mover(e){
+    var r = wrap.getBoundingClientRect(), x = e.originalEvent.clientX-r.left+16, y = e.originalEvent.clientY-r.top+16;
+    var tw = tip.offsetWidth||220, th = tip.offsetHeight||160;
+    if(x+tw>r.width-8) x = e.originalEvent.clientX-r.left-tw-16;
+    if(y+th>r.height-8) y = e.originalEvent.clientY-r.top-th-16;
+    tip.style.left = Math.max(4,x)+'px'; tip.style.top = Math.max(4,y)+'px';
+  }
+  function linhaTip(a, b){ return '<span>'+a+'</span><span>'+b+'</span>'; }
+  VX.camada = L.geoJSON({type:'FeatureCollection', features:feats}, {style:estilo, onEachFeature:function(ft, ly){
+    ly.on('mouseover', function(e){
+      var o = vendaPorId[ft.properties.id], f = VX.geo[ft.properties.uf].lista.filter(function(x){ return x[2]===ft.properties.id; })[0];
+      ly.setStyle({weight:2, color:claro?'#0f172a':'#fff', fillOpacity:Math.min(.95, (ly.options.fillOpacity||.5)+.2)});
+      var pop = f[5] ? vxN(f[5]) : '—', fro = f[6] ? vxN(f[6]) : '—';
+      var cor = o ? esc.cor(o) : 'var(--text-2)';
+      tip.innerHTML = '<div class="tn" style="color:'+cor+'">'+escapeHtml(f[1])+' <span style="color:var(--text-muted); font-size:10.5px; font-weight:500;">('+ft.properties.uf+')</span></div>' +
+        (o ? '<div class="tg">'+linhaTip('Faturamento', vxM(o.fat))+linhaTip('Lucro bruto', '<span style="color:var(--vx-gr-t)">'+vxM(o.lb)+'</span>')+linhaTip('Margem', vxP(o.mg))+
+          linhaTip('Volume', vxN(o.qtd)+' un.')+linhaTip('Var. anterior', seta(o.vr))+linhaTip('Share', (total>0?(o.fat/total*100).toFixed(2).replace('.',','):'0')+'%')+
+          '<div class="sep"></div>'+linhaTip('População', pop)+linhaTip('Frota', fro)+(f[5] ? linhaTip('R$ por mil hab.', vxM(o.fat/f[5]*1000)) : '')+(f[6] ? linhaTip('Peças por mil veíc.', (o.qtd/f[6]*1000).toFixed(1).replace('.',',')) : '')+'</div>'
+          : '<div class="sv">Sem vendas no filtro atual</div><div class="tg">'+linhaTip('População', pop)+linhaTip('Frota', fro)+'</div>');
+      tip.style.display = 'block'; mover(e);
+    });
+    ly.on('mousemove', mover);
+    ly.on('mouseout', function(){ VX.camada.resetStyle(ly); tip.style.display = 'none'; });
+    ly.on('click', function(){ var o = vendaPorId[ft.properties.id]; if(o){ tip.style.display = 'none'; toggleFiltro('cidade', o.nomes[0]); } });
+  }}).addTo(VX.map);
+  // lojas físicas
+  if(VX.pinos){ VX.map.removeLayer(VX.pinos); VX.pinos = null; }
+  if(document.getElementById('vxMapLojas').checked && VX.geo.SP){
+    VX.pinos = L.layerGroup().addTo(VX.map);
+    var lojasFat = agLista('loja'), porCid = {};
+    Object.keys(LOJA_MUNICIPIO).forEach(function(l){ (porCid[LOJA_MUNICIPIO[l]] = porCid[LOJA_MUNICIPIO[l]] || []).push(l); });
+    Object.keys(porCid).forEach(function(c){
+      var f = VX.geo.SP.idx[vxSemAcento(c).replace(/[^A-Z0-9]/g,'')]; if(!f) return;
+      var mk = L.marker(f[3], {icon:L.divIcon({className:'vx-loja-pin', iconSize:[14,14]}), keyboard:false}).addTo(VX.pinos);
+      mk.bindTooltip('<b>'+porCid[c].map(escapeHtml).join(', ')+'</b><br>'+porCid[c].map(function(l){ return escapeHtml(l)+': '+vxM((lojasFat[l]||{}).fat||0); }).join('<br>'), {direction:'top', offset:[0,-8]});
+    });
+  }
+  // enquadra as cidades que somam 90% do faturamento (evita que uma venda isolada afaste o mapa)
+  var chaveFit = JSON.stringify([painelChave, ufs]);
+  if(VX.mapFit!==chaveFit){
+    VX.mapFit = chaveFit;
+    var acum = 0, pts = [];
+    for(var i=0; i<lista.length; i++){ pts.push(lista[i].f[3]); acum += lista[i].fat; if(mapeado>0 && acum>=mapeado*0.9 && pts.length>=3) break; }
+    if(pts.length) VX.map.fitBounds(L.latLngBounds(pts), {padding:[40,40], maxZoom:9});
+    else VX.map.setView([-22.5,-48.5], 6);
+  }
+}
+function vxLigar(){
+  document.getElementById('vxAbas').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-vxaba]'); if(b) vxTrocarAba(b.getAttribute('data-vxaba'));
+  });
+  document.getElementById('vxMapMetrica').addEventListener('change', function(){ if(VX.aba==='regioes') vxRegioes(); });
+  document.getElementById('vxMapLojas').addEventListener('change', function(){ if(VX.aba==='regioes') vxRegioes(); });
+}
+
 async function renderAll(refreshing){
   filtroAplicado();
   var fBase = painelFiltros(null), per = painelPeriodo(), comP = precisaProdutos();
@@ -5538,7 +6110,8 @@ function renderTudo(refreshing){
   }
   renderBrandModelLists();
   renderLojaList();
-  if(state.currentView==='vendas') renderCidades(); // busca clientes por cidade só quando a aba Vendas está aberta
+  if(state.currentView==='clientes' && (CLI_ABA==='cidades' || CLI_ABA==='cidmov')) renderCidades(); // busca clientes por cidade só quando a aba de cidades está aberta
+  if(state.currentView==='vendas') renderVendasAbas();
   if(PRODUTOS_NO_PAINEL) renderTable();
   renderActiveTags();
   if(state.currentView==='clientes') renderClientes();
@@ -5551,6 +6124,7 @@ function renderTudo(refreshing){
    EVENTOS
    ============================================================ */
 function bindEvents(){
+  vxLigar();
   // sidebar collapse
   document.getElementById('collapseBtn').addEventListener('click', function(){
     var app = document.getElementById('app');
@@ -5570,10 +6144,10 @@ function bindEvents(){
   // nav items -> troca de guia real
   var VIEW_META = {
     dashboard:{title:'Dashboard', sub:'Visão geral de vendas e estoque'},
-    vendas:{title:'Vendas', sub:'Faturamento por loja, canal, marca e montadora'},
+    vendas:{title:'Vendas', sub:'Lojas, marcas, grupos, produtos, insights, regiões e loja × mês'},
     estoque:{title:'Estoque', sub:'Valor, giro, saúde do estoque, alertas e produtos'},
     vendedores:{title:'Vendedores', sub:'Performance e consultoria comparativa'},
-    clientes:{title:'Clientes', sub:'Carteira, termômetro de compras e clientes disponíveis (60 dias sem compra)'},
+    clientes:{title:'Clientes', sub:'Carteira, termômetro de compras, clientes disponíveis (60 dias sem compra) e cidades'},
     diasuteis:{title:'Dias úteis', sub:'Calendário de dias úteis por loja, feriados e venda por tipo de dia'},
     insights:{title:'Insights', sub:'Oportunidades para aumentar faturamento e margem'},
     usuarios:{title:'Usuários', sub:'Gestão de acessos ao painel (somente BI)'},
@@ -5596,7 +6170,8 @@ function bindEvents(){
     document.getElementById('cliAbas').hidden = (view!=='clientes');
     if(VIEWS_COM_PRODUTOS.indexOf(view)!==-1 && !PRODUTOS_NO_PAINEL){ state.page = 1; renderAll(false); }
     if(view==='clientes'){ renderClientes(); }
-    if(view==='vendas'){ renderCidades(); }
+    if(view==='vendas'){ renderVendasAbas(); }
+    if(view==='clientes' && (CLI_ABA==='cidades' || CLI_ABA==='cidmov')){ renderCidades(); }
     if(view==='vendedores'){ renderVendConsult(); }
     if(view==='insights'){ renderInsights(); }
     if(view==='diasuteis'){ renderDiasUteis(); }
@@ -5625,6 +6200,7 @@ function bindEvents(){
     if(claro) document.documentElement.setAttribute('data-theme','light'); else document.documentElement.removeAttribute('data-theme');
     try{ localStorage.setItem('nc_tema', claro ? 'light' : 'dark'); }catch(e){}
     var mt = document.querySelector('meta[name="theme-color"]'); if(mt) mt.setAttribute('content', claro ? '#ffffff' : '#0b0f17');
+    if(state.currentView==='vendas') renderVendasAbas();
   });
   document.getElementById('notifBtn').addEventListener('click', function(){
     var n = filteredProducts().filter(function(p){ var st=stockStatus(p); return !p.isBucket && (st==='critico'||st==='zerado'); }).length;
@@ -5838,9 +6414,7 @@ function bindEvents(){
   document.getElementById('alertsList').addEventListener('click', function(ev){
     var it = ev.target.closest('.alert-item[data-id]'); if(it) openDrawer(it.getAttribute('data-id'));
   });
-  document.getElementById('topProducts').addEventListener('click', function(ev){
-    var it = ev.target.closest('.rank-row[data-id]'); if(it) openDrawer(it.getAttribute('data-id'));
-  });
+
   document.getElementById('drawerClose').addEventListener('click', closeDrawer);
 
   // export
@@ -6727,7 +7301,7 @@ async function enter(authUser){
   window.__NC_REAL = real;
   if(!started){ started = true; window.__NC_main(); }
   try{ await window.__NC_enter(pr.data); }
-  catch(ex){ errEl.textContent = 'Não foi possível carregar os números do painel. Tente novamente ou contate o BI.'; }
+  catch(ex){ console.error('painel', ex && ex.stack || ex); errEl.textContent = 'Não foi possível carregar os números do painel. Tente novamente ou contate o BI.'; }
   busy(null);
 }
 
