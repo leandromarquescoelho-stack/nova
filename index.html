@@ -470,6 +470,17 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 #vxMapCard:fullscreen #vxMapWrap, #vxMapCard.vx-full #vxMapWrap{flex:1; height:auto; min-height:300px;}
 #vxMapWrap .leaflet-control-attribution{background:rgba(0,0,0,.35); color:var(--text-muted); font-size:10px;}
 :root[data-theme="light"] #vxMapWrap .leaflet-control-attribution{background:rgba(255,255,255,.7);}
+#vxMapWrap .vx-pop .leaflet-popup-content-wrapper{background:var(--surface); color:var(--text); border:1px solid var(--border-strong); border-radius:12px; box-shadow:0 8px 28px rgba(0,0,0,.45);}
+#vxMapWrap .vx-pop .leaflet-popup-tip{background:var(--surface); border:1px solid var(--border-strong);}
+#vxMapWrap .vx-pop .leaflet-popup-content{margin:12px 14px; font:inherit; font-size:12px;}
+#vxMapWrap .vx-pop a.leaflet-popup-close-button{color:var(--text-muted);}
+.vx-q-t{font-family:'Sora',sans-serif; font-weight:700; font-size:14px; margin:0 14px 8px 0;} .vx-q-t span{color:var(--text-muted); font-size:11px; font-weight:500;}
+.vx-q table{width:100%; border-collapse:collapse;} .vx-q td{padding:4px 0; border-bottom:1px solid var(--border);}
+.vx-q td:first-child{color:var(--text-muted); padding-right:12px;} .vx-q td:last-child{text-align:right; font-family:'JetBrains Mono',monospace; white-space:nowrap;}
+.vx-q-n{font-size:10.5px; color:var(--text-muted); margin-top:7px;}
+.vx-q-sv{background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); border-radius:6px; padding:4px 8px; color:var(--vx-am-t); margin-bottom:6px;}
+.vx-q-b{margin-top:9px; width:100%; font:inherit; font-size:11.5px; font-weight:700; padding:6px 8px; border-radius:8px; border:1px solid rgba(0,229,255,.35); background:rgba(0,229,255,.08); color:var(--vx-cy-t); cursor:pointer;}
+.vx-q-b:hover{background:rgba(0,229,255,.16);}
 .vx-map-msg{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:900; pointer-events:none; font-size:13px;}
 .vx-map-msg[hidden]{display:none;}
 .vx-loja-pin{background:#fff url('icons/loja-pin.png') center/100% no-repeat; border:2px solid #fff; border-radius:50%; box-shadow:0 0 0 3px rgba(124,58,237,.55), 0 2px 8px rgba(0,0,0,.55);}
@@ -1673,7 +1684,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <div class="vx-kpis" id="vxRegKpis"></div>
         <div class="vx-card" id="vxMapCard">
           <div class="vx-map-top">
-            <div><div class="vx-ct">Mapa de Calor &mdash; Municípios</div><div class="vx-cs" id="vxMapSub">Passe o mouse para ver os detalhes &middot; clique no município para filtrar</div></div>
+            <div><div class="vx-ct">Mapa de Calor &mdash; Municípios</div><div class="vx-cs" id="vxMapSub">Passe o mouse para ver os detalhes &middot; clique no município para ver clientes e ticket</div></div>
             <div class="vx-map-ctl">
               <label>Cor por<select class="fsel" id="vxMapMetrica">
                 <option value="fat">Faturamento</option>
@@ -1681,6 +1692,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
                 <option value="var">Variação vs. período anterior</option>
                 <option value="hab">Faturamento por mil habitantes</option>
               </select></label>
+              <label>UF<select class="fsel" id="vxMapUF"><option value="">Todas</option></select></label>
               <label class="vx-chk"><input type="checkbox" id="vxMapLojas" checked> Lojas</label>
               <button type="button" class="vx-full-btn" id="vxMapFull" title="Ver o mapa em tela cheia" aria-label="Ver o mapa em tela cheia"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tela cheia</span></button>
             </div>
@@ -2974,8 +2986,8 @@ function carregarCidCli(){
   rpcMemo('bi_cidade_clientes', arg).then(function(rows){
     if(CID_CLI_K!==k) return;
     CID_CLI = {}; (rows||[]).forEach(function(r){ CID_CLI[dimNome('cidade', r[0])] = {n:+r[1]||0, p:+r[2]||0}; });
-    renderCidades();
-  }).catch(function(){ if(CID_CLI_K===k){ CID_CLI_ERRO = true; renderCidades(); } });
+    renderCidades(); vxCidCliPronto();
+  }).catch(function(){ if(CID_CLI_K===k){ CID_CLI_ERRO = true; renderCidades(); vxCidCliPronto(); } });
 }
 function renderCidades(){
   var box = document.getElementById('cidadeList'); if(!box) return;
@@ -5916,11 +5928,25 @@ function vxEscala(met, cidades){
 function vxRegioes(){
   var cids = vxLinhas('cidade').filter(function(r){ return r.k!=='N/D' && /^[A-Z]{2} - /.test(r.k); });
   var total = vxLinhas('cidade').total || 0;
+  carregarCidCli(); // clientes por cidade (quadro ao clicar no município)
   // estados que entram no mapa: ao menos 0,5% do faturamento, mais o estado das lojas
   var porUF = {}; cids.forEach(function(r){ var uf = r.k.slice(0,2); porUF[uf] = (porUF[uf]||0) + r.fat; });
-  var ufs = Object.keys(porUF).filter(function(uf){ return uf!=='EX' && (porUF[uf] >= total*0.005 || uf==='SP'); });
-  if(ufs.indexOf('SP')===-1) ufs.push('SP');
-  var fora = Object.keys(porUF).filter(function(uf){ return uf!=='EX' && ufs.indexOf(uf)===-1; });
+  // opções do filtro de UF: estados com venda, do maior para o menor
+  var selUF = document.getElementById('vxMapUF'), ufSel = selUF.value;
+  var ordUF = Object.keys(porUF).filter(function(uf){ return uf!=='EX'; }).sort(function(a,b){ return porUF[b]-porUF[a]; });
+  if(ufSel && ordUF.indexOf(ufSel)===-1) ufSel = '';
+  selUF.innerHTML = '<option value="">Todas</option>' + ordUF.map(function(uf){ return '<option value="'+uf+'"'+(uf===ufSel?' selected':'')+'>'+uf+' · '+(total>0?(porUF[uf]/total*100).toFixed(1).replace('.',','):'0')+'%</option>'; }).join('');
+  var ufs, fora;
+  if(ufSel){
+    ufs = [ufSel]; fora = [];
+    cids = cids.filter(function(r){ return r.k.slice(0,2)===ufSel; });
+    total = porUF[ufSel] || 0;
+  } else {
+    ufs = Object.keys(porUF).filter(function(uf){ return uf!=='EX' && (porUF[uf] >= total*0.005 || uf==='SP'); });
+    if(ufs.indexOf('SP')===-1) ufs.push('SP');
+    fora = Object.keys(porUF).filter(function(uf){ return uf!=='EX' && ufs.indexOf(uf)===-1; });
+  }
+  VX.ufSel = ufSel;
   var seq = ++VX.mapSeq, msg = document.getElementById('vxMapMsg');
   msg.hidden = false; msg.textContent = 'Carregando mapa…';
   vxTabelaCidades(cids, null);
@@ -5972,14 +5998,14 @@ function vxDesenharMapa(cids, total, ufs, fora){
   var top5 = lista.slice(0,5).reduce(function(s,o){ return s+o.fat; }, 0);
   document.getElementById('vxRegKpis').innerHTML =
     vxKpiHtml('k0', 'Cidades com venda', vxN(cids.length), vxN(lista.length)+' no mapa') +
-    vxKpiHtml('k1', 'Faturamento no mapa', vxM(mapeado), (total>0 ? (mapeado/total*100).toFixed(1).replace('.',',') : '0')+'% do total') +
+    vxKpiHtml('k1', VX.ufSel ? 'Faturamento em '+VX.ufSel : 'Faturamento no mapa', vxM(mapeado), (total>0 ? (mapeado/total*100).toFixed(1).replace('.',',') : '0')+'% do total'+(VX.ufSel ? ' do estado' : '')) +
     vxKpiHtml('k2', 'Maior cidade', lista[0] ? escapeHtml(lista[0].f[1]) : '—', lista[0] ? vxM(lista[0].fat)+' · '+lista[0].uf : '') +
-    vxKpiHtml('k3', '5 maiores somam', (total>0 ? (top5/total*100).toFixed(1).replace('.',',') : '0')+'%', 'concentração do faturamento');
+    vxKpiHtml('k3', VX.ufSel ? '5 maiores do estado' : '5 maiores somam', (total>0 ? (top5/total*100).toFixed(1).replace('.',',') : '0')+'%', 'concentração do faturamento');
   var met = document.getElementById('vxMapMetrica').value, esc = vxEscala(met, lista);
   document.getElementById('vxMapLeg').innerHTML = esc.leg.map(function(x){ return '<span><i style="background:'+x[0]+'"></i>'+x[1]+'</span>'; }).join('') +
     '<span><i style="background:'+(claro?'#cbd5e1':'#2a3a4a')+'; border:1px solid '+(claro?'#94a3b8':'#3d5068')+'"></i>Sem vendas</span>';
   var sub = document.getElementById('vxMapSub');
-  if(sub) sub.textContent = {fat:'Faturamento por município', margem:'Margem bruta por município', var:'Variação do faturamento vs. período anterior de mesmo tamanho', hab:'Faturamento por mil habitantes (população do Censo 2022)'}[met]+' · passe o mouse para ver os detalhes · clique para filtrar';
+  if(sub) sub.textContent = {fat:'Faturamento por município', margem:'Margem bruta por município', var:'Variação do faturamento vs. período anterior de mesmo tamanho', hab:'Faturamento por mil habitantes (população do Censo 2022)'}[met]+' · passe o mouse para ver os detalhes · clique no município para ver clientes e ticket';
   var nota = document.getElementById('vxMapNota');
   if(nota) nota.innerHTML = fora.length ? 'Estados com menos de 0,5% do faturamento ficam fora do mapa para ele abrir rápido ('+fora.sort().join(', ')+'); as cidades deles estão na tabela.' : '';
   // camada única em canvas com todos os municípios dos estados carregados
@@ -5999,6 +6025,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
     return {fillColor:esc.cor(o), color:claro?'rgba(15,23,42,.35)':'rgba(255,255,255,.22)', weight:.7, fillOpacity:op, opacity:.9};
   }
   if(VX.camada) VX.map.removeLayer(VX.camada);
+  if(VX.quadro){ VX.map.closePopup(); VX.quadro = null; }
   var tip = document.getElementById('vxMapTip'), wrap = document.getElementById('vxMapWrap');
   function mover(e){
     var r = wrap.getBoundingClientRect(), x = e.originalEvent.clientX-r.left+16, y = e.originalEvent.clientY-r.top+16;
@@ -6023,7 +6050,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
     });
     ly.on('mousemove', mover);
     ly.on('mouseout', function(){ VX.camada.resetStyle(ly); tip.style.display = 'none'; });
-    ly.on('click', function(){ var o = vendaPorId[ft.properties.id]; if(o){ tip.style.display = 'none'; toggleFiltro('cidade', o.nomes[0]); } });
+    ly.on('click', function(e){ var o = vendaPorId[ft.properties.id]; tip.style.display = 'none'; vxQuadroCidade(e.latlng, o, ft.properties, total); });
   }}).addTo(VX.map);
   // lojas físicas
   if(VX.pinos){ VX.map.removeLayer(VX.pinos); VX.pinos = null; }
@@ -6038,7 +6065,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
     });
   }
   // enquadra as cidades que somam 90% do faturamento (evita que uma venda isolada afaste o mapa)
-  var chaveFit = JSON.stringify([painelChave, ufs]);
+  var chaveFit = JSON.stringify([ufs, VX.ufSel]); // filtros novos não mexem no zoom; só a troca de UF reenquadra
   if(VX.mapFit!==chaveFit){
     VX.mapFit = chaveFit;
     var acum = 0, pts = [];
@@ -6046,6 +6073,51 @@ function vxDesenharMapa(cids, total, ufs, fora){
     if(pts.length) VX.map.fitBounds(L.latLngBounds(pts), {padding:[40,40], maxZoom:9});
     else VX.map.setView([-22.5,-48.5], 6);
   }
+}
+
+// quadro fixo ao clicar no município: faturamento, clientes, ticket médio por cliente (sem mexer no zoom)
+function vxQuadroHtml(q){
+  var o = q.o, pr = q.props, f = VX.geo[pr.uf].lista.filter(function(x){ return x[2]===pr.id; })[0];
+  function ln(a, b){ return '<tr><td>'+a+'</td><td>'+b+'</td></tr>'; }
+  var h = '<div class="vx-q"><div class="vx-q-t">'+escapeHtml(f[1])+' <span>('+pr.uf+')</span></div>';
+  if(!o){
+    return h+'<div class="vx-q-sv">Sem vendas no filtro atual</div><table>'+ln('População', f[5]?vxN(f[5]):'—')+ln('Frota', f[6]?vxN(f[6]):'—')+'</table></div>';
+  }
+  var cli = null, cliP = null;
+  if(CID_CLI){ cli = 0; cliP = 0; o.nomes.forEach(function(n){ var c = CID_CLI[n]; if(c){ cli += c.n; cliP += c.p; } }); }
+  var carregando = !CID_CLI && !CID_CLI_ERRO;
+  var vc = cli!==null && cliP>0 ? (cli-cliP)/cliP*100 : null;
+  var tk = cli ? o.fat/cli : null, tkP = cliP ? o.prev/cliP : null, vtk = tk!==null && tkP ? (tk-tkP)/tkP*100 : null;
+  var vazio = carregando ? '<span class="status-txt">Carregando…</span>' : '—';
+  h += '<table>' +
+    ln('Faturamento', vxM(o.fat)+' '+seta(o.vr)) +
+    ln('Clientes', cli!==null ? vxN(cli)+(vc!==null ? ' '+seta(vc) : '') : vazio) +
+    ln('Ticket médio por cliente', tk!==null ? vxM(tk)+(vtk!==null ? ' '+seta(vtk) : '') : vazio) +
+    ln('Faturamento por cliente/mês', tk!==null ? vxM(tk/Math.max(1, metaFator(periodRange(state.globalPeriod)))) : vazio) +
+    ln('Lucro bruto', '<span style="color:var(--vx-gr-t)">'+vxM(o.lb)+'</span>') +
+    ln('Margem', vxBdg(o.mg)) +
+    ln('Volume', vxN(o.qtd)+' un.') +
+    ln('Share', (q.total>0 ? (o.fat/q.total*100).toFixed(2).replace('.',',') : '0')+'%') +
+    ln('População', f[5] ? vxN(f[5]) : '—') +
+    ln('Clientes por mil hab.', cli!==null && f[5] ? (cli/f[5]*1000).toFixed(2).replace('.',',') : '—') +
+    ln('Frota', f[6] ? vxN(f[6]) : '—') +
+    '</table>' + (cli!==null && cliP ? '<div class="vx-q-n">Período anterior: '+vxN(cliP)+' clientes, ticket '+vxM(tkP)+'</div>' : '') +
+    '<button type="button" class="vx-q-b" data-vxfiltra="'+escapeHtml(o.nomes[0])+'">Filtrar o painel por esta cidade</button></div>';
+  return h;
+}
+function vxQuadroCidade(latlng, o, props, total){
+  VX.quadro = {latlng:latlng, o:o, props:props, total:total};
+  if(!VX.popup) VX.popup = L.popup({maxWidth:300, minWidth:250, autoPan:true, autoPanPadding:[20,20], className:'vx-pop', closeButton:true});
+  VX.popup.setLatLng(latlng).setContent(vxQuadroHtml(VX.quadro)).openOn(VX.map);
+  vxQuadroLigar();
+}
+// o Leaflet não deixa o clique do quadro chegar à página: liga o botão direto no quadro
+function vxQuadroLigar(){
+  var el = VX.popup && VX.popup.getElement(), b = el && el.querySelector('[data-vxfiltra]');
+  if(b) b.onclick = function(){ var n = b.getAttribute('data-vxfiltra'); VX.map.closePopup(); VX.quadro = null; toggleFiltro('cidade', n); };
+}
+function vxCidCliPronto(){
+  if(VX.quadro && VX.popup && VX.map && VX.map.hasLayer(VX.popup)){ VX.popup.setContent(vxQuadroHtml(VX.quadro)); vxQuadroLigar(); }
 }
 function vxTelaCheia(){
   var card = document.getElementById('vxMapCard'), btn = document.getElementById('vxMapFull');
@@ -6073,6 +6145,8 @@ function vxLigar(){
   });
   document.getElementById('vxMapMetrica').addEventListener('change', function(){ if(VX.aba==='regioes') vxRegioes(); });
   document.getElementById('vxMapLojas').addEventListener('change', function(){ if(VX.aba==='regioes') vxRegioes(); });
+  document.getElementById('vxMapUF').addEventListener('change', function(){ if(VX.map) VX.map.closePopup(); VX.quadro = null; if(VX.aba==='regioes') vxRegioes(); });
+
 }
 
 async function renderAll(refreshing){
