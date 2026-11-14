@@ -65,7 +65,7 @@ def ld_regex(page):
         def campo(k):
             mm = re.search(r'"' + k + r'"\s*:\s*"?([^",}]+)', t)
             return mm.group(1).strip() if mm else ''
-        out.append({'@type': 'Product', 'name': campo('name'), 'sku': campo('sku'), 'mpn': campo('mpn'),
+        out.append({'@type': 'Product', 'name': campo('name'), 'sku': campo('sku'), 'mpn': campo('mpn'), 'gtin': campo('gtin'),
                     'offers': {'price': campo('price'), 'availability': campo('availability')}})
     return out
 
@@ -133,7 +133,8 @@ def accioly(cs):
         prods = jsonld_produtos(page) or ld_regex(page)
         ACC_DBG['paginas'] += 1; ACC_DBG['com_produto'] += bool(prods)
         for p in prods:
-            ids = {norm(p.get('mpn', '')), norm(p.get('sku', '')), norm(p.get('gtin13', ''))}
+            ids = {norm(p.get(k, '')) for k in ('mpn', 'sku', 'gtin', 'gtin13', 'gtin8', 'gtin14')}
+            ids |= {norm(r) for r in re.findall(r'"(?:reference|EAN)"\s*:\s*"([^"]+)"', page)}
             nome = norm(p.get('name', ''))
             if ids & set(cs) or any(c in nome for c in cs):
                 preco, disp = oferta(p)
@@ -172,7 +173,7 @@ def carrera(cs):
             continue
         st, page = get(u)
         for p in (jsonld_produtos(page) or ld_regex(page)):
-            ids = {norm(p.get('mpn', '')), norm(p.get('sku', ''))}
+            ids = {norm(p.get(k, '')) for k in ('mpn', 'sku', 'gtin')}
             titulo = H.unescape(p.get('name', ''))
             # o código precisa estar no nome do produto ou no sku/mpn (o fim do endereço sozinho pode ser outro número)
             if not (ids & set(cs) or any(re.search(r'(?<![0-9A-Z])0*' + c + r'(?![0-9A-Z])', titulo.upper()) for c in cs)):
