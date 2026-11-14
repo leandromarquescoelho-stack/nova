@@ -164,9 +164,10 @@ a{color:inherit;}
 svg text{font-family:'Manrope', sans-serif;}
 
 /* scrollbars */
-*::-webkit-scrollbar{height:8px; width:8px;}
+*::-webkit-scrollbar{height:14px; width:14px;}
 *::-webkit-scrollbar-track{background:transparent;}
-*::-webkit-scrollbar-thumb{background:var(--border-strong); border-radius:8px;}
+*::-webkit-scrollbar-thumb{background:var(--border-strong); border-radius:10px; border:3px solid transparent; background-clip:padding-box; min-height:40px;}
+*::-webkit-scrollbar-thumb:hover{background-color:var(--text-muted);}
 
 /* ================= APP SHELL ================= */
 .app{
@@ -581,11 +582,11 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .barlist{display:flex; flex-direction:column; gap:10px;}
 /* painéis com muitos itens: mostra ~10 linhas e rola para ver o resto */
 .scroll-limit{ max-height:412px; overflow-y:auto; padding-right:6px; margin-right:-6px; }
-.scroll-limit::-webkit-scrollbar{ width:7px; }
+.scroll-limit::-webkit-scrollbar{ width:12px; }
 .scroll-limit::-webkit-scrollbar-track{ background:transparent; }
-.scroll-limit::-webkit-scrollbar-thumb{ background:var(--surface-3); border-radius:6px; }
+.scroll-limit::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:10px; border:2px solid transparent; background-clip:padding-box; }
 .scroll-limit::-webkit-scrollbar-thumb:hover{ background:var(--text-muted); }
-.scroll-limit{ scrollbar-width:thin; scrollbar-color:var(--surface-3) transparent; }
+.scroll-limit{ scrollbar-width:auto; scrollbar-color:var(--surface-3) transparent; }
 .capturando .scroll-limit, .capturando .scroll-limit-sm{ scrollbar-width:none; }
 .capturando .scroll-limit::-webkit-scrollbar, .capturando .scroll-limit-sm::-webkit-scrollbar{ display:none; }
 [data-fk]{ cursor:pointer; }
@@ -1179,9 +1180,9 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .dq-row:last-child{ border-bottom:none; }
 .dq-row .n{ color:var(--text-2); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .dq-row .v{ font-family:'JetBrains Mono',monospace; white-space:nowrap; }
-.scroll-limit-sm::-webkit-scrollbar{ width:6px; }
+.scroll-limit-sm::-webkit-scrollbar{ width:11px; }
 .scroll-limit-sm::-webkit-scrollbar-track{ background:transparent; }
-.scroll-limit-sm::-webkit-scrollbar-thumb{ background:var(--surface-3); border-radius:6px; }
+.scroll-limit-sm::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:10px; border:2px solid transparent; background-clip:padding-box; }
 .fcheck-item{
   display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--text-2); font-weight:500;
   padding:5px 6px; border-radius:5px; cursor:pointer;
@@ -3050,8 +3051,9 @@ function renderCidades(){
    E-commerce (canal ECOMMERCE e lojas de marketplace) vende todos os dias: conta dias corridos. */
 var LOJA_MUNICIPIO = {'IPIRANGA':'São Paulo', 'JOAO DIAS':'São Paulo', 'TATUAPE':'São Paulo', 'CAMPINAS':'Campinas',
   'RIBEIRAO':'Ribeirão Preto', 'RIO PRETO':'São José do Rio Preto', 'SBC':'São Bernardo do Campo'};
-// posição do ícone das lojas da capital, no bairro de cada uma (as demais ficam no centro do município)
-var LOJA_COORD = {'IPIRANGA':[-23.5890,-46.6070], 'TATUAPE':[-23.5405,-46.5760], 'JOAO DIAS':[-23.6440,-46.7270]};
+// posição do ícone de cada loja física, pelo endereço da loja (aproximada)
+var LOJA_COORD = {'IPIRANGA':[-23.5990,-46.5880], 'TATUAPE':[-23.5305,-46.5690], 'JOAO DIAS':[-23.6425,-46.7245],
+  'SBC':[-23.7115,-46.5505], 'CAMPINAS':[-22.9125,-47.0650], 'RIO PRETO':[-20.7860,-49.3930], 'RIBEIRAO':[-21.1965,-47.7755]};
 var MUNICIPIOS = ['São Paulo','Campinas','Ribeirão Preto','São José do Rio Preto','São Bernardo do Campo'];
 var CANAL_ONLINE = 'ECOMMERCE';
 var DIA_SEMANA = ['dom','seg','ter','qua','qui','sex','sáb'];
