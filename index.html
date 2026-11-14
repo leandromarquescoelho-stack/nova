@@ -6212,8 +6212,7 @@ function vxQuadroHtml(q){
     ln('Automóveis', f[6] ? vxN(f[6]) : '—') +
     (vxChev(f) ? ln('Chevrolet na frota', vxN(vxChev(f).n)+' · '+vxChev(f).pct.toFixed(1).replace('.',',')+'%') + (f[7] ? ln('Peças por mil Chevrolet', (o.qtd/f[7]*1000).toFixed(1).replace('.',',')) : '') : '') +
     '</table>' + (cli!==null && cliP ? '<div class="vx-q-n">Período anterior: '+vxN(cliP)+' clientes, ticket '+vxM(tkP)+'</div>' : '') +
-    '<div class="vx-q-top" tabindex="0"><span>👥 Top 5 clientes</span><span class="seta">▸</span><div class="vx-q-sub">'+vxTopHtml(q.top)+'</div></div>' +
-    '<button type="button" class="vx-q-b" data-vxfiltra="'+escapeHtml(o.nomes[0])+'">Filtrar o painel por esta cidade</button></div>';
+    '<div class="vx-q-top" tabindex="0"><span>👥 Top 5 clientes</span><span class="seta">▸</span><div class="vx-q-sub">'+vxTopHtml(q.top)+'</div></div></div>';
   return h;
 }
 function vxQuadroCidade(latlng, o, props, total){
@@ -6227,9 +6226,8 @@ function vxQuadroCidade(latlng, o, props, total){
 }
 // o Leaflet não deixa o clique do quadro chegar à página: liga o botão direto no quadro
 function vxQuadroLigar(){
-  var el = VX.popup && VX.popup.getElement(), b = el && el.querySelector('[data-vxfiltra]'), tp = el && el.querySelector('.vx-q-top');
+  var el = VX.popup && VX.popup.getElement(), tp = el && el.querySelector('.vx-q-top');
   if(tp) tp.onclick = function(ev){ if(!ev.target.closest('.vx-q-sub')) tp.classList.toggle('aberto'); };
-  if(b) b.onclick = function(){ var n = b.getAttribute('data-vxfiltra'); VX.map.closePopup(); VX.quadro = null; toggleFiltro('cidade', n); };
 }
 function vxCidCliPronto(){
   if(VX.quadro && VX.popup && VX.map && VX.map.hasLayer(VX.popup)){ VX.popup.setContent(vxQuadroHtml(VX.quadro)); vxQuadroLigar(); }
