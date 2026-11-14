@@ -115,11 +115,13 @@
   --ink:255,255,255;          /* linhas e véus translúcidos */
   --halo:0,0,0;               /* contorno de texto sobre barras */
   --glass:rgba(10,13,18,.82); /* topo e barra de filtros ativos */
+  --status-txt:#39ff6e;       /* frases de status (Carregando…): verde chamativo no escuro */
   font-size:14px;
 }
 /* modo claro: mesmas variáveis, tons claros; escolhido no botão do topo e guardado no navegador */
 :root[data-theme="light"]{
   color-scheme: light;
+  --status-txt:#0a5cff;       /* azul chamativo no claro */
   --bg:#eef1f5;
   --plane:#ffffff;
   --surface:#ffffff;
@@ -299,7 +301,7 @@ svg text{font-family:'Manrope', sans-serif;}
 .lo-logo .p1{ clip-path:inset(0 87.5% 0 0); transform-origin:5.95% 50%; animation:loGira 1.4s cubic-bezier(.45,.05,.55,.95) infinite; }
 .lo-logo .p2{ clip-path:inset(0 0 0 12.5%); }
 @keyframes loGira{ to{ transform:rotate(360deg); } }
-.lo-txt{ font-size:14px; letter-spacing:.12em; color:var(--text-2); font-weight:600; }
+.lo-txt{ font-size:14px; letter-spacing:.12em; color:var(--status-txt); font-weight:600; }
 .lo-txt i{ font-style:normal; animation:loPonto 1.2s infinite; } .lo-txt i:nth-child(2){ animation-delay:.2s; } .lo-txt i:nth-child(3){ animation-delay:.4s; }
 @keyframes loPonto{ 0%,60%,100%{ opacity:.2; } 30%{ opacity:1; } }
 @media (prefers-reduced-motion: reduce){ .lo-logo img{ animation:none; } }
@@ -964,6 +966,7 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .est-dest .ed.big .v{font-size:28px;}
 .est-dest .ed .s{font-size:11.5px; color:var(--text-2); margin-top:4px; line-height:1.5;}
 @media (max-width:1100px){.est-dest{grid-template-columns:repeat(2,minmax(0,1fr));} .est-dest .ed.big{grid-column:span 2;}}
+.status-txt{ color:var(--status-txt) !important; font-weight:600; }
 .note-muted{ font-size:11px; color:var(--text-muted); margin-top:10px; line-height:1.6; }
 /* ---- mês em andamento ---- */
 .mtd-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
@@ -3031,7 +3034,7 @@ function renderDuVendas(){
   var base = f.canal ? f.canal : todos;
   function comCanais(ids){ var g = JSON.parse(JSON.stringify(f)); g.canal = ids.length ? ids.slice().sort(function(a,b){ return a-b; }) : [-1]; return g; }
   var fFis = comCanais(base.filter(function(i){ return i!==idOn; })), fOn = comCanais(base.filter(function(i){ return i===idOn; }));
-  tb.innerHTML = '<p class="note-muted">Carregando vendas por dia…</p>';
+  tb.innerHTML = '<p class="note-muted status-txt">Carregando vendas por dia…</p>';
   Promise.all([rpcMemo('bi_painel', {f:fFis, per:{}, parte:'a'}), rpcMemo('bi_painel', {f:fOn, per:{}, parte:'a'})]).then(function(r){
     if(seq!==DU_SEQ) return;
     function serie(v){ var s = {}; ((v && v.d)||[]).forEach(function(x){ s[String(x[0]).slice(0,10)] = c2(x[1]); }); return s; }
@@ -3325,7 +3328,7 @@ function renderVendConsult(){
   if(VC.key!==vk){
     if(VC.pend!==vk){
       VC.pend = vk;
-      box.innerHTML = '<p class="note-muted">Carregando o comparativo dos vendedores…</p>';
+      box.innerHTML = '<p class="note-muted status-txt">Carregando o comparativo dos vendedores…</p>';
       rpcMemo('bi_vendedores', {f: fv, per: {ini: painelPeriodo().ini, fim: painelPeriodo().fim}}).then(function(d){
         if(VC.pend!==vk) return;
         VC = {key:vk, d:d||{}, pend:null};
@@ -3766,7 +3769,7 @@ function renderVendFunil(){
   var chave = JSON.stringify([f, per, perF]);
   if(FUN.chave===chave && FUN.d){ desenharFunil(box); return; }
   var meu = ++FUN.req, grid = box.querySelector('.fun-grid');
-  if(grid) grid.classList.add('carregando'); else box.innerHTML = '<p class="note-muted">Carregando o funil do vendedor…</p>';
+  if(grid) grid.classList.add('carregando'); else box.innerHTML = '<p class="note-muted status-txt">Carregando o funil do vendedor…</p>';
   // com uma coluna clicada, os funis usam o período dela e o gráfico continua no período inteiro
   var pedidos = [rpcMemo('bi_vendedor_funil', {f:f, per:perF, lim:20})];
   if(FUN.pk) pedidos.push(rpcMemo('bi_vendedor_funil', {f:f, per:per, lim:20}));
@@ -4422,7 +4425,7 @@ function openDrawer(productId){
   ].map(function(pair){ return '<div class="dstat"><div class="dl">'+pair[0]+'</div><div class="dv">'+pair[1]+'</div></div>'; }).join('');
 
   // série diária exata do produto no recorte atual (busca ao abrir)
-  document.getElementById('drawerSpark').innerHTML = '<p class="note-muted">Carregando vendas…</p>';
+  document.getElementById('drawerSpark').innerHTML = '<p class="note-muted status-txt">Carregando vendas…</p>';
   document.getElementById('drawerSales').innerHTML = ''; document.getElementById('drawerPrices').innerHTML = '';
   rpcMemo('bi_produto_serie', {f: painelFiltros(null), produto: p.pid}).then(function(serie){
     if(drawerAtual!==p.id) return;
@@ -5089,7 +5092,7 @@ function renderHeatRazao(box){
     });
     return tabela(lin);
   }
-  box.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">Carregando notas e clientes…</p>';
+  box.innerHTML = '<p class="status-txt" style="font-size:12px;">Carregando notas e clientes…</p>';
   rpcMemo('bi_loja_mes', {f: painelFiltros(null)}).then(function(rows){
     if(seq!==HEAT_SEQ) return;
     var lin = {};
@@ -5396,8 +5399,8 @@ function renderClientes(){
   var tab = document.getElementById('cliTabela'); if(!tab) return;
   cliLigar(); cliPendente(false);
   var seq = ++CLI_SEQ;
-  tab.innerHTML = '<p class="note-muted">Carregando clientes…</p>';
-  document.getElementById('cliDisp').innerHTML = '<p class="note-muted">Carregando…</p>';
+  tab.innerHTML = '<p class="note-muted status-txt">Carregando clientes…</p>';
+  document.getElementById('cliDisp').innerHTML = '<p class="note-muted status-txt">Carregando…</p>';
   var a1 = cliArgs(), a2 = cliArgs({disp:true, ordem:'f12', limite:100}); delete a2.o.termo;
   Promise.all([rpcMemo('bi_clientes', a1), rpcMemo('bi_clientes', a2)]).then(function(r){
     if(seq!==CLI_SEQ) return;
@@ -5912,7 +5915,7 @@ function mostrarOpcoesBusca(key, ops, msg){
   if(!ops){ res.classList.remove('show'); res.innerHTML = ''; return; }
   res.innerHTML = ops.length ? ops.map(function(o){
     return '<button type="button" class="fbusca-op" data-bk="'+key+'" data-bv="'+escapeHtml(String(o[0]))+'" data-bl="'+escapeHtml(o[1])+'">'+escapeHtml(o[1])+'</button>';
-  }).join('') : '<div class="fbusca-msg">'+(msg||'Nada encontrado.')+'</div>';
+  }).join('') : '<div class="fbusca-msg'+(/…$/.test(msg||'')?' status-txt':'')+'">'+(msg||'Nada encontrado.')+'</div>';
   res.classList.add('show');
 }
 function bindBuscas(){
@@ -6137,7 +6140,7 @@ async function salvarCard(card, liberar){
   var erro = validaEscopo(payload);
   if(erro){ msg.style.color='var(--critical)'; msg.textContent = erro; return; }
   if(CURRENT_PROFILE && CURRENT_PROFILE.id===id){ delete payload.role; delete payload.active; }
-  msg.style.color='var(--text-muted)'; msg.textContent = 'Salvando…';
+  msg.style.color='var(--status-txt)'; msg.textContent = 'Salvando…';
   var upd = await supa.from('profiles').update(payload).eq('id', id);
   if(upd.error){ msg.style.color='var(--critical)'; msg.textContent = 'Erro ao salvar: '+upd.error.message; return; }
   toast(liberar ? 'Acesso liberado.' : 'Usuário atualizado.');
@@ -6178,7 +6181,7 @@ function renderUsersStats(){
 async function renderUsersAdmin(){
   var wrap = document.getElementById('usersTableWrap');
   if(!wrap) return;
-  if(!wrap.innerHTML) wrap.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:8px 2px;">Carregando…</div>';
+  if(!wrap.innerHTML) wrap.innerHTML = '<div class="status-txt" style="font-size:12px; padding:8px 2px;">Carregando…</div>';
   var res = await fetchAllProfiles();
   if(res.error){ wrap.innerHTML = '<div class="login-error">Erro ao carregar usuários: '+escapeHtml(res.error)+'</div>'; return; }
   USERS_CACHE = res.data;
@@ -6251,7 +6254,7 @@ async function renderFontesAdmin(){
   var wrap = document.getElementById('fontesWrap');
   var cw = document.getElementById('cargasWrap');
   if(!wrap) return;
-  wrap.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:8px 2px;">Carregando…</div>';
+  wrap.innerHTML = '<div class="status-txt" style="font-size:12px; padding:8px 2px;">Carregando…</div>';
   var res = await supa.from('bi_fonte').select('papel,link,ativo,atualizado_em');
   if(res.error){ wrap.innerHTML = '<div class="login-error">Erro ao carregar os links: '+escapeHtml(res.error.message)+'</div>'; return; }
   var atual = {}; (res.data||[]).forEach(function(r){ atual[r.papel] = r; });
@@ -6334,7 +6337,7 @@ if(userInviteFormEl){
   userInviteFormEl.addEventListener('submit', async function(e){
     e.preventDefault();
     var msg = document.getElementById('uiMsg');
-    msg.style.color = '';
+    msg.style.color = 'var(--status-txt)';
     msg.textContent = 'Enviando convite…';
     var email = document.getElementById('uiEmail').value.trim();
     var nome = document.getElementById('uiNome').value.trim();
@@ -6588,7 +6591,7 @@ async function renderIAAdmin(){
   var on = iaAtiva();
   box.innerHTML = '<div class="ia-adm"><button type="button" class="ia-sw" id="iaSw" role="switch" aria-checked="'+on+'" aria-label="Ligar agente de IA"></button>' +
     '<div class="ia-adm-txt"><b>'+(on ? 'Ligado para todos os usuários' : 'Desligado')+'</b><div>'+(on ? 'O botão "Pergunte aos dados" aparece no canto da tela de cada usuário.' : 'Ao ligar, o botão "Pergunte aos dados" aparece para todos os usuários. Cada um só pergunta sobre os dados que já pode ver.')+'</div></div></div>' +
-    '<div id="iaUso"><div class="ia-adm-txt" style="margin-top:12px;"><div>Carregando uso…</div></div></div>';
+    '<div id="iaUso"><div class="ia-adm-txt" style="margin-top:12px;"><div class="status-txt">Carregando uso…</div></div></div>';
   document.getElementById('iaSw').addEventListener('click', async function(){
     var sw = this, novo = sw.getAttribute('aria-checked')!=='true'; sw.disabled = true;
     try{ var v = await window.__NC_rpc('bi_ia_config', {ativa:novo}); REAL.ia = v; toast(novo ? 'Agente de IA ligado.' : 'Agente de IA desligado.'); }
