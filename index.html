@@ -1481,17 +1481,14 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <p class="note-muted" id="mtdNota"></p>
       </div>
 
-      <!-- ---- insights automáticos: achados gerados a partir dos filtros/período atuais ---- -->
+      <!-- ---- evolução mensal por canal + margem ---- -->
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div>
-            <h2>Insights automáticos</h2>
-            <div class="psub">Achados gerados a partir dos filtros e período selecionados</div>
-          </div>
+          <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal (colunas ao fundo) &middot; cada indicador na própria faixa e escala &middot; du = dias úteis</div></div>
         </div>
-        <div class="ins-grid" id="autoInsights"></div>
+        <div class="chart-scroll"><div class="chart-wrap chart-larga"><div id="monthChart"></div></div></div>
+        <div class="leg-row" id="monthLegend"></div>
       </div>
-
       <!-- ---- main chart + category ---- -->
       <div class="grid-main">
         <div class="panel">
@@ -1536,14 +1533,6 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
       </div>
 
-      <!-- ---- evolução mensal por canal + margem ---- -->
-      <div class="panel" style="margin-bottom:14px;">
-        <div class="panel-head">
-          <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal (colunas ao fundo) &middot; cada indicador na própria faixa e escala &middot; du = dias úteis</div></div>
-        </div>
-        <div class="chart-scroll"><div class="chart-wrap chart-larga"><div id="monthChart"></div></div></div>
-        <div class="leg-row" id="monthLegend"></div>
-      </div>
       </section>
 
       <!-- ============ VENDAS ============ -->
