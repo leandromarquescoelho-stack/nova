@@ -40,19 +40,24 @@ for pn in EX:
         print('  erro', e, body[:200])
 
 secao('ACCIOLY (Tray)')
-st, body, _ = get('https://www.acciolygm.com.br/loja/busca.php?loja=476243&palavra_busca=93378018')
-print('busca', st, len(body))
-links = list(dict.fromkeys(re.findall(r'href="(https://www\.acciolygm\.com\.br/[a-z0-9\-]+)"', body)))
-print('links', len(links), links[:8])
-for t in trecho(body, r'R\$\s*[\d\.]+,\d\d', 200, 3):
-    print('  preço>', t[:400])
-st, body, _ = get('https://www.acciolygm.com.br/filtro-de-combustivel-onix-de-2013-a-2016')
-print('produto', st, len(body))
-for pat in [r'application/ld\+json', r'"sku"', r'"mpn"', r'refer[eê]ncia', r'c[oó]digo', r'"gtin', r'dataLayer']:
-    for t in trecho(body, pat, 300, 2):
-        print('  ', pat, '>', t[:500])
-st, body, _ = get('https://www.acciolygm.com.br/sitemap.xml')
-print('sitemap', st, len(body), re.findall(r'<loc>([^<]+)</loc>', body)[:6])
+_, nav, _ = get('https://www.acciolygm.com.br/loja/busca.php?loja=476243&palavra_busca=zzqxw9')
+NAV = set(re.findall(r'href="(https://www\.acciolygm\.com\.br/[a-z0-9\-]+)"', nav))
+for pn in EX[:2]:
+    st, body, _ = get('https://www.acciolygm.com.br/loja/busca.php?loja=476243&palavra_busca=' + pn)
+    links = [l for l in dict.fromkeys(re.findall(r'href="(https://www\.acciolygm\.com\.br/[a-z0-9\-]+)"', body)) if l not in NAV]
+    print(pn, 'busca', st, len(body), 'links', len(links), links[:6])
+    for t in trecho(body, pn, 200, 2):
+        print('  na busca>', t[:400])
+    for l in links[:3]:
+        st, page, _ = get(l, 1500000)
+        print(' pág', l, st, len(page))
+        for m in re.finditer(r'<script[^>]+application/ld\+json[^>]*>(.*?)</script>', page, re.S | re.I):
+            t = re.sub(r'\s+', ' ', m.group(1))
+            if 'Product' in t:
+                print('   ld>', t[:900])
+        for pat in [r'refer[eê]ncia', r'c[oó]digo', pn]:
+            for t in trecho(page, pat, 200, 2):
+                print('   ', pat, '>', t[:300])
 
 secao('CARRERA (Nuvemshop)')
 st, body, _ = get('https://pecas.carrera.com.br/robots.txt')
