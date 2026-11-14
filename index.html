@@ -2635,9 +2635,10 @@ function eixoDatasHtml(s0, s1){
   }
   return '<div class="eixo-datas">'+out+'</div>';
 }
-function sparklineSVG(values, w, h, color, fill){
+function sparklineSVG(values, w, h, color, fill, folga){
   if(!values.length) return '';
   var max = Math.max.apply(null,values), min = Math.min.apply(null,values);
+  if(folga && max>min){ var fg = (max-min)*folga; max += fg; min -= fg; } // folga: o menor valor não encosta no chão
   if(max===min){ max+=1; min-=1; }
   var pts = values.map(function(v,i){
     var x = (i/(values.length-1))*w;
@@ -2650,6 +2651,53 @@ function sparklineSVG(values, w, h, color, fill){
     area = '<polygon points="0,'+h+' '+pts.join(' ')+' '+w+','+h+'" fill="'+color+'" opacity="0.12"/>';
   }
   return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none">'+area+line+'</svg>';
+}
+
+// minigráfico dos cartões: últimos 3 meses (mesmo dia, 3 meses atrás, até hoje), com riscos discretos na virada de cada mês
+function janela3m(){
+  var b = TODAY_IDX, h = DAYS[b], ini = new Date(h.getFullYear(), h.getMonth()-3, h.getDate()+1);
+  var a = DIA_IDX[isoDia(ini)]; if(a===undefined) a = 0;
+  return {a:Math.max(0, a), b:b};
+}
+function spark3m(vals, a, color, fill, folga){
+  var w = 120, h = 26, n = vals.length; if(n < 2) return '';
+  var svg = sparklineSVG(vals, w, h, color, fill, folga), riscos = '';
+  for(var i=1; i<n; i++){
+    if(DAYS[a+i].getDate()!==1) continue;
+    var x = (i/(n-1)*w).toFixed(1);
+    riscos += '<line x1="'+x+'" y1="1" x2="'+x+'" y2="'+h+'" stroke="var(--text-muted)" stroke-opacity="0.45" stroke-width="1" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>';
+  }
+  var k = svg.indexOf('>')+1;
+  return svg.slice(0, k) + riscos + svg.slice(k);
+}
+// soma móvel de 7 dias (tira o sobe-e-desce de fim de semana)
+function movel7(arr, a, b){
+  var out = [];
+  for(var i=a; i<=b; i++){ var t = 0; for(var j=Math.max(0,i-6); j<=i; j++) t += arr[j]||0; out.push(t); }
+  return out;
+}
+function kpiSparks(k){
+  var j = janela3m(), a = j.a, b = j.b, sd = salesDaily();
+  var f7 = movel7(sd.fat, a, b), l7 = movel7(sd.lb, a, b);
+  var dia = [];
+  for(var i=a; i<=b; i++){ var c = contarDias(DAYS[Math.max(0,i-6)], DAYS[i], null); dia.push(k.soOnline ? c.corridos : c.uteis); }
+  var put = function(key, html){ var el = kpiEls[key].s; el.innerHTML = html; el.title = html ? 'Gráfico dos últimos 3 meses' : ''; };
+  put('fat', spark3m(f7, a, 'var(--accent)', true));
+  put('margem', spark3m(f7.map(function(f,i){ return f>0 ? l7[i]/f*100 : 0; }), a, 'var(--accent)', true));
+  put('media', spark3m(f7.map(function(f,i){ return dia[i] ? f/dia[i] : 0; }), a, 'var(--accent)', true));
+  put('estoque', '');
+  // tickets: notas e clientes distintos só existem por mês (consulta do banco); cada mês vira um degrau
+  var seq = kpiSparks.seq = (kpiSparks.seq||0) + 1;
+  rpcMemo('bi_loja_mes', {f: painelFiltros(null)}).then(function(rows){
+    if(seq!==kpiSparks.seq) return;
+    var nM = REAL.months.length, ft = new Array(nM).fill(0), nn = new Array(nM).fill(0), nc = new Array(nM).fill(0);
+    (rows||[]).forEach(function(r){ if(r[6]!==1) return; var mi = mesIdx(r[1]); if(mi<0) return; ft[mi] = c2(r[2]); nn[mi] = +r[4]; nc[mi] = +r[5]; });
+    var tn = [], tc = [];
+    for(var i=a; i<=b; i++){ var mi = monthIndexOfDay[i]; // mês ainda sem dado repete o anterior (não despenca a zero)
+      tn.push(nn[mi] ? ft[mi]/nn[mi] : (tn.length ? tn[tn.length-1] : 0)); tc.push(nc[mi] ? ft[mi]/nc[mi] : (tc.length ? tc[tc.length-1] : 0)); }
+    put('tknf', spark3m(tn, a, 'var(--accent)', true, 0.6));
+    put('tkcli', spark3m(tc, a, 'var(--accent)', true, 0.6));
+  }).catch(function(){ if(seq===kpiSparks.seq){ put('tknf', ''); put('tkcli', ''); } });
 }
 
 /* ============================================================
@@ -2737,7 +2785,6 @@ function renderKpis(refreshing){
 
   countUp(kpiEls.fat.v, k.fat, fmtMoney);
   delta(kpiEls.fat.d, varPct(k.fat, k.prevFat), 'vs. período anterior');
-  kpiEls.fat.s.innerHTML = sparklineSVG(k.spark,120,26,'var(--accent)',true);
 
   var dMargem = k.margem-k.prevMargem;
   countUp(kpiEls.margem.v, k.margem, function(v){ return v.toFixed(1)+'%'; });
@@ -2765,7 +2812,7 @@ function renderKpis(refreshing){
     kpiEls.estoque.d.textContent = 'Giro '+k.giro.toFixed(1).replace('.',',')+'x ao ano'+(k.cobertura!==null ? ' · cobre '+Math.round(k.cobertura)+' dias' : '');
     kpiEls.estoque.d.title = 'Valor a custo do estoque atual. Giro = custo das vendas dos últimos 12 meses ÷ estoque a custo (filtros aplicados). '+fmtUn(k.estQtd)+' peças.';
   } else { kpiEls.estoque.v.textContent = '—'; kpiEls.estoque.d.textContent = ''; }
-  ['margem','media','tknf','tkcli','estoque'].forEach(function(x){ kpiEls[x].s.innerHTML = ''; });
+  kpiSparks(k);
 }
 
 /* ============================================================
