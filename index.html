@@ -968,6 +968,8 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
   opacity:1; visibility:visible; transform:translateX(0);
   transition:opacity .16s ease, transform .16s ease, visibility 0s linear 0s;
 }
+/* depois de Aplicar o painel some mesmo com o mouse em cima; volta ao sair e entrar de novo */
+.filter-rail.recolhido .filter-rail-panel{opacity:0 !important; visibility:hidden !important; transform:translateX(8px) !important; pointer-events:none;}
 .filter-rail:hover .filter-rail-tab, .filter-rail.pinned .filter-rail-tab{
   background:linear-gradient(180deg, rgba(34,211,238,.28), rgba(59,130,246,.18));
 }
@@ -3042,6 +3044,8 @@ function renderCidades(){
    E-commerce (canal ECOMMERCE e lojas de marketplace) vende todos os dias: conta dias corridos. */
 var LOJA_MUNICIPIO = {'IPIRANGA':'São Paulo', 'JOAO DIAS':'São Paulo', 'TATUAPE':'São Paulo', 'CAMPINAS':'Campinas',
   'RIBEIRAO':'Ribeirão Preto', 'RIO PRETO':'São José do Rio Preto', 'SBC':'São Bernardo do Campo'};
+// posição do ícone das lojas da capital, no bairro de cada uma (as demais ficam no centro do município)
+var LOJA_COORD = {'IPIRANGA':[-23.5890,-46.6070], 'TATUAPE':[-23.5405,-46.5760], 'JOAO DIAS':[-23.6440,-46.7270]};
 var MUNICIPIOS = ['São Paulo','Campinas','Ribeirão Preto','São José do Rio Preto','São Bernardo do Campo'];
 var CANAL_ONLINE = 'ECOMMERCE';
 var DIA_SEMANA = ['dom','seg','ter','qua','qui','sex','sáb'];
@@ -6108,7 +6112,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
       var ls = porCid[c];
       ls.forEach(function(l, i){
         var ang = ls.length>1 ? (i/ls.length)*2*Math.PI : 0, r = ls.length>1 ? 0.06 : 0;
-        var pos = [f[3][0] + r*Math.sin(ang), f[3][1] + r*Math.cos(ang)];
+        var pos = LOJA_COORD[l] || [f[3][0] + r*Math.sin(ang), f[3][1] + r*Math.cos(ang)];
         var sel = VX.lojaSel===l, apagado = VX.lojaSel && !sel;
         var mk = L.marker(pos, {icon:L.divIcon({className:'vx-loja-pin'+(sel?' on':'')+(apagado?' off':''), iconSize: sel ? [38,38] : [26,26]}), keyboard:false, zIndexOffset: sel ? 1000 : 0}).addTo(VX.pinos);
         mk.bindTooltip('<b>Nova · '+escapeHtml(l)+'</b><br>Faturamento: '+vxM((lojasFat[l]||{}).fat||0)+'<br><span style="opacity:.75">'+(sel ? 'Clique para ver todas as lojas' : 'Clique para ver só as vendas desta loja')+'</span>', {direction:'top', offset:[0, sel ? -20 : -14]});
@@ -6410,7 +6414,7 @@ function bindEvents(){
     state.page=1; renderAll(false);
   });
   document.getElementById('filtersBtn').addEventListener('click', function(){
-    document.getElementById('filterRail').classList.toggle('pinned');
+    document.getElementById('filterRail').classList.remove('recolhido'); document.getElementById('filterRail').classList.toggle('pinned');
   });
   // modo claro / escuro: troca o atributo da página, guarda a escolha neste navegador (os gráficos usam as variáveis de cor)
   document.getElementById('temaBtn').addEventListener('click', function(){
@@ -6517,8 +6521,14 @@ function bindEvents(){
   });
   document.getElementById('aplicarFiltros').addEventListener('click', function(){
     state.page=1; renderAll(false);
-    var rail = document.getElementById('filterRail'); if(rail) rail.classList.remove('pinned');
+    var rail = document.getElementById('filterRail');
+    if(rail){
+      rail.classList.remove('pinned'); rail.classList.add('recolhido');
+      if(document.activeElement && rail.contains(document.activeElement)) document.activeElement.blur();
+      rail.addEventListener('mouseleave', function(){ rail.classList.remove('recolhido'); }, {once:true});
+    }
   });
+  document.getElementById('filterRailTab').addEventListener('click', function(){ document.getElementById('filterRail').classList.remove('recolhido'); });
   document.getElementById('semanaChips').addEventListener('click', function(ev){
     var c = ev.target.closest('.dia-chip'); if(!c) return;
     ev.stopPropagation();
