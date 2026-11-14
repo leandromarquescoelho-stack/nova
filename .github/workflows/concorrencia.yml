@@ -1,0 +1,42 @@
+name: Concorrência (preços do e-commerce)
+
+# Toda segunda de manhã compara o preço do top 100 do nosso e-commerce com os sites concorrentes e grava no banco
+# (tabela bi_concorrencia, lida pela aba Concorrência). Nada da empresa é impresso no log nem gravado no repositório.
+on:
+  schedule:
+    - cron: '0 10 * * 1'
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: 'coleta (padrão) ou sonda (só para desenvolver)'
+        required: false
+        default: 'coleta'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: concorrencia
+  cancel-in-progress: false
+
+jobs:
+  precos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependências
+        run: |
+          pip install "psycopg[binary]" playwright
+          python -m playwright install --with-deps chromium
+      - name: Sondar os sites
+        if: ${{ github.event.inputs.modo == 'sonda' }}
+        run: python etl/concorrencia_probe.py
+      - name: Coletar preços
+        if: ${{ github.event.inputs.modo != 'sonda' }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python etl/concorrencia.py
