@@ -37,6 +37,20 @@ def norm(s):
     return re.sub(r'[^A-Z0-9]', '', sem_acento(s).upper())
 
 
+def num(v):
+    """'1.0' -> 1; '1.234' -> 1234; '1.234,5' -> 1234.5; 12 -> 12."""
+    if isinstance(v, (int, float)):
+        return float(v)
+    v = str(v).strip()
+    if not v:
+        return 0.0
+    if ',' in v:
+        return float(v.replace('.', '').replace(',', '.'))
+    if re.fullmatch(r'\d{1,3}(\.\d{3})+', v):
+        return float(v.replace('.', ''))
+    return float(v)
+
+
 def api(acao, **p):
     with urllib.request.urlopen(API + acao + '?' + urllib.parse.urlencode(p), timeout=120) as r:
         return json.load(r)['result']
@@ -135,7 +149,7 @@ def chevrolet(rs):
         if not uf:
             continue
         try:
-            q = int(float(c[iq].replace('.', '').replace(',', '.') or 0))
+            q = int(round(num(c[iq])))
         except ValueError:
             continue
         k = uf + '|' + norm(c[im])
@@ -162,7 +176,8 @@ def automoveis_govbr():
             html = r.stdout.decode('utf-8', 'ignore')
             for href, txt in re.findall(r'href="([^"]+)"[^>]*>(.*?)</a>', html, flags=re.S):
                 t = sem_acento(href + ' ' + re.sub('<[^>]+>', ' ', txt))
-                if 'munic' in t and 'tipo' in t and re.search(r'\.(xlsx|xls|csv|zip)(/|$|\?)', href.lower()):
+                arqn = sem_acento(href.split('/@@')[0].rsplit('/', 1)[-1])
+                if 'munic' in arqn and 'tipo' in arqn and 'restricao' not in arqn and 'especie' not in arqn and re.search(r'\.(xlsx|xls|csv|zip)(/|$|\?)', href.lower()):
                     d = mes_do_nome(t) or date(a, 1, 1)
                     u = href if href.startswith('http') else 'https://www.gov.br' + href
                     print('gov.br:', d, u)
@@ -205,7 +220,7 @@ def automoveis(rs):
         if not uf:
             continue
         try:
-            out[uf + '|' + norm(row[im])] = int(float(str(row[ia]).replace('.', '').replace(',', '.')))
+            out[uf + '|' + norm(row[im])] = int(round(num(row[ia])))
         except ValueError:
             pass
     print('automóveis', ref, len(out), 'municípios; total', sum(out.values()))
@@ -225,6 +240,7 @@ def main():
     try:
         ref_a, auto = automoveis(rs)
     except Exception as e:  # sem a planilha de tipos, segue só com a Chevrolet
+        import traceback; traceback.print_exc()
         print('automóveis: falhou', repr(e)); ref_a, auto = None, {}
     ref_c, mm = chevrolet(rs)
     if not auto and not mm:
