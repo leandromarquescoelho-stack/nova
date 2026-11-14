@@ -164,6 +164,11 @@ a{color:inherit;}
 svg text{font-family:'Manrope', sans-serif;}
 
 #telaCheiaBtn .tc-fe{display:none;} #telaCheiaBtn.on .tc-ab{display:none;} #telaCheiaBtn.on .tc-fe{display:block;}
+.tag-chip.tag-varios{position:relative; cursor:help;}
+.tag-varios .tag-pop{display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:80; min-width:220px; max-width:360px; max-height:300px; overflow:auto; background:var(--surface); border:1px solid var(--border-strong); border-radius:10px; padding:9px 11px; box-shadow:0 10px 30px rgba(0,0,0,.45); color:var(--text); font-weight:500; cursor:default; flex-direction:column; gap:3px; white-space:nowrap;}
+.tag-varios .tag-pop b{font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;}
+.tag-varios .tag-pop span{font-size:12px;}
+.tag-varios:hover .tag-pop, .tag-varios:focus-within .tag-pop{display:flex;}
 /* scrollbars */
 *::-webkit-scrollbar{height:14px; width:14px;}
 *::-webkit-scrollbar-track{background:transparent;}
@@ -4744,11 +4749,19 @@ var TAG_DEFS = [
     ['grupo_cliente','Grupo de cliente'],['pessoa','Pessoa'],['condicao','Condição de pagamento'],['equipe','Equipe'],['funcao','Função'],['grupo_peca','Grupo de peça'],['aplicacao','Aplicação'],['curva_gm','Curva GM'],
     ['produto','Produto'],['cliente','Razão'],['nf','NF']
   ];
+var TAG_MAX = 3; // acima disso o filtro vira um chip "Vários"
 function renderActiveTags(){
   var defs = TAG_DEFS;
   var box = document.getElementById('activeTags');
   var chips = [];
   defs.forEach(function(d){
+    // muitos valores no mesmo filtro: um chip só, "Vários (n)", com os nomes ao passar o mouse
+    if(state[d[0]].length > TAG_MAX){
+      var nomes = state[d[0]].map(function(v){ return filtroRotulo(d[0], v); }).sort(function(a,b){ return String(a).localeCompare(String(b),'pt-BR'); });
+      chips.push('<span class="tag-chip tag-varios" tabindex="0">'+d[1]+': Vários ('+nomes.length+')<button data-k="'+d[0]+'" data-v="*" title="Tirar todos os '+nomes.length+'">✕</button>' +
+        '<span class="tag-pop"><b>'+d[1]+' · '+nomes.length+' selecionados</b>'+nomes.map(function(n){ return '<span>'+escapeHtml(n)+'</span>'; }).join('')+'</span></span>');
+      return;
+    }
     state[d[0]].forEach(function(v){
       chips.push('<span class="tag-chip">'+d[1]+': '+escapeHtml(filtroRotulo(d[0], v))+'<button data-k="'+d[0]+'" data-v="'+String(v).replace(/"/g,'&quot;')+'">✕</button></span>');
     });
@@ -4774,6 +4787,7 @@ function renderActiveTags(){
       if(key==='soParados'){ state.soParados = false; }
       else if(key==='diaSemana'){ state.diaSemana = ''; }
       else if(key==='diasMin'){ state.diasMin = null; }
+      else if(val==='*'){ state[key].length = 0; }
       else { var arr = state[key], i = arr.indexOf(val); if(i!==-1) arr.splice(i,1); }
       syncFilterSelects();
       state.page=1;
