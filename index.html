@@ -214,6 +214,8 @@ svg text{font-family:'Manrope', sans-serif;}
 .app[data-sidebar="collapsed"] .brand .name{ display:none; }
 
 .nav{display:flex; flex-direction:column; gap:2px; flex:1; margin-top:4px;}
+.nav-sair{margin-top:6px; border-top:1px solid var(--border); border-radius:0 0 var(--radius-sm) var(--radius-sm); padding-top:14px;}
+.nav-sair:hover{color:var(--critical) !important;}
 .nav-item{
   display:flex; align-items:center; gap:12px;
   padding:10px 12px; border-radius:var(--radius-sm);
@@ -1339,6 +1341,9 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       </div>
       <div class="nav-item" data-view="fontes" style="display:none;">
         <span class="ico">&#9881;&#65039;</span><span class="label">Configurações</span><span class="tip">Configurações</span>
+      </div>
+      <div class="nav-item nav-sair" id="navSair" role="button" tabindex="0">
+        <span class="ico">&#128682;</span><span class="label">Sair</span><span class="tip">Sair</span>
       </div>
     </nav>
 
@@ -6504,9 +6509,13 @@ function bindEvents(){
     document.getElementById('app').removeAttribute('data-sidebar-mobile');
     document.getElementById('overlay').classList.remove('show');
   }
-  Array.prototype.forEach.call(document.querySelectorAll('.nav-item'), function(item){
+  Array.prototype.forEach.call(document.querySelectorAll('.nav-item[data-view]'), function(item){
     item.addEventListener('click', function(){ switchView(item.getAttribute('data-view')); });
   });
+  // "Sair" no menu lateral: mesmo efeito do botão sair do topo
+  var navSair = document.getElementById('navSair');
+  navSair.addEventListener('click', function(){ document.getElementById('logoutBtn').click(); });
+  navSair.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); navSair.click(); } });
 
   // header period select
   document.getElementById('periodSelect').addEventListener('change', function(){
