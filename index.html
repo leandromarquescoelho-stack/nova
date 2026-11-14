@@ -1691,6 +1691,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
                 <option value="margem">Margem %</option>
                 <option value="var">Variação vs. período anterior</option>
                 <option value="hab">Faturamento por mil habitantes</option>
+                <option value="chev">Participação Chevrolet na frota</option>
               </select></label>
               <label>UF<select class="fsel" id="vxMapUF"><option value="">Todas</option></select></label>
               <label class="vx-chk"><input type="checkbox" id="vxMapLojas" checked> Lojas</label>
@@ -5881,11 +5882,25 @@ var VX_ALIAS = {MOGIMIRIM:'MOJIMIRIM', EMBUDASARTES:'EMBU', PARATI:'PARATY', BUZ
   BARAOGERALDO:'CAMPINAS', SOUSAS:'CAMPINAS', BONFIMPAULISTA:'RIBEIRAOPRETO', SAOBERNADODOCAMPO:'SAOBERNARDODOCAMPO', SANTANADOPARNAIBA:'SANTANADEPARNAIBA',
   SANTAROSAVITERBO:'SANTAROSADEVITERBO', SAOLUIZDOPARAITINGA:'SAOLUISDOPARAITINGA', MARIPORA:'MAIRIPORA', LUIZANTONIO:'LUISANTONIO'};
 function vxSemAcento(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase(); }
+// frota da Senatran (rotina mensal no GitHub): troca os automóveis de 2019 pelos atuais e acrescenta Chevrolet
+function vxFrota(){
+  if(VX.frotaPr) return VX.frotaPr;
+  VX.frotaPr = fetch('geo/frota.json').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }).then(function(d){
+    VX.frota = d; Object.keys(VX.geo).forEach(vxAplicarFrota); return d;
+  });
+  return VX.frotaPr;
+}
+function vxAplicarFrota(uf){
+  var g = VX.geo[uf], d = VX.frota; if(!g || !d || !d.m || g.frotaOk) return;
+  g.lista.forEach(function(f){ var x = d.m[uf+'|'+f[0]]; if(x){ if(x[0]>0) f[6] = x[0]; f[7] = x[1]; f[8] = x[2]; } });
+  g.frotaOk = true;
+}
+function vxChev(f){ return f[8]>0 ? {n:f[7]||0, pct:(f[7]||0)/f[8]*100} : null; }
 function vxGeoUF(uf){
   if(VX.geoPr[uf]) return VX.geoPr[uf];
   VX.geoPr[uf] = fetch('geo/'+uf+'.json').then(function(r){ if(!r.ok) throw new Error('geo'); return r.json(); }).then(function(lista){
     var idx = {}; lista.forEach(function(f){ idx[f[0]] = f; });
-    VX.geo[uf] = {lista:lista, idx:idx}; return VX.geo[uf];
+    VX.geo[uf] = {lista:lista, idx:idx}; vxAplicarFrota(uf); return VX.geo[uf];
   }).catch(function(e){ VX.geoPr[uf] = null; throw e; });
   return VX.geoPr[uf];
 }
@@ -5916,6 +5931,13 @@ function vxEscala(met, cidades){
   if(met==='margem') return {cor:function(c){ return vxMc(c.mg); }, leg:[['#ef4444','abaixo de 10%'],['#f59e0b','10% a 15%'],['#22d3ee','15% a 25%'],['#00e5ff','25% a 40%'],['#10b981','40% ou mais']]};
   if(met==='var') return {cor:function(c){ if(c.vr===null) return '#7c3aed'; return c.vr<=-30 ? '#dc2626' : c.vr<=-5 ? '#f97316' : c.vr<5 ? '#94a3b8' : c.vr<30 ? '#22d3ee' : '#10b981'; },
     leg:[['#dc2626','caiu 30% ou mais'],['#f97316','caiu 5% a 30%'],['#94a3b8','estável'],['#22d3ee','cresceu 5% a 30%'],['#10b981','cresceu 30% ou mais'],['#7c3aed','sem compra no período anterior']]};
+  if(met==='chev'){
+    var cv = cidades.map(function(c){ return c.chev; }).filter(function(x){ return x!==null && x>0; });
+    if(!cv.length) return {cor:function(){ return '#64748b'; }, leg:[['#64748b','frota por marca ainda não carregada']]};
+    var qc = vxQuantis(cv, 5), fp = function(x){ return x.toFixed(1).replace('.',',')+'%'; };
+    return {cor:function(c){ if(c.chev===null) return '#64748b'; var i = 0; while(i<4 && c.chev>qc[i]) i++; return VX_ESCALA[i]; },
+      leg:VX_ESCALA.map(function(c, i){ return [c, i===0 ? 'até '+fp(qc[0]) : (i===4 ? 'acima de '+fp(qc[3]) : fp(qc[i-1])+' a '+fp(qc[i]))]; }).concat([['#64748b','sem dado']])};
+  }
   var val = met==='hab' ? function(c){ return c.pop>0 ? c.fat/c.pop*1000 : null; } : function(c){ return c.fat; };
   var vs = cidades.map(val).filter(function(x){ return x!==null && x>0; });
   if(!vs.length) return {cor:function(){ return VX_ESCALA[0]; }, leg:[]};
@@ -5950,7 +5972,7 @@ function vxRegioes(){
   var seq = ++VX.mapSeq, msg = document.getElementById('vxMapMsg');
   msg.hidden = false; msg.textContent = 'Carregando mapa…';
   vxTabelaCidades(cids, null);
-  Promise.all([vxLeafletLib()].concat(ufs.map(function(uf){ return vxGeoUF(uf).catch(function(){ return null; }); }))).then(function(){
+  Promise.all([vxLeafletLib(), vxFrota()].concat(ufs.map(function(uf){ return vxGeoUF(uf).catch(function(){ return null; }); }))).then(function(){
     if(seq!==VX.mapSeq || state.currentView!=='vendas' || VX.aba!=='regioes') return;
     if(!ufs.some(function(uf){ return VX.geo[uf]; })){ msg.hidden = false; msg.textContent = 'Não foi possível carregar os contornos dos municípios agora. A tabela abaixo continua valendo.'; return; }
     msg.hidden = true;
@@ -5961,13 +5983,14 @@ function vxTabelaCidades(cids, info){
   cids.forEach(function(r){
     var f = info ? vxMunicipio(r.k) : null;
     r.uf = r.k.slice(0,2); r.nome = f ? f[1] : r.k.slice(5);
-    if(f){ r.pop = f[5]||0; r.frota = f[6]||0; }
+    if(f){ r.pop = f[5]||0; r.frota = f[6]||0; var ch = vxChev(f); r.chev = ch ? ch.pct : null; }
     r.hab = r.pop>0 ? r.fat/r.pop*1000 : null;
   });
   vxTabela('vxTR', [VX_COL.rk, {k:'nome', t:'Cidade', td:function(r){ return '<td class="nm">'+escapeHtml(r.nome)+'</td>'; }}, {k:'uf', t:'UF', td:function(r){ return '<td class="mn">'+r.uf+'</td>'; }},
     VX_COL.fat, VX_COL.lb, VX_COL.qtd, VX_COL.mg, VX_COL.sh, VX_COL.vr,
     {k:'pop', t:'População', td:function(r){ return '<td class="mn">'+(r.pop ? vxN(r.pop) : '—')+'</td>'; }},
     {k:'frota', t:'Automóveis', td:function(r){ return '<td class="mn">'+(r.frota ? vxN(r.frota) : '—')+'</td>'; }},
+    {k:'chev', t:'Chevrolet %', td:function(r){ return '<td class="mn">'+(r.chev!==null && r.chev!==undefined ? r.chev.toFixed(1).replace('.',',')+'%' : '—')+'</td>'; }},
     {k:'hab', t:'R$/mil hab.', td:function(r){ return '<td class="mn">'+(r.hab!==null ? vxM(r.hab) : '—')+'</td>'; }}], cids, {fk:'cidade', barra:VX_PAL.cy, limite:500});
 }
 function vxDesenharMapa(cids, total, ufs, fora){
@@ -5991,7 +6014,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
     var o = porMun[f[2]] || (porMun[f[2]] = {f:f, uf:r.k.slice(0,2), nomes:[], fat:0, lb:0, qtd:0, prev:0});
     o.nomes.push(r.k); o.fat += r.fat; o.lb += r.lb; o.qtd += r.qtd; o.prev += r.prev; mapeado += r.fat;
   });
-  var lista = Object.keys(porMun).map(function(id){ var o = porMun[id]; o.mg = o.fat>0 ? o.lb/o.fat*100 : 0; o.vr = vxVarPct(o.fat, o.prev); o.pop = o.f[5]||0; o.frota = o.f[6]||0; return o; });
+  var lista = Object.keys(porMun).map(function(id){ var o = porMun[id]; o.mg = o.fat>0 ? o.lb/o.fat*100 : 0; o.vr = vxVarPct(o.fat, o.prev); o.pop = o.f[5]||0; o.frota = o.f[6]||0; var ch = vxChev(o.f); o.chev = ch ? ch.pct : null; return o; });
   lista.sort(function(a,b){ return b.fat-a.fat; });
   vxTabelaCidades(cids, true);
   // KPIs
@@ -6005,7 +6028,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
   document.getElementById('vxMapLeg').innerHTML = esc.leg.map(function(x){ return '<span><i style="background:'+x[0]+'"></i>'+x[1]+'</span>'; }).join('') +
     '<span><i style="background:'+(claro?'#cbd5e1':'#2a3a4a')+'; border:1px solid '+(claro?'#94a3b8':'#3d5068')+'"></i>Sem vendas</span>';
   var sub = document.getElementById('vxMapSub');
-  if(sub) sub.textContent = {fat:'Faturamento por município', margem:'Margem bruta por município', var:'Variação do faturamento vs. período anterior de mesmo tamanho', hab:'Faturamento por mil habitantes (população do Censo 2022)'}[met]+' · passe o mouse para ver os detalhes · clique no município para ver clientes e ticket';
+  if(sub) sub.textContent = {fat:'Faturamento por município', margem:'Margem bruta por município', var:'Variação do faturamento vs. período anterior de mesmo tamanho', hab:'Faturamento por mil habitantes (população do Censo 2022)', chev:'Participação de veículos Chevrolet na frota do município (Senatran)'}[met]+' · passe o mouse para ver os detalhes · clique no município para ver clientes e ticket';
   var nota = document.getElementById('vxMapNota');
   if(nota) nota.innerHTML = fora.length ? 'Estados com menos de 0,5% do faturamento ficam fora do mapa para ele abrir rápido ('+fora.sort().join(', ')+'); as cidades deles estão na tabela.' : '';
   // camada única em canvas com todos os municípios dos estados carregados
@@ -6044,7 +6067,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
       tip.innerHTML = '<div class="tn" style="color:'+cor+'">'+escapeHtml(f[1])+' <span style="color:var(--text-muted); font-size:10.5px; font-weight:500;">('+ft.properties.uf+')</span></div>' +
         (o ? '<div class="tg">'+linhaTip('Faturamento', vxM(o.fat))+linhaTip('Lucro bruto', '<span style="color:var(--vx-gr-t)">'+vxM(o.lb)+'</span>')+linhaTip('Margem', vxP(o.mg))+
           linhaTip('Volume', vxN(o.qtd)+' un.')+linhaTip('Var. anterior', seta(o.vr))+linhaTip('Share', (total>0?(o.fat/total*100).toFixed(2).replace('.',','):'0')+'%')+
-          '<div class="sep"></div>'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+(f[5] ? linhaTip('R$ por mil hab.', vxM(o.fat/f[5]*1000)) : '')+(f[6] ? linhaTip('Peças por mil autos', (o.qtd/f[6]*1000).toFixed(1).replace('.',',')) : '')+'</div>'
+          '<div class="sep"></div>'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+(vxChev(f) ? linhaTip('Chevrolet na frota', vxChev(f).pct.toFixed(1).replace('.',',')+'%') : '')+(f[5] ? linhaTip('R$ por mil hab.', vxM(o.fat/f[5]*1000)) : '')+(f[6] ? linhaTip('Peças por mil autos', (o.qtd/f[6]*1000).toFixed(1).replace('.',',')) : '')+'</div>'
           : '<div class="sv">Sem vendas no filtro atual</div><div class="tg">'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+'</div>');
       tip.style.display = 'block'; mover(e);
     });
@@ -6081,7 +6104,7 @@ function vxQuadroHtml(q){
   function ln(a, b){ return '<tr><td>'+a+'</td><td>'+b+'</td></tr>'; }
   var h = '<div class="vx-q"><div class="vx-q-t">'+escapeHtml(f[1])+' <span>('+pr.uf+')</span></div>';
   if(!o){
-    return h+'<div class="vx-q-sv">Sem vendas no filtro atual</div><table>'+ln('População', f[5]?vxN(f[5]):'—')+ln('Automóveis', f[6]?vxN(f[6]):'—')+'</table></div>';
+    return h+'<div class="vx-q-sv">Sem vendas no filtro atual</div><table>'+ln('População', f[5]?vxN(f[5]):'—')+ln('Automóveis', f[6]?vxN(f[6]):'—')+(vxChev(f) ? ln('Chevrolet na frota', vxChev(f).pct.toFixed(1).replace('.',',')+'%') : '')+'</table></div>';
   }
   var cli = null, cliP = null;
   if(CID_CLI){ cli = 0; cliP = 0; o.nomes.forEach(function(n){ var c = CID_CLI[n]; if(c){ cli += c.n; cliP += c.p; } }); }
@@ -6101,6 +6124,7 @@ function vxQuadroHtml(q){
     ln('População', f[5] ? vxN(f[5]) : '—') +
     ln('Clientes por mil hab.', cli!==null && f[5] ? (cli/f[5]*1000).toFixed(2).replace('.',',') : '—') +
     ln('Automóveis', f[6] ? vxN(f[6]) : '—') +
+    (vxChev(f) ? ln('Chevrolet na frota', vxN(vxChev(f).n)+' · '+vxChev(f).pct.toFixed(1).replace('.',',')+'%') + (f[7] ? ln('Peças por mil Chevrolet', (o.qtd/f[7]*1000).toFixed(1).replace('.',',')) : '') : '') +
     '</table>' + (cli!==null && cliP ? '<div class="vx-q-n">Período anterior: '+vxN(cliP)+' clientes, ticket '+vxM(tkP)+'</div>' : '') +
     '<button type="button" class="vx-q-b" data-vxfiltra="'+escapeHtml(o.nomes[0])+'">Filtrar o painel por esta cidade</button></div>';
   return h;
