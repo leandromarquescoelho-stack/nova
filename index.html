@@ -472,7 +472,7 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 :root[data-theme="light"] #vxMapWrap .leaflet-control-attribution{background:rgba(255,255,255,.7);}
 .vx-map-msg{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:900; pointer-events:none; font-size:13px;}
 .vx-map-msg[hidden]{display:none;}
-.vx-loja-pin{background:var(--vx-pu); border:2px solid #fff; border-radius:50%; box-shadow:0 0 0 3px rgba(124,58,237,.35);}
+.vx-loja-pin{background:#fff url('icons/loja-pin.png') center/100% no-repeat; border:2px solid #fff; border-radius:50%; box-shadow:0 0 0 3px rgba(124,58,237,.55), 0 2px 8px rgba(0,0,0,.55);}
 @media(max-width:1100px){ .vx-kpis{grid-template-columns:1fr 1fr;} .vx-g2{grid-template-columns:1fr;} .vx-ins{grid-template-columns:1fr 1fr;} }
 @media(max-width:640px){ .vx-ins{grid-template-columns:1fr;} #vxMapWrap{height:420px;} .vx-kv{font-size:18px;} }
 /* ---- insights automáticos (cards com achados gerados a partir dos dados filtrados) ---- */
@@ -6033,8 +6033,8 @@ function vxDesenharMapa(cids, total, ufs, fora){
     Object.keys(LOJA_MUNICIPIO).forEach(function(l){ (porCid[LOJA_MUNICIPIO[l]] = porCid[LOJA_MUNICIPIO[l]] || []).push(l); });
     Object.keys(porCid).forEach(function(c){
       var f = VX.geo.SP.idx[vxSemAcento(c).replace(/[^A-Z0-9]/g,'')]; if(!f) return;
-      var mk = L.marker(f[3], {icon:L.divIcon({className:'vx-loja-pin', iconSize:[14,14]}), keyboard:false}).addTo(VX.pinos);
-      mk.bindTooltip('<b>'+porCid[c].map(escapeHtml).join(', ')+'</b><br>'+porCid[c].map(function(l){ return escapeHtml(l)+': '+vxM((lojasFat[l]||{}).fat||0); }).join('<br>'), {direction:'top', offset:[0,-8]});
+      var mk = L.marker(f[3], {icon:L.divIcon({className:'vx-loja-pin', iconSize:[26,26]}), keyboard:false}).addTo(VX.pinos);
+      mk.bindTooltip('<b>Nova · '+porCid[c].map(escapeHtml).join(', ')+'</b><br>'+porCid[c].map(function(l){ return escapeHtml(l)+': '+vxM((lojasFat[l]||{}).fat||0); }).join('<br>'), {direction:'top', offset:[0,-14]});
     });
   }
   // enquadra as cidades que somam 90% do faturamento (evita que uma venda isolada afaste o mapa)
