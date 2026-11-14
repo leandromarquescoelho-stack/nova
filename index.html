@@ -65,7 +65,11 @@
 .ia-uso{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-top:14px; }
 .ia-uso div{ background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:9px 11px; }
 .ia-uso span{ display:block; font-size:10.5px; color:var(--text-muted); } .ia-uso b{ font-size:15px; font-family:'JetBrains Mono',monospace; }
-.ia-ult{ margin-top:12px; font-size:11.5px; color:var(--text-2); }
+.ia-ult{ margin-top:4px; font-size:11.5px; color:var(--text-2); max-height:126px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--surface-3) transparent; border-top:1px solid var(--border); }
+.ia-ult-tog{ margin-top:12px; display:flex; align-items:center; gap:8px; width:100%; background:none; border:0; padding:6px 2px; cursor:pointer; color:var(--text-2); font:600 12px Manrope,sans-serif; text-align:left; }
+.ia-ult-tog:hover{ color:var(--text); }
+.ia-ult-tog svg{ margin-left:auto; width:16px; height:16px; transition:transform .2s; color:var(--text-muted); }
+.ia-ult-tog[aria-expanded="true"] svg{ transform:rotate(180deg); }
 .ia-ult div{ display:grid; grid-template-columns:96px 130px 1fr; gap:8px; padding:5px 2px; border-bottom:1px solid var(--border); }
 .ia-ult div span{ color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 @media (max-width:640px){ .ia-ult div{ grid-template-columns:1fr; gap:1px; } }
@@ -8192,9 +8196,11 @@ function iniciarIA(){
 }
 // cartão na tela Usuários: liga/desliga e mostra o uso dos últimos 30 dias (custo estimado pelos preços do modelo padrão)
 var IA_PRECO = {in:4, out:20, cl:0.2, cg:5}; // US$ por milhão de tokens
+var IA_ULT_ABERTO = false; // lista das últimas perguntas começa recolhida
 async function renderIAAdmin(){
   var box = document.getElementById('iaAdm'); if(!box) return;
-  var on = iaAtiva();
+  var on = !!(REAL && REAL.ia && REAL.ia.ativa);
+  USERS_TEM_IA = USERS_TEM_IA || !!(CURRENT_PROFILE && Object.prototype.hasOwnProperty.call(CURRENT_PROFILE, 'ia'));
   box.innerHTML = '<div class="ia-adm"><button type="button" class="ia-sw" id="iaSw" role="switch" aria-checked="'+on+'" aria-label="Ligar agente de IA"></button>' +
     '<div class="ia-adm-txt"><b>'+(on ? (USERS_TEM_IA ? 'Ligado' : 'Ligado para todos os usuários') : 'Desligado')+'</b><div>'+(on ? (USERS_TEM_IA ? 'O botão "Pergunte aos dados" aparece para quem tem IA liberada no cadastro (chave IA em cada usuário).' : 'O botão "Pergunte aos dados" aparece no canto da tela de cada usuário.') : 'Ao ligar, o botão "Pergunte aos dados" aparece para quem tem IA liberada no cadastro. Cada um só pergunta sobre os dados que já pode ver.')+'</div></div></div>' +
     '<div id="iaUso"><div class="ia-adm-txt" style="margin-top:12px;"><div class="status-txt">Carregando uso…</div></div></div>';
@@ -8211,9 +8217,16 @@ async function renderIAAdmin(){
     document.getElementById('iaUso').innerHTML = '<div class="ia-uso">' + cel('Perguntas (30 dias)', fmtUn(u.perguntas)) + cel('Usuários', fmtUn(u.usuarios)) +
       cel('Custo estimado', 'US$ '+custo.toFixed(2).replace('.',',')) + cel('Por pergunta', u.perguntas ? 'US$ '+(custo/u.perguntas).toFixed(3).replace('.',',') : '—') +
       (u.erros ? cel('Com erro', fmtUn(u.erros)) : '') + '</div>' +
-      (u.ultimas && u.ultimas.length ? '<div class="ia-ult">'+u.ultimas.map(function(x){
+      (u.ultimas && u.ultimas.length ? '<button type="button" class="ia-ult-tog" id="iaUltTog" aria-expanded="'+IA_ULT_ABERTO+'" title="Mostrar ou esconder as últimas perguntas">Últimas perguntas ('+u.ultimas.length+')' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>' +
+        '<div class="ia-ult" id="iaUlt"'+(IA_ULT_ABERTO ? '' : ' hidden')+'>'+u.ultimas.map(function(x){
         var d = new Date(x[0]); return '<div><span>'+fmtDate(d)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'</span><span>'+escapeHtml(x[1]||'')+'</span><span title="'+escapeHtml(x[2]||'')+'">'+(x[3] ? '⚠ ' : '')+escapeHtml(x[2]||'')+'</span></div>';
       }).join('')+'</div>' : '');
+    var tog = document.getElementById('iaUltTog');
+    if(tog) tog.addEventListener('click', function(){
+      IA_ULT_ABERTO = !IA_ULT_ABERTO; tog.setAttribute('aria-expanded', IA_ULT_ABERTO);
+      document.getElementById('iaUlt').hidden = !IA_ULT_ABERTO;
+    });
   } catch(e){
     document.getElementById('iaUso').innerHTML = '<div class="ia-adm-txt" style="margin-top:12px;"><div>Uso indisponível: '+escapeHtml((e && e.message)||'')+'</div></div>';
   }
