@@ -5352,8 +5352,7 @@ function cliLigar(){
     var b = ev.target.closest('[data-termo]'); if(!b) return;
     var t = b.getAttribute('data-termo'), i = CLI.termo.indexOf(t);
     if(i===-1) CLI.termo.push(t); else CLI.termo.splice(i,1);
-    b.setAttribute('aria-pressed', String(i===-1));
-    cliPendente(true);
+    renderClientes(); // cards do termômetro filtram na hora (aplica junto o que estiver escolhido)
   });
   document.getElementById('cliExport').addEventListener('click', exportarDisponiveis);
 }
