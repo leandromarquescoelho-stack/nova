@@ -205,7 +205,7 @@ def automoveis(rs):
     ref, url = max(cand)
     arq = baixar(url)
     import pandas as pd
-    if url.lower().endswith(('.xlsx', '.xls')):
+    if re.search(r'\.xlsx?(/|$|\?)', url.lower()) or (zipfile.is_zipfile(arq) and any(n.startswith('xl/') for n in zipfile.ZipFile(arq).namelist())):
         bruto = pd.read_excel(arq, header=None, dtype=str)
     else:
         bruto = pd.DataFrame([l.rstrip('\r\n').split(';') for l in linhas_de(arq)])
