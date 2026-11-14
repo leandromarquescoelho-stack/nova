@@ -939,14 +939,14 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cli-filtros label{display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--text-muted); font-weight:600;}
 .cli-filtros select{max-width:190px;}
 .cli-busca{min-width:220px; padding:8px 10px; border-radius:9px; border:1px solid var(--border); background:var(--surface); color:var(--text); font:inherit; font-size:12.5px;}
-.cli-termo{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:12px;}
+.cli-termo{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; margin-bottom:12px;}
 .cli-termo button{text-align:left; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:11px; padding:9px 11px; cursor:pointer; font:inherit;}
 .cli-termo button[aria-pressed="true"]{border-color:var(--accent); box-shadow:0 0 0 2px rgba(34,211,238,.18);}
 .cli-termo .t{font-size:12px; font-weight:700;} .cli-termo .n{font-size:18px; font-weight:800; font-family:'JetBrains Mono',monospace; margin-top:2px;} .cli-termo .s{font-size:11px; color:var(--text-muted);}
 .termo{display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap;}
 .termo.esquentando{background:rgba(31,196,106,.15); color:var(--good);} .termo.estavel{background:rgba(59,130,246,.14); color:#60a5fa;}
 .termo.esfriando{background:rgba(245,165,36,.16); color:var(--warning);} .termo.novo{background:rgba(34,211,238,.14); color:var(--accent);}
-.termo.disponivel{background:rgba(239,68,68,.14); color:var(--critical);}
+.termo.disponivel{background:rgba(239,68,68,.14); color:var(--critical);} .termo.ocasional{background:rgba(148,163,184,.16); color:var(--text-muted);}
 @media (max-width:900px){.cli-termo{grid-template-columns:repeat(2,minmax(0,1fr));}}
 .pares-ctl{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:-4px 0 12px;}
 .pares-ctl:empty{display:none;}
@@ -1794,7 +1794,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Clientes disponíveis para outros vendedores</h2><div class="psub">Política: cliente com mais de 60 dias sem compra fica disponível &middot; maiores compradores dos últimos 12 meses primeiro</div></div>
+          <div><h2>Clientes disponíveis para outros vendedores</h2><div class="psub">Política: cliente com mais de 60 dias sem compra fica disponível &middot; do e-commerce, só os recorrentes (mais de 3 compras em 12 meses) &middot; maiores compradores primeiro</div></div>
           <button class="tbtn" id="cliExport" type="button">
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Exportar Excel
@@ -5321,9 +5321,10 @@ var TERMO = {
   estavel:{t:'Estável', ico:'🙂', d:'Compras no ritmo de sempre'},
   esfriando:{t:'Esfriando', ico:'🧊', d:'Últimos 90 dias abaixo de 60% dos 90 anteriores, ou sem comprar há mais que o dobro do intervalo normal dele'},
   novo:{t:'Novo', ico:'✨', d:'Primeira compra nos últimos 60 dias'},
-  disponivel:{t:'Disponível', ico:'⛔', d:'Mais de 60 dias sem compra: disponível para outros vendedores'}
+  disponivel:{t:'Disponível', ico:'⛔', d:'Mais de 60 dias sem compra: disponível para outros vendedores (no e-commerce, só clientes com mais de 3 compras em 12 meses)'},
+  ocasional:{t:'Ocasional e-commerce', ico:'🛒', d:'Cliente do e-commerce com mais de 60 dias sem compra e até 3 compras em 12 meses: não entra nos disponíveis'}
 };
-var TERMO_ORD = ['esquentando','estavel','esfriando','novo','disponivel'];
+var TERMO_ORD = ['esquentando','estavel','esfriando','novo','disponivel','ocasional'];
 function cliOpcoes(id, tipo, vazio){
   var el = document.getElementById(id); if(!el) return;
   var lista = ((META.dims && META.dims[tipo]) || []).slice().sort(function(a,b){ return String(a[1]).localeCompare(String(b[1]), 'pt-BR'); });
