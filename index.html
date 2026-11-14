@@ -4015,7 +4015,7 @@ function renderVendConsult(){
   var D = VC.d, map = {};
   var groupFatByMarca = {}, groupFatByCategoria = {}, groupFatByProduto = {}, groupFatTotalAll = 0;
   var prodNameById = {};
-  function vnome(id){ return id===null ? SEM_VENDEDOR : dimNome('vendedor', id); }
+  function vnome(id){ return id===null ? SEM_VENDEDOR : (id<0 ? 'Par '+(-id) : dimNome('vendedor', id)); }
   (D.v||[]).forEach(function(r){
     var n = vnome(r[0]); if(!isPessoa(n) || c2(r[1])<=0.5) return;
     map[n] = {fat:c2(r[1]), qtd:n0(r[2]), lb:c2(r[3]), dailyFat:new Array(N_DAYS).fill(0), skus:{}, marcas:{}, categorias:{}, produtos:{}};
@@ -4062,9 +4062,12 @@ function renderVendConsult(){
 
   // pares: todo o grupo ou só os vendedores das equipes escolhidas (o vendedor analisado fica sempre)
   var VEQ = vendEquipes(), eqLista = Object.keys(toSet(Object.keys(VEQ).map(function(n){ return VEQ[n]; }))).sort();
+  // vendedor: quem define os pares é o cadastro (o banco já devolve só eles, sem nome)
+  var ehVendPares = !!(CURRENT_PROFILE && CURRENT_PROFILE.role==='vendedor');
+  if(ehVendPares) eqLista = [];
   if(state.paresModo==='equipe' && !state.paresEquipes.length && VEQ[state.vendConsultSel]) state.paresEquipes = [VEQ[state.vendConsultSel]];
   renderParesCtl(eqLista);
-  if(state.paresModo==='equipe' && state.paresEquipes.length){
+  if(!ehVendPares && state.paresModo==='equipe' && state.paresEquipes.length){
     var eqOk = toSet(state.paresEquipes);
     rows = rows.filter(function(r){ return r.name===state.vendConsultSel || eqOk[VEQ[r.name]]; });
   }
@@ -7243,7 +7246,7 @@ function bindEvents(){
   // a página fica onde está: nenhuma troca de vendedor rola a tela
   function cliqueVendedor(ev){
     var tr = ev.target.closest('tr.vend-row, .vend-pt'); if(!tr) return;
-    var nome = tr.getAttribute('data-vend'); if(!nome || nome===state.vendConsultSel) return;
+    var nome = tr.getAttribute('data-vend'); if(!nome || nome===state.vendConsultSel || VEND_PESSOAS.indexOf(nome)===-1) return;
     state.vendConsultSel = nome;
     document.getElementById('vendConsultSelect').value = nome;
     renderVendSemRolar();
@@ -7507,24 +7510,59 @@ async function fetchAllProfiles(){
 }
 var ABAS = [
   {k:'dashboard', t:'Dashboard'}, {k:'vendas', t:'Vendas'}, {k:'estoque', t:'Estoque'},
-  {k:'vendedores', t:'Vendedores'}, {k:'clientes', t:'Clientes'}, {k:'diasuteis', t:'Dias úteis'}, {k:'insights', t:'Insights'}
+  {k:'vendedores', t:'Vendedores'}, {k:'clientes', t:'Clientes'}, {k:'diasuteis', t:'Dias úteis'}, {k:'insights', t:'Insights'},
+  // restritas: só aparecem para quem as tiver marcadas no cadastro (o "todas as guias" antigo não as inclui)
+  {k:'concorrencia', t:'Concorrência', restrita:true}, {k:'planejamento', t:'Planejamento', restrita:true}
 ];
 var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
+var ABAS_PADRAO = ABAS.filter(function(a){ return !a.restrita; }).map(function(a){ return a.k; });
+// nulo no banco = guias padrão (sem as restritas); qualquer outra combinação vai como lista
+function abasPayload(role, ab){
+  if(role==='bi') return null;
+  var o = toSet(ab);
+  if(ab.length===ABAS_PADRAO.length && ABAS_PADRAO.every(function(k){ return o[k]; })) return null;
+  return ab;
+}
 var ROLE_COR = {bi:'linear-gradient(135deg,#22d3ee,#3b82f6)', diretoria:'linear-gradient(135deg,#a78bfa,#6366f1)', gerencia:'linear-gradient(135deg,#fab219,#d9772e)', vendedor:'linear-gradient(135deg,#1fc46a,#1fb08a)'};
 var USERS_CACHE = [], USERS_TEM_ABAS = false, USERS_TEM_ESCOPO = false, USERS_FILTRO = 'todos';
 // equipes de venda (aba vendedores do arquivo infobi); nulo no perfil = todas
-var EQUIPES = [], USERS_TEM_EQUIPES = false, USERS_TEM_IA = false;
+var EQUIPES = [], USERS_TEM_EQUIPES = false, USERS_TEM_IA = false, USERS_TEM_PARES = false;
 function equipesDoPerfil(p){ var e = listaPerfil(p.equipes); return e.length ? e : EQUIPES.slice(); }
 function equipesChips(sel, disabled){
   if(!USERS_TEM_EQUIPES || !EQUIPES.length) return '';
   var eu = uniaoOrd(EQUIPES, sel);
   return '<div class="u-abas-label">Equipes de venda liberadas</div><div class="u-abas" data-grp="equipes">'+chipsHtml(eu.map(function(v){ return {k:v, t:v}; }), sel, disabled)+'</div>';
 }
+// vendedor: comparativo com os pares (média, mediana, posição), configurado no cadastro. Os outros vendedores aparecem sem nome
+function paresHtml(p){
+  if(!USERS_TEM_PARES) return '';
+  var m = p.pares_modo || '', sel = listaPerfil(p.pares_equipes);
+  var bt = function(v, t){ return '<button type="button" data-pm="'+v+'" aria-pressed="'+(m===v)+'">'+t+'</button>'; };
+  return '<div class="u-pares-w"><div class="u-abas-label">Comparar com os pares (aba Vendedores)</div>' +
+    '<div class="seg u-pares-modo" style="display:inline-flex; margin-top:8px;">'+bt('', 'Desligado')+bt('grupo', 'Todo o grupo')+bt('equipe', 'Por equipe')+'</div>' +
+    '<div class="u-abas u-pares-eq" data-grp="pares" style="margin-top:8px;'+(m==='equipe'?'':'display:none;')+'">'+chipsHtml(uniaoOrd(EQUIPES, sel).map(function(v){ return {k:v, t:v}; }), sel, false)+'</div>' +
+    '<div class="u-pares-nota" style="font-size:11px; color:var(--text-muted); margin-top:6px;">O vendedor vê os próprios números contra a média e a mediana dos pares; os demais aparecem como "Par 1, Par 2…", sem nome.</div></div>';
+}
+function ligarPares(card){
+  var box = card.querySelector('.u-pares-w'); if(!box) return;
+  box.querySelector('.u-pares-modo').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-pm]'); if(!b) return;
+    Array.prototype.forEach.call(box.querySelectorAll('[data-pm]'), function(x){ x.setAttribute('aria-pressed', x===b ? 'true' : 'false'); });
+    box.querySelector('.u-pares-eq').style.display = b.getAttribute('data-pm')==='equipe' ? '' : 'none';
+  });
+}
+function paresPayload(card, role){
+  var box = card.querySelector('.u-pares-w'); if(!box || role!=='vendedor') return {pares_modo:null, pares_equipes:null};
+  var b = box.querySelector('[data-pm][aria-pressed="true"]'), m = b ? b.getAttribute('data-pm') : '';
+  if(m==='equipe') return {pares_modo:'equipe', pares_equipes:grpSel(card, 'pares')};
+  return {pares_modo: m || null, pares_equipes:null};
+}
 function equipesPayload(role, sel){ return (role==='bi' || !EQUIPES.length || contemTodos(sel, EQUIPES)) ? null : sel; }
 // guias que o perfil pode abrir (vazio/nulo = todas)
 // a antiga aba Produtos agora fica dentro de Estoque
 function abasDoPerfil(p){
-  if(!(p && Array.isArray(p.abas) && p.abas.length)) return ABAS_TODAS.slice();
+  if(p && p.role==='bi') return ABAS_TODAS.slice();
+  if(!(p && Array.isArray(p.abas) && p.abas.length)) return ABAS_PADRAO.slice();
   var a = p.abas.map(function(k){ return k==='produtos' ? 'estoque' : k; });
   return ABAS_TODAS.filter(function(k){ return a.indexOf(k)!==-1; });
 }
@@ -7583,6 +7621,7 @@ function userCard(p){
     (USERS_TEM_ABAS ? '<div class="u-abas-label">Guias liberadas</div><div class="u-abas" data-grp="abas">'+abasChips(abas, p.role==='bi')+'</div>' : '') +
     (USERS_TEM_ESCOPO ? escopoChips(p.role==='bi' ? uniaoOrd(lojasUniverso(), listaPerfil(p.lojas)) : lojasDoPerfil(p), p.role==='bi' ? canaisUniverso() : canaisDoPerfil(p), p.role==='bi') : '') +
     equipesChips(p.role==='bi' ? EQUIPES.slice() : equipesDoPerfil(p), p.role==='bi') +
+    paresHtml(p) +
     '<div class="u-foot"><span class="when">Criado em '+fmtDateShort(p.created_at)+'</span>' +
       (ehEu ? '' : '<label class="u-switch" title="Acesso liberado"><input type="checkbox" class="u-active" '+(p.active?'checked':'')+'><i></i>Acesso</label>') +
       (USERS_TEM_IA ? '<label class="u-switch" title="'+(p.role==='bi' ? 'O perfil BI sempre tem acesso à IA' : 'Libera o botão Pergunte aos dados para este usuário')+'"><input type="checkbox" class="u-ia" '+(iaDoPerfil(p)?'checked':'')+(p.role==='bi'?' disabled':'')+'><i></i>IA</label>' : '') +
@@ -7600,6 +7639,7 @@ function userResumo(p){
   if(p.role==='vendedor' && p.vendedor_nome) partes.push(escapeHtml(p.vendedor_nome));
   if(USERS_TEM_ESCOPO) partes.push(nLj===1 ? escapeHtml(lojasDoPerfil(p)[0]||'1 loja') : nLj+' lojas', nCn+' canais');
   if(USERS_TEM_ABAS) partes.push(nAb+' guias');
+  if(USERS_TEM_PARES && p.role==='vendedor' && p.pares_modo) partes.push(p.pares_modo==='grupo' ? 'pares: grupo' : 'pares: '+listaPerfil(p.pares_equipes).join(', '));
   if(USERS_TEM_IA) partes.push(iaDoPerfil(p) ? '<b style="color:var(--accent)">✦ IA</b>' : 'sem IA');
   return '<div class="u-card u-mini '+(st.c==='pend'?'pend':(st.c==='off'?'off':''))+'" data-id="'+p.id+'" tabindex="0" role="button" title="Clique para abrir o cadastro">' +
     '<div class="u-top"><div class="u-av" style="background:'+(ROLE_COR[p.role]||ROLE_COR.vendedor)+'">'+escapeHtml(iniciais(p.full_name||p.email))+'</div>' +
@@ -7622,7 +7662,7 @@ function abrirUserPop(id){
   bg.querySelector('.u-pop-x').addEventListener('click', fecharUserPop);
   document.addEventListener('keydown', escUserPop);
   var card = bg.querySelector('.u-card');
-  bindAbas(card); ajustaEscopo(card);
+  bindAbas(card); ligarPares(card); ajustaEscopo(card);
   card.querySelector('.u-role').addEventListener('change', function(){ ajustaEscopo(card); });
   card.querySelector('.u-save').addEventListener('click', function(){ salvarCard(card, false); });
   var lib = card.querySelector('.u-liberar'); if(lib) lib.addEventListener('click', function(){ salvarCard(card, true); });
@@ -7632,7 +7672,8 @@ function ajustaEscopo(card){
   var role = card.querySelector('.u-role').value;
   var lw = card.querySelector('.u-loja-w'); if(lw) lw.style.display = role==='gerencia' ? '' : 'none';
   card.querySelector('.u-vend-w').style.display = role==='vendedor' ? '' : 'none';
-  var chips = card.querySelectorAll('.u-aba');
+  var pw = card.querySelector('.u-pares-w'); if(pw) pw.style.display = role==='vendedor' ? '' : 'none';
+  var chips = card.querySelectorAll('.u-abas:not(.u-pares-eq) .u-aba');
   Array.prototype.forEach.call(chips, function(b){ b.disabled = role==='bi'; if(role==='bi') b.setAttribute('aria-pressed','true'); });
 }
 function validaEscopo(payload){
@@ -7640,6 +7681,7 @@ function validaEscopo(payload){
   if(payload.lojas && !payload.lojas.length) return 'Libere pelo menos uma loja.';
   if(payload.canais && !payload.canais.length) return 'Libere pelo menos um canal.';
   if(payload.equipes && !payload.equipes.length) return 'Libere pelo menos uma equipe de venda.';
+  if(payload.pares_modo==='equipe' && !(payload.pares_equipes||[]).length) return 'Escolha ao menos uma equipe para comparar os pares.';
   if(payload.role==='vendedor' && !payload.vendedor_nome) return 'Informe o vendedor como aparece nos dados.';
   if(payload.role==='vendedor' && VEND_PESSOAS.indexOf(payload.vendedor_nome)===-1 && SELLERS.indexOf(payload.vendedor_nome)===-1)
     return 'Esse nome não aparece nas vendas; o usuário veria o painel vazio. Escolha um nome da lista.';
@@ -7664,7 +7706,8 @@ async function salvarCard(card, liberar){
     if(role==='gerencia') payload.loja = (esc.lojas||[])[0] || null;
   }
   if(USERS_TEM_EQUIPES && EQUIPES.length) payload.equipes = equipesPayload(role, grpSel(card,'equipes'));
-  if(USERS_TEM_ABAS){ var ab = grpSel(card,'abas'); payload.abas = (role==='bi' || ab.length===ABAS_TODAS.length) ? null : ab; if(role!=='bi' && !ab.length) payload.abas = []; }
+  if(USERS_TEM_PARES){ var pp = paresPayload(card, role); payload.pares_modo = pp.pares_modo; payload.pares_equipes = pp.pares_equipes; }
+  if(USERS_TEM_ABAS){ var ab = grpSel(card,'abas'); payload.abas = abasPayload(role, ab); }
   var erro = validaEscopo(payload);
   if(erro){ msg.style.color='var(--critical)'; msg.textContent = erro; return; }
   if(CURRENT_PROFILE && CURRENT_PROFILE.id===id){ delete payload.role; delete payload.active; }
@@ -7715,6 +7758,7 @@ async function renderUsersAdmin(){
   USERS_CACHE = res.data;
   USERS_TEM_ABAS = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'abas'); });
   USERS_TEM_ESCOPO = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'lojas') && Object.prototype.hasOwnProperty.call(p, 'canais'); });
+  USERS_TEM_PARES = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'pares_modo'); });
   USERS_TEM_IA = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'ia'); });
   USERS_TEM_EQUIPES = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'equipes'); });
   if(USERS_TEM_EQUIPES && !EQUIPES.length){ try{ EQUIPES = (await window.__NC_rpc('bi_equipes')) || []; } catch(e){ EQUIPES = []; } }
@@ -7732,7 +7776,7 @@ async function renderUsersAdmin(){
   document.getElementById('uVendList').innerHTML = VEND_PESSOAS.map(function(v){ return '<option value="'+escapeHtml(v)+'">'; }).join('');
   var uiL = document.getElementById('uiLoja'); if(uiL && !uiL.options.length) uiL.innerHTML = lojaOptions('');
   var uiA = document.getElementById('uiAbas');
-  if(uiA && !uiA.dataset.built){ uiA.innerHTML = abasChips(ABAS_TODAS, false); bindAbas(uiA); uiA.dataset.built='1'; }
+  if(uiA && !uiA.dataset.built){ uiA.innerHTML = abasChips(ABAS_PADRAO, false); bindAbas(uiA); uiA.dataset.built='1'; }
   if(uiA) uiA.style.display = USERS_TEM_ABAS ? '' : 'none';
   uiA && (uiA.previousElementSibling.style.display = USERS_TEM_ABAS ? '' : 'none');
   renderUsersStats();
@@ -7875,7 +7919,7 @@ if(userInviteFormEl){
     var loja = document.getElementById('uiLoja').value.trim();
     if(!email){ msg.textContent = 'Informe um e-mail.'; return; }
     var abasConv = USERS_TEM_ABAS && role!=='bi' ? grpSel(userInviteFormEl,'abas') : null;
-    if(abasConv && abasConv.length===ABAS_TODAS.length) abasConv = null;
+    if(abasConv) abasConv = abasPayload(role, abasConv);
     var escConv = USERS_TEM_ESCOPO ? escopoPayload(role, grpSel(userInviteFormEl,'lojas'), grpSel(userInviteFormEl,'canais')) : {lojas:null, canais:null};
     if(USERS_TEM_ESCOPO && role==='gerencia') loja = (escConv.lojas||[])[0] || '';
     var eqConv = (USERS_TEM_EQUIPES && EQUIPES.length) ? equipesPayload(role, grpSel(userInviteFormEl,'equipes')) : null;
@@ -7905,7 +7949,7 @@ if(userInviteFormEl){
       msg.style.color = 'var(--good)';
       msg.textContent = 'Convite enviado para '+email+'.';
       userInviteFormEl.reset();
-      var uiA2 = document.getElementById('uiAbas'); uiA2.innerHTML = abasChips(ABAS_TODAS, false); bindAbas(uiA2);
+      var uiA2 = document.getElementById('uiAbas'); uiA2.innerHTML = abasChips(ABAS_PADRAO, false); bindAbas(uiA2);
       var uiE2 = document.getElementById('uiEquipes'); if(uiE2 && EQUIPES.length){ uiE2.innerHTML = chipsHtml(EQUIPES.map(function(v){ return {k:v,t:v}; }), EQUIPES, false); bindAbas(uiE2); }
       var uiC2 = document.getElementById('uiCanais'); if(uiC2 && USERS_TEM_ESCOPO){ uiC2.innerHTML = chipsHtml(canaisUniverso().map(function(v){ return {k:v,t:v}; }), canaisUniverso(), false); bindAbas(uiC2); }
       document.getElementById('uiRole').dispatchEvent(new Event('change'));
