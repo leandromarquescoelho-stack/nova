@@ -3441,7 +3441,7 @@ function renderCanalBar(map){
   function pctTxt(s){ return s<1 ? s.toFixed(1).replace('.',',') : s.toFixed(0); }
   bar.innerHTML = ks.map(function(k){
     var d = det(k);
-    return '<div class="seg'+(d.share<MIN?' peq':'')+'" data-k="'+k+'"'+fkAttr('canal',k)+' style="width:'+larg[k]+'%; background:'+canalCor(k)+'"><span class="sn">'+k+'&nbsp;</span>'+pctTxt(d.share)+'%</div>';
+    return '<div class="seg'+(d.share<MIN?' peq':'')+'" data-k="'+k+'"'+fkAttr('canal',k)+' style="width:'+larg[k]+'%; background:'+canalCor(k)+'; color:'+canalTxt(k)+'"><span class="sn">'+k+'&nbsp;</span>'+pctTxt(d.share)+'%</div>';
   }).join('');
   document.getElementById('canalCards').innerHTML = ks.map(function(k){
     var d = det(k);
@@ -5030,12 +5030,15 @@ function renderMonthToDate(){
 /* ============================================================
    EVOLUÇÃO MENSAL POR CANAL (barras empilhadas + margem %)
    ============================================================ */
-var CANAL_COR = {ATACADO:'#3b82f6', OFICINA:'#fab219', ECOMMERCE:'#22d3ee', ACESSORIOS:'#1fb08a'};
-var CANAL_EXTRA = ['#d9772e','#a78bfa','#f472b6','#94a3b8','#84cc16'];
+// cor única de cada canal, usada em todos os gráficos, legendas e etiquetas (azul, laranja, roxo e verde: bem distintas entre si)
+var CANAL_COR = {ATACADO:'#3b82f6', OFICINA:'#f97316', ECOMMERCE:'#a855f7', ACESSORIOS:'#10b981'};
+var CANAL_EXTRA = ['#ec4899','#14b8a6','#eab308','#94a3b8','#84cc16'];
 function canalCor(c){
   if(!CANAL_COR[c]){ var n = Object.keys(CANAL_COR).length - 4; CANAL_COR[c] = CANAL_EXTRA[Math.max(0,n) % CANAL_EXTRA.length]; }
   return CANAL_COR[c];
 }
+function canalTxt(c){ return '#fff'; }
+function canalBdg(c){ var k = canalCor(c); return '<span class="vx-bdg" style="background:color-mix(in srgb, '+k+' 16%, transparent); color:color-mix(in srgb, '+k+' 75%, var(--text))">'+escapeHtml(c)+'</span>'; }
 function monthlyByCanal(){
   var nM = REAL.months.length, byC = {}, lb = new Array(nM).fill(0), tot = new Array(nM).fill(0), qt = new Array(nM).fill(0);
   function add(c, mi, f, l, q){ (byC[c] = byC[c] || new Array(nM).fill(0))[mi] += f; tot[mi]+=f; lb[mi]+=l; qt[mi]+=q||0; }
@@ -5820,7 +5823,6 @@ function passaEstoque(p){ return matchesFilters(p); }
    ============================================================ */
 var VX = {aba:'lojas', sort:{}, ch:{}, map:null, tiles:null, tilesTema:null, camada:null, pinos:null, geo:{}, geoPr:{}, munMemo:{}, mapSeq:0, mapFit:null};
 var VX_PAL = {cy:'#00e5ff', pu:'#7c3aed', am:'#f59e0b', gr:'#10b981', re:'#ef4444'};
-var VX_CANAL = {ATACADO:'#00e5ff', OFICINA:'#f59e0b', ECOMMERCE:'#7c3aed', ACESSORIOS:'#10b981'};
 var VX_LIBS = {};
 function vxScript(url, glob){
   if(window[glob]) return Promise.resolve(window[glob]);
@@ -5999,15 +6001,15 @@ function vxLojas(){
   var rows = vxLinhas('loja'), cdl = vxCanalDaLoja();
   rows.forEach(function(r){ r.canal = cdl[r.k] || ''; r.mkt = LOJA_INFO[r.k] && !LOJA_INFO[r.k].fisica; });
   var keys = rows.map(function(r){ return r.k; });
-  var coresCanal = rows.map(function(r){ return VX_CANAL[r.canal] || VX_PAL.cy; });
+  var coresCanal = rows.map(function(r){ return (r.canal ? canalCor(r.canal) : VX_PAL.cy); });
   vxGrafico('vxLF', 'bar', keys, rows.map(function(r){ return r.fat; }), vxCores(coresCanal, keys, 'regiao'), {horiz:true, fk:'regiao', keys:keys});
   vxGrafico('vxLM', 'bar', keys, rows.map(function(r){ return +r.mg.toFixed(2); }), vxCores(rows.map(function(r){ return vxMc(r.mg); }), keys, 'regiao'), {pct:true, fk:'regiao', keys:keys});
   var usados = {}; rows.forEach(function(r){ if(r.canal) usados[r.canal] = true; });
   var leg = document.getElementById('vxLojaLeg');
-  if(leg) leg.innerHTML = Object.keys(usados).map(function(c){ return '<span class="vx-leg-f"'+fkAttr('canal', c)+'><i style="background:'+(VX_CANAL[c]||VX_PAL.cy)+'"></i>'+escapeHtml(c)+'</span>'; }).join('');
+  if(leg) leg.innerHTML = Object.keys(usados).map(function(c){ return '<span class="vx-leg-f"'+fkAttr('canal', c)+'><i style="background:'+canalCor(c)+'"></i>'+escapeHtml(c)+'</span>'; }).join('');
   var BC = {ATACADO:'bc', OFICINA:'ba', ECOMMERCE:'bp', ACESSORIOS:'bg'};
   vxTabela('vxTL', [VX_COL.rk, {k:'k', t:'Loja', td:function(r){ return '<td class="nm">'+(r.mkt?'🛒 ':'')+escapeHtml(r.k)+'</td>'; }},
-    {k:'canal', t:'Canal', td:function(r){ return '<td>'+(r.canal ? '<span class="vx-bdg '+(BC[r.canal]||'bc')+'">'+escapeHtml(r.canal)+'</span>' : '')+'</td>'; }},
+    {k:'canal', t:'Canal', td:function(r){ return '<td>'+(r.canal ? canalBdg(r.canal) : '')+'</td>'; }},
     VX_COL.fat, VX_COL.lb, VX_COL.qtd, VX_COL.mg, VX_COL.sh, VX_COL.vr], rows, {fk:'regiao', barra:VX_PAL.cy});
 }
 function vxDimensao(t, rot, idF, idM, idT, corF, corBarra){
