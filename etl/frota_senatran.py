@@ -52,16 +52,18 @@ def recursos():
 
 
 def baixar(url):
+    """Baixa com curl (repete e retoma se a conexão cair: o portal derruba downloads longos)."""
+    import subprocess
     print('baixando', url, flush=True)
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    f = tempfile.NamedTemporaryFile(delete=False)
-    with urllib.request.urlopen(req, timeout=900) as r:
-        while True:
-            b = r.read(1 << 20)
-            if not b:
-                break
-            f.write(b)
-    f.close()
+    f = tempfile.NamedTemporaryFile(delete=False); f.close()
+    for tentativa in range(8):
+        r = subprocess.run(['curl', '-fsSL', '--retry', '5', '--retry-all-errors', '--retry-delay', '5', '-C', '-',
+                            '-A', 'Mozilla/5.0', '-o', f.name, url])
+        if r.returncode == 0:
+            break
+        print('  tentativa', tentativa + 1, 'falhou (curl', r.returncode, '), retomando...', flush=True)
+    else:
+        raise SystemExit('não foi possível baixar ' + url)
     print('  ', os.path.getsize(f.name), 'bytes')
     return f.name
 
@@ -168,6 +170,14 @@ def automoveis(rs):
 
 def main():
     rs = recursos()
+    # tipos de arquivo publicados (sem mês/ano), para achar o de "município e tipo"
+    tipos = {}
+    for r in rs:
+        n = re.sub(r'(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|20\d\d|\d+)', '#', sem_acento(r.get('name') or r.get('url') or ''))
+        tipos.setdefault((r['pacote'], n), r.get('url'))
+    for (pk, n), u in sorted(tipos.items()):
+        if pk == 'registro-nacional-de-veiculos-automotores-renavam':
+            print('arquivo:', n, '|', u)
     ref_a, auto = automoveis(rs)
     ref_c, mm = chevrolet(rs)
     if not auto and not mm:
