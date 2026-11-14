@@ -1087,6 +1087,38 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .msel .msel-i{display:flex; flex-direction:row; align-items:center; gap:8px; padding:5px 6px; border-radius:6px; font-size:12.5px; color:var(--text); font-weight:500; cursor:pointer;}
 .msel-i:hover{background:var(--surface-2);}
 .msel-i input{accent-color:var(--accent); width:14px; height:14px; margin:0; flex:none;}
+/* ===== Concorrência ===== */
+.cc-kpis{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin-bottom:14px;}
+.cc-kpi{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px;}
+.cc-kpi .l{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); font-weight:700;}
+.cc-kpi .v{font-family:'Sora',sans-serif; font-size:24px; font-weight:800; margin-top:6px; color:var(--text);}
+.cc-kpi .s{font-size:12px; color:var(--text-2); margin-top:4px;}
+.cc-ctl{display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;}
+.cc-ctl label{display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--text-muted); font-weight:600;}
+.cc-busca{min-width:220px; padding:9px 12px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font:inherit; font-size:13px;}
+.cc-leg{display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--text-2); margin:4px 0 10px;}
+.cc-up{color:var(--critical);} .cc-dn{color:var(--good);}
+.cc-scroll{overflow:auto; max-height:calc(100vh - 330px); border:1px solid var(--border); border-radius:12px;}
+.cc-tbl{width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px;}
+.cc-tbl th{position:sticky; top:0; z-index:2; background:var(--surface-2); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); font-weight:800; padding:10px 12px; border-bottom:1px solid var(--border-strong); white-space:nowrap; cursor:pointer;}
+.cc-tbl th.num{text-align:right;}
+.cc-tbl td{padding:9px 12px; border-bottom:1px solid var(--border); color:var(--text-2); vertical-align:middle;}
+.cc-tbl tr:hover td{background:var(--surface-2);}
+.cc-tbl .num{text-align:right; font-family:'JetBrains Mono',monospace; white-space:nowrap;}
+.cc-item b{display:block; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:12px;}
+.cc-item span{display:block; max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px;}
+.cc-nosso{color:var(--text); font-weight:800;}
+.cc-c{display:flex; flex-direction:column; align-items:flex-end; gap:2px;}
+.cc-c a{color:var(--text); text-decoration:none; font-family:'JetBrains Mono',monospace;}
+.cc-c a:hover{text-decoration:underline;}
+.cc-d{font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:800; padding:1px 7px; border-radius:20px; white-space:nowrap;}
+.cc-d.up{color:var(--critical); background:color-mix(in srgb, var(--critical) 13%, transparent);}
+.cc-d.dn{color:var(--good); background:color-mix(in srgb, var(--good) 13%, transparent);}
+.cc-d.eq{color:var(--text-muted); background:var(--surface-3);}
+.cc-vazio{color:var(--text-muted);}
+.cc-pos{font-size:11.5px; font-weight:800; white-space:nowrap;}
+@media (max-width:900px){ .cc-kpis{grid-template-columns:repeat(2,minmax(0,1fr));} }
+
 /* ===== Planejamento (apresentação) ===== */
 .pl-guias{display:flex; gap:8px; margin-bottom:14px;}
 .pl-guias button{font:inherit; font-size:14px; font-weight:800; padding:9px 22px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); cursor:pointer;}
@@ -1455,6 +1487,9 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       </div>
       <div class="nav-item" data-view="insights">
         <span class="ico">&#128161;</span><span class="label">Insights</span><span class="tip">Insights</span>
+      </div>
+      <div class="nav-item" data-view="concorrencia">
+        <span class="ico">&#127991;&#65039;</span><span class="label">Concorrência</span><span class="tip">Concorrência</span>
       </div>
       <div class="nav-item" data-view="planejamento">
         <span class="ico">&#127919;</span><span class="label">Planejamento</span><span class="tip">Planejamento</span>
@@ -2112,6 +2147,29 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <div class="opp-grid" id="oppGrid"></div>
       </div>
       <div id="insSections"></div>
+      </section>
+
+      <!-- ============ CONCORRÊNCIA ============ -->
+      <section class="view-panel" data-view-panel="concorrencia" style="display:none;">
+        <div class="cc-kpis" id="ccKpis"></div>
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Top 100 do e-commerce: nosso preço x concorrentes</h2><div class="psub" id="ccSub">Itens que mais faturaram no e-commerce nos últimos 90 dias</div></div>
+            <div class="cc-ctl">
+              <label>Mostrar<select class="fsel" id="ccFiltro">
+                <option value="todos">Todos os itens</option>
+                <option value="caro">Onde estamos mais caros</option>
+                <option value="barato">Onde estamos mais baratos</option>
+                <option value="comp">Só itens comparados</option>
+                <option value="sem">Sem comparação</option>
+              </select></label>
+              <input type="search" class="cc-busca" id="ccBusca" placeholder="Buscar código ou nome…">
+            </div>
+          </div>
+          <div class="cc-leg"><span><b class="cc-up">&#9650;</b> estamos mais caros</span><span><b class="cc-dn">&#9660;</b> estamos mais baratos</span><span>diferença = nosso preço − preço do concorrente</span></div>
+          <div class="cc-scroll"><table class="cc-tbl" id="ccTbl"></table></div>
+          <p class="note-muted" id="ccNota"></p>
+        </div>
       </section>
 
       <!-- ============ PLANEJAMENTO ============ -->
@@ -2821,6 +2879,94 @@ function kpiSparks(k){
     put('tknf', spark3m(tn, a, 'var(--accent)', true, 0.6));
     put('tkcli', spark3m(tc, a, 'var(--accent)', true, 0.6));
   }).catch(function(){ if(seq===kpiSparks.seq){ put('tknf', ''); put('tkcli', ''); } });
+}
+
+/* ============================================================
+   CONCORRÊNCIA: top 100 do e-commerce x preços coletados nos sites concorrentes (rotina semanal no GitHub)
+   ============================================================ */
+var CC = {dados:null, carregando:false, ordem:'fat', desc:true, ligado:false};
+var CC_SITES = [{k:'accioly', n:'Accioly GM'}, {k:'carrera', n:'Carrera'}];
+function renderConcorrencia(){
+  if(!CC.ligado){
+    CC.ligado = true;
+    document.getElementById('ccFiltro').addEventListener('change', ccTabela);
+    document.getElementById('ccBusca').addEventListener('input', ccTabela);
+    document.getElementById('ccTbl').addEventListener('click', function(e){
+      var th = e.target.closest('th[data-o]'); if(!th) return;
+      var o = th.getAttribute('data-o'); CC.desc = CC.ordem===o ? !CC.desc : true; CC.ordem = o; ccTabela();
+    });
+  }
+  if(CC.dados){ ccTabela(); return; }
+  if(CC.carregando) return; CC.carregando = true;
+  document.getElementById('ccTbl').innerHTML = '<tr><td class="status-txt" style="padding:20px;">Carregando…</td></tr>';
+  supa.rpc('bi_concorrencia_ler').then(function(r){
+    CC.carregando = false;
+    if(r.error){ document.getElementById('ccTbl').innerHTML = '<tr><td style="padding:20px;">'+(/sem acesso/.test(r.error.message||'') ? 'A concorrência está disponível só para quem tem acesso a todas as lojas.' : 'Não foi possível carregar agora. Tente de novo em instantes.')+'</td></tr>'; return; }
+    var d = r.data || {itens:[], precos:[]}, pm = {}, quando = null;
+    (d.precos||[]).forEach(function(x){ (pm[x[1]] = pm[x[1]] || {})[x[0]] = {preco:+x[2], lista:x[3]==null?null:+x[3], disp:x[4], titulo:x[5], url:x[6], conf:x[7]}; if(!quando || x[8] > quando) quando = x[8]; });
+    CC.dados = {quando:quando, itens:(d.itens||[]).map(function(x, i){
+      var p = pm[x[0]] || {}, nosso = p.nossa ? p.nossa.preco : null, pmv = x[3] ? c2(x[2])/x[3] : null;
+      // preço muito longe do que vendemos (ou do nosso site) costuma ser outro produto, kit ou embalagem: fica marcado e fora do resumo
+      function longe(a, b){ return a && b ? (a/b > 2.5 || a/b < 0.4) : false; }
+      var nossoSusp = longe(nosso, pmv), ref = nosso && !nossoSusp ? nosso : pmv;
+      var cs = CC_SITES.map(function(s){ var c = p[s.k]; return c && c.preco>0 ? {site:s.k, preco:c.preco, url:c.url, titulo:c.titulo, conf:c.conf, susp:longe(c.preco, ref), pct: nosso ? (nosso/c.preco - 1)*100 : null} : null; });
+      if(nossoSusp) nosso = null;
+      var vals = cs.filter(function(c){ return c && !c.susp; }).map(function(c){ return c.preco; }), menor = vals.length ? Math.min.apply(null, vals) : null;
+      var pctMenor = nosso && menor ? (nosso/menor - 1)*100 : null;
+      return {rank:i+1, pn:x[0], nome:x[1], fat:c2(x[2]), qtd:+x[3], pmv:pmv, nosso:nosso, nossoSusp:nossoSusp, nossoBruto:p.nossa ? p.nossa.preco : null, nossoUrl:p.nossa && p.nossa.url, cs:cs, menor:menor, pctMenor:pctMenor, n:vals.length};
+    })};
+    ccTabela();
+  });
+}
+function ccSeta(pct){
+  if(pct==null) return '';
+  var c = Math.abs(pct) < 0.5 ? 'eq' : (pct > 0 ? 'up' : 'dn');
+  return '<span class="cc-d '+c+'">'+(c==='eq' ? '= ' : (c==='up' ? '▲ ' : '▼ '))+(pct>0?'+':'')+pct.toFixed(1).replace('.',',')+'%</span>';
+}
+function ccMoney(v){ return v==null ? '—' : 'R$ '+v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function ccTabela(){
+  var D = CC.dados; if(!D) return;
+  var f = document.getElementById('ccFiltro').value, q = vxSemAcento(document.getElementById('ccBusca').value||'');
+  var comp = D.itens.filter(function(it){ return it.nosso && it.n; });
+  var caro = comp.filter(function(it){ return it.pctMenor >= 0.5; }), barato = comp.filter(function(it){ return it.pctMenor <= -0.5; });
+  var fatCaro = caro.reduce(function(a,it){ return a+it.fat; }, 0), medio = comp.length ? comp.reduce(function(a,it){ return a+it.pctMenor; }, 0)/comp.length : 0;
+  function kpi(l, v, sub, cor){ return '<div class="cc-kpi"><div class="l">'+l+'</div><div class="v"'+(cor?' style="color:'+cor+'"':'')+'>'+v+'</div><div class="s">'+sub+'</div></div>'; }
+  document.getElementById('ccKpis').innerHTML =
+    kpi('Itens comparados', comp.length+' de '+D.itens.length, 'com nosso preço e ao menos um concorrente') +
+    kpi('Mais caros', '▲ '+caro.length, 'itens acima do menor preço do mercado', 'var(--critical)') +
+    kpi('Mais baratos', '▼ '+barato.length, 'itens abaixo do menor preço do mercado', 'var(--good)') +
+    kpi('Diferença média', (medio>0?'+':'')+medio.toFixed(1).replace('.',',')+'%', 'nosso preço vs menor concorrente', medio>0.5?'var(--critical)':(medio<-0.5?'var(--good)':'')) +
+    kpi('Faturamento em risco', fmtCurto(fatCaro), '90 dias dos itens onde estamos mais caros');
+  var linhas = D.itens.filter(function(it){
+    if(q && vxSemAcento(it.pn+' '+it.nome).indexOf(q)===-1) return false;
+    if(f==='caro') return it.pctMenor!=null && it.pctMenor >= 0.5;
+    if(f==='barato') return it.pctMenor!=null && it.pctMenor <= -0.5;
+    if(f==='comp') return it.pctMenor!=null;
+    if(f==='sem') return it.pctMenor==null;
+    return true;
+  });
+  var o = CC.ordem, sg = CC.desc ? -1 : 1;
+  linhas.sort(function(a,b){
+    var va = o==='pct' ? a.pctMenor : (o==='rank' ? -a.rank : a[o]), vb = o==='pct' ? b.pctMenor : (o==='rank' ? -b.rank : b[o]);
+    if(va==null && vb==null) return a.rank-b.rank; if(va==null) return 1; if(vb==null) return -1;
+    return (va-vb)*sg || a.rank-b.rank;
+  });
+  function th(t, k, num){ return '<th'+(num?' class="num"':'')+(k?' data-o="'+k+'"':'')+'>'+t+(k && CC.ordem===k ? (CC.desc?' ▾':' ▴') : '')+'</th>'; }
+  document.getElementById('ccTbl').innerHTML = '<thead><tr>'+th('#','rank')+th('Item')+th('Fat. 90 dias','fat',1)+th('Preço médio vendido','pmv',1)+th('Nosso site','nosso',1) +
+    CC_SITES.map(function(s){ return th(s.n, '', 1); }).join('') + th('vs menor preço','pct',1)+'</tr></thead><tbody>' +
+    linhas.map(function(it){
+      return '<tr><td class="num">'+it.rank+'</td><td class="cc-item"><b>'+escapeHtml(it.pn)+'</b><span title="'+escapeHtml(it.nome||'')+'">'+escapeHtml(String(it.nome||'').replace(/^\S+\s*-\s*/, ''))+'</span></td>' +
+        '<td class="num">'+fmtCurto(it.fat)+'</td><td class="num">'+ccMoney(it.pmv)+'</td>' +
+        '<td class="num cc-nosso">'+(it.nossoSusp ? '<a href="'+escapeHtml(it.nossoUrl||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="Preço do site muito diferente do preço médio vendido: confira o cadastro">⚠ '+ccMoney(it.nossoBruto)+'</a>' : it.nosso ? (it.nossoUrl ? '<a href="'+escapeHtml(it.nossoUrl)+'" target="_blank" rel="noopener" style="color:inherit">'+ccMoney(it.nosso)+'</a>' : ccMoney(it.nosso)) : '<span class="cc-vazio" title="Não encontrado no nosso site pelo código">—</span>')+'</td>' +
+        it.cs.map(function(c){
+          if(!c) return '<td class="num cc-vazio">—</td>';
+          if(c.susp) return '<td class="num"><div class="cc-c"><a href="'+escapeHtml(c.url||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="'+escapeHtml((c.titulo||'')+' · diferença grande demais: pode ser outro produto, kit ou embalagem. Confira no link.')+'">⚠ '+ccMoney(c.preco)+'</a></div></td>';
+          return '<td class="num"><div class="cc-c"><a href="'+escapeHtml(c.url||'#')+'" target="_blank" rel="noopener" title="'+escapeHtml((c.titulo||'')+(c.conf==='nome'?' (pareado pelo nome)':''))+'">'+ccMoney(c.preco)+(c.conf==='nome'?'*':'')+'</a>'+ccSeta(c.pct)+'</div></td>';
+        }).join('') +
+        '<td class="num">'+(it.pctMenor==null ? '<span class="cc-vazio">—</span>' : ccSeta(it.pctMenor))+'</td></tr>';
+    }).join('') + '</tbody>';
+  document.getElementById('ccSub').textContent = 'Itens que mais faturaram no e-commerce nos últimos 90 dias' + (D.quando ? ' · preços coletados em '+new Date(D.quando).toLocaleDateString('pt-BR') : ' · aguardando a primeira coleta');
+  document.getElementById('ccNota').textContent = 'Preços de venda exibidos nos sites (sem desconto de Pix ou boleto e sem frete), coletados toda segunda-feira pelo código da peça. * pareado pelo nome, confira no link. ⚠ preço muito diferente (mais de 2,5 vezes ou menos de 40%): provavelmente outro produto, kit ou embalagem; fica fora do resumo. Vigorito não entra: o site bloqueia leitura automática. A seta compara o nosso preço com o de cada concorrente: vermelho ▲ = estamos mais caros; verde ▼ = estamos mais baratos.';
 }
 
 /* ============================================================
@@ -6881,6 +7027,7 @@ function bindEvents(){
     clientes:{title:'Clientes', sub:'Carteira, termômetro de compras, clientes disponíveis (60 dias sem compra) e cidades'},
     diasuteis:{title:'Dias úteis', sub:'Calendário de dias úteis por loja, feriados e venda por tipo de dia'},
     insights:{title:'Insights', sub:'Oportunidades para aumentar faturamento e margem'},
+    concorrencia:{title:'Concorrência', sub:'Comparativo de preços do top 100 do e-commerce com os sites concorrentes'},
     planejamento:{title:'Planejamento', sub:'Projeções e objetivos de vendas por ano, em formato de apresentação'},
     usuarios:{title:'Usuários', sub:'Gestão de acessos ao painel (somente BI)'},
     fontes:{title:'Configurações', sub:'Links das planilhas e origem dos dados da carga (somente BI)'}
@@ -6907,6 +7054,7 @@ function bindEvents(){
     if(view==='vendedores'){ renderVendConsult(); }
     if(view==='insights'){ renderInsights(); }
     if(view==='planejamento'){ renderPlanejamento(); }
+    if(view==='concorrencia'){ renderConcorrencia(); }
     if(view==='diasuteis'){ renderDiasUteis(); }
     if(view==='usuarios'){ renderUsersAdmin(); renderIAAdmin(); }
     if(view==='fontes'){ renderFontesAdmin(); }
