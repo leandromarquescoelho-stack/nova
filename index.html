@@ -421,6 +421,10 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vx-cw .vx-vazio{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--text-muted);}
 .vx-leg{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-muted);}
 .vx-leg span{display:inline-flex; align-items:center; gap:5px;}
+.vx-leg-f{cursor:pointer; padding:4px 9px; border:1px solid var(--border-strong); border-radius:8px; background:var(--surface-2); transition:border-color .15s, color .15s;}
+.vx-leg-f:hover{border-color:var(--vx-cy-t); color:var(--text);}
+.vx-leg-f[data-fon]{border-color:var(--vx-cy-t); color:var(--text); background:rgba(0,229,255,.1);}
+.vx-leg-f[data-foff]{opacity:.45;}
 .vx-leg i{width:11px; height:11px; border-radius:3px; display:inline-block;}
 .vx-scroll{max-height:340px; overflow:auto; border-radius:8px;}
 .vx-tbl{width:100%; border-collapse:collapse; font-size:12px;}
@@ -1663,7 +1667,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <div class="vx-tc" data-vxpainel="lojas">
         <div class="vx-g2">
-          <div class="vx-card"><div class="vx-ct">Faturamento por Loja</div><div class="vx-cs">Cor da barra = canal principal da loja &middot; clique para filtrar</div><div class="vx-cw"><canvas id="vxLF"></canvas></div><div class="vx-leg" id="vxLojaLeg"></div></div>
+          <div class="vx-card"><div class="vx-ct">Faturamento por Loja</div><div class="vx-cs">Cor da barra = canal principal da loja &middot; clique na barra ou no canal da legenda para filtrar</div><div class="vx-cw"><canvas id="vxLF"></canvas></div><div class="vx-leg" id="vxLojaLeg"></div></div>
           <div class="vx-card"><div class="vx-ct">Margem % por Loja</div><div class="vx-cs">Rentabilidade &middot; verde/ciano acima de 15%, âmbar de 10% a 15%, vermelho abaixo de 10%</div><div class="vx-cw"><canvas id="vxLM"></canvas></div></div>
         </div>
         <div class="vx-card"><div class="vx-ct">Tabela &mdash; Lojas</div><div class="vx-cs">Dados filtrados &middot; clique no cabeçalho para ordenar e na linha para filtrar</div><div class="vx-scroll"><table class="vx-tbl" id="vxTL"></table></div></div>
@@ -5814,7 +5818,7 @@ function vxLojas(){
   vxGrafico('vxLM', 'bar', keys, rows.map(function(r){ return +r.mg.toFixed(2); }), vxCores(rows.map(function(r){ return vxMc(r.mg); }), keys, 'regiao'), {pct:true, fk:'regiao', keys:keys});
   var usados = {}; rows.forEach(function(r){ if(r.canal) usados[r.canal] = true; });
   var leg = document.getElementById('vxLojaLeg');
-  if(leg) leg.innerHTML = Object.keys(usados).map(function(c){ return '<span><i style="background:'+(VX_CANAL[c]||VX_PAL.cy)+'"></i>'+escapeHtml(c)+'</span>'; }).join('');
+  if(leg) leg.innerHTML = Object.keys(usados).map(function(c){ return '<span class="vx-leg-f"'+fkAttr('canal', c)+'><i style="background:'+(VX_CANAL[c]||VX_PAL.cy)+'"></i>'+escapeHtml(c)+'</span>'; }).join('');
   var BC = {ATACADO:'bc', OFICINA:'ba', ECOMMERCE:'bp', ACESSORIOS:'bg'};
   vxTabela('vxTL', [VX_COL.rk, {k:'k', t:'Loja', td:function(r){ return '<td class="nm">'+(r.mkt?'🛒 ':'')+escapeHtml(r.k)+'</td>'; }},
     {k:'canal', t:'Canal', td:function(r){ return '<td>'+(r.canal ? '<span class="vx-bdg '+(BC[r.canal]||'bc')+'">'+escapeHtml(r.canal)+'</span>' : '')+'</td>'; }},
