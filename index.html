@@ -5032,8 +5032,16 @@ function renderMonthToDate(){
     var mi = monthIndexOfDay[i];
     // ritmo por dia com venda (domingos e feriados sem venda não entram); projeção e ritmo só com dias concluídos (sem o último dia)
     if(mi===lastMi){ mtd+=sd.fat[i]; mtdLb+=sd.lb[i]; if(sd.fat[i]>0) dv++; if(i<TODAY_IDX){ mtdC+=sd.fat[i]; if(sd.fat[i]>0) dvC++; } }
-    else if(mi===lastMi-1){ prevFull+=sd.fat[i]; if(sd.fat[i]>0) prevDv++; if(DAYS[i].getDate()<=dia) prevSame+=sd.fat[i]; }
+    else if(mi===lastMi-1){ prevFull+=sd.fat[i]; if(sd.fat[i]>0) prevDv++; if(DAYS[i].getDate()<dia) prevSame+=sd.fat[i]; }
   }
+  // o último dia carregado ainda está aberto: comparação e ritmo usam só os dias concluídos (até ontem)
+  var i0m = inicioMesAtual(), ultC = TODAY_IDX-1, diaC = dia-1, mtdAberto = mtd - mtdC;
+  var lbC = 0; for(var q=i0m; q<=ultC; q++) lbC += sd.lb[q]||0;
+  // ritmo por dia: só e-commerce/marketplace = dias corridos; qualquer outro canal junto = dias úteis (mesma regra da Média diária)
+  var soOn = mediaSoOnline();
+  function nDias(a, b){ if(b < a) return 0; var c = contarDias(DAYS[a], DAYS[b], null); return soOn ? c.corridos : c.uteis; }
+  var iAnt0 = -1, iAnt1 = -1; for(var q2=0; q2<N_DAYS; q2++){ if(monthIndexOfDay[q2]===lastMi-1){ if(iAnt0<0) iAnt0 = q2; iAnt1 = q2; } }
+  dvC = ultC>=i0m ? nDias(i0m, ultC) : 0; prevDv = iAnt0>=0 ? nDias(iAnt0, iAnt1) : 0;
   // quanto do mês os últimos 3 meses fechados já tinham faturado até este mesmo dia (curva real da empresa)
   var shares = [];
   for(var m=Math.max(0,lastMi-3); m<lastMi; m++){
@@ -5047,21 +5055,21 @@ function renderMonthToDate(){
   var pm = projAtiva() ? projMes() : null;
   if(pm && pm.real>0) proj = mtd*pm.proj/pm.real; // projeção por dias úteis (pesos reais de sábado, domingo e feriados)
   var mesAtual = MES_NOME[NOW.getMonth()], mesAnt = MES_NOME[(NOW.getMonth()+11)%12];
-  var vsSame = prevSame>0 ? (mtd-prevSame)/prevSame*100 : 0;
+  var vsSame = prevSame>0 && diaC>0 ? (mtdC-prevSame)/prevSame*100 : 0;
   var vsFull = prevFull>0 ? (proj-prevFull)/prevFull*100 : 0;
   var ritmo = dvC ? mtdC/dvC : 0, ritmoAnt = prevDv ? prevFull/prevDv : 0;
   var vsRitmo = ritmoAnt>0 ? (ritmo-ritmoAnt)/ritmoAnt*100 : 0;
   function cor(v){ return v>=0 ? 'var(--good)' : 'var(--critical)'; }
   document.getElementById('mtdTitle').textContent = (completo ? 'Mês fechado: ' : 'Mês em andamento: ') + mesAtual;
   grid.innerHTML =
-    '<div class="mtd-box"><div class="l">Acumulado até '+fmtDate(NOW)+'</div><div class="v">'+fmtMoney(mtd)+'</div>' +
-      '<div class="s">'+dv+' dias com venda · margem '+(mtd>0?(mtdLb/mtd*100).toFixed(1):'0')+'%</div></div>' +
-    '<div class="mtd-box"><div class="l">vs. mesmos dias de '+mesAnt+'</div><div class="v" style="color:'+cor(vsSame)+'">'+fmtPct(vsSame)+'</div>' +
-      '<div class="s">'+mesAnt+' até o dia '+dia+': '+fmtMoney(prevSame)+'</div></div>' +
+    '<div class="mtd-box"><div class="l">Acumulado até '+(diaC>0 ? fmtDate(DAYS[ultC]) : fmtDate(NOW))+'</div><div class="v">'+fmtMoney(diaC>0 ? mtdC : mtd)+'</div>' +
+      '<div class="s" title="O dia '+dia+' ainda está aberto (vendas incompletas) e fica fora do acumulado, da comparação e do ritmo.">'+(diaC>0 ? 'dias concluídos · margem '+(mtdC>0?(lbC/mtdC*100).toFixed(1):'0')+'% · dia '+dia+' em aberto: '+fmtCurto(mtdAberto) : dv+' dias com venda · margem '+(mtd>0?(mtdLb/mtd*100).toFixed(1):'0')+'%')+'</div></div>' +
+    '<div class="mtd-box"><div class="l">vs. mesmos dias de '+mesAnt+'</div><div class="v" style="color:'+cor(vsSame)+'">'+(diaC>0 ? fmtPct(vsSame) : '—')+'</div>' +
+      '<div class="s">'+(diaC>0 ? mesAnt+' do dia 1 ao '+diaC+': '+fmtMoney(prevSame) : 'aguardando o primeiro dia concluído')+'</div></div>' +
     '<div class="mtd-box'+(completo?'':' mtd-proj')+'"><div class="l">'+(completo?'Total do mês':'Projeção de fechamento')+'</div><div class="v">'+fmtMoney(proj)+'</div>' +
       '<div class="s"><span style="color:'+cor(vsFull)+'">'+fmtPct(vsFull)+'</span> vs. '+mesAnt+' fechado ('+fmtCurto(prevFull)+')</div></div>' +
-    '<div class="mtd-box"><div class="l">Ritmo por dia de venda</div><div class="v">'+fmtMoney(ritmo)+'</div>' +
-      '<div class="s"><span style="color:'+cor(vsRitmo)+'">'+fmtPct(vsRitmo)+'</span> vs. média de '+mesAnt+' ('+fmtCurto(ritmoAnt)+')</div></div>';
+    '<div class="mtd-box"><div class="l">Ritmo por dia '+(soOn ? 'corrido' : 'útil')+'</div><div class="v">'+fmtMoney(ritmo)+'</div>' +
+      '<div class="s" title="'+(soOn ? 'Só e-commerce: faturamento dos dias concluídos ÷ dias corridos.' : 'Faturamento dos dias concluídos ÷ dias úteis (seg. a sex., sem feriados). Com e-commerce junto de outros canais, prevalecem os dias úteis; só e-commerce usa dias corridos.')+'"><span style="color:'+cor(vsRitmo)+'">'+fmtPct(vsRitmo)+'</span> vs. '+mesAnt+' ('+fmtCurto(ritmoAnt)+') · '+dvC+(soOn ? (dvC===1?' dia corrido':' dias corridos') : (dvC===1?' dia útil':' dias úteis'))+'</div></div>';
   var pct = proj>0 ? Math.min(100, mtd/proj*100) : 0;
   document.getElementById('mtdBar').innerHTML = '<i style="width:'+pct+'%; background:linear-gradient(90deg,#F2C811,#E09B00);"></i>' +
     (completo ? '' : '<b class="mtd-falta" style="width:'+(100-pct)+'%" title="Falta para a projeção de fechamento"></b>');
