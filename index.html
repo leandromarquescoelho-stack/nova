@@ -163,6 +163,7 @@ a{color:inherit;}
 ::selection{background:var(--accent-glow); color:var(--text);}
 svg text{font-family:'Manrope', sans-serif;}
 
+#telaCheiaBtn .tc-fe{display:none;} #telaCheiaBtn.on .tc-ab{display:none;} #telaCheiaBtn.on .tc-fe{display:block;}
 /* scrollbars */
 *::-webkit-scrollbar{height:14px; width:14px;}
 *::-webkit-scrollbar-track{background:transparent;}
@@ -1377,6 +1378,10 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <button class="tbtn" id="refreshBtn">
           <svg viewBox="0 0 24 24" fill="none"><path d="M20 11A8 8 0 1 0 18.5 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 5v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Atualizar
+        </button>
+        <button class="tbtn icon-only" id="telaCheiaBtn" title="Tela cheia" aria-label="Tela cheia">
+          <svg class="tc-ab" viewBox="0 0 24 24" fill="none"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="tc-fe" viewBox="0 0 24 24" fill="none"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <button class="tbtn icon-only" id="temaBtn" title="Modo claro / escuro" aria-label="Alternar modo claro e escuro">
           <svg class="tema-ico-escuro" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -6425,6 +6430,17 @@ function bindEvents(){
     document.getElementById('filterRail').classList.remove('recolhido'); document.getElementById('filterRail').classList.toggle('pinned');
   });
   // modo claro / escuro: troca o atributo da página, guarda a escolha neste navegador (os gráficos usam as variáveis de cor)
+  (function(){
+    var bt = document.getElementById('telaCheiaBtn'), de = document.documentElement;
+    if(!(de.requestFullscreen || de.webkitRequestFullscreen)){ bt.hidden = true; return; }
+    function atual(){ return document.fullscreenElement || document.webkitFullscreenElement; }
+    function marca(){ var on = !!atual(); bt.classList.toggle('on', on); bt.title = on ? 'Sair da tela cheia' : 'Tela cheia'; bt.setAttribute('aria-label', bt.title); }
+    bt.addEventListener('click', function(){
+      if(atual()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      else (de.requestFullscreen || de.webkitRequestFullscreen).call(de);
+    });
+    document.addEventListener('fullscreenchange', marca); document.addEventListener('webkitfullscreenchange', marca);
+  })();
   document.getElementById('temaBtn').addEventListener('click', function(){
     var claro = document.documentElement.getAttribute('data-theme') !== 'light';
     if(claro) document.documentElement.setAttribute('data-theme','light'); else document.documentElement.removeAttribute('data-theme');
