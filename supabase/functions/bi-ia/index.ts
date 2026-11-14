@@ -121,8 +121,12 @@ Deno.serve(async (req: Request) => {
     if (uErr || !u?.user) return json({ error: "Não autenticado" }, 401);
     userId = u.user.id;
 
-    const { data: perfil } = await admin.from("profiles").select("active").eq("id", userId).maybeSingle();
+    const { data: perfil } = await admin.from("profiles").select("*").eq("id", userId).maybeSingle();
     if (!perfil?.active) return json({ error: "Usuário inativo" }, 403);
+    // acesso por usuário (coluna ia, liberada no cadastro); o perfil BI sempre tem acesso
+    if (perfil.role !== "bi" && "ia" in perfil && !perfil.ia) {
+      return json({ error: "Seu usuário não tem acesso ao agente de IA. Peça ao perfil BI para liberar no seu cadastro." }, 403);
+    }
 
     const { data: cfg } = await admin.from("bi_config").select("valor").eq("chave", "ia").maybeSingle();
     if (!cfg?.valor?.ativa) return json({ error: "O agente de IA está desligado. O perfil BI pode ligá-lo na tela Usuários." }, 403);
