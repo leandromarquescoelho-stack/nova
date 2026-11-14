@@ -371,6 +371,10 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
             cur.execute("""insert into public.bi_config (chave, valor) values (%s, %s::jsonb)
                            on conflict (chave) do update set valor = excluded.valor""",
                         (chave, json.dumps(valor, ensure_ascii=False)))
+        # resumo por cliente da aba Clientes (pesado demais para calcular na hora); banco sem a função: segue sem ele
+        cur.execute("select to_regprocedure('private.bi_clientes_atualizar()') is not null")
+        if cur.fetchone()[0]:
+            cur.execute('select private.bi_clientes_atualizar()')
         cur.execute('delete from public.bi_cache')
         cur.execute("update public.bi_carga_controle set status = 'ok', linhas = %s, concluido_em = now() where id = %s",
                     (int(len(v)), id_carga))

@@ -1785,7 +1785,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             <option value="media">Maior média mensal</option>
             <option value="margem">Maior margem</option>
           </select></label>
-          <button type="button" class="clear-filters" id="cliLimpar">Limpar</button>
+          <button type="button" class="clear-filters" id="cliLimpar">Limpar</button><button type="button" class="aplicar-filtros" id="cliAplicar" title="Atualiza a lista com todos os filtros escolhidos">Aplicar</button>
         </div>
         <div class="cli-termo" id="cliTermo"></div>
         <div class="table-scroll scroll-limit" id="cliTabela"></div>
@@ -5337,11 +5337,11 @@ function cliLigar(){
   var eqs = Object.keys(toSet(Object.keys(vendEquipes()).map(function(n){ return vendEquipes()[n]; }))).sort();
   document.getElementById('cliEquipe').innerHTML = '<option value="">Todas</option>' + eqs.map(function(e){ return '<option value="'+escapeHtml(e)+'">'+escapeHtml(e)+'</option>'; }).join('');
   [['cliTipo','tipo'],['cliGrupo','grupo'],['cliPessoa','pessoa'],['cliCidade','cidade'],['cliVend','vend'],['cliEquipe','equipe'],['cliOrdem','ordem']].forEach(function(x){
-    document.getElementById(x[0]).addEventListener('change', function(){ CLI[x[1]] = this.value; renderClientes(); });
+    document.getElementById(x[0]).addEventListener('change', function(){ CLI[x[1]] = this.value; cliPendente(true); });
   });
-  var tm = null;
-  document.getElementById('cliBusca').addEventListener('input', function(){ var v = this.value.trim(); clearTimeout(tm); tm = setTimeout(function(){ CLI.busca = v; renderClientes(); }, 400); });
-  document.getElementById('cliBusca').addEventListener('keydown', function(e){ e.stopPropagation(); });
+  document.getElementById('cliBusca').addEventListener('input', function(){ CLI.busca = this.value.trim(); cliPendente(true); });
+  document.getElementById('cliBusca').addEventListener('keydown', function(e){ e.stopPropagation(); if(e.key==='Enter') renderClientes(); });
+  document.getElementById('cliAplicar').addEventListener('click', function(){ renderClientes(); });
   document.getElementById('cliLimpar').addEventListener('click', function(){
     CLI = {busca:'', tipo:'', grupo:'', pessoa:'', cidade:'', vend:'', equipe:'', termo:[], ordem:'fat'};
     ['cliTipo','cliGrupo','cliPessoa','cliCidade','cliVend','cliEquipe'].forEach(function(id){ document.getElementById(id).value = ''; });
@@ -5352,7 +5352,8 @@ function cliLigar(){
     var b = ev.target.closest('[data-termo]'); if(!b) return;
     var t = b.getAttribute('data-termo'), i = CLI.termo.indexOf(t);
     if(i===-1) CLI.termo.push(t); else CLI.termo.splice(i,1);
-    renderClientes();
+    b.setAttribute('aria-pressed', String(i===-1));
+    cliPendente(true);
   });
   document.getElementById('cliExport').addEventListener('click', exportarDisponiveis);
 }
@@ -5383,9 +5384,14 @@ function termoTip(c){
   return t;
 }
 function termoHtml(c){ var d = TERMO[c.termo] || {t:c.termo, ico:''}; return '<span class="termo '+c.termo+'" title="'+escapeHtml(termoTip(c))+'">'+d.ico+' '+d.t+'</span>'; }
+// filtros da aba Clientes: escolhe vários e aplica de uma vez
+function cliPendente(on){
+  var b = document.getElementById('cliAplicar'); if(!b) return;
+  b.classList.toggle('pendente', !!on); b.textContent = on ? 'Aplicar filtros' : 'Aplicar';
+}
 function renderClientes(){
   var tab = document.getElementById('cliTabela'); if(!tab) return;
-  cliLigar();
+  cliLigar(); cliPendente(false);
   var seq = ++CLI_SEQ;
   tab.innerHTML = '<p class="note-muted">Carregando clientes…</p>';
   document.getElementById('cliDisp').innerHTML = '<p class="note-muted">Carregando…</p>';
