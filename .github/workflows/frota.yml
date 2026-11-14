@@ -1,0 +1,46 @@
+name: Frota de veículos (Senatran) -> mapa
+
+# Todo mês baixa a frota pública da Senatran (automóveis e Chevrolet por município), grava geo/frota.json
+# e republica o painel. Só dados públicos. Também roda quando este arquivo ou o script mudam, ou à mão.
+on:
+  schedule:
+    - cron: '0 9 20 * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/frota.yml', 'etl/frota_senatran.py']
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: frota
+  cancel-in-progress: false
+
+jobs:
+  frota:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependências
+        run: pip install pandas openpyxl xlrd
+      - name: Baixar e resumir a frota
+        run: python etl/frota_senatran.py
+      - name: Gravar no repositório e republicar o painel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- geo/frota.json && git ls-files --error-unmatch geo/frota.json >/dev/null 2>&1; then
+            echo "Frota sem mudança."; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add geo/frota.json
+          git commit -m "Frota Senatran atualizada"
+          git push
+          gh workflow run pages.yml --ref main
