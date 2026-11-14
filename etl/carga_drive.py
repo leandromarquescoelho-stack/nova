@@ -658,7 +658,9 @@ def gravar(conn, res, usados):
                             [(m['vendedor'], m['meta']) for m in res['metas']])
 
         carga = {'carregado_em': agora, 'dados_ate': res['dados_ate'],
-                 'origem': ' + '.join(a['nome'] for a in usados.values())}
+                 'origem': ' + '.join(a['nome'] for a in usados.values()),
+                 # horário em que a planilha foi salva (o mais recente entre as usadas)
+                 'arquivo_salvo_em': max((a['modificado'] for a in usados.values() if a.get('modificado')), default=None)}
         for chave, valor in {**res['config'], 'carga': carga}.items():
             cur.execute("""insert into public.bi_config (chave, valor) values (%s, %s::jsonb)
                            on conflict (chave) do update set valor = excluded.valor""",

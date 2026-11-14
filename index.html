@@ -7446,11 +7446,11 @@ function bindBuscas(){
    REFRESH / TEMPO REAL
    ============================================================ */
 function cargaLabel(c){
-  if(!c || !c.carregado_em) return '';
-  var d = new Date(c.carregado_em);
+  if(!c || !(c.arquivo_salvo_em || c.carregado_em)) return '';
+  var d = new Date(c.arquivo_salvo_em || c.carregado_em);
   var p = (c.dados_ate||'').split('-');
   var ate = p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : '';
-  return (ate ? 'Dados até '+ate+' · ' : '') + 'carga de '+fmtDateFull(d)+' às '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  return (ate ? 'Dados até '+ate+' · ' : '') + (c.arquivo_salvo_em ? 'planilha modificada em ' : 'carga de ')+fmtDateFull(d)+' às '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
 var novaCargaPendente = false;
 async function checarNovaCarga(){

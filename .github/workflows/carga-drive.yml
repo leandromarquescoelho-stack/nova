@@ -4,7 +4,7 @@ name: Carga planilhas -> Supabase
 # alguma planilha tiver data de modificação nova. Também pode ser disparado à mão.
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '7,37 * * * *'  # fora da virada da hora, quando o GitHub mais atrasa os agendamentos
   workflow_dispatch:
     inputs:
       forcar:
