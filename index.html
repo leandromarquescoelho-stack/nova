@@ -7513,7 +7513,7 @@ var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
 var ROLE_COR = {bi:'linear-gradient(135deg,#22d3ee,#3b82f6)', diretoria:'linear-gradient(135deg,#a78bfa,#6366f1)', gerencia:'linear-gradient(135deg,#fab219,#d9772e)', vendedor:'linear-gradient(135deg,#1fc46a,#1fb08a)'};
 var USERS_CACHE = [], USERS_TEM_ABAS = false, USERS_TEM_ESCOPO = false, USERS_FILTRO = 'todos';
 // equipes de venda (aba vendedores do arquivo infobi); nulo no perfil = todas
-var EQUIPES = [], USERS_TEM_EQUIPES = false;
+var EQUIPES = [], USERS_TEM_EQUIPES = false, USERS_TEM_IA = false;
 function equipesDoPerfil(p){ var e = listaPerfil(p.equipes); return e.length ? e : EQUIPES.slice(); }
 function equipesChips(sel, disabled){
   if(!USERS_TEM_EQUIPES || !EQUIPES.length) return '';
@@ -7585,6 +7585,7 @@ function userCard(p){
     equipesChips(p.role==='bi' ? EQUIPES.slice() : equipesDoPerfil(p), p.role==='bi') +
     '<div class="u-foot"><span class="when">Criado em '+fmtDateShort(p.created_at)+'</span>' +
       (ehEu ? '' : '<label class="u-switch" title="Acesso liberado"><input type="checkbox" class="u-active" '+(p.active?'checked':'')+'><i></i>Acesso</label>') +
+      (USERS_TEM_IA ? '<label class="u-switch" title="'+(p.role==='bi' ? 'O perfil BI sempre tem acesso à IA' : 'Libera o botão Pergunte aos dados para este usuário')+'"><input type="checkbox" class="u-ia" '+(iaDoPerfil(p)?'checked':'')+(p.role==='bi'?' disabled':'')+'><i></i>IA</label>' : '') +
       (st.c==='pend' ? '<button class="tbtn primary u-liberar" type="button">Liberar acesso</button>' : '') +
       '<button class="tbtn u-save" type="button">Salvar</button>' +
       '<span class="u-msg"></span></div>' +
@@ -7599,6 +7600,7 @@ function userResumo(p){
   if(p.role==='vendedor' && p.vendedor_nome) partes.push(escapeHtml(p.vendedor_nome));
   if(USERS_TEM_ESCOPO) partes.push(nLj===1 ? escapeHtml(lojasDoPerfil(p)[0]||'1 loja') : nLj+' lojas', nCn+' canais');
   if(USERS_TEM_ABAS) partes.push(nAb+' guias');
+  if(USERS_TEM_IA) partes.push(iaDoPerfil(p) ? '<b style="color:var(--accent)">✦ IA</b>' : 'sem IA');
   return '<div class="u-card u-mini '+(st.c==='pend'?'pend':(st.c==='off'?'off':''))+'" data-id="'+p.id+'" tabindex="0" role="button" title="Clique para abrir o cadastro">' +
     '<div class="u-top"><div class="u-av" style="background:'+(ROLE_COR[p.role]||ROLE_COR.vendedor)+'">'+escapeHtml(iniciais(p.full_name||p.email))+'</div>' +
       '<div class="u-id"><b>'+escapeHtml(p.full_name||'(sem nome)')+(ehEu?' · você':'')+'</b><span>'+escapeHtml(p.email)+'</span></div>' +
@@ -7655,6 +7657,7 @@ async function salvarCard(card, liberar){
     vendedor_nome: role==='vendedor' ? (card.querySelector('.u-vendedor').value.trim() || null) : null
   };
   if(act) payload.active = liberar ? true : act.checked;
+  var iaEl = card.querySelector('.u-ia'); if(iaEl && USERS_TEM_IA && !(CURRENT_PROFILE && CURRENT_PROFILE.id===id)) payload.ia = role==='bi' ? true : iaEl.checked;
   if(USERS_TEM_ESCOPO){
     var esc = escopoPayload(role, grpSel(card,'lojas'), grpSel(card,'canais'));
     payload.lojas = esc.lojas; payload.canais = esc.canais;
@@ -7712,6 +7715,7 @@ async function renderUsersAdmin(){
   USERS_CACHE = res.data;
   USERS_TEM_ABAS = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'abas'); });
   USERS_TEM_ESCOPO = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'lojas') && Object.prototype.hasOwnProperty.call(p, 'canais'); });
+  USERS_TEM_IA = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'ia'); });
   USERS_TEM_EQUIPES = USERS_CACHE.some(function(p){ return Object.prototype.hasOwnProperty.call(p, 'equipes'); });
   if(USERS_TEM_EQUIPES && !EQUIPES.length){ try{ EQUIPES = (await window.__NC_rpc('bi_equipes')) || []; } catch(e){ EQUIPES = []; } }
   var uiEq = document.getElementById('uiEquipes');
@@ -8016,7 +8020,9 @@ document.getElementById('logoutBtn').addEventListener('click', async function(){
    do usuário (escopo dele). O navegador só envia a pergunta e o contexto da tela.
    ============================================================ */
 var IA_HIST = [], IA_OCUPADO = false;
-function iaAtiva(){ return !!(REAL && REAL.ia && REAL.ia.ativa); }
+// chave geral ligada + acesso liberado no cadastro (o perfil BI sempre tem; sem a coluna ia no banco vale a chave geral)
+function iaDoPerfil(p){ return !!p && (p.role==='bi' || !Object.prototype.hasOwnProperty.call(p,'ia') || !!p.ia); }
+function iaAtiva(){ return !!(REAL && REAL.ia && REAL.ia.ativa) && iaDoPerfil(CURRENT_PROFILE); }
 function iaAtualizarFab(){
   var fab = document.getElementById('iaFab'); if(!fab) return;
   fab.classList.toggle('on', iaAtiva());
@@ -8115,7 +8121,7 @@ async function renderIAAdmin(){
   var box = document.getElementById('iaAdm'); if(!box) return;
   var on = iaAtiva();
   box.innerHTML = '<div class="ia-adm"><button type="button" class="ia-sw" id="iaSw" role="switch" aria-checked="'+on+'" aria-label="Ligar agente de IA"></button>' +
-    '<div class="ia-adm-txt"><b>'+(on ? 'Ligado para todos os usuários' : 'Desligado')+'</b><div>'+(on ? 'O botão "Pergunte aos dados" aparece no canto da tela de cada usuário.' : 'Ao ligar, o botão "Pergunte aos dados" aparece para todos os usuários. Cada um só pergunta sobre os dados que já pode ver.')+'</div></div></div>' +
+    '<div class="ia-adm-txt"><b>'+(on ? (USERS_TEM_IA ? 'Ligado' : 'Ligado para todos os usuários') : 'Desligado')+'</b><div>'+(on ? (USERS_TEM_IA ? 'O botão "Pergunte aos dados" aparece para quem tem IA liberada no cadastro (chave IA em cada usuário).' : 'O botão "Pergunte aos dados" aparece no canto da tela de cada usuário.') : 'Ao ligar, o botão "Pergunte aos dados" aparece para quem tem IA liberada no cadastro. Cada um só pergunta sobre os dados que já pode ver.')+'</div></div></div>' +
     '<div id="iaUso"><div class="ia-adm-txt" style="margin-top:12px;"><div class="status-txt">Carregando uso…</div></div></div>';
   document.getElementById('iaSw').addEventListener('click', async function(){
     var sw = this, novo = sw.getAttribute('aria-checked')!=='true'; sw.disabled = true;
