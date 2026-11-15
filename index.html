@@ -1,11 +1,16 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* ---------- agente de IA: botão flutuante e painel de conversa ---------- */
-#iaFab{ position:fixed; right:22px; bottom:22px; z-index:800; display:none; align-items:center; gap:8px; height:46px; padding:0 18px 0 14px;
-  border-radius:999px; border:1px solid rgba(242,200,17,.55); color:#171717; font-weight:700; font-size:13px; cursor:pointer;
-  background:var(--pbi-grad); box-shadow:0 10px 30px -8px rgba(242,200,17,.55), 0 2px 8px rgba(0,0,0,.4); transition:transform .15s, box-shadow .15s; }
+/* balão pequeno e meio transparente com o logo; ao passar o mouse fica inteiro e mostra "Pergunte aos dados" */
+#iaFab{ position:fixed; right:22px; bottom:22px; z-index:800; display:none; align-items:center; gap:8px; height:40px; min-width:40px; padding:0 10px 0 7px;
+  border-radius:999px; border:1px solid rgba(242,200,17,.55); color:#171717; font-weight:700; font-size:13px; cursor:pointer; opacity:.5; white-space:nowrap; overflow:visible;
+  background:var(--pbi-grad); box-shadow:0 6px 18px -8px rgba(242,200,17,.55), 0 2px 6px rgba(0,0,0,.35); transition:opacity .18s, height .18s, padding .18s, box-shadow .18s; }
 #iaFab.on{ display:inline-flex; }
-#iaFab:hover{ transform:translateY(-2px); box-shadow:0 14px 34px -8px rgba(242,200,17,.7), 0 2px 8px rgba(0,0,0,.4); }
-#iaFab svg{ width:18px; height:18px; }
+#iaFab .ia-logo{ width:24px; height:24px; object-fit:contain; flex:none; }
+#iaFab .ia-spark{ position:absolute; top:-3px; right:-3px; width:14px; height:14px; padding:2px; border-radius:50%; background:#171717; color:#f2c811; transition:all .18s; }
+#iaFab span{ display:inline-block; max-width:0; overflow:hidden; opacity:0; transition:max-width .2s, opacity .15s; }
+#iaFab:hover, #iaFab:focus-visible{ opacity:1; height:46px; padding:0 18px 0 12px; box-shadow:0 14px 34px -8px rgba(242,200,17,.7), 0 2px 8px rgba(0,0,0,.4); }
+#iaFab:hover span, #iaFab:focus-visible span{ max-width:180px; opacity:1; }
+#iaFab:hover .ia-spark, #iaFab:focus-visible .ia-spark{ position:static; width:16px; height:16px; padding:0; background:none; color:#171717; order:-1; }
 #iaFab.aberto{ display:none; }
 #iaPainel{ position:fixed; right:18px; bottom:18px; z-index:850; width:min(440px, calc(100vw - 24px)); height:min(640px, calc(100vh - 36px));
   display:none; flex-direction:column; background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius-lg);
@@ -52,7 +57,7 @@
 .ia-form button:disabled{ opacity:.4; cursor:default; }
 .ia-form button svg{ width:16px; height:16px; }
 .ia-rodape{ font-size:10px; color:var(--text-muted); text-align:center; padding:0 12px 9px; background:var(--plane); }
-@media (max-width:560px){ #iaPainel{ right:6px; left:6px; bottom:6px; width:auto; height:calc(100vh - 12px); } #iaFab span{ display:none; } #iaFab{ padding:0 14px; } }
+@media (max-width:560px){ #iaPainel{ right:6px; left:6px; bottom:6px; width:auto; height:calc(100vh - 12px); } #iaFab span{ display:none; } }
 @media print{ #iaFab, #iaPainel{ display:none !important; } }
 /* cartão de controle do agente na tela Usuários (perfil BI) */
 .ia-adm{ display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:center; }
@@ -8625,6 +8630,7 @@ async function iaEnviar(texto){
 function iniciarIA(){
   var fab = document.getElementById('iaFab'), painel = document.getElementById('iaPainel'); if(!fab || fab.dataset.ok) return;
   fab.dataset.ok = '1';
+  var lg = fab.querySelector('.ia-logo'), mk = document.querySelector('.mark-ico'); if(lg && mk) lg.src = mk.src;
   fab.addEventListener('click', function(){ painel.classList.add('on'); fab.classList.add('aberto'); iaRender(); setTimeout(function(){ document.getElementById('iaTxt').focus(); }, 50); });
   document.getElementById('iaFechar').addEventListener('click', function(){ painel.classList.remove('on'); fab.classList.remove('aberto'); });
   document.getElementById('iaLimpar').addEventListener('click', function(){ if(IA_OCUPADO) return; IA_HIST = []; iaRender(); });
@@ -8883,7 +8889,7 @@ document.getElementById('forgotBtn').addEventListener('click', async function(){
 })();
 </script>
 
-<button id="iaFab" type="button" aria-label="Pergunte aos dados"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.5l-.8-1.9-1.9-.8 1.9-.8z"/></svg><span>Pergunte aos dados</span></button>
+<button id="iaFab" type="button" aria-label="Pergunte aos dados" title="Pergunte aos dados"><img class="ia-logo" alt=""><svg class="ia-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.5l-.8-1.9-1.9-.8 1.9-.8z"/></svg><span>Pergunte aos dados</span></button>
 <div id="iaPainel" role="dialog" aria-label="Pergunte aos dados">
   <div class="ia-cab"><div class="ia-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.5l-.8-1.9-1.9-.8 1.9-.8z"/></svg></div><div><h3>Pergunte aos dados</h3><p>Consulta a base completa, dentro do que você tem acesso</p></div>
     <div class="ia-x"><button type="button" id="iaLimpar" title="Nova conversa">&#8634;</button><button type="button" id="iaFechar" title="Fechar">&#10005;</button></div></div>
