@@ -514,6 +514,8 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vx-loja-pin{background:#fff url('icons/loja-pin.png') center/100% no-repeat; border:2px solid #fff; border-radius:50%; box-shadow:0 0 0 3px rgba(124,58,237,.55), 0 2px 8px rgba(0,0,0,.55); transition:opacity .2s;}
 .vx-loja-pin.on{box-shadow:0 0 0 4px #00e5ff, 0 0 18px 6px rgba(0,229,255,.7), 0 2px 8px rgba(0,0,0,.6); animation:vxPulso 1.6s ease-in-out infinite;}
 .vx-loja-pin.off{opacity:.45;}
+.vx-conc-pin{background:#F2C811; border:2px solid #1a1a1a; border-radius:4px; transform:rotate(45deg); box-shadow:0 1px 5px rgba(0,0,0,.6);}
+.vx-conc-pin::after{content:''; position:absolute; inset:3px; background:#1a1a1a; border-radius:1px;}
 @keyframes vxPulso{50%{box-shadow:0 0 0 4px #00e5ff, 0 0 26px 10px rgba(0,229,255,.45), 0 2px 8px rgba(0,0,0,.6);}}
 .vx-loja-aviso{position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:950; background:var(--surface); border:1px solid rgba(0,229,255,.45); color:var(--text); border-radius:10px; padding:6px 12px; font-size:12px; font-weight:600; box-shadow:0 6px 20px rgba(0,0,0,.35); display:flex; gap:10px; align-items:center; white-space:nowrap;}
 .vx-loja-aviso[hidden]{display:none;}
@@ -1925,11 +1927,13 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
               </select></label>
               <label>UF<select class="fsel" id="vxMapUF"><option value="">Todas</option></select></label>
               <label class="vx-chk"><input type="checkbox" id="vxMapLojas" checked> Lojas</label>
+              <label class="vx-chk" title="Concessionárias Chevrolet (com venda de peças), fonte: OpenStreetMap"><input type="checkbox" id="vxMapConc"> Concessionárias Chevrolet</label>
               <button type="button" class="vx-full-btn" id="vxMapFull" title="Ver o mapa em tela cheia" aria-label="Ver o mapa em tela cheia"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tela cheia</span></button>
             </div>
           </div>
           <div class="vx-leg" id="vxMapLeg"></div>
           <div id="vxMapWrap"><div class="vx-loja-aviso" id="vxLojaAviso" hidden></div><div id="vxMap"></div><div id="vxMapTip"></div><div class="vx-map-msg status-txt" id="vxMapMsg">Carregando mapa…</div></div>
+          <div class="note-muted" id="vxConcNota" style="font-size:11px; margin-top:6px;"></div>
           <p class="note-muted" id="vxMapNota"></p>
         </div>
         <div class="vx-card"><div class="vx-ct">Tabela &mdash; Cidades</div><div class="vx-cs">Clique no cabeçalho para ordenar e na linha para filtrar</div><div class="vx-scroll" style="max-height:380px;"><table class="vx-tbl" id="vxTR"></table></div></div>
@@ -6918,6 +6922,22 @@ function vxDesenharMapa(cids, total, ufs, fora){
       });
     });
   }
+  // concessionárias Chevrolet (concorrentes diretos em peças): pontos públicos do OpenStreetMap, em geo/concessionarias.json
+  if(VX.conc){ VX.map.removeLayer(VX.conc); VX.conc = null; }
+  if(document.getElementById('vxMapConc').checked){
+    if(!VX.concPr) VX.concPr = fetch('geo/concessionarias.json').then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; });
+    VX.concPr.then(function(lista){
+      if(!document.getElementById('vxMapConc').checked || VX.conc) return;
+      VX.conc = L.layerGroup().addTo(VX.map);
+      lista.forEach(function(c){
+        if(ufs.length && ufs.indexOf(c.uf)===-1) return;
+        var mk = L.marker([c.lat, c.lon], {icon:L.divIcon({className:'vx-conc-pin', iconSize:[13,13]}), keyboard:false, zIndexOffset:-500}).addTo(VX.conc);
+        mk.bindTooltip('<b>'+escapeHtml(c.n||'Concessionária Chevrolet')+'</b>'+(c.cid ? '<br>'+escapeHtml(c.cid)+' ('+c.uf+')' : '')+(c.end ? '<br><span style="opacity:.75">'+escapeHtml(c.end)+'</span>' : '')+(c.tel ? '<br><span style="opacity:.75">'+escapeHtml(c.tel)+'</span>' : ''), {direction:'top', offset:[0,-8]});
+      });
+      var n = VX.conc.getLayers().length, nota = document.getElementById('vxConcNota');
+      if(nota) nota.textContent = n ? n+' concessionárias Chevrolet no mapa (fonte: OpenStreetMap; pode faltar alguma).' : 'Nenhuma concessionária Chevrolet encontrada para este recorte.';
+    });
+  } else { var nt = document.getElementById('vxConcNota'); if(nt) nt.textContent = ''; }
   // enquadra as cidades que somam 90% do faturamento (evita que uma venda isolada afaste o mapa)
   var chaveFit = JSON.stringify([ufs, VX.ufSel]); // filtros novos não mexem no zoom; só a troca de UF reenquadra
   if(VX.mapFit!==chaveFit){
@@ -7060,6 +7080,7 @@ function vxLigar(){
   });
   document.getElementById('vxMapMetrica').addEventListener('change', function(){ if(VX.aba==='regioes') vxRegioes(); });
   document.getElementById('vxMapLojas').addEventListener('change', function(){ if(VX.aba==='regioes') vxRegioes(); });
+  document.getElementById('vxMapConc').addEventListener('change', function(){ if(VX.aba==='regioes') vxRegioes(); });
   document.getElementById('vxMapUF').addEventListener('change', function(){ if(VX.map) VX.map.closePopup(); VX.quadro = null; if(VX.aba==='regioes') vxRegioes(); });
 
 }
