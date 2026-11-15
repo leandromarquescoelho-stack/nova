@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       modo:
-        description: 'coleta (padrão) ou sonda (só para desenvolver)'
+        description: 'coleta (padrão), sonda ou concessionarias (só para desenvolver)'
         required: false
         default: 'coleta'
 
@@ -31,12 +31,15 @@ jobs:
       - name: Instalar dependências
         run: |
           pip install "psycopg[binary]==3.2.3"
-          if [ "${{ github.event.inputs.modo }}" = "sonda" ]; then pip install playwright && python -m playwright install --with-deps chromium; fi
+          if [ "${{ github.event.inputs.modo }}" = "sonda" ] || [ "${{ github.event.inputs.modo }}" = "concessionarias" ]; then pip install playwright && python -m playwright install --with-deps chromium; fi
       - name: Sondar os sites
         if: ${{ github.event.inputs.modo == 'sonda' }}
         run: python etl/concorrencia_probe.py
+      - name: Sondar o localizador de concessionárias
+        if: ${{ github.event.inputs.modo == 'concessionarias' }}
+        run: python etl/concessionarias_probe.py
       - name: Coletar preços
-        if: ${{ github.event.inputs.modo != 'sonda' }}
+        if: ${{ github.event.inputs.modo != 'sonda' && github.event.inputs.modo != 'concessionarias' }}
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: python etl/concorrencia.py
