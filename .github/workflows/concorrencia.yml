@@ -37,12 +37,7 @@ jobs:
         run: python etl/concorrencia_probe.py
       - name: Sondar o localizador de concessionárias
         if: ${{ github.event.inputs.modo == 'concessionarias' }}
-        run: python etl/concessionarias_osm.py
-      - uses: actions/upload-artifact@v4
-        if: ${{ github.event.inputs.modo == 'concessionarias' }}
-        with:
-          name: concessionarias
-          path: concessionarias.json
+        run: python etl/concessionarias_osm.py SP RJ MG PR SC RS GO DF MS MT ES BA
       - name: Coletar preços
         if: ${{ github.event.inputs.modo != 'sonda' && github.event.inputs.modo != 'concessionarias' }}
         env:
