@@ -1924,6 +1924,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
                 <option value="var">Variação vs. período anterior</option>
                 <option value="hab">Faturamento por mil habitantes</option>
                 <option value="chev">Participação Chevrolet na frota</option>
+                <option value="cli">Quantidade de clientes</option>
               </select></label>
               <label>UF<select class="fsel" id="vxMapUF"><option value="">Todas</option></select></label>
               <label class="vx-chk"><input type="checkbox" id="vxMapLojas" checked> Lojas</label>
@@ -6764,6 +6765,15 @@ function vxEscala(met, cidades){
     return {cor:function(c){ if(c.chev===null) return '#64748b'; var i = 0; while(i<4 && c.chev>qc[i]) i++; return VX_ESCALA[i]; },
       leg:VX_ESCALA.map(function(c, i){ return [c, i===0 ? 'até '+fp(qc[0]) : (i===4 ? 'acima de '+fp(qc[3]) : fp(qc[i-1])+' a '+fp(qc[i]))]; }).concat([['#64748b','sem dado']])};
   }
+  if(met==='cli'){
+    if(!CID_CLI) return {cor:function(){ return '#64748b'; }, leg:[['#64748b', CID_CLI_ERRO ? 'clientes por município indisponível' : 'carregando clientes…']]};
+    var cl = cidades.map(function(c){ return c.cli; }).filter(function(x){ return x!==null && x>0; });
+    if(!cl.length) return {cor:function(){ return '#64748b'; }, leg:[['#64748b','sem clientes no filtro']]};
+    var qk = vxQuantis(cl, 5), fc = function(x){ return vxN(Math.round(x)); };
+    var rk = ['até '+fc(qk[0]), fc(qk[0])+' a '+fc(qk[1]), fc(qk[1])+' a '+fc(qk[2]), fc(qk[2])+' a '+fc(qk[3]), 'acima de '+fc(qk[3])];
+    return {cor:function(c){ if(c.cli===null || !(c.cli>0)) return '#64748b'; var i = 0; while(i<4 && c.cli>qk[i]) i++; return VX_ESCALA[i]; },
+      leg:VX_ESCALA.map(function(c, i){ return [c, ['Poucos','Médio-baixo','Médio','Muitos','Mais clientes'][i]+' ('+rk[i]+' clientes)']; }).concat([['#64748b','sem cliente identificado']])};
+  }
   var val = met==='hab' ? function(c){ return c.pop>0 ? c.fat/c.pop*1000 : null; } : function(c){ return c.fat; };
   var vs = cidades.map(val).filter(function(x){ return x!==null && x>0; });
   if(!vs.length) return {cor:function(){ return VX_ESCALA[0]; }, leg:[]};
@@ -6842,7 +6852,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
     var o = porMun[f[2]] || (porMun[f[2]] = {f:f, uf:r.k.slice(0,2), nomes:[], fat:0, lb:0, qtd:0, prev:0});
     o.nomes.push(r.k); o.fat += r.fat; o.lb += r.lb; o.qtd += r.qtd; o.prev += r.prev; mapeado += r.fat;
   });
-  var lista = Object.keys(porMun).map(function(id){ var o = porMun[id]; o.mg = o.fat>0 ? o.lb/o.fat*100 : 0; o.vr = vxVarPct(o.fat, o.prev); o.pop = o.f[5]||0; o.frota = o.f[6]||0; var ch = vxChev(o.f); o.chev = ch ? ch.pct : null; return o; });
+  var lista = Object.keys(porMun).map(function(id){ var o = porMun[id]; o.mg = o.fat>0 ? o.lb/o.fat*100 : 0; o.vr = vxVarPct(o.fat, o.prev); o.pop = o.f[5]||0; o.frota = o.f[6]||0; var ch = vxChev(o.f); o.chev = ch ? ch.pct : null; o.cli = null; if(CID_CLI){ o.cli = 0; (o.nomes||[]).forEach(function(n){ var c = CID_CLI[n]; if(c) o.cli += c.n; }); } return o; });
   lista.sort(function(a,b){ return b.fat-a.fat; });
   vxTabelaCidades(cids, true);
   // KPIs
@@ -6856,7 +6866,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
   document.getElementById('vxMapLeg').innerHTML = esc.leg.map(function(x){ return '<span><i style="background:'+x[0]+'"></i>'+x[1]+'</span>'; }).join('') +
     '<span><i style="background:'+(claro?'#cbd5e1':'#2a3a4a')+'; border:1px solid '+(claro?'#94a3b8':'#3d5068')+'"></i>Sem vendas</span>';
   var sub = document.getElementById('vxMapSub');
-  if(sub) sub.textContent = {fat:'Faturamento por município', margem:'Margem bruta por município', var:'Variação do faturamento vs. período anterior de mesmo tamanho', hab:'Faturamento por mil habitantes (população do Censo 2022)', chev:'Participação de veículos Chevrolet na frota do município (Senatran)'}[met]+' · passe o mouse para ver os detalhes · clique no município para ver clientes e ticket';
+  if(sub) sub.textContent = {fat:'Faturamento por município', margem:'Margem bruta por município', var:'Variação do faturamento vs. período anterior de mesmo tamanho', hab:'Faturamento por mil habitantes (população do Censo 2022)', chev:'Participação de veículos Chevrolet na frota do município (Senatran)', cli:'Clientes distintos com compra no período, por município'}[met]+' · passe o mouse para ver os detalhes · clique no município para ver clientes e ticket';
   var nota = document.getElementById('vxMapNota');
   if(nota) nota.innerHTML = fora.length ? 'Estados com menos de 0,5% do faturamento ficam fora do mapa para ele abrir rápido ('+fora.sort().join(', ')+'); as cidades deles estão na tabela.' : '';
   // camada única em canvas com todos os municípios dos estados carregados
@@ -6894,7 +6904,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
       var cor = o ? esc.cor(o) : 'var(--text-2)';
       tip.innerHTML = '<div class="tn" style="color:'+cor+'">'+escapeHtml(f[1])+' <span style="color:var(--text-muted); font-size:10.5px; font-weight:500;">('+ft.properties.uf+')</span></div>' +
         (o ? '<div class="tg">'+linhaTip('Faturamento', vxM(o.fat))+linhaTip('Lucro bruto', '<span style="color:var(--vx-gr-t)">'+vxM(o.lb)+'</span>')+linhaTip('Margem', vxP(o.mg))+
-          linhaTip('Volume', vxN(o.qtd)+' un.')+linhaTip('Var. anterior', seta(o.vr))+linhaTip('Share', (total>0?(o.fat/total*100).toFixed(2).replace('.',','):'0')+'%')+
+          linhaTip('Volume', vxN(o.qtd)+' un.')+(o.cli!==null ? linhaTip('Clientes', vxN(o.cli)) : '')+linhaTip('Var. anterior', seta(o.vr))+linhaTip('Share', (total>0?(o.fat/total*100).toFixed(2).replace('.',','):'0')+'%')+
           '<div class="sep"></div>'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+(vxChev(f) ? linhaTip('Chevrolet na frota', vxChev(f).pct.toFixed(1).replace('.',',')+'%') : '')+(f[5] ? linhaTip('R$ por mil hab.', vxM(o.fat/f[5]*1000)) : '')+(f[6] ? linhaTip('Peças por mil autos', (o.qtd/f[6]*1000).toFixed(1).replace('.',',')) : '')+'</div>'
           : '<div class="sv">Sem vendas no filtro atual</div><div class="tg">'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+'</div>');
       tip.style.display = 'block'; mover(e);
@@ -7052,6 +7062,8 @@ function vxQuadroLigar(){
   if(tp) tp.onclick = function(ev){ if(!ev.target.closest('.vx-q-sub')) tp.classList.toggle('aberto'); };
 }
 function vxCidCliPronto(){
+  var ms = document.getElementById('vxMapMetrica');
+  if(VX.aba==='regioes' && ms && ms.value==='cli' && !VX.cliRedesenho){ VX.cliRedesenho = true; try{ vxRegioes(); } finally { VX.cliRedesenho = false; } return; }
   if(VX.quadro && VX.popup && VX.map && VX.map.hasLayer(VX.popup)){ VX.popup.setContent(vxQuadroHtml(VX.quadro)); vxQuadroLigar(); }
 }
 function vxTelaCheia(){
