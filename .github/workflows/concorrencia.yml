@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       modo:
-        description: 'coleta (padrão), sonda ou concessionarias (só para desenvolver)'
+        description: 'coleta (padrão), sonda, concessionarias ou ibge (só para desenvolver)'
         required: false
         default: 'coleta'
 
@@ -38,8 +38,17 @@ jobs:
       - name: Sondar o localizador de concessionárias
         if: ${{ github.event.inputs.modo == 'concessionarias' }}
         run: python etl/concessionarias_osm.py SP RJ MG PR SC RS GO DF MS MT ES BA
+      - name: Regiões do IBGE (dado público)
+        if: ${{ github.event.inputs.modo == 'ibge' }}
+        run: |
+          curl -sf https://servicodados.ibge.gov.br/api/v1/localidades/estados/35/municipios | python -c "
+          import json,sys
+          for m in json.load(sys.stdin):
+              ri = m.get('regiao-imediata') or {}; rg = ri.get('regiao-intermediaria') or {}; mi = m.get('microrregiao') or {}
+              print('IBGE|%s|%s|%s|%s|%s' % (m['id'], m['nome'], ri.get('nome',''), rg.get('nome',''), mi.get('nome','')))
+          "
       - name: Coletar preços
-        if: ${{ github.event.inputs.modo != 'sonda' && github.event.inputs.modo != 'concessionarias' }}
+        if: ${{ github.event.inputs.modo != 'sonda' && github.event.inputs.modo != 'concessionarias' && github.event.inputs.modo != 'ibge' }}
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: python etl/concorrencia.py
