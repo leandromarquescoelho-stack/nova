@@ -3,3 +3,8 @@ Contornos: malha municipal do IBGE, via github.com/tbrugz/geodata-br, simplifica
 População: Censo 2022 (IBGE). Frota: só automóveis (Denatran 2019; sem motos, caminhões e ônibus).
 Formato: [nome normalizado, nome, código IBGE, [lat, lng], polígonos, população, frota].
 Não contém dados de venda.
+
+concessionarias.json: concessionárias Chevrolet (concorrentes diretos em peças), camada opcional do mapa.
+Fonte: OpenStreetMap (© colaboradores do OpenStreetMap, licença ODbL), lojas com marca/nome Chevrolet. O site da Chevrolet
+bloqueia acesso automatizado, por isso não é a fonte. A cobertura do OSM é incompleta: pode faltar concessionária.
+Atualizar: Actions > Concorrência > modo "concessionarias" e regerar o arquivo. Não contém dados da empresa.
