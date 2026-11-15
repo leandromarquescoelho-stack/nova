@@ -1627,7 +1627,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <option value="12m">Últimos 12 meses</option>
           <option value="tudo">Todo o histórico</option>
           <option value="custom">Personalizado</option>
-          <option value="fs:novo">Personalizado 2 · criar filtro salvo…</option>
+          <option value="fs:novo">Crie seu filtro</option>
           <optgroup label="Meus filtros" id="fsGrupo" hidden></optgroup>
         </select>
         <button class="tbtn" id="filtersBtn">
@@ -7788,7 +7788,7 @@ function bindEvents(){
   });
 }
 
-/* ---------- filtros salvos ("Personalizado 2"): combinações de filtros com nome, por usuário.
+/* ---------- filtros salvos ("Crie seu filtro"): combinações de filtros com nome, por usuário.
    Ficam no banco (tabela bi_filtros_salvos, cada um vê só os seus) e valem em qualquer aparelho; o navegador guarda uma cópia. ---------- */
 var FS = {lista:[], ativo:null, editando:null};
 function fsChave(){ return 'nc_filtros_salvos_'+((CURRENT_PROFILE && CURRENT_PROFILE.id) || 'anon'); }
