@@ -507,6 +507,8 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vx-q-top:hover .vx-q-sub, .vx-q-top:focus-within .vx-q-sub, .vx-q-top.aberto .vx-q-sub{display:block;}
 .vx-q-sub .vx-q-tt{font-size:10.5px; color:var(--text-muted); margin-bottom:6px; font-weight:600;}
 .vx-q-sub td{vertical-align:top;} .vx-q-sub td:first-child{color:var(--text) !important; font-weight:600; white-space:normal;}
+.vx-q-exp{display:block; width:100%; margin-top:8px; font:inherit; font-size:11.5px; font-weight:700; padding:7px 10px; border-radius:8px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--vx-cy-t); cursor:pointer;}
+.vx-q-exp:hover{border-color:var(--vx-cy);} .vx-q-exp:disabled{opacity:.6; cursor:wait;}
 .vx-q-sub .rk{display:inline-block; width:16px; color:var(--vx-pu-t); font-family:'JetBrains Mono',monospace;}
 .vx-q-sub .sub{font-size:10px; color:var(--text-muted); font-weight:400; margin:1px 0 0 16px;}
 @media(max-width:700px){ .vx-q-sub{position:static; width:auto; margin-top:8px; box-shadow:none;} }
@@ -6404,6 +6406,20 @@ function carregarXlsx(){
     document.head.appendChild(sc);
   });
 }
+// grava .xlsx (ou .csv se a biblioteca não carregar) no computador de quem clicou
+function baixarPlanilha(X, nome, aba, cab, dados, larg){
+  if(X){
+    var ws = X.utils.aoa_to_sheet([cab].concat(dados));
+    if(larg) ws['!cols'] = larg.map(function(w){ return {wch:w}; });
+    ws['!autofilter'] = {ref:X.utils.encode_range({s:{r:0, c:0}, e:{r:dados.length, c:cab.length-1}})};
+    var wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, aba.slice(0,31));
+    X.writeFile(wb, nome+'.xlsx');
+  } else {
+    var csv = '\ufeff' + [cab].concat(dados).map(function(l){ return l.map(function(v){ v = v===null||v===undefined ? '' : String(v); return /[;"\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }).join(';'); }).join('\r\n');
+    var url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'})), lk = document.createElement('a');
+    lk.href = url; lk.download = nome+'.csv'; document.body.appendChild(lk); lk.click(); lk.remove(); setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  }
+}
 function exportarDisponiveis(){
   var bt = document.getElementById('cliExport'); bt.disabled = true;
   toast('Preparando a planilha de clientes disponíveis…');
@@ -6412,17 +6428,7 @@ function exportarDisponiveis(){
     var dl = ((r[0]||{}).linhas||[]).map(cliLinhaObj), X = r[1];
     var cab = ['Código','Razão social','Cidade','Tipo de cliente','Grupo','Pessoa','Último responsável','Equipe','Faturamento 12 meses','Média mensal','Margem %','Última compra','Dias sem compra','Dias com compra (12m)'];
     var dados = dl.map(function(c){ return [c.cod, c.razao, c.cidade, c.tipo, c.grupo, c.pessoa, c.resp, c.equipe, Math.round(c.f12*100)/100, Math.round(c.med*100)/100, c.mg, cliData(c.ult), c.dias, c.ncomp]; });
-    var nome = 'clientes_disponiveis_'+isoDia(DAYS[N_DAYS-1]);
-    if(X){
-      var ws = X.utils.aoa_to_sheet([cab].concat(dados));
-      ws['!cols'] = [10,42,22,18,18,16,26,14,16,14,10,14,14,14].map(function(w){ return {wch:w}; });
-      var wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Disponíveis');
-      X.writeFile(wb, nome+'.xlsx');
-    } else {
-      var csv = '﻿' + [cab].concat(dados).map(function(l){ return l.map(function(v){ v = v===null||v===undefined ? '' : String(v); return /[;"\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }).join(';'); }).join('\r\n');
-      var url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'})), lk = document.createElement('a');
-      lk.href = url; lk.download = nome+'.csv'; document.body.appendChild(lk); lk.click(); lk.remove(); setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
-    }
+    baixarPlanilha(X, 'clientes_disponiveis_'+isoDia(DAYS[N_DAYS-1]), 'Disponíveis', cab, dados, [10,42,22,18,18,16,26,14,16,14,10,14,14,14]);
     toast(fmtUn(dl.length)+' clientes exportados.');
   }).catch(function(){ toast('Não foi possível exportar agora. Tente de novo.'); })
     .then(function(){ bt.disabled = false; });
@@ -7041,7 +7047,7 @@ function vxTopHtml(t){
   return '<div class="vx-q-tt">'+tit+'</div><table>'+t.rows.map(function(c, i){
     var v = t.semVenda ? c.f12 : c.fp;
     return '<tr><td><span class="rk">'+(i+1)+'</span> '+escapeHtml(c.razao.length>30 ? c.razao.slice(0,29)+'…' : c.razao)+'<div class="sub">'+escapeHtml(c.cod)+' · '+escapeHtml(c.resp)+' · última compra '+cliData(c.ult)+'</div></td><td>'+vxM(v)+'</td></tr>';
-  }).join('')+'</table>';
+  }).join('')+'</table><button type="button" class="vx-q-exp" title="Baixa todos os clientes cadastrados neste município, com os filtros atuais">⬇ Listagem completa em Excel</button>';
 }
 // quadro fixo ao clicar no município: faturamento, clientes, ticket médio por cliente (sem mexer no zoom)
 function vxQuadroHtml(q){
@@ -7077,7 +7083,7 @@ function vxQuadroHtml(q){
 function vxQuadroCidade(latlng, o, props, total){
   var q = VX.quadro = {latlng:latlng, o:o, props:props, total:total, top:null};
   vxTopClientes(q).then(function(t){ q.top = t; }).catch(function(){ q.top = {erro:true}; }).then(function(){
-    if(VX.quadro===q){ var el = VX.popup && VX.popup.getElement(), sub = el && el.querySelector('.vx-q-sub'); if(sub) sub.innerHTML = vxTopHtml(q.top); }
+    if(VX.quadro===q){ var el = VX.popup && VX.popup.getElement(), sub = el && el.querySelector('.vx-q-sub'); if(sub){ sub.innerHTML = vxTopHtml(q.top); vxQuadroLigar(); } }
   });
   if(!VX.popup) VX.popup = L.popup({maxWidth:300, minWidth:250, autoPan:true, autoPanPadding:[20,20], className:'vx-pop', closeButton:true});
   VX.popup.setLatLng(latlng).setContent(vxQuadroHtml(VX.quadro)).openOn(VX.map);
@@ -7087,6 +7093,31 @@ function vxQuadroCidade(latlng, o, props, total){
 function vxQuadroLigar(){
   var el = VX.popup && VX.popup.getElement(), tp = el && el.querySelector('.vx-q-top');
   if(tp) tp.onclick = function(ev){ if(!ev.target.closest('.vx-q-sub')) tp.classList.toggle('aberto'); };
+  var ex = el && el.querySelector('.vx-q-exp');
+  if(ex) ex.onclick = function(ev){ ev.stopPropagation(); vxExportarMun(ex); };
+}
+// listagem completa dos clientes do município (mesmos filtros do Top 5), em Excel
+function vxExportarMun(bt){
+  var q = VX.quadro; if(!q) return;
+  var nomes = q.o ? q.o.nomes : vxNomesDoMun(q.props.uf, q.props.id);
+  var ids = nomes.map(function(n){ return (DIMI.cidade||{})[n]; }).filter(function(x){ return x!==undefined; });
+  if(!ids.length){ toast('Nenhum cliente cadastrado neste município.'); return; }
+  var per = painelPeriodo(), f = VX.geo[q.props.uf].lista.filter(function(x){ return x[2]===q.props.id; })[0];
+  var args = {f: q.o ? vxFiltrosLoja() : {}, per:{ini:per.ini, fim:per.fim}, o:{cidade:ids, ordem: q.o ? 'fat' : 'f12', limite:50000}};
+  bt.disabled = true; bt.textContent = 'Preparando a planilha…';
+  Promise.all([window.__NC_rpc('bi_clientes', args), carregarXlsx().catch(function(){ return null; })]).then(function(r){
+    var dl = ((r[0]||{}).linhas||[]).map(cliLinhaObj), X = r[1];
+    var cab = ['Código','Razão social','Cidade','Tipo de cliente','Grupo','Pessoa','Último responsável','Equipe',
+      'Faturamento no período','Lucro bruto no período','Margem no período %','Faturamento 12 meses','Média mensal (12m)','Margem 12m %',
+      'Última compra','Dias sem compra','Dias com compra (12m)','Intervalo médio entre compras (dias)','Situação'];
+    var dados = dl.map(function(c){ return [c.cod, c.razao, c.cidade, c.tipo, c.grupo, c.pessoa, c.resp, c.equipe,
+      Math.round(c.fp*100)/100, Math.round(c.lp*100)/100, c.fp>0 ? Math.round(c.lp/c.fp*1000)/10 : null,
+      Math.round(c.f12*100)/100, Math.round(c.med*100)/100, c.mg, cliData(c.ult), c.dias, c.ncomp, c.intv, (TERMO[c.termo]||{}).t || c.termo || '']; });
+    var nome = 'clientes_'+vxSemAcento(f ? f[1] : 'municipio').replace(/[^A-Z0-9]+/g, '_').toLowerCase()+'_'+q.props.uf.toLowerCase()+'_'+per.ini+'_a_'+per.fim;
+    baixarPlanilha(X, nome, f ? f[1] : 'Clientes', cab, dados, [10,42,22,18,18,14,26,14,16,16,12,16,14,10,13,12,12,14,24]);
+    toast(fmtUn(dl.length)+' clientes exportados.');
+  }).catch(function(){ toast('Não foi possível exportar agora. Tente de novo.'); })
+    .then(function(){ bt.disabled = false; bt.textContent = '⬇ Listagem completa em Excel'; });
 }
 function vxCidCliPronto(){
   var ms = document.getElementById('vxMapMetrica');
