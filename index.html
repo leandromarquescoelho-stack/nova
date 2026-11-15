@@ -1135,6 +1135,18 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 
 /* ===== Planejamento (apresentação) ===== */
 .pl-guias{display:flex; gap:8px; margin-bottom:14px;}
+.pl-guias button:disabled{opacity:.45; cursor:not-allowed;}
+.pl-edbar{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:-4px 0 12px; padding:10px 12px; border-radius:12px; border:1px dashed rgba(242,200,17,.55); background:rgba(242,200,17,.07);}
+.pl-edbar[hidden]{display:none;}
+.pl-edtxt{font-size:12.5px; font-weight:700; color:var(--text); margin-right:auto;}
+.pl-edsep{width:1px; height:22px; background:var(--border-strong);}
+.pl-edbar button, .pl-editar{font:inherit; font-size:12.5px; font-weight:700; padding:7px 12px; border-radius:9px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); cursor:pointer;}
+.pl-edbar button:disabled{opacity:.4; cursor:not-allowed;}
+.pl-edbar .pl-edsalvar{background:var(--pbi-grad); color:var(--pbi-ink); border-color:transparent;}
+.pl-editar[hidden]{display:none;}
+.pl-editando .pl-ed{outline:1px dashed rgba(242,200,17,.55); outline-offset:2px; border-radius:3px; cursor:text; min-width:12px; display:inline-block;}
+.pl-editando .pl-ed:hover{background:rgba(242,200,17,.08);}
+.pl-editando .pl-ed:focus{outline:2px solid #F2C811; background:rgba(242,200,17,.12);}
 .pl-guias button{font:inherit; font-size:14px; font-weight:800; padding:9px 22px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); cursor:pointer;}
 .pl-guias button.on{background:var(--pbi-grad); color:var(--pbi-ink); border-color:transparent; box-shadow:var(--pbi-glow);}
 .pl-wrap{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:12px;}
@@ -2188,7 +2200,17 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <!-- ============ PLANEJAMENTO ============ -->
       <section class="view-panel" data-view-panel="planejamento" style="display:none;">
-        <div class="pl-guias" id="plGuias" role="tablist"><button type="button" class="on" data-ano="2027" role="tab" aria-selected="true">2027</button></div>
+        <div class="pl-guias" id="plGuias" role="tablist"><button type="button" class="on" data-ano="2027" role="tab" aria-selected="true">2027</button><button type="button" data-ano="2027v2" role="tab" aria-selected="false">2027 v2</button></div>
+        <div class="pl-edbar" id="plEdBar" hidden>
+          <span class="pl-edtxt">Modo edição: clique num texto ou número do slide para alterar.</span>
+          <button type="button" data-op="esq" title="Mover este slide para a esquerda">&#9664; Mover</button>
+          <button type="button" data-op="dir" title="Mover este slide para a direita">Mover &#9654;</button>
+          <button type="button" data-op="dup" title="Duplicar este slide">Duplicar</button>
+          <button type="button" data-op="del" title="Excluir este slide">Excluir slide</button>
+          <span class="pl-edsep"></span>
+          <button type="button" data-op="cancelar">Cancelar</button>
+          <button type="button" data-op="salvar" class="pl-edsalvar">Salvar</button>
+        </div>
         <div class="pl-wrap" id="plWrap">
           <div class="pl-stage" id="plStage"><div class="pl-msg status-txt">Carregando a apresentação…</div></div>
           <div class="pl-ctrl">
@@ -2196,6 +2218,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             <div class="pl-dots" id="plDots"></div>
             <span class="pl-num mono" id="plNum"></span>
             <button type="button" class="pl-nav" id="plProx" aria-label="Próximo slide">&#8250;</button>
+            <button type="button" class="pl-editar" id="plEditar" hidden title="Editar textos e números desta apresentação">&#9998; Editar</button>
             <button type="button" class="pl-apres" id="plApres" title="Apresentar em tela cheia (setas do teclado para navegar, Esc para sair)">&#9654; Apresentar</button>
           </div>
         </div>
@@ -2986,7 +3009,8 @@ function ccTabela(){
 /* ============================================================
    PLANEJAMENTO: apresentação anual (conteúdo no banco, só para quem vê todas as lojas)
    ============================================================ */
-var PL = {ano:'2027', dados:{}, idx:0, carregando:{}};
+var PL = {ano:'2027', dados:{}, idx:0, carregando:{}, edit:false, rasc:null};
+function plDoc(){ return PL.edit ? PL.rasc : PL.dados[PL.ano]; }
 function plEsc(t){ return escapeHtml(String(t==null?'':t)); }
 function plPct(v, casas){ var c = casas==null ? 1 : casas; return (v>=0?'+':'')+v.toFixed(c).replace('.',',')+'%'; }
 function renderPlanejamento(){
@@ -3015,40 +3039,44 @@ function plReal(){
   return {porC:porC, tot:tot, n:fech.length, porT:porT, mesesT:mesesT, ultMes:fech.length ? REAL.monthLabels[fech[fech.length-1].mi] : ''};
 }
 function plSlide(sl, i, n, D){
-  var topo = '<div class="pl-top"><span class="pl-tag">'+plEsc(D.titulo)+'</span><span class="pl-pg">'+(i+1)+' / '+n+'</span></div>';
-  var h = '<h3 class="pl-h">'+plEsc(sl.titulo)+'</h3>', c = '';
+  var P = 'slides.'+i+'.';
+  function E(v, p){ return '<span class="pl-ed" data-p="'+p+'">'+plEsc(v)+'</span>'; }
+  function N(v, p, txt){ return '<span class="pl-ed" data-p="'+p+'" data-num="1">'+txt+'</span>'; }
+  var topo = '<div class="pl-top"><span class="pl-tag">'+E(D.titulo,'titulo')+'</span><span class="pl-pg">'+(i+1)+' / '+n+'</span></div>';
+  var h = '<h3 class="pl-h">'+E(sl.titulo,P+'titulo')+'</h3>', c = '';
   if(sl.tipo==='capa'){
-    return '<div class="pl-slide pl-capa">'+topo+'<h2 class="pl-big">'+plEsc(sl.titulo)+'</h2><div class="pl-sub">'+plEsc(sl.sub)+'</div>' +
-      (sl.destaque ? '<div class="pl-meta"><div><span>'+plEsc(sl.destaque.rotulo)+'</span><em>'+plEsc(sl.destaque.nota)+'</em></div><b>'+plEsc(sl.destaque.valor)+'</b></div>' : '') +
-      '<div class="pl-rod">'+plEsc(sl.rodape)+(D.data ? ' · Atualizado em '+plEsc(D.data) : '')+'</div></div>';
+    return '<div class="pl-slide pl-capa">'+topo+'<h2 class="pl-big">'+E(sl.titulo,P+'titulo')+'</h2><div class="pl-sub">'+E(sl.sub,P+'sub')+'</div>' +
+      (sl.destaque ? '<div class="pl-meta"><div><span>'+E(sl.destaque.rotulo,P+'destaque.rotulo')+'</span><em>'+E(sl.destaque.nota,P+'destaque.nota')+'</em></div><b>'+E(sl.destaque.valor,P+'destaque.valor')+'</b></div>' : '') +
+      '<div class="pl-rod">'+E(sl.rodape,P+'rodape')+(D.data!=null ? ' · Atualizado em '+E(D.data,'data') : '')+'</div></div>';
   }
   if(sl.tipo==='pontos'){
-    c = '<div class="pl-pontos">'+sl.itens.map(function(x, k){ return '<div class="pl-ponto"><i>'+(k+1)+'</i><div><b>'+plEsc(x.t)+'</b><p>'+plEsc(x.d)+'</p></div></div>'; }).join('')+'</div>';
+    c = '<div class="pl-pontos">'+sl.itens.map(function(x, k){ return '<div class="pl-ponto"><i>'+(k+1)+'</i><div><b>'+E(x.t,P+'itens.'+k+'.t')+'</b><p>'+E(x.d,P+'itens.'+k+'.d')+'</p></div></div>'; }).join('')+'</div>';
   }
   if(sl.tipo==='cards'){
-    c = '<div class="pl-cards">'+sl.itens.map(function(x){ return '<div class="pl-card"><span class="n">'+plEsc(x.n)+'</span><b>'+plEsc(x.t)+'</b><p>'+plEsc(x.d)+'</p>'+(x.acao ? '<div class="ac">'+plEsc(x.acao)+'</div>' : '')+'</div>'; }).join('')+'</div>';
+    c = '<div class="pl-cards">'+sl.itens.map(function(x, k){ var q = P+'itens.'+k+'.'; return '<div class="pl-card"><span class="n">'+E(x.n,q+'n')+'</span><b>'+E(x.t,q+'t')+'</b><p>'+E(x.d,q+'d')+'</p>'+(x.acao!=null ? '<div class="ac">'+E(x.acao,q+'acao')+'</div>' : '')+'</div>'; }).join('')+'</div>';
   }
   if(sl.tipo==='tabela'){
-    c = '<table class="pl-tab"><thead><tr>'+sl.cab.map(function(x){ return '<th>'+plEsc(x)+'</th>'; }).join('')+'</tr></thead><tbody>' +
-      sl.linhas.map(function(l){ return '<tr>'+l.map(function(x){ return '<td>'+plEsc(x)+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table>' +
-      (sl.notas ? '<div class="pl-notas">'+sl.notas.map(function(x){ return '<div class="pl-nota"><b>'+plEsc(x.t)+'</b><p>'+plEsc(x.d)+'</p></div>'; }).join('')+'</div>' : '');
+    c = '<table class="pl-tab"><thead><tr>'+sl.cab.map(function(x, k){ return '<th>'+E(x,P+'cab.'+k)+'</th>'; }).join('')+'</tr></thead><tbody>' +
+      sl.linhas.map(function(l, r){ return '<tr>'+l.map(function(x, k){ return '<td>'+E(x,P+'linhas.'+r+'.'+k)+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table>' +
+      (sl.notas ? '<div class="pl-notas">'+sl.notas.map(function(x, k){ return '<div class="pl-nota"><b>'+E(x.t,P+'notas.'+k+'.t')+'</b><p>'+E(x.d,P+'notas.'+k+'.d')+'</p></div>'; }).join('')+'</div>' : '');
   }
   if(sl.tipo==='cenarios'){
     var cor = {ruim:'var(--critical)', base:'#F2C811', bom:'var(--good)'};
-    c = '<div class="pl-logica">'+plEsc(sl.logica)+'</div><div class="pl-cen">'+sl.itens.map(function(x){
-      return '<div style="--c:'+(cor[x.tom]||'#F2C811')+'"><h4>'+plEsc(x.t)+'</h4><div class="v">'+plEsc(x.nominal)+'</div><div class="r">Real (vs IPCA ~4,9%): <b>'+plEsc(x.real)+'</b></div><p>'+plEsc(x.premissas)+'</p></div>';
-    }).join('')+'</div>'+(sl.rodape ? '<div class="pl-rod">'+plEsc(sl.rodape)+'</div>' : '');
+    c = '<div class="pl-logica">'+E(sl.logica,P+'logica')+'</div><div class="pl-cen">'+sl.itens.map(function(x, k){ var q = P+'itens.'+k+'.';
+      return '<div style="--c:'+(cor[x.tom]||'#F2C811')+'"><h4>'+E(x.t,q+'t')+'</h4><div class="v">'+E(x.nominal,q+'nominal')+'</div><div class="r">Real (vs IPCA ~4,9%): <b>'+E(x.real,q+'real')+'</b></div><p>'+E(x.premissas,q+'premissas')+'</p></div>';
+    }).join('')+'</div>'+(sl.rodape!=null ? '<div class="pl-rod">'+E(sl.rodape,P+'rodape')+'</div>' : '');
   }
   if(sl.tipo==='canais'){
     var R0 = plReal(), temReal = R0.tot>0, mix = {}, somaMix = 0;
     sl.canais.forEach(function(x){ var v = temReal ? (R0.porC[x.canal]||0) : (sl.mixIlustrativo[x.canal]||0); mix[x.canal] = v; somaMix += v; });
     function cons(k){ return somaMix ? sl.canais.reduce(function(a,x){ return a + mix[x.canal]/somaMix*x[k]; }, 0) : 0; }
     var cC = cons('cons'), cB = cons('base'), cD = cons('des'), anual = temReal ? 12/R0.n : 0;
-    var maxV = Math.max.apply(null, sl.canais.map(function(x){ return x.des; })) * 1.12;
+    var maxV = Math.max.apply(null, sl.canais.map(function(x){ return Math.max(x.des, x.base, x.cons); })) * 1.12;
     c = '<div class="pl-canais"><table class="pl-tab"><thead><tr><th>Canal</th><th class="num">Mix '+(temReal?'real 2026':'ilustr.')+'</th><th class="num">Conserv.</th><th class="num">Base</th><th class="num">Desafio</th>'+(temReal?'<th class="num">Meta 2027 (base)</th>':'')+'</tr></thead><tbody>' +
-      sl.canais.map(function(x){
+      sl.canais.map(function(x, k){
+        var q = P+'canais.'+k+'.';
         var base26 = (R0.porC[x.canal]||0)*anual;
-        return '<tr title="'+plEsc(x.racional)+'"><td><span class="pl-dot" style="background:'+canalCor(x.canal)+'"></span>'+plEsc(x.nome)+'</td><td class="num">'+(somaMix ? (mix[x.canal]/somaMix*100).toFixed(0)+'%' : '—')+'</td><td class="num">'+plPct(x.cons)+'</td><td class="num forte">'+plPct(x.base)+'</td><td class="num">'+plPct(x.des)+'</td>'+(temReal?'<td class="num">'+fmtCurto(base26*(1+x.base/100))+'</td>':'')+'</tr>';
+        return '<tr title="'+plEsc(x.racional)+'"><td><span class="pl-dot" style="background:'+canalCor(x.canal)+'"></span>'+E(x.nome,q+'nome')+'</td><td class="num">'+(somaMix ? (mix[x.canal]/somaMix*100).toFixed(0)+'%' : '—')+'</td><td class="num">'+N(x.cons,q+'cons',plPct(x.cons))+'</td><td class="num forte">'+N(x.base,q+'base',plPct(x.base))+'</td><td class="num">'+N(x.des,q+'des',plPct(x.des))+'</td>'+(temReal?'<td class="num">'+fmtCurto(base26*(1+x.base/100))+'</td>':'')+'</tr>';
       }).join('') +
       '<tr class="tot"><td>Consolidado</td><td class="num">100%</td><td class="num">'+plPct(cC)+'</td><td class="num forte">'+plPct(cB)+'</td><td class="num">'+plPct(cD)+'</td>'+(temReal?'<td class="num">'+fmtCurto(R0.tot*anual*(1+cB/100))+'</td>':'')+'</tr></tbody></table>' +
       '<div class="pl-barras"><div class="tit">Meta base por canal · traço = faixa conservador a desafio</div>' +
@@ -3059,7 +3087,7 @@ function plSlide(sl, i, n, D){
     var dif = cB - sl.consolidadoDoc.base;
     c += '<div class="pl-insight">' + (temReal
       ? '<b>Com o mix real de 2026</b> (jan a '+plEsc(R0.ultMes.toLowerCase())+', filtros aplicados), a meta base consolidada fica em <b>'+plPct(cB)+'</b>, contra '+plPct(sl.consolidadoDoc.base)+' no estudo com mix ilustrativo ('+(dif>=0?'+':'')+dif.toFixed(1).replace('.',',')+' p.p.). Base 2026 anualizada: '+fmtCurto(R0.tot*anual)+' → meta 2027: <b>'+fmtCurto(R0.tot*anual*(1+cB/100))+'</b>. '
-      : 'Mix ilustrativo do estudo. ') + plEsc(sl.decomposicao) + '</div>';
+      : 'Mix ilustrativo do estudo. ') + E(sl.decomposicao,P+'decomposicao') + '</div>';
   }
   if(sl.tipo==='trimestres'){
     var R1 = plReal(), maxT = Math.max.apply(null, sl.itens.map(function(x){ return x.v; }));
@@ -3068,38 +3096,96 @@ function plSlide(sl, i, n, D){
     var temP = somaP>0 && pesos.every(function(v){ return v>0; });
     var pond = temP ? sl.itens.reduce(function(a,x,t){ return a + x.v*pesos[t]/somaP; }, 0) : 0;
     c = '<div class="pl-tri">'+sl.itens.map(function(x, t){
-      return '<div><div class="col" style="height:'+(x.v/maxT*62)+'%"><span>'+plPct(x.v,0)+'</span></div><b>'+plEsc(x.t)+'</b><p>'+plEsc(x.d)+'</p>'+(temP ? '<div class="peso">peso 2026: '+(pesos[t]/somaP*100).toFixed(0)+'%'+(R1.mesesT[t]<3?'*':'')+'</div>' : '')+'</div>';
+      return '<div><div class="col" style="height:'+(x.v/maxT*62)+'%"><span>'+N(x.v,P+'itens.'+t+'.v',plPct(x.v,0))+'</span></div><b>'+E(x.t,P+'itens.'+t+'.t')+'</b><p>'+E(x.d,P+'itens.'+t+'.d')+'</p>'+(temP ? '<div class="peso">peso 2026: '+(pesos[t]/somaP*100).toFixed(0)+'%'+(R1.mesesT[t]<3?'*':'')+'</div>' : '')+'</div>';
     }).join('')+'</div>' +
     '<div class="pl-insight">'+(temP ? '<b>Ponderado pelo peso real de cada trimestre em 2026: '+plPct(pond)+'</b> no ano. * trimestre com mês ainda aberto, completado pela média mensal dos meses fechados.' : 'Ponderado pelo peso típico de cada trimestre, o resultado fica perto de +7%.')+'</div>';
   }
   if(sl.tipo==='acomp'){
-    c = '<div class="pl-acomp"><div><h4>Acompanhar todo mês</h4><ul>'+sl.indicadores.map(function(x){ return '<li>'+plEsc(x)+'</li>'; }).join('')+'</ul></div>' +
-      '<div><h4>Gatilhos de revisão</h4><ul>'+sl.gatilhos.map(function(x){ return '<li><b>'+plEsc(x.t)+'</b>: '+plEsc(x.d)+'</li>'; }).join('')+'</ul></div>' +
-      '<div><h4>Próximos passos</h4><ol>'+sl.passos.map(function(x){ return '<li>'+plEsc(x)+'</li>'; }).join('')+'</ol></div></div>' +
-      (D.fontes ? '<div class="pl-rod">Fontes: '+D.fontes.map(plEsc).join(' · ')+'</div>' : '');
+    c = '<div class="pl-acomp"><div><h4>Acompanhar todo mês</h4><ul>'+sl.indicadores.map(function(x, k){ return '<li>'+E(x,P+'indicadores.'+k)+'</li>'; }).join('')+'</ul></div>' +
+      '<div><h4>Gatilhos de revisão</h4><ul>'+sl.gatilhos.map(function(x, k){ return '<li><b>'+E(x.t,P+'gatilhos.'+k+'.t')+'</b>: '+E(x.d,P+'gatilhos.'+k+'.d')+'</li>'; }).join('')+'</ul></div>' +
+      '<div><h4>Próximos passos</h4><ol>'+sl.passos.map(function(x, k){ return '<li>'+E(x,P+'passos.'+k)+'</li>'; }).join('')+'</ol></div></div>' +
+      (D.fontes ? '<div class="pl-rod">Fontes: '+D.fontes.map(function(x, k){ return E(x,'fontes.'+k); }).join(' · ')+'</div>' : '');
   }
   return '<div class="pl-slide">'+topo+h+'<div class="pl-corpo">'+c+'</div></div>';
 }
 function plMontar(){
-  var D = PL.dados[PL.ano], st = document.getElementById('plStage'), n = D.slides.length;
+  var D = plDoc(), st = document.getElementById('plStage'), n = D.slides.length;
   st.innerHTML = D.slides.map(function(sl, i){ return plSlide(sl, i, n, D); }).join('');
+  var ed = document.getElementById('plEditar'); if(ed) ed.hidden = !(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi') || PL.edit;
+  if(PL.edit) Array.prototype.forEach.call(st.querySelectorAll('.pl-ed'), function(el){
+    try{ el.contentEditable = 'plaintext-only'; } catch(e){ el.contentEditable = 'true'; }
+    if(el.contentEditable!=='plaintext-only') el.contentEditable = 'true';
+    el.spellcheck = true;
+  });
   document.getElementById('plDots').innerHTML = D.slides.map(function(sl, i){ return '<button type="button" data-i="'+i+'" title="'+plEsc(sl.titulo)+'" aria-label="Slide '+(i+1)+'"></button>'; }).join('');
   plIr(Math.min(PL.idx, n-1));
 }
 function plIr(i){
-  var D = PL.dados[PL.ano]; if(!D) return;
+  var D = plDoc(); if(!D) return;
   var n = D.slides.length; i = Math.max(0, Math.min(n-1, i)); PL.idx = i;
   Array.prototype.forEach.call(document.querySelectorAll('#plStage .pl-slide'), function(el, k){ el.classList.toggle('on', k===i); el.classList.toggle('antes', k<i); });
   Array.prototype.forEach.call(document.querySelectorAll('#plDots button'), function(el, k){ el.classList.toggle('on', k===i); });
   document.getElementById('plNum').textContent = (i+1)+' / '+n;
   document.getElementById('plAnt').disabled = i===0; document.getElementById('plProx').disabled = i===n-1;
+  if(PL.edit){
+    var bar = document.getElementById('plEdBar');
+    bar.querySelector('[data-op="esq"]').disabled = i===0; bar.querySelector('[data-op="dir"]').disabled = i===n-1;
+    bar.querySelector('[data-op="del"]').disabled = n<=1;
+  }
+}
+/* ---- modo edição (perfil BI): textos e números editáveis no próprio slide; salva no banco (bi_conteudo_gravar) ---- */
+function plSetPath(o, p, v){
+  var ks = p.split('.'), x = o;
+  for(var k=0; k<ks.length-1; k++){ if(x[ks[k]]==null) return; x = x[ks[k]]; }
+  x[ks[ks.length-1]] = v;
+}
+function plColetar(){
+  if(!PL.edit) return;
+  Array.prototype.forEach.call(document.querySelectorAll('#plStage .pl-ed'), function(el){
+    var t = (el.textContent||'').replace(/\s+/g, ' ').trim(), p = el.getAttribute('data-p');
+    if(el.hasAttribute('data-num')){
+      var v = parseFloat(t.replace(/[^0-9,.\-]/g, '').replace(',', '.'));
+      if(!isNaN(v)) plSetPath(PL.rasc, p, v);
+    } else plSetPath(PL.rasc, p, t);
+  });
+}
+function plModoEdicao(on){
+  PL.edit = on;
+  PL.rasc = on ? JSON.parse(JSON.stringify(PL.dados[PL.ano])) : null;
+  document.getElementById('plWrap').classList.toggle('pl-editando', on);
+  document.getElementById('plEdBar').hidden = !on;
+  Array.prototype.forEach.call(document.querySelectorAll('#plGuias button'), function(b){ b.disabled = on; });
+  plMontar();
+}
+function plOperar(op){
+  if(!PL.edit) return;
+  plColetar();
+  var S = PL.rasc.slides, i = PL.idx;
+  if(op==='esq' && i>0){ S.splice(i-1, 0, S.splice(i, 1)[0]); PL.idx = i-1; }
+  else if(op==='dir' && i<S.length-1){ S.splice(i+1, 0, S.splice(i, 1)[0]); PL.idx = i+1; }
+  else if(op==='dup'){ S.splice(i+1, 0, JSON.parse(JSON.stringify(S[i]))); PL.idx = i+1; }
+  else if(op==='del' && S.length>1){ S.splice(i, 1); PL.idx = Math.min(i, S.length-1); toast('Slide excluído. Ele só some de vez quando você salvar.'); }
+  else if(op==='cancelar'){ plModoEdicao(false); toast('Alterações descartadas.'); return; }
+  else if(op==='salvar'){ plSalvar(); return; }
+  plMontar();
+}
+function plSalvar(){
+  plColetar();
+  var hoje = new Date(), ano = PL.ano, doc = PL.rasc;
+  doc.data = String(hoje.getDate()).padStart(2,'0')+'/'+String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();
+  var bt = document.querySelector('#plEdBar [data-op="salvar"]'); bt.disabled = true; bt.textContent = 'Salvando…';
+  supa.rpc('bi_conteudo_gravar', {p_chave: 'planejamento_'+ano, p_valor: doc}).then(function(r){
+    bt.disabled = false; bt.textContent = 'Salvar';
+    if(r.error){ toast('Não foi possível salvar: '+(r.error.message||'erro')); return; }
+    PL.dados[ano] = doc; plModoEdicao(false); toast('Apresentação salva.');
+  });
 }
 function plLigar(){
   document.getElementById('plAnt').addEventListener('click', function(){ plIr(PL.idx-1); });
   document.getElementById('plProx').addEventListener('click', function(){ plIr(PL.idx+1); });
   document.getElementById('plDots').addEventListener('click', function(e){ var b = e.target.closest('button'); if(b) plIr(+b.getAttribute('data-i')); });
   document.getElementById('plStage').addEventListener('click', function(e){
-    if(!document.fullscreenElement || e.target.closest('a,button,table')) return;
+    if(PL.edit || !document.fullscreenElement || e.target.closest('a,button,table')) return;
     var r = this.getBoundingClientRect(); plIr(PL.idx + (e.clientX - r.left < r.width*0.3 ? -1 : 1));
   });
   document.getElementById('plApres').addEventListener('click', function(){
@@ -3107,13 +3193,22 @@ function plLigar(){
     if(document.fullscreenElement){ document.exitFullscreen(); return; }
     if(w.requestFullscreen) w.requestFullscreen().catch(function(){});
   });
+  document.getElementById('plEditar').addEventListener('click', function(){ if(PL.dados[PL.ano]) plModoEdicao(true); });
+  document.getElementById('plEdBar').addEventListener('click', function(e){ var b = e.target.closest('button[data-op]'); if(b && !b.disabled) plOperar(b.getAttribute('data-op')); });
+  // número alterado: refaz os cálculos do slide (consolidado, metas, ponderação) ao sair do campo
+  document.getElementById('plStage').addEventListener('focusout', function(e){
+    if(PL.edit && e.target.hasAttribute && e.target.hasAttribute('data-num')){ plColetar(); plMontar(); }
+  });
+  document.getElementById('plStage').addEventListener('keydown', function(e){
+    if(PL.edit && e.key==='Enter' && e.target.isContentEditable && !e.shiftKey){ e.preventDefault(); e.target.blur(); }
+  });
   document.getElementById('plGuias').addEventListener('click', function(e){
-    var b = e.target.closest('button[data-ano]'); if(!b) return;
+    var b = e.target.closest('button[data-ano]'); if(!b || PL.edit) return;
     Array.prototype.forEach.call(this.querySelectorAll('button'), function(x){ x.classList.toggle('on', x===b); x.setAttribute('aria-selected', x===b ? 'true' : 'false'); });
     PL.ano = b.getAttribute('data-ano'); PL.idx = 0; renderPlanejamento();
   });
   document.addEventListener('keydown', function(e){
-    if(state.currentView!=='planejamento' || /INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||'')) return;
+    if(state.currentView!=='planejamento' || /INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||'') || (e.target && e.target.isContentEditable)) return;
     if(e.key==='ArrowRight' || e.key==='PageDown' || (e.key===' ' && document.fullscreenElement)){ e.preventDefault(); plIr(PL.idx+1); }
     else if(e.key==='ArrowLeft' || e.key==='PageUp'){ e.preventDefault(); plIr(PL.idx-1); }
     else if(e.key==='Home'){ plIr(0); } else if(e.key==='End'){ plIr(1e9); }
