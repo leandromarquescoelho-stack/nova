@@ -478,6 +478,8 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 #vxMapWrap .leaflet-container{background:var(--surface-2); font:inherit;}
 #vxMapTip{position:absolute; z-index:1000; background:var(--surface); border:1px solid var(--border-strong); border-radius:10px; padding:10px 13px; pointer-events:none; display:none; min-width:200px; max-width:260px; box-shadow:0 6px 24px rgba(0,0,0,.35); font-size:11.5px;}
 #vxMapTip .tn{font-family:'Sora',sans-serif; font-weight:700; font-size:13px; margin-bottom:6px;}
+#vxMapTip .tcli{display:inline-flex; align-items:baseline; gap:5px; margin:-2px 0 8px; padding:3px 9px; border-radius:7px; background:rgba(34,211,238,.12); border:1px solid rgba(34,211,238,.35); color:var(--vx-cy-t); font-size:11px; font-weight:600;}
+#vxMapTip .tcli b{font-family:'Sora',sans-serif; font-size:15px; font-weight:800;}
 #vxMapTip .tg{display:grid; grid-template-columns:auto auto; gap:3px 14px;}
 #vxMapTip .tg span:nth-child(odd){color:var(--text-muted);}
 #vxMapTip .tg span:nth-child(even){font-family:'JetBrains Mono',monospace; text-align:right;}
@@ -6935,8 +6937,10 @@ function vxDesenharMapa(cids, total, ufs, fora){
       var pop = f[5] ? vxN(f[5]) : '—', fro = f[6] ? vxN(f[6]) : '—';
       var cor = o ? esc.cor(o) : 'var(--text-2)';
       tip.innerHTML = '<div class="tn" style="color:'+cor+'">'+escapeHtml(f[1])+' <span style="color:var(--text-muted); font-size:10.5px; font-weight:500;">('+ft.properties.uf+')</span></div>' +
-        (o ? '<div class="tg">'+linhaTip('Faturamento', vxM(o.fat))+linhaTip('Lucro bruto', '<span style="color:var(--vx-gr-t)">'+vxM(o.lb)+'</span>')+linhaTip('Margem', vxP(o.mg))+
-          linhaTip('Volume', vxN(o.qtd)+' un.')+(o.cli!==null ? linhaTip('Clientes', vxN(o.cli)) : '')+linhaTip('Var. anterior', seta(o.vr))+linhaTip('Share', (total>0?(o.fat/total*100).toFixed(2).replace('.',','):'0')+'%')+
+        (o ? (function(){ var n = null; if(CID_CLI){ n = 0; o.nomes.forEach(function(k){ var c = CID_CLI[k]; if(c) n += c.n; }); }
+              return '<div class="tcli">'+(n!==null ? '<b>'+vxN(n)+'</b> '+(n===1 ? 'cliente' : 'clientes')+' com compra' : (CID_CLI_ERRO ? 'clientes indisponível' : 'carregando clientes…'))+'</div>'; })() +
+          '<div class="tg">'+linhaTip('Faturamento', vxM(o.fat))+linhaTip('Lucro bruto', '<span style="color:var(--vx-gr-t)">'+vxM(o.lb)+'</span>')+linhaTip('Margem', vxP(o.mg))+
+          linhaTip('Volume', vxN(o.qtd)+' un.')+linhaTip('Var. anterior', seta(o.vr))+linhaTip('Share', (total>0?(o.fat/total*100).toFixed(2).replace('.',','):'0')+'%')+
           '<div class="sep"></div>'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+(vxChev(f) ? linhaTip('Chevrolet na frota', vxChev(f).pct.toFixed(1).replace('.',',')+'%') : '')+(f[5] ? linhaTip('R$ por mil hab.', vxM(o.fat/f[5]*1000)) : '')+(f[6] ? linhaTip('Peças por mil autos', (o.qtd/f[6]*1000).toFixed(1).replace('.',',')) : '')+'</div>'
           : '<div class="sv">Sem vendas no filtro atual</div><div class="tg">'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+'</div>');
       tip.style.display = 'block'; mover(e);
