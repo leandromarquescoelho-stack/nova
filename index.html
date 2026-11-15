@@ -487,6 +487,7 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vx-full-btn:hover{border-color:var(--vx-cy); color:var(--vx-cy-t);}
 #vxMapCard:fullscreen, #vxMapCard.vx-full{display:flex; flex-direction:column; margin:0; border-radius:0; padding:16px 18px; background:var(--surface); overflow:auto;}
 #vxMapCard.vx-full{position:fixed; inset:0; z-index:2000;}
+#vxMapCard > .filter-rail{z-index:1200;}
 #vxMapCard:fullscreen #vxMapWrap, #vxMapCard.vx-full #vxMapWrap{flex:1; height:auto; min-height:300px;}
 #vxMapWrap .leaflet-control-attribution{background:rgba(0,0,0,.35); color:var(--text-muted); font-size:10px;}
 :root[data-theme="light"] #vxMapWrap .leaflet-control-attribution{background:rgba(255,255,255,.7);}
@@ -1930,6 +1931,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
               <label id="vxMapRegL" hidden>Região<select class="fsel" id="vxMapReg"><option value="">Todas</option></select></label>
               <label class="vx-chk"><input type="checkbox" id="vxMapLojas" checked> Lojas</label>
               <label class="vx-chk" title="Concessionárias Chevrolet (com venda de peças), fonte: OpenStreetMap"><input type="checkbox" id="vxMapConc"> Concessionárias Chevrolet</label>
+              <button type="button" class="vx-full-btn" id="vxMapFiltros" title="Abrir os filtros do painel sem sair do mapa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Filtros</span></button>
               <button type="button" class="vx-full-btn" id="vxMapFull" title="Ver o mapa em tela cheia" aria-label="Ver o mapa em tela cheia"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tela cheia</span></button>
             </div>
           </div>
@@ -7106,10 +7108,20 @@ function vxAoTrocarTela(){
   var cheia = document.fullscreenElement===card || card.classList.contains('vx-full');
   btn.querySelector('span').textContent = cheia ? 'Sair da tela cheia' : 'Tela cheia';
   btn.title = cheia ? 'Sair da tela cheia (Esc)' : 'Ver o mapa em tela cheia';
+  // em tela cheia só o card aparece: leva a barra de filtros para dentro dele e devolve ao sair
+  var rail = document.getElementById('filterRail');
+  if(rail){
+    if(!VX.railCasa) VX.railCasa = {pai:rail.parentNode, prox:rail.nextSibling};
+    if(cheia && rail.parentNode!==card) card.appendChild(rail);
+    else if(!cheia && rail.parentNode===card){ rail.classList.remove('pinned'); VX.railCasa.pai.insertBefore(rail, VX.railCasa.prox); }
+  }
   setTimeout(function(){ if(VX.map) VX.map.invalidateSize(); }, 150);
 }
 function vxLigar(){
   document.getElementById('vxMapFull').addEventListener('click', vxTelaCheia);
+  document.getElementById('vxMapFiltros').addEventListener('click', function(){
+    var rail = document.getElementById('filterRail'); rail.classList.remove('recolhido'); rail.classList.toggle('pinned');
+  });
   document.addEventListener('fullscreenchange', vxAoTrocarTela);
   document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ var c = document.getElementById('vxMapCard'); if(c.classList.contains('vx-full')){ c.classList.remove('vx-full'); vxAoTrocarTela(); } } });
   document.getElementById('vxAbas').addEventListener('click', function(ev){
@@ -7422,7 +7434,7 @@ function bindEvents(){
   });
   document.addEventListener('click', function(e){
     var rail = document.getElementById('filterRail');
-    if(rail.classList.contains('pinned') && !rail.contains(e.target) && document.body.contains(e.target) && !e.target.closest('#filtersBtn')){ rail.classList.remove('pinned'); }
+    if(rail.classList.contains('pinned') && !rail.contains(e.target) && document.body.contains(e.target) && !e.target.closest('#filtersBtn, #vxMapFiltros')){ rail.classList.remove('pinned'); }
   });
 
   // consultoria de vendedor
