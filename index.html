@@ -1352,9 +1352,15 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .fs-salvar button{ height:30px; padding:0 12px; border-radius:7px; border:1px solid var(--accent); background:var(--accent); color:#06121a; font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
 .fs-nota{ margin-top:6px; font-size:10.5px; color:var(--text-muted); }
 .frp-bloco{ margin:14px 0 4px; padding:10px 10px 4px; border:1px solid var(--border); border-radius:10px; background:rgba(var(--ink),.02); }
-.frp-bloco-t{ display:flex; align-items:baseline; gap:8px; margin-bottom:8px; font-family:'Sora',sans-serif; font-size:12.5px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:.04em; }
+.frp-bloco-t{ width:100%; background:none; border:none; padding:0; cursor:pointer; text-align:left; display:flex; align-items:baseline; gap:8px; margin-bottom:8px; font-family:'Sora',sans-serif; font-size:12.5px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:.04em; }
 .frp-bloco-t span{ font-family:'Manrope',sans-serif; font-size:10.5px; font-weight:600; color:var(--text-muted); text-transform:none; letter-spacing:0; }
 .frp-bloco .fbusca{ margin-top:8px; }
+.frp-bloco-sv{ display:inline-block; font-style:normal; font-size:10px; color:var(--text-muted); transform:rotate(90deg); transition:transform .15s; align-self:center; }
+.frp-bloco.fechado .frp-bloco-sv{ transform:rotate(0deg); }
+.frp-bloco.fechado{ padding-bottom:10px; }
+.frp-bloco.fechado .frp-bloco-t{ margin-bottom:0; }
+.frp-bloco.fechado > :not(.frp-bloco-t){ display:none !important; }
+.frp-bloco-n{ margin-left:auto; align-self:center; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; color:var(--accent); background:rgba(34,211,238,.12); border:1px solid rgba(34,211,238,.3); border-radius:999px; padding:1px 7px; letter-spacing:0; }
 .fbusca-in{ width:100%; box-sizing:border-box; height:30px; padding:0 9px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:12px; font-family:'Manrope',sans-serif; }
 .fbusca-in:focus{ outline:none; border-color:var(--accent); }
 .fbusca-res{ display:none; flex-direction:column; margin-top:4px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); max-height:180px; overflow-y:auto; }
@@ -1693,7 +1699,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
         <div class="frp-label" style="margin-top:2px;">Filtros por assunto &middot; clique para expandir &middot; selecione uma ou mais opções</div>
         <div class="frp-bloco" data-bloco="venda">
-          <div class="frp-bloco-t">Venda<span>canal, loja e nota</span></div>
+          <button type="button" class="frp-bloco-t" aria-expanded="true"><i class="frp-bloco-sv">&#9656;</i>Venda<span>canal, loja e nota</span><b class="frp-bloco-n" hidden></b></button>
         <div class="fcheck-group" data-key="canal">
           <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Canal de venda<b class="fch-count" id="fcount-canal"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="canal">todos</button><button type="button" class="fcheck-clear" data-key="canal">limpar</button></span></div>
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="canal" placeholder="Buscar..." autocomplete="off"></div>
@@ -1727,7 +1733,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
         </div>
         <div class="frp-bloco" data-bloco="produto">
-          <div class="frp-bloco-t">Produto<span>peça, marca e linha</span></div>
+          <button type="button" class="frp-bloco-t" aria-expanded="true"><i class="frp-bloco-sv">&#9656;</i>Produto<span>peça, marca e linha</span><b class="frp-bloco-n" hidden></b></button>
         <div class="fcheck-group" data-key="categoria">
           <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Categoria<b class="fch-count" id="fcount-categoria"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="categoria">todos</button><button type="button" class="fcheck-clear" data-key="categoria">limpar</button></span></div>
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="categoria" placeholder="Buscar..." autocomplete="off"></div>
@@ -1781,7 +1787,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
         </div>
         <div class="frp-bloco" data-bloco="cliente">
-          <div class="frp-bloco-t">Clientes<span>quem comprou</span></div>
+          <button type="button" class="frp-bloco-t" aria-expanded="true"><i class="frp-bloco-sv">&#9656;</i>Clientes<span>quem comprou</span><b class="frp-bloco-n" hidden></b></button>
         <div class="fcheck-group" data-key="cidade">
           <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Cidade<b class="fch-count" id="fcount-cidade"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="cidade">todos</button><button type="button" class="fcheck-clear" data-key="cidade">limpar</button></span></div>
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="cidade" placeholder="Buscar..." autocomplete="off"></div>
@@ -1810,7 +1816,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
         </div>
         <div class="frp-bloco" data-bloco="vendedor">
-          <div class="frp-bloco-t">Vendedores<span>quem vendeu</span></div>
+          <button type="button" class="frp-bloco-t" aria-expanded="true"><i class="frp-bloco-sv">&#9656;</i>Vendedores<span>quem vendeu</span><b class="frp-bloco-n" hidden></b></button>
         <div class="fcheck-group" data-key="vendedor">
           <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Vendedor<b class="fch-count" id="fcount-vendedor"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="vendedor">todos</button><button type="button" class="fcheck-clear" data-key="vendedor">limpar</button></span></div>
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="vendedor" placeholder="Buscar..." autocomplete="off"></div>
@@ -1828,7 +1834,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
         </div>
         <div class="frp-bloco" data-bloco="estoque">
-          <div class="frp-bloco-t">Estoque<span>saldo e giro</span></div>
+          <button type="button" class="frp-bloco-t" aria-expanded="true"><i class="frp-bloco-sv">&#9656;</i>Estoque<span>saldo e giro</span><b class="frp-bloco-n" hidden></b></button>
           <div class="fcheck-group" data-key="status" style="margin-bottom:8px;">
             <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Status estoque<b class="fch-count" id="fcount-status"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="status">todos</button><button type="button" class="fcheck-clear" data-key="status">limpar</button></span></div>
             <div class="fcheck-list" id="fcheck-status"></div>
@@ -5352,6 +5358,34 @@ function opcoesFiltro(key){
 function updateFcheckCount(key){
   var el = document.getElementById('fcount-'+key);
   if(el) el.textContent = state[key].length ? ' ('+state[key].length+')' : '';
+  blocosContar();
+}
+// blocos do painel de filtros (Venda, Produto, Clientes, Vendedores, Estoque): minimizáveis, com a quantidade marcada em cada um
+var BLOCOS_FECH = null;
+function blocosContar(){
+  Array.prototype.forEach.call(document.querySelectorAll('.frp-bloco'), function(bl){
+    var n = 0;
+    Array.prototype.forEach.call(bl.querySelectorAll('.fcheck-group[data-key], .fbusca[data-key]'), function(g){ var v = state[g.getAttribute('data-key')]; if(v && v.length) n += v.length; });
+    if(bl.getAttribute('data-bloco')==='estoque'){ if(state.soParados) n++; if(state.diasMin!==null && state.diasMin!==undefined && state.diasMin!=='') n++; }
+    var b = bl.querySelector('.frp-bloco-n'); if(!b) return;
+    b.hidden = !n; b.textContent = n; b.title = n+(n===1 ? ' filtro marcado neste bloco' : ' filtros marcados neste bloco');
+  });
+}
+function blocosLigar(){
+  try{ BLOCOS_FECH = JSON.parse(localStorage.getItem('nc_blocos_fechados')||'null'); }catch(e){ BLOCOS_FECH = null; }
+  Array.prototype.forEach.call(document.querySelectorAll('.frp-bloco'), function(bl){
+    var k = bl.getAttribute('data-bloco'), t = bl.querySelector('.frp-bloco-t');
+    // primeira vez: começa minimizado, menos os blocos que já têm filtro marcado
+    var fechado = BLOCOS_FECH ? BLOCOS_FECH.indexOf(k)!==-1 : !(bl.querySelector('.frp-bloco-n') && !bl.querySelector('.frp-bloco-n').hidden);
+    bl.classList.toggle('fechado', fechado); t.setAttribute('aria-expanded', String(!fechado));
+    t.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      var f = !bl.classList.contains('fechado');
+      bl.classList.toggle('fechado', f); t.setAttribute('aria-expanded', String(!f));
+      BLOCOS_FECH = Array.prototype.filter.call(document.querySelectorAll('.frp-bloco.fechado'), function(){ return true; }).map(function(x){ return x.getAttribute('data-bloco'); });
+      try{ localStorage.setItem('nc_blocos_fechados', JSON.stringify(BLOCOS_FECH)); }catch(e){}
+    });
+  });
 }
 /* ---- busca dentro de cada grupo de filtro (sanfona) ---- */
 var fcheckSearch = {};
@@ -5384,7 +5418,7 @@ function applyFcheckSearch(key){
 // barra de filtros: marcar opções não recarrega o painel; tudo é aplicado de uma vez no botão Aplicar
 var FILTRO_PEND = false;
 function filtroPendente(){
-  FILTRO_PEND = true; if(FS.ativo){ FS.ativo = null; fsRender(); }
+  FILTRO_PEND = true; blocosContar(); if(FS.ativo){ FS.ativo = null; fsRender(); }
   var b = document.getElementById('aplicarFiltros');
   if(b){ b.classList.add('pendente'); b.textContent = 'Aplicar filtros'; }
 }
@@ -5493,6 +5527,7 @@ function syncFilterSelects(){
   document.getElementById('fParado').checked = state.soParados;
   Array.prototype.forEach.call(document.querySelectorAll('.dia-chip'), function(c){ c.setAttribute('aria-pressed', String(c.getAttribute('data-s')===state.diaSemana)); });
   document.getElementById('fDiasMin').value = state.diasMin===null ? '' : state.diasMin;
+  blocosContar();
 }
 
 /* ============================================================
@@ -7817,6 +7852,7 @@ function renderBuscaSel(key){
     return '<span class="tag-chip"><span>'+escapeHtml(filtroRotulo(key, v))+'</span><button type="button" data-bk="'+key+'" data-bv="'+escapeHtml(v)+'" aria-label="Remover">✕</button></span>';
   }).join('');
   var c = document.getElementById('fcount-'+key); if(c) c.textContent = state[key].length ? ' ('+state[key].length+')' : '';
+  blocosContar();
 }
 function mostrarOpcoesBusca(key, ops, msg){
   var res = document.getElementById('fres-'+key);
@@ -8385,7 +8421,7 @@ function bootApp(){
   bindEvents();
   bindBuscas();
   BUSCA_KEYS.forEach(renderBuscaSel);
-  if(!FS.ligado){ FS.ligado = true; fsLigar(); }
+  if(!FS.ligado){ FS.ligado = true; fsLigar(); blocosContar(); blocosLigar(); }
   fsCarregar();
   syncPeriodChips();
   updateLiveLabel();
