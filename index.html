@@ -1336,6 +1336,21 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .frp-datas input{ padding:5px 7px; border-radius:7px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font:inherit; font-size:12px; color-scheme:light dark; }
 .frp-per{ font-size:11px; color:var(--text-2); margin-top:8px; line-height:1.5; }
 .fbusca{ margin-bottom:10px; position:relative; }
+.fs-box{ border:1px solid rgba(34,211,238,.25); border-radius:10px; padding:10px; background:rgba(34,211,238,.04); }
+.fs-box.foco{ box-shadow:0 0 0 2px var(--accent); }
+.fs-lista{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+.fs-lista:empty{ display:none; }
+.fs-chip{ display:inline-flex; align-items:center; border:1px solid var(--border-strong); border-radius:999px; background:var(--surface-2); font-size:11.5px; overflow:hidden; }
+.fs-chip.ativo{ border-color:var(--accent); background:rgba(34,211,238,.14); }
+.fs-chip button{ background:none; border:none; color:var(--text); font:inherit; cursor:pointer; padding:5px 8px; }
+.fs-chip .fs-ap{ font-weight:700; padding-left:11px; }
+.fs-chip .fs-ed, .fs-chip .fs-del{ color:var(--text-muted); padding:5px 6px; }
+.fs-chip .fs-del:hover{ color:#ef4444; } .fs-chip .fs-ed:hover{ color:var(--accent); }
+.fs-salvar{ display:flex; gap:6px; }
+.fs-salvar input{ flex:1; min-width:0; height:30px; padding:0 9px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text); font:inherit; font-size:12px; }
+.fs-salvar input:focus{ outline:none; border-color:var(--accent); }
+.fs-salvar button{ height:30px; padding:0 12px; border-radius:7px; border:1px solid var(--accent); background:var(--accent); color:#06121a; font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
+.fs-nota{ margin-top:6px; font-size:10.5px; color:var(--text-muted); }
 .frp-bloco{ margin:14px 0 4px; padding:10px 10px 4px; border:1px solid var(--border); border-radius:10px; background:rgba(var(--ink),.02); }
 .frp-bloco-t{ display:flex; align-items:baseline; gap:8px; margin-bottom:8px; font-family:'Sora',sans-serif; font-size:12.5px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:.04em; }
 .frp-bloco-t span{ font-family:'Manrope',sans-serif; font-size:10.5px; font-weight:600; color:var(--text-muted); text-transform:none; letter-spacing:0; }
@@ -1590,6 +1605,8 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <option value="12m">Últimos 12 meses</option>
           <option value="tudo">Todo o histórico</option>
           <option value="custom">Personalizado</option>
+          <option value="fs:novo">Personalizado 2 · criar filtro salvo…</option>
+          <optgroup label="Meus filtros" id="fsGrupo" hidden></optgroup>
         </select>
         <button class="tbtn" id="filtersBtn">
           <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -1640,6 +1657,13 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         <div class="frp-head">
           <h3>Filtros</h3>
           <div class="frp-acoes"><button class="clear-filters" id="clearFilters">Limpar tudo</button><button type="button" class="aplicar-filtros" id="aplicarFiltros" title="Atualiza o painel com todos os filtros marcados">Aplicar</button></div>
+        </div>
+
+        <div class="frp-section fs-box" id="fsBox">
+          <label class="frp-label">Meus filtros salvos</label>
+          <div class="fs-lista" id="fsLista"></div>
+          <div class="fs-salvar"><input type="text" id="fsNome" maxlength="40" placeholder="Nome do filtro (ex.: Atacado SP 90 dias)" autocomplete="off"><button type="button" id="fsSalvar">Salvar</button></div>
+          <div class="fs-nota" id="fsNota">Marque os filtros abaixo, dê um nome e salve. O período escolhido também é guardado.</div>
         </div>
 
         <div class="frp-section">
@@ -5360,7 +5384,7 @@ function applyFcheckSearch(key){
 // barra de filtros: marcar opções não recarrega o painel; tudo é aplicado de uma vez no botão Aplicar
 var FILTRO_PEND = false;
 function filtroPendente(){
-  FILTRO_PEND = true;
+  FILTRO_PEND = true; if(FS.ativo){ FS.ativo = null; fsRender(); }
   var b = document.getElementById('aplicarFiltros');
   if(b){ b.classList.add('pendente'); b.textContent = 'Aplicar filtros'; }
 }
@@ -7379,6 +7403,8 @@ function bindEvents(){
 
   // header period select
   document.getElementById('periodSelect').addEventListener('change', function(){
+    if(this.value.slice(0,3)==='fs:'){ var fv = this.value.slice(3); if(fv==='novo') fsNovo(); else fsAplicar(fv); return; }
+    if(FS.ativo){ FS.ativo = null; fsRender(); }
     if(this.value==='custom' && state.perIni===null){ var pr0 = periodRange(state.globalPeriod); state.perIni = pr0.start; state.perFim = pr0.end; }
     state.globalPeriod = this.value;
     syncPeriodChips();
@@ -7499,6 +7525,7 @@ function bindEvents(){
     if(CURRENT_USER && CURRENT_USER.escopo.tipo==='loja') state.regiao = [CURRENT_USER.escopo.loja];
     if(CURRENT_USER && CURRENT_USER.escopo.tipo==='vendedor') state.vendedor = [CURRENT_USER.escopo.vendedor];
     state.soParados=false; state.diasMin=null; state.diaSemana='';
+    FS.ativo = null; fsRender();
     syncFilterSelects(); state.page=1; renderAll(false);
   });
   document.getElementById('aplicarFiltros').addEventListener('click', function(){
@@ -7651,11 +7678,105 @@ function bindEvents(){
   });
 }
 
+/* ---------- filtros salvos ("Personalizado 2"): combinações de filtros com nome, guardadas por usuário neste navegador ---------- */
+var FS = {lista:[], ativo:null, editando:null};
+function fsChave(){ return 'nc_filtros_salvos_'+((CURRENT_PROFILE && CURRENT_PROFILE.id) || 'anon'); }
+function fsCarregar(){ try{ FS.lista = JSON.parse(localStorage.getItem(fsChave())||'[]') || []; }catch(e){ FS.lista = []; } fsRender(); }
+function fsGravar(){ try{ localStorage.setItem(fsChave(), JSON.stringify(FS.lista)); return true; }catch(e){ toast('Não foi possível salvar neste navegador.'); return false; } }
+function fsAchar(id){ return FS.lista.filter(function(x){ return x.id===id; })[0]; }
+function fsCapturar(){
+  var f = {}; FILTER_KEYS.concat(BUSCA_KEYS).forEach(function(k){ if(state[k] && state[k].length) f[k] = state[k].slice(); });
+  var lbl = {}; ['cliente','nf'].forEach(function(k){ (state[k]||[]).forEach(function(v){ if(BUSCA_LBL[k][v]) (lbl[k] = lbl[k] || {})[v] = BUSCA_LBL[k][v]; }); });
+  var per = {p:state.globalPeriod};
+  if(state.globalPeriod==='custom'){ var pr = periodRange('custom'); per.de = isoDia(DAYS[pr.start]); per.ate = isoDia(DAYS[pr.end]); }
+  return {f:f, lbl:lbl, per:per, dia:state.diaSemana||'', parado:!!state.soParados, dias:state.diasMin};
+}
+function fsResumo(x){
+  var n = Object.keys(x.f||{}).reduce(function(a, k){ return a + x.f[k].length; }, 0);
+  var opt = document.querySelector('#periodSelect option[value="'+(x.per||{}).p+'"]');
+  return (opt ? opt.textContent : 'Período salvo') + (n ? ' · '+n+(n===1?' filtro':' filtros') : ' · sem filtros');
+}
+function fsRender(){
+  var box = document.getElementById('fsLista'); if(!box) return;
+  box.innerHTML = FS.lista.map(function(x){
+    return '<span class="fs-chip'+(FS.ativo===x.id?' ativo':'')+'" data-id="'+x.id+'" title="'+escapeHtml(fsResumo(x))+'"><button type="button" class="fs-ap">'+escapeHtml(x.nome)+'</button><button type="button" class="fs-ed" title="Renomear ou atualizar com os filtros marcados agora" aria-label="Editar">✎</button><button type="button" class="fs-del" title="Excluir" aria-label="Excluir">✕</button></span>';
+  }).join('');
+  var g = document.getElementById('fsGrupo');
+  if(g){ g.innerHTML = FS.lista.map(function(x){ return '<option value="fs:'+x.id+'">'+escapeHtml(x.nome)+'</option>'; }).join(''); g.hidden = !FS.lista.length; }
+  var sel = document.getElementById('periodSelect');
+  if(sel) sel.value = FS.ativo && fsAchar(FS.ativo) ? 'fs:'+FS.ativo : state.globalPeriod;
+  var bt = document.getElementById('fsSalvar'); if(bt) bt.textContent = FS.editando ? 'Atualizar' : 'Salvar';
+}
+function fsNovo(){
+  FS.editando = null; fsRender();
+  var rail = document.getElementById('filterRail'); rail.classList.remove('recolhido'); rail.classList.add('pinned');
+  var box = document.getElementById('fsBox'), inp = document.getElementById('fsNome');
+  box.scrollIntoView({block:'start'}); box.classList.add('foco'); setTimeout(function(){ box.classList.remove('foco'); }, 1600);
+  inp.value = ''; inp.focus();
+  document.getElementById('fsNota').textContent = 'Marque os filtros abaixo e o período, dê um nome e clique em Salvar.';
+}
+function fsSalvar(){
+  var inp = document.getElementById('fsNome'), nome = inp.value.trim();
+  if(!nome){ inp.focus(); toast('Dê um nome ao filtro.'); return; }
+  var dados = fsCapturar(), x = FS.editando ? fsAchar(FS.editando) : FS.lista.filter(function(y){ return y.nome.toLowerCase()===nome.toLowerCase(); })[0];
+  if(x){ x.nome = nome; x.f = dados.f; x.lbl = dados.lbl; x.per = dados.per; x.dia = dados.dia; x.parado = dados.parado; x.dias = dados.dias; }
+  else { x = Object.assign({id:'f'+Date.now().toString(36), nome:nome}, dados); FS.lista.push(x); }
+  if(!fsGravar()) return;
+  FS.editando = null; inp.value = '';
+  // se havia filtro marcado e ainda não aplicado, aplica junto
+  if(FILTRO_PEND){ state.page = 1; renderAll(false); }
+  FS.ativo = x.id; fsRender(); syncPeriodChips();
+  document.getElementById('fsNota').textContent = '"'+nome+'" salvo. Ele aparece aqui e na lista de períodos, em Meus filtros.';
+  toast('Filtro "'+escapeHtml(nome)+'" salvo.');
+}
+function fsAplicar(id){
+  var x = fsAchar(id); if(!x){ syncPeriodChips(); return; }
+  FILTER_KEYS.concat(BUSCA_KEYS).forEach(function(k){ state[k] = (x.f && x.f[k]) ? x.f[k].slice() : []; });
+  Object.keys(x.lbl||{}).forEach(function(k){ Object.keys(x.lbl[k]).forEach(function(v){ BUSCA_LBL[k][v] = x.lbl[k][v]; }); });
+  if(CURRENT_USER && CURRENT_USER.escopo.tipo==='loja') state.regiao = [CURRENT_USER.escopo.loja];
+  if(CURRENT_USER && CURRENT_USER.escopo.tipo==='vendedor') state.vendedor = [CURRENT_USER.escopo.vendedor];
+  var per = x.per || {p:'30d'};
+  if(per.p==='custom'){
+    var de = DIA_IDX[per.de], ate = DIA_IDX[per.ate];
+    if(de===undefined) de = 0; if(ate===undefined) ate = N_DAYS-1;
+    state.perIni = Math.min(de, ate); state.perFim = Math.max(de, ate);
+  }
+  state.globalPeriod = per.p || '30d';
+  state.diaSemana = x.dia || ''; state.soParados = !!x.parado; state.diasMin = x.dias===undefined ? null : x.dias;
+  Array.prototype.forEach.call(document.querySelectorAll('.dia-chip'), function(c){ c.setAttribute('aria-pressed', String(c.getAttribute('data-s')===state.diaSemana)); });
+  var fp = document.getElementById('fParado'); if(fp) fp.checked = state.soParados;
+  var fd = document.getElementById('fDiasMin'); if(fd) fd.value = state.diasMin===null ? '' : state.diasMin;
+  syncFilterSelects(); BUSCA_KEYS.forEach(function(k){ if(typeof renderBuscaSel==='function') renderBuscaSel(k); });
+  FS.ativo = x.id; state.page = 1; renderAll(false);
+  fsRender(); syncPeriodChips();
+  toast('Filtro "'+escapeHtml(x.nome)+'" aplicado.');
+}
+function fsLigar(){
+  document.getElementById('fsSalvar').addEventListener('click', fsSalvar);
+  var inp = document.getElementById('fsNome');
+  inp.addEventListener('keydown', function(e){ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); fsSalvar(); } if(e.key==='Escape'){ FS.editando = null; inp.value = ''; fsRender(); } });
+  inp.addEventListener('click', function(e){ e.stopPropagation(); });
+  document.getElementById('fsLista').addEventListener('click', function(ev){
+    var chip = ev.target.closest('.fs-chip'); if(!chip) return; ev.stopPropagation();
+    var id = chip.getAttribute('data-id'), x = fsAchar(id); if(!x) return;
+    if(ev.target.closest('.fs-del')){
+      if(chip.getAttribute('data-conf')!=='1'){ chip.setAttribute('data-conf','1'); ev.target.textContent = 'excluir?'; setTimeout(function(){ if(chip.isConnected){ chip.removeAttribute('data-conf'); ev.target.textContent = '✕'; } }, 3000); return; }
+      FS.lista = FS.lista.filter(function(y){ return y.id!==id; }); if(FS.ativo===id) FS.ativo = null; if(FS.editando===id) FS.editando = null;
+      fsGravar(); fsRender(); toast('Filtro "'+escapeHtml(x.nome)+'" excluído.'); return;
+    }
+    if(ev.target.closest('.fs-ed')){
+      FS.editando = id; inp.value = x.nome; inp.focus(); inp.select(); fsRender();
+      document.getElementById('fsNota').textContent = 'Editando "'+x.nome+'": troque o nome e/ou os filtros marcados e clique em Atualizar. Esc cancela.';
+      return;
+    }
+    fsAplicar(id);
+  });
+}
 function syncPeriodChips(){
   Array.prototype.forEach.call(document.querySelectorAll('#periodChips .period-chip'), function(c){
     c.setAttribute('aria-pressed', c.getAttribute('data-p')===state.globalPeriod ? 'true':'false');
   });
-  var sel = document.getElementById('periodSelect'); if(sel) sel.value = state.globalPeriod;
+  var sel = document.getElementById('periodSelect'); if(sel) sel.value = FS.ativo && fsAchar(FS.ativo) ? 'fs:'+FS.ativo : state.globalPeriod;
   var pr = periodRange(state.globalPeriod), de = document.getElementById('fDe'), ate = document.getElementById('fAte');
   if(de && ate){
     de.min = ate.min = isoDia(DAYS[0]); de.max = ate.max = isoDia(DAYS[N_DAYS-1]);
@@ -8264,6 +8385,8 @@ function bootApp(){
   bindEvents();
   bindBuscas();
   BUSCA_KEYS.forEach(renderBuscaSel);
+  if(!FS.ligado){ FS.ligado = true; fsLigar(); }
+  fsCarregar();
   syncPeriodChips();
   updateLiveLabel();
   return renderAll(false);
