@@ -1669,7 +1669,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <label class="frp-label">Meus filtros salvos</label>
           <div class="fs-lista" id="fsLista"></div>
           <div class="fs-salvar"><input type="text" id="fsNome" maxlength="40" placeholder="Nome do filtro (ex.: Atacado SP 90 dias)" autocomplete="off"><button type="button" id="fsSalvar">Salvar</button></div>
-          <div class="fs-nota" id="fsNota">Marque os filtros abaixo, dê um nome e salve. O período escolhido também é guardado.</div>
+          <div class="fs-nota" id="fsNota">Marque os filtros abaixo, dê um nome e salve. O período escolhido também é guardado, e o filtro vale no celular e em outros computadores.</div>
         </div>
 
         <div class="frp-section">
@@ -7713,11 +7713,32 @@ function bindEvents(){
   });
 }
 
-/* ---------- filtros salvos ("Personalizado 2"): combinações de filtros com nome, guardadas por usuário neste navegador ---------- */
+/* ---------- filtros salvos ("Personalizado 2"): combinações de filtros com nome, por usuário.
+   Ficam no banco (tabela bi_filtros_salvos, cada um vê só os seus) e valem em qualquer aparelho; o navegador guarda uma cópia. ---------- */
 var FS = {lista:[], ativo:null, editando:null};
 function fsChave(){ return 'nc_filtros_salvos_'+((CURRENT_PROFILE && CURRENT_PROFILE.id) || 'anon'); }
-function fsCarregar(){ try{ FS.lista = JSON.parse(localStorage.getItem(fsChave())||'[]') || []; }catch(e){ FS.lista = []; } fsRender(); }
-function fsGravar(){ try{ localStorage.setItem(fsChave(), JSON.stringify(FS.lista)); return true; }catch(e){ toast('Não foi possível salvar neste navegador.'); return false; } }
+function fsCarregar(){
+  try{ FS.lista = JSON.parse(localStorage.getItem(fsChave())||'[]') || []; }catch(e){ FS.lista = []; }
+  fsRender();
+  var db = window.__NC_supa || supa, uid = CURRENT_PROFILE && CURRENT_PROFILE.id; if(!db || !uid) return;
+  db.from('bi_filtros_salvos').select('lista').eq('user_id', uid).maybeSingle().then(function(r){
+    if(!r || r.error) return;
+    if(r.data && Array.isArray(r.data.lista)){
+      FS.lista = r.data.lista; try{ localStorage.setItem(fsChave(), JSON.stringify(FS.lista)); }catch(e){}
+      if(FS.ativo && !fsAchar(FS.ativo)) FS.ativo = null; fsRender();
+    } else if(FS.lista.length) fsGravarBanco(); // salvos antes neste navegador: sobem para o banco
+  });
+}
+function fsGravarBanco(){
+  var db = window.__NC_supa || supa, uid = CURRENT_PROFILE && CURRENT_PROFILE.id; if(!db || !uid) return;
+  db.from('bi_filtros_salvos').upsert({user_id:uid, lista:FS.lista, atualizado_em:new Date().toISOString()}).then(function(r){
+    if(r && r.error) toast('Filtro guardado só neste navegador: não foi possível salvar no servidor agora.');
+  });
+}
+function fsGravar(){
+  try{ localStorage.setItem(fsChave(), JSON.stringify(FS.lista)); }catch(e){}
+  fsGravarBanco(); return true;
+}
 function fsAchar(id){ return FS.lista.filter(function(x){ return x.id===id; })[0]; }
 function fsCapturar(){
   var f = {}; FILTER_KEYS.concat(BUSCA_KEYS).forEach(function(k){ if(state[k] && state[k].length) f[k] = state[k].slice(); });
