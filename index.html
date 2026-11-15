@@ -471,7 +471,9 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vx-in .bd b{color:var(--text);}
 .vx-map-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;}
 .vx-map-ctl{display:flex; gap:12px; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--text-muted);}
-.vx-map-ctl label{display:inline-flex; align-items:center; gap:6px;}
+.vx-map-ctl label, .vx-ml{display:inline-flex; align-items:center; gap:6px;}
+.vx-ml[hidden]{display:none;}
+.vx-msel{min-width:130px;} .vx-msel .msel-p{z-index:1300;}
 .vx-chk input{accent-color:var(--vx-cy);}
 #vxMapWrap{position:relative; isolation:isolate; z-index:0; width:100%; height:560px; border-radius:10px; overflow:hidden; border:1px solid var(--border); margin-top:10px; background:var(--surface-2);}
 #vxMap{width:100%; height:100%;}
@@ -1931,8 +1933,8 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
                 <option value="chev">Participação Chevrolet na frota</option>
                 <option value="cli">Quantidade de clientes</option>
               </select></label>
-              <label>UF<select class="fsel" id="vxMapUF"><option value="">Todas</option></select></label>
-              <label id="vxMapRegL" hidden>Região<select class="fsel" id="vxMapReg"><option value="">Todas</option></select></label>
+              <span class="vx-ml">UF<div class="msel vx-msel" id="vxMapUF"></div></span>
+              <span class="vx-ml" id="vxMapRegL" hidden>Região<div class="msel vx-msel" id="vxMapReg"></div></span>
               <label class="vx-chk"><input type="checkbox" id="vxMapLojas" checked> Lojas</label>
               <label class="vx-chk" title="Concessionárias Chevrolet (com venda de peças), fonte: OpenStreetMap"><input type="checkbox" id="vxMapConc"> Concessionárias Chevrolet</label>
               <button type="button" class="vx-full-btn" id="vxMapFiltros" title="Abrir os filtros do painel sem sair do mapa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Filtros</span></button>
@@ -6192,9 +6194,9 @@ function carregando(on){
 var CLI = {busca:'', tipo:[], grupo:[], pessoa:[], cidade:[], vend:[], equipe:[], termo:[], ordem:'fat'}, CLI_SEQ = 0, CLI_LIG = false;
 // caixa de seleção múltipla (marcar quantos quiser): botão com o resumo + lista com busca e caixas de marcar
 var MSEL = {};
-function mselMontar(id, chave, opcoes, vazio){
+function mselMontar(id, chave, opcoes, vazio, estado, aoMudar){
   var el = document.getElementById(id); if(!el) return;
-  MSEL[id] = {chave:chave, opcoes:opcoes, vazio:vazio};
+  MSEL[id] = {chave:chave, opcoes:opcoes, vazio:vazio, estado:estado, aoMudar:aoMudar};
   el.innerHTML = '<button type="button" class="fsel msel-b" aria-haspopup="listbox"><span></span></button>' +
     '<div class="msel-p" hidden><input type="text" class="msel-q" placeholder="Buscar…" autocomplete="off">' +
     '<div class="msel-acoes"><button type="button" data-a="todos">Marcar todos</button><button type="button" data-a="limpar">Limpar</button></div>' +
@@ -6221,11 +6223,11 @@ function mselFiltrar(el, txt){
 }
 function mselLer(id){
   var m = MSEL[id], el = document.getElementById(id);
-  CLI[m.chave] = Array.prototype.map.call(el.querySelectorAll('.msel-i input:checked'), function(i){ return i.value; });
-  mselResumo(id); cliPendente(true);
+  (m.estado || CLI)[m.chave] = Array.prototype.map.call(el.querySelectorAll('.msel-i input:checked'), function(i){ return i.value; });
+  mselResumo(id); if(m.aoMudar) m.aoMudar(); else cliPendente(true);
 }
 function mselResumo(id){
-  var m = MSEL[id], el = document.getElementById(id), v = CLI[m.chave] || [];
+  var m = MSEL[id], el = document.getElementById(id), v = (m.estado || CLI)[m.chave] || [];
   Array.prototype.forEach.call(el.querySelectorAll('.msel-i input'), function(i){ i.checked = v.indexOf(i.value)!==-1; });
   var nomes = m.opcoes.filter(function(o){ return v.indexOf(String(o[0]))!==-1; }).map(function(o){ return String(o[1]); });
   var sp = el.querySelector('.msel-b span');
@@ -6802,36 +6804,38 @@ function vxRegioes(){
   vxAvisoLoja(); // clientes por cidade (quadro ao clicar no município)
   // estados que entram no mapa: ao menos 0,5% do faturamento, mais o estado das lojas
   var porUF = {}; cids.forEach(function(r){ var uf = r.k.slice(0,2); porUF[uf] = (porUF[uf]||0) + r.fat; });
-  // opções do filtro de UF: estados com venda, do maior para o menor
-  var selUF = document.getElementById('vxMapUF'), ufSel = selUF.value;
+  // filtros de UF e região do mapa: seleção múltipla (vazio = todas)
+  VX.mapF = VX.mapF || {uf:[], reg:[]};
   var ordUF = Object.keys(porUF).filter(function(uf){ return uf!=='EX'; }).sort(function(a,b){ return porUF[b]-porUF[a]; });
-  if(ufSel && ordUF.indexOf(ufSel)===-1) ufSel = '';
-  selUF.innerHTML = '<option value="">Todas</option>' + ordUF.map(function(uf){ return '<option value="'+uf+'"'+(uf===ufSel?' selected':'')+'>'+uf+' · '+(total>0?(porUF[uf]/total*100).toFixed(1).replace('.',','):'0')+'%</option>'; }).join('');
+  var ufSelL = VX.mapF.uf = VX.mapF.uf.filter(function(uf){ return ordUF.indexOf(uf)!==-1; });
+  vxMselMapa('vxMapUF', 'uf', ordUF.map(function(uf){ return [uf, uf+' · '+(total>0?(porUF[uf]/total*100).toFixed(1).replace('.',','):'0')+'%']; }), 'Todas');
   var ufs, fora;
-  if(ufSel){
-    ufs = [ufSel]; fora = [];
-    cids = cids.filter(function(r){ return r.k.slice(0,2)===ufSel; });
-    total = porUF[ufSel] || 0;
+  if(ufSelL.length){
+    ufs = ufSelL.slice(); fora = [];
+    cids = cids.filter(function(r){ return ufSelL.indexOf(r.k.slice(0,2))!==-1; });
+    total = ufSelL.reduce(function(a, uf){ return a + (porUF[uf]||0); }, 0);
   } else {
     ufs = Object.keys(porUF).filter(function(uf){ return uf!=='EX' && (porUF[uf] >= total*0.005 || uf==='SP'); });
     if(ufs.indexOf('SP')===-1) ufs.push('SP');
     fora = Object.keys(porUF).filter(function(uf){ return uf!=='EX' && ufs.indexOf(uf)===-1; });
   }
   // região (grupo de municípios do estado, geo/regioes.json): só aparece quando o estado tem regiões cadastradas
-  var regs = VX.regioes ? (ufSel ? (VX.regioes[ufSel]||[]).map(function(r){ return [ufSel, r]; }) :
-    ordUF.filter(function(uf){ return ufs.indexOf(uf)!==-1 && VX.regioes[uf]; }).reduce(function(a, uf){ return a.concat(VX.regioes[uf].map(function(r){ return [uf, r]; })); }, [])) : [];
-  var selReg = document.getElementById('vxMapReg'), regSel = selReg.value, regObj = null;
-  regs.forEach(function(x){ if(x[0]+'|'+x[1].k===regSel) regObj = x; });
-  if(!regObj) regSel = '';
-  selReg.innerHTML = '<option value="">Todas</option>' + regs.map(function(x){ var v = x[0]+'|'+x[1].k; return '<option value="'+v+'"'+(v===regSel?' selected':'')+'>'+escapeHtml(x[1].t)+(ufSel || regs.every(function(y){ return y[0]===regs[0][0]; }) ? '' : ' ('+x[0]+')')+'</option>'; }).join('');
+  var regs = VX.regioes ? ordUF.filter(function(uf){ return ufs.indexOf(uf)!==-1 && VX.regioes[uf]; })
+    .reduce(function(a, uf){ return a.concat(VX.regioes[uf].map(function(r){ return [uf, r]; })); }, []) : [];
+  var umaUF = regs.every(function(y){ return y[0]===(regs[0]||[])[0]; });
+  VX.mapF.reg = VX.mapF.reg.filter(function(v){ return regs.some(function(x){ return x[0]+'|'+x[1].k===v; }); });
+  vxMselMapa('vxMapReg', 'reg', regs.map(function(x){ return [x[0]+'|'+x[1].k, x[1].t+(umaUF ? '' : ' ('+x[0]+')')]; }), 'Todas');
   document.getElementById('vxMapRegL').hidden = !regs.length;
   VX.reg = null;
-  if(regObj){
-    var set = {}; regObj[1].m.forEach(function(id){ set[id] = 1; });
-    VX.reg = {uf:regObj[0], t:regObj[1].t, set:set};
-    ufs = [regObj[0]]; fora = [];
-    cids = cids.filter(function(r){ return r.k.slice(0,2)===regObj[0]; });
+  var regObjs = regs.filter(function(x){ return VX.mapF.reg.indexOf(x[0]+'|'+x[1].k)!==-1; });
+  if(regObjs.length){
+    var set = {}, rUfs = [];
+    regObjs.forEach(function(x){ x[1].m.forEach(function(id){ set[id] = 1; }); if(rUfs.indexOf(x[0])===-1) rUfs.push(x[0]); });
+    VX.reg = {t:regObjs.map(function(x){ return x[1].t; }).join(', '), n:regObjs.length, set:set};
+    ufs = rUfs; fora = [];
+    cids = cids.filter(function(r){ return rUfs.indexOf(r.k.slice(0,2))!==-1; });
   }
+  var ufSel = ufSelL.join(', ');
   VX.ufSel = ufSel;
   var seq = ++VX.mapSeq, msg = document.getElementById('vxMapMsg');
   msg.hidden = false; msg.textContent = 'Carregando mapa…';
@@ -6892,9 +6896,9 @@ function vxDesenharMapa(cids, total, ufs, fora){
   var top5 = lista.slice(0,5).reduce(function(s,o){ return s+o.fat; }, 0);
   document.getElementById('vxRegKpis').innerHTML =
     vxKpiHtml('k0', 'Cidades com venda', vxN(cids.length), vxN(lista.length)+' no mapa') +
-    vxKpiHtml('k1', VX.reg ? 'Faturamento: '+escapeHtml(VX.reg.t) : VX.ufSel ? 'Faturamento em '+VX.ufSel : 'Faturamento no mapa', vxM(mapeado), VX.reg ? 'cidades da região' : (total>0 ? (mapeado/total*100).toFixed(1).replace('.',',') : '0')+'% do total'+(VX.ufSel ? ' do estado' : '')) +
+    vxKpiHtml('k1', VX.reg ? (VX.reg.n>1 ? 'Faturamento: '+VX.reg.n+' regiões' : 'Faturamento: '+escapeHtml(VX.reg.t)) : VX.ufSel ? 'Faturamento em '+VX.ufSel : 'Faturamento no mapa', vxM(mapeado), VX.reg ? (VX.reg.n>1 ? escapeHtml(VX.reg.t) : 'cidades da região') : (total>0 ? (mapeado/total*100).toFixed(1).replace('.',',') : '0')+'% do total'+(VX.ufSel ? (VX.ufSel.indexOf(',')!==-1 ? ' dos estados' : ' do estado') : '')) +
     vxKpiHtml('k2', 'Maior cidade', lista[0] ? escapeHtml(lista[0].f[1]) : '—', lista[0] ? vxM(lista[0].fat)+' · '+lista[0].uf : '') +
-    vxKpiHtml('k3', VX.reg ? '5 maiores da região' : VX.ufSel ? '5 maiores do estado' : '5 maiores somam', (total>0 ? (top5/total*100).toFixed(1).replace('.',',') : '0')+'%', 'concentração do faturamento');
+    vxKpiHtml('k3', VX.reg ? (VX.reg.n>1 ? '5 maiores das regiões' : '5 maiores da região') : VX.ufSel ? (VX.ufSel.indexOf(',')!==-1 ? '5 maiores dos estados' : '5 maiores do estado') : '5 maiores somam', (total>0 ? (top5/total*100).toFixed(1).replace('.',',') : '0')+'%', 'concentração do faturamento');
   var met = document.getElementById('vxMapMetrica').value, esc = vxEscala(met, lista);
   document.getElementById('vxMapLeg').innerHTML = esc.leg.map(function(x){ return '<span><i style="background:'+x[0]+'"></i>'+x[1]+'</span>'; }).join('') +
     '<span><i style="background:'+(claro?'#cbd5e1':'#2a3a4a')+'; border:1px solid '+(claro?'#94a3b8':'#3d5068')+'"></i>Sem vendas</span>';
@@ -7123,6 +7127,18 @@ function vxExportarMun(bt){
   }).catch(function(){ toast('Não foi possível exportar agora. Tente de novo.'); })
     .then(function(){ bt.disabled = false; bt.textContent = '⬇ Listagem completa em Excel'; });
 }
+// caixa de marcar do mapa: só remonta quando as opções mudam (assim o painel fica aberto enquanto se marca)
+function vxMselMapa(id, chave, opcoes, vazio){
+  var sig = JSON.stringify(opcoes), m = MSEL[id];
+  if(m && m.sig===sig){ mselResumo(id); return; }
+  var aberto = m && !document.getElementById(id).querySelector('.msel-p').hidden;
+  mselMontar(id, chave, opcoes, vazio, VX.mapF, function(){
+    clearTimeout(VX.mselT);
+    VX.mselT = setTimeout(function(){ if(VX.map) VX.map.closePopup(); VX.quadro = null; if(VX.aba==='regioes') vxRegioes(); }, 250);
+  });
+  MSEL[id].sig = sig;
+  if(aberto) document.getElementById(id).querySelector('.msel-p').hidden = false;
+}
 function vxCidCliPronto(){
   var ms = document.getElementById('vxMapMetrica');
   if(VX.aba==='regioes' && ms && ms.value==='cli' && !VX.cliRedesenho){ VX.cliRedesenho = true; try{ vxRegioes(); } finally { VX.cliRedesenho = false; } return; }
@@ -7165,8 +7181,6 @@ function vxLigar(){
   document.getElementById('vxMapMetrica').addEventListener('change', function(){ if(VX.aba==='regioes') vxRegioes(); });
   document.getElementById('vxMapLojas').addEventListener('change', function(){ if(VX.aba==='regioes') vxRegioes(); });
   document.getElementById('vxMapConc').addEventListener('change', function(){ if(VX.aba==='regioes') vxRegioes(); });
-  document.getElementById('vxMapUF').addEventListener('change', function(){ document.getElementById('vxMapReg').value = ''; if(VX.map) VX.map.closePopup(); VX.quadro = null; if(VX.aba==='regioes') vxRegioes(); });
-  document.getElementById('vxMapReg').addEventListener('change', function(){ if(VX.map) VX.map.closePopup(); VX.quadro = null; if(VX.aba==='regioes') vxRegioes(); });
 
 }
 
