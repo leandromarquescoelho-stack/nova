@@ -7732,7 +7732,8 @@ function fsCarregar(){
 function fsGravarBanco(){
   var db = window.__NC_supa || supa, uid = CURRENT_PROFILE && CURRENT_PROFILE.id; if(!db || !uid) return;
   db.from('bi_filtros_salvos').upsert({user_id:uid, lista:FS.lista, atualizado_em:new Date().toISOString()}).then(function(r){
-    if(r && r.error) toast('Filtro guardado só neste navegador: não foi possível salvar no servidor agora.');
+    // tabela ainda não criada no banco: segue só com a cópia do navegador, sem aviso
+    if(r && r.error && !/bi_filtros_salvos|does not exist|schema cache|PGRST20/i.test((r.error.message||'')+' '+(r.error.code||''))) toast('Filtro guardado só neste navegador: não foi possível salvar no servidor agora.');
   });
 }
 function fsGravar(){
