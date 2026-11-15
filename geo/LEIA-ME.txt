@@ -8,3 +8,7 @@ concessionarias.json: concessionárias Chevrolet (concorrentes diretos em peças
 Fonte: OpenStreetMap (© colaboradores do OpenStreetMap, licença ODbL), lojas com marca/nome Chevrolet. O site da Chevrolet
 bloqueia acesso automatizado, por isso não é a fonte. A cobertura do OSM é incompleta: pode faltar concessionária.
 Atualizar: Actions > Concorrência > modo "concessionarias" e regerar o arquivo. Não contém dados da empresa.
+
+regioes.json: grupos de municípios usados no filtro "Região" do mapa (códigos IBGE).
+Regiões metropolitanas oficiais (RMSP, ABC, RM Vale do Paraíba sem o Litoral Norte, RM Campinas, RM Ribeirão Preto),
+Litoral (Baixada Santista, Litoral Norte e litoral do Vale do Ribeira) e a Região Geográfica Imediata de São José do Rio Preto (IBGE 2017).
