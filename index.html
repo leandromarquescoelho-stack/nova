@@ -473,6 +473,11 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vx-map-ctl{display:flex; gap:12px; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--text-muted);}
 .vx-map-ctl label, .vx-ml{display:inline-flex; align-items:center; gap:6px;}
 .vx-ml[hidden]{display:none;}
+.vx-prog{position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:1100; width:min(340px, 80%); padding:9px 12px 10px; border-radius:10px; background:var(--surface); border:1px solid var(--border-strong); box-shadow:0 8px 24px rgba(0,0,0,.35); font-size:12px; color:var(--text);}
+.vx-prog[hidden]{display:none;}
+.vx-prog-t{display:flex; justify-content:space-between; margin-bottom:6px; font-weight:600;} .vx-prog-t b{font-family:'JetBrains Mono',monospace; color:var(--vx-cy-t);}
+.vx-prog-b{height:6px; border-radius:4px; background:rgba(var(--ink),.1); overflow:hidden;}
+.vx-prog-b i{display:block; height:100%; width:0; background:linear-gradient(90deg, var(--vx-cy), var(--vx-pu, #8b5cf6)); border-radius:4px; transition:width .25s ease;}
 .vx-msel{min-width:130px;} .vx-msel .msel-p{z-index:1300;}
 .vx-chk input{accent-color:var(--vx-cy);}
 #vxMapWrap{position:relative; isolation:isolate; z-index:0; width:100%; height:560px; border-radius:10px; overflow:hidden; border:1px solid var(--border); margin-top:10px; background:var(--surface-2);}
@@ -491,7 +496,7 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vx-full-btn:hover{border-color:var(--vx-cy); color:var(--vx-cy-t);}
 #vxMapCard:fullscreen, #vxMapCard.vx-full{display:flex; flex-direction:column; margin:0; border-radius:0; padding:16px 18px; background:var(--surface); overflow:auto;}
 #vxMapCard.vx-full{position:fixed; inset:0; z-index:2000;}
-#vxMapCard > .filter-rail{z-index:1200;}
+#vxMapCard > .filter-rail{z-index:1200;} #vxMapCard > #toastStack{z-index:1400;}
 #vxMapCard:fullscreen #vxMapWrap, #vxMapCard.vx-full #vxMapWrap{flex:1; height:auto; min-height:300px;}
 #vxMapWrap .leaflet-control-attribution{background:rgba(0,0,0,.35); color:var(--text-muted); font-size:10px;}
 :root[data-theme="light"] #vxMapWrap .leaflet-control-attribution{background:rgba(255,255,255,.7);}
@@ -1942,7 +1947,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             </div>
           </div>
           <div class="vx-leg" id="vxMapLeg"></div>
-          <div id="vxMapWrap"><div class="vx-loja-aviso" id="vxLojaAviso" hidden></div><div id="vxMap"></div><div id="vxMapTip"></div><div class="vx-map-msg status-txt" id="vxMapMsg">Carregando mapa…</div></div>
+          <div id="vxMapWrap"><div class="vx-loja-aviso" id="vxLojaAviso" hidden></div><div id="vxMap"></div><div id="vxMapTip"></div><div class="vx-prog" id="vxProg" hidden role="status" aria-live="polite"><div class="vx-prog-t"><span id="vxProgTx">Aplicando filtros…</span><b id="vxProgPc">0%</b></div><div class="vx-prog-b"><i id="vxProgBar"></i></div></div><div class="vx-map-msg status-txt" id="vxMapMsg">Carregando mapa…</div></div>
           <div class="note-muted" id="vxConcNota" style="font-size:11px; margin-top:6px;"></div>
           <p class="note-muted" id="vxMapNota"></p>
         </div>
@@ -6178,7 +6183,31 @@ function renderInsights(){
 var painelSeq = 0, painelChave = null, PAINEL_F = null, KPI_DB = null, PRODUTOS_NO_PAINEL = false;
 // aguarde com a logo animada: só aparece se a consulta passar de 250 ms (respostas em cache não piscam a tela)
 var LOAD_TIMER = null;
+// barra de andamento dentro do mapa em tela cheia (a tela de espera do painel fica escondida atrás da tela cheia)
+var VX_PROG = {t:null, pc:0};
+function vxMapaCheio(){ var c = document.getElementById('vxMapCard'); return !!c && (document.fullscreenElement===c || c.classList.contains('vx-full')); }
+function vxProg(etapa){
+  var box = document.getElementById('vxProg'); if(!box) return;
+  clearInterval(VX_PROG.t);
+  if(etapa==='fim'){
+    clearTimeout(VX_PROG.fb);
+    if(box.hidden) return;
+    VX_PROG.pc = 100; vxProgPintar('Pronto'); setTimeout(function(){ if(VX_PROG.pc===100) box.hidden = true; }, 450); return;
+  }
+  if(!vxMapaCheio()) return;
+  if(box.hidden || VX_PROG.pc>=100) VX_PROG.pc = 5;
+  box.hidden = false; vxProgPintar(etapa);
+  // avança sozinho e desacelera perto do fim, até a etapa terminar de verdade
+  VX_PROG.t = setInterval(function(){ VX_PROG.pc += Math.max(.4, (92-VX_PROG.pc)*.06); if(VX_PROG.pc>92) VX_PROG.pc = 92; vxProgPintar(etapa); }, 200);
+}
+function vxProgPintar(tx){
+  document.getElementById('vxProgTx').textContent = tx;
+  document.getElementById('vxProgPc').textContent = Math.round(VX_PROG.pc)+'%';
+  document.getElementById('vxProgBar').style.width = VX_PROG.pc+'%';
+}
 function carregando(on){
+  if(on) vxProg('Buscando os dados com os filtros…');
+  else if(!document.getElementById('vxProg').hidden){ vxProg('Desenhando o mapa…'); clearTimeout(VX_PROG.fb); VX_PROG.fb = setTimeout(function(){ vxProg('fim'); }, 6000); }
   var app = document.getElementById('app'); if(!app) return;
   if(on) app.setAttribute('data-carregando', '1'); else app.removeAttribute('data-carregando');
   var ov = document.getElementById('loadOverlay'); if(!ov) return;
@@ -6839,6 +6868,7 @@ function vxRegioes(){
   VX.ufSel = ufSel;
   var seq = ++VX.mapSeq, msg = document.getElementById('vxMapMsg');
   msg.hidden = false; msg.textContent = 'Carregando mapa…';
+  if(vxMapaCheio()){ vxProg('Desenhando o mapa…'); clearTimeout(VX_PROG.fb); VX_PROG.fb = setTimeout(function(){ vxProg('fim'); }, 8000); }
   vxTabelaCidades(cids, null);
   if(!VX.regPr) VX.regPr = fetch('geo/regioes.json').then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; }).then(function(d){
     var tinha = !!VX.regioes; VX.regioes = d||{}; if(!tinha && Object.keys(VX.regioes).length && VX.aba==='regioes' && state.currentView==='vendas') vxRegioes(); return d;
@@ -6998,6 +7028,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
     else if(pts.length) VX.map.fitBounds(L.latLngBounds(pts), {padding:[40,40], maxZoom:9});
     else VX.map.setView([-22.5,-48.5], 6);
   }
+  if(!document.getElementById('app').hasAttribute('data-carregando')) vxProg('fim');
 }
 
 
@@ -7160,12 +7191,14 @@ function vxAoTrocarTela(){
   btn.querySelector('span').textContent = cheia ? 'Sair da tela cheia' : 'Tela cheia';
   btn.title = cheia ? 'Sair da tela cheia (Esc)' : 'Ver o mapa em tela cheia';
   // em tela cheia só o card aparece: leva a barra de filtros para dentro dele e devolve ao sair
-  var rail = document.getElementById('filterRail');
-  if(rail){
-    if(!VX.railCasa) VX.railCasa = {pai:rail.parentNode, prox:rail.nextSibling};
-    if(cheia && rail.parentNode!==card) card.appendChild(rail);
-    else if(!cheia && rail.parentNode===card){ rail.classList.remove('pinned'); VX.railCasa.pai.insertBefore(rail, VX.railCasa.prox); }
-  }
+  // (e os avisos, como "clientes exportados", que senão ficariam escondidos atrás da tela cheia)
+  VX.casas = VX.casas || {};
+  ['filterRail', 'toastStack'].forEach(function(id){
+    var el = document.getElementById(id); if(!el) return;
+    if(!VX.casas[id]) VX.casas[id] = {pai:el.parentNode, prox:el.nextSibling};
+    if(cheia && el.parentNode!==card) card.appendChild(el);
+    else if(!cheia && el.parentNode===card){ el.classList.remove('pinned'); VX.casas[id].pai.insertBefore(el, VX.casas[id].prox); }
+  });
   setTimeout(function(){ if(VX.map) VX.map.invalidateSize(); }, 150);
 }
 function vxLigar(){
