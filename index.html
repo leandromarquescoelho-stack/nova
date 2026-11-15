@@ -1342,6 +1342,16 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .frp-datas input{ padding:5px 7px; border-radius:7px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font:inherit; font-size:12px; color-scheme:light dark; }
 .frp-per{ font-size:11px; color:var(--text-2); margin-top:8px; line-height:1.5; }
 .fbusca{ margin-bottom:10px; position:relative; }
+.dup-op{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+.dup-op label{ display:flex; align-items:flex-start; gap:8px; flex:1 1 260px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; cursor:pointer; font-size:12.5px; line-height:1.5; }
+.dup-op label.on{ border-color:var(--accent); background:rgba(34,211,238,.06); }
+.dup-op input[type=radio]{ margin-top:3px; accent-color:var(--accent); }
+.dup-op b{ display:block; font-size:13px; }
+.dup-val{ display:flex; flex-wrap:wrap; gap:14px; align-items:center; font-size:12.5px; color:var(--text-2); }
+.dup-val input{ width:76px; height:30px; padding:0 8px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text); font:inherit; font-family:'JetBrains Mono',monospace; }
+.dup-val input:disabled{ opacity:.5; }
+.dup-salvar{ height:32px; padding:0 14px; border-radius:8px; border:1px solid var(--accent); background:var(--accent); color:#06121a; font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
+.dup-salvar:disabled{ opacity:.5; cursor:default; }
 .fs-box{ border:1px solid rgba(34,211,238,.25); border-radius:10px; padding:10px; background:rgba(34,211,238,.04); }
 .fs-box.foco{ box-shadow:0 0 0 2px var(--accent); }
 .fs-lista{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
@@ -2312,6 +2322,12 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
         <div id="duTipoBody"></div>
         <p id="duTipoNota" style="font-size:11.5px; color:var(--text-2); margin-top:8px; line-height:1.6;"></p>
+      </div>
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Peso do fim de semana na projeção</h2><div class="psub">Quanto um sábado e um domingo valem de um dia útil na projeção de fechamento do mês das lojas físicas &middot; vale para todos os usuários</div></div>
+        </div>
+        <div id="duPesoBody"></div>
       </div>
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
@@ -3846,6 +3862,7 @@ function lojasDoMunicipio(c){ return Object.keys(LOJA_MUNICIPIO).filter(function
 var DU_ANO = null, DU_SEQ = 0;
 function renderDiasUteis(){
   var box = document.getElementById('duMesBody'); if(!box) return;
+  renderDuPeso(); carregarPesos();
   var anoIni = DAYS[0].getFullYear(), anoFim = DAYS[N_DAYS-1].getFullYear()+1;
   if(DU_ANO===null) DU_ANO = DAYS[N_DAYS-1].getFullYear();
   var sel = document.getElementById('duAno');
@@ -3986,7 +4003,8 @@ function carregarPesos(){
   if(ini<=0){ PESOS_PR = Promise.resolve(null); return PESOS_PR; }
   PESOS_PR = Promise.all([
     fis.length ? rpcMemo('bi_painel', {f:{canal:fis}, per:{}, parte:'a'}) : null,
-    idOn!==undefined ? rpcMemo('bi_painel', {f:{canal:[idOn]}, per:{}, parte:'a'}) : null
+    idOn!==undefined ? rpcMemo('bi_painel', {f:{canal:[idOn]}, per:{}, parte:'a'}) : null,
+    projCfgCarregar()
   ]).then(function(r){
     function calc(v){
       if(!v) return null;
@@ -4007,9 +4025,60 @@ function carregarPesos(){
       return p;
     }
     PESOS = {fis: calc(r[0]), on: calc(r[1])}; PROJ_MEMO = {};
+    // pesos automáticos guardados para mostrar na tela Dias úteis; no modo manual valem os da configuração
+    if(PESOS.fis){
+      PESOS.autoFis = {sab:PESOS.fis.sab, dom:PESOS.fis.dom};
+      var cf = PROJ_CFG;
+      if(cf && cf.modo==='manual' && cf.sab!==null && cf.sab!==undefined){
+        PESOS.fis.sab = +cf.sab; if(cf.dom!==null && cf.dom!==undefined) PESOS.fis.dom = +cf.dom;
+        PESOS.manual = true;
+      }
+    }
+    if(document.getElementById('duPesoBody')) renderDuPeso();
     return PESOS;
   }).catch(function(){ PESOS_PR = null; return null; });
   return PESOS_PR;
+}
+// configuração do peso de sábado/domingo (bi_config 'projecao_pesos'): auto = venda real; manual = valor fixo
+var PROJ_CFG = null;
+function projCfgCarregar(){
+  var db = window.__NC_supa || supa; if(!db) return Promise.resolve(null);
+  return db.from('bi_config').select('valor').eq('chave', 'projecao_pesos').maybeSingle().then(function(r){
+    PROJ_CFG = r && r.data ? r.data.valor : null; return PROJ_CFG;
+  }).catch(function(){ return null; });
+}
+function renderDuPeso(){
+  var box = document.getElementById('duPesoBody'); if(!box) return;
+  var a = PESOS && PESOS.autoFis, cf = PROJ_CFG || {modo:'auto'}, man = cf.modo==='manual';
+  var bi = CURRENT_PROFILE && CURRENT_PROFILE.role==='bi';
+  function f(x){ return x===null || x===undefined ? '—' : (+x).toFixed(2).replace('.',','); }
+  var vs = man && cf.sab!==null && cf.sab!==undefined ? cf.sab : (a ? a.sab : 0.05), vd = man && cf.dom!==null && cf.dom!==undefined ? cf.dom : (a ? a.dom : 0);
+  box.innerHTML = '<div class="dup-op">' +
+    '<label class="'+(man?'':'on')+'"><input type="radio" name="dupModo" value="auto"'+(man?'':' checked')+(bi?'':' disabled')+'><span><b>Automático (venda real)</b>Calculado com a venda dos últimos 12 meses: hoje o sábado vale <b style="display:inline">'+f(a&&a.sab)+'</b> e o domingo <b style="display:inline">'+f(a&&a.dom)+'</b> dia útil.</span></label>' +
+    '<label class="'+(man?'on':'')+'"><input type="radio" name="dupModo" value="manual"'+(man?' checked':'')+(bi?'':' disabled')+'><span><b>Valor fixo</b>Você define quanto o sábado e o domingo valem de um dia útil (0 = não conta; 1 = igual a um dia útil).</span></label></div>' +
+    '<div class="dup-val">Sábado <input type="number" id="dupSab" min="0" max="1.5" step="0.01" value="'+(+vs).toFixed(2)+'"'+(man&&bi?'':' disabled')+'>' +
+    'Domingo <input type="number" id="dupDom" min="0" max="1.5" step="0.01" value="'+(+vd).toFixed(2)+'"'+(man&&bi?'':' disabled')+'>' +
+    (bi ? '<button type="button" class="dup-salvar" id="dupSalvar">Salvar</button>' : '<span>Só o perfil BI altera esta configuração.</span>') +
+    (cf.em ? '<span style="font-size:11px; color:var(--text-muted)">Alterado em '+new Date(cf.em).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'})+'</span>' : '') + '</div>';
+  if(!bi) return;
+  Array.prototype.forEach.call(box.querySelectorAll('input[name=dupModo]'), function(r){
+    r.addEventListener('change', function(){
+      var m = box.querySelector('input[name=dupModo]:checked').value==='manual';
+      Array.prototype.forEach.call(box.querySelectorAll('.dup-op label'), function(l){ l.classList.toggle('on', l.querySelector('input').checked); });
+      document.getElementById('dupSab').disabled = !m; document.getElementById('dupDom').disabled = !m;
+    });
+  });
+  document.getElementById('dupSalvar').addEventListener('click', function(){
+    var bt = this, m = box.querySelector('input[name=dupModo]:checked').value;
+    var s = parseFloat(String(document.getElementById('dupSab').value).replace(',','.')), d = parseFloat(String(document.getElementById('dupDom').value).replace(',','.'));
+    if(m==='manual' && (!(s>=0 && s<=1.5) || !(d>=0 && d<=1.5))){ toast('Use valores entre 0 e 1,5.'); return; }
+    bt.disabled = true; bt.textContent = 'Salvando…';
+    window.__NC_rpc('bi_config_projecao_gravar', {p: m==='manual' ? {modo:'manual', sab:s, dom:d} : {modo:'auto'}}).then(function(){
+      PESOS_PR = null; PESOS = null; PROJ_MEMO = {};
+      return carregarPesos();
+    }).then(function(){ toast('Peso do fim de semana salvo. A projeção do mês já usa o novo valor.'); state.page = 1; renderAll(false); })
+      .catch(function(){ toast('Não foi possível salvar agora. A configuração no banco pode ainda não estar criada.'); bt.disabled = false; bt.textContent = 'Salvar'; });
+  });
 }
 function pesoDia(d, online, municipio){
   var p = PESOS && PESOS[online ? 'on' : 'fis'];
@@ -4080,7 +4149,7 @@ function textoPesos(){
   var p = PESOS && PESOS.fis; if(!p) return '';
   function f(x){ return x.toFixed(2).replace('.',','); }
   var ate = TODAY_IDX>0 ? DAYS[TODAY_IDX-1] : null;
-  return 'Nas lojas físicas, sábado vale '+f(p.sab)+' e domingo '+f(p.dom)+' dia útil, conforme a venda real dos últimos 12 meses.' +
+  return 'Nas lojas físicas, sábado vale '+f(p.sab)+' e domingo '+f(p.dom)+' dia útil, '+(PESOS.manual ? 'valor fixo definido em Dias úteis.' : 'conforme a venda real dos últimos 12 meses.') +
     (ate ? ' A projeção usa só os dias concluídos (até '+fmtDate(ate)+'); o último dia com venda pode estar incompleto.' : '');
 }
 function renderCanalBar(map){
