@@ -41,7 +41,19 @@ jobs:
       - name: Regiões do IBGE (dado público)
         if: ${{ github.event.inputs.modo == 'ibge' }}
         run: |
-          curl -sf https://servicodados.ibge.gov.br/api/v1/localidades/estados/35/municipios | python -c "
+          curl -sfL --retry 5 --retry-delay 10 --max-time 120 -o mun.json https://servicodados.ibge.gov.br/api/v1/localidades/estados/35/municipios || true
+          if [ ! -s mun.json ]; then
+            pip -q install openpyxl
+            curl -sfL --retry 3 --max-time 180 -o rg.xlsx "https://geoftp.ibge.gov.br/organizacao_do_territorio/divisao_regional/divisao_regional_do_brasil/divisao_regional_do_brasil_em_regioes_geograficas_2017/tabelas/regioes_geograficas_composicao_por_municipios_2017_20180911.xlsx" || true
+            ls -la rg.xlsx || true
+            python -c "
+          import openpyxl
+          for r in openpyxl.load_workbook('rg.xlsx', read_only=True).active.iter_rows(values_only=True):
+              if r and str(r[0])[:2] == '35' or (r and len(r)>1 and str(r[1])[:2] == '35'): print('IBGEX|' + '|'.join(str(x) for x in r))
+          "
+            exit 0
+          fi
+          cat mun.json | python -c "
           import json,sys
           for m in json.load(sys.stdin):
               ri = m.get('regiao-imediata') or {}; rg = ri.get('regiao-intermediaria') or {}; mi = m.get('microrregiao') or {}
