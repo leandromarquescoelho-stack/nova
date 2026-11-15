@@ -1336,6 +1336,10 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .frp-datas input{ padding:5px 7px; border-radius:7px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font:inherit; font-size:12px; color-scheme:light dark; }
 .frp-per{ font-size:11px; color:var(--text-2); margin-top:8px; line-height:1.5; }
 .fbusca{ margin-bottom:10px; position:relative; }
+.frp-bloco{ margin:14px 0 4px; padding:10px 10px 4px; border:1px solid var(--border); border-radius:10px; background:rgba(var(--ink),.02); }
+.frp-bloco-t{ display:flex; align-items:baseline; gap:8px; margin-bottom:8px; font-family:'Sora',sans-serif; font-size:12.5px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:.04em; }
+.frp-bloco-t span{ font-family:'Manrope',sans-serif; font-size:10.5px; font-weight:600; color:var(--text-muted); text-transform:none; letter-spacing:0; }
+.frp-bloco .fbusca{ margin-top:8px; }
 .fbusca-in{ width:100%; box-sizing:border-box; height:30px; padding:0 9px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:12px; font-family:'Manrope',sans-serif; }
 .fbusca-in:focus{ outline:none; border-color:var(--accent); }
 .fbusca-res{ display:none; flex-direction:column; margin-top:4px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); max-height:180px; overflow-y:auto; }
@@ -1663,41 +1667,67 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           </div>
         </div>
 
-        <div class="frp-label" style="margin-top:2px;">Dimensões &middot; clique para expandir &middot; selecione uma ou mais opções</div>
+        <div class="frp-label" style="margin-top:2px;">Filtros por assunto &middot; clique para expandir &middot; selecione uma ou mais opções</div>
+        <div class="frp-bloco" data-bloco="venda">
+          <div class="frp-bloco-t">Venda<span>canal, loja e nota</span></div>
         <div class="fcheck-group" data-key="canal">
           <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Canal de venda<b class="fch-count" id="fcount-canal"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="canal">todos</button><button type="button" class="fcheck-clear" data-key="canal">limpar</button></span></div>
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="canal" placeholder="Buscar..." autocomplete="off"></div>
           <div class="fcheck-list scroll-limit-sm" id="fcheck-canal"></div>
         </div>
-        <div class="fcheck-group" data-key="categoria">
-          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Categoria<b class="fch-count" id="fcount-categoria"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="categoria">todos</button><button type="button" class="fcheck-clear" data-key="categoria">limpar</button></span></div>
-          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="categoria" placeholder="Buscar..." autocomplete="off"></div>
-          <div class="fcheck-list scroll-limit-sm" id="fcheck-categoria"></div>
-        </div>
-        <div class="fcheck-group" data-key="cidade">
-          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Cidade<b class="fch-count" id="fcount-cidade"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="cidade">todos</button><button type="button" class="fcheck-clear" data-key="cidade">limpar</button></span></div>
-          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="cidade" placeholder="Buscar..." autocomplete="off"></div>
-          <div class="fcheck-list scroll-limit-sm" id="fcheck-cidade"></div>
-        </div>
-        <div class="fcheck-group" data-key="classificacao">
-          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Classificação da peça<b class="fch-count" id="fcount-classificacao"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="classificacao">todos</button><button type="button" class="fcheck-clear" data-key="classificacao">limpar</button></span></div>
-          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="classificacao" placeholder="Buscar..." autocomplete="off"></div>
-          <div class="fcheck-list scroll-limit-sm" id="fcheck-classificacao"></div>
+        <div class="fcheck-group" data-key="regiao">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Loja<b class="fch-count" id="fcount-regiao"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="regiao">todos</button><button type="button" class="fcheck-clear" data-key="regiao">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="regiao" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-regiao"></div>
         </div>
         <div class="fcheck-group" data-key="emitente">
           <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Emitente<b class="fch-count" id="fcount-emitente"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="emitente">todos</button><button type="button" class="fcheck-clear" data-key="emitente">limpar</button></span></div>
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="emitente" placeholder="Buscar..." autocomplete="off"></div>
           <div class="fcheck-list scroll-limit-sm" id="fcheck-emitente"></div>
         </div>
+        <div class="fcheck-group" data-key="origem">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Origem da venda<b class="fch-count" id="fcount-origem"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="origem">todos</button><button type="button" class="fcheck-clear" data-key="origem">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="origem" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-origem"></div>
+        </div>
+        <div class="fcheck-group" data-key="condicao">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Condição de pagamento<b class="fch-count" id="fcount-condicao"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="condicao">todos</button><button type="button" class="fcheck-clear" data-key="condicao">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="condicao" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-condicao"></div>
+        </div>
+        <div class="fbusca" data-key="nf">
+          <label class="frp-label" for="fbusca-nf">Nota fiscal<b class="fch-count" id="fcount-nf"></b></label>
+          <input type="text" class="fbusca-in" id="fbusca-nf" data-key="nf" placeholder="Número da NF" autocomplete="off" inputmode="numeric">
+          <div class="fbusca-res" id="fres-nf"></div>
+          <div class="fbusca-sel" id="fsel-nf"></div>
+        </div>
+        </div>
+        <div class="frp-bloco" data-bloco="produto">
+          <div class="frp-bloco-t">Produto<span>peça, marca e linha</span></div>
+        <div class="fcheck-group" data-key="categoria">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Categoria<b class="fch-count" id="fcount-categoria"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="categoria">todos</button><button type="button" class="fcheck-clear" data-key="categoria">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="categoria" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-categoria"></div>
+        </div>
+        <div class="fcheck-group" data-key="subcategoria">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Subcategoria<b class="fch-count" id="fcount-subcategoria"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="subcategoria">todos</button><button type="button" class="fcheck-clear" data-key="subcategoria">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="subcategoria" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-subcategoria"></div>
+        </div>
+        <div class="fcheck-group" data-key="grupo_peca">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Grupo de peça<b class="fch-count" id="fcount-grupo_peca"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="grupo_peca">todos</button><button type="button" class="fcheck-clear" data-key="grupo_peca">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="grupo_peca" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-grupo_peca"></div>
+        </div>
+        <div class="fcheck-group" data-key="classificacao">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Classificação da peça<b class="fch-count" id="fcount-classificacao"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="classificacao">todos</button><button type="button" class="fcheck-clear" data-key="classificacao">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="classificacao" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-classificacao"></div>
+        </div>
         <div class="fcheck-group" data-key="linha">
           <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Linha<b class="fch-count" id="fcount-linha"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="linha">todos</button><button type="button" class="fcheck-clear" data-key="linha">limpar</button></span></div>
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="linha" placeholder="Buscar..." autocomplete="off"></div>
           <div class="fcheck-list scroll-limit-sm" id="fcheck-linha"></div>
-        </div>
-        <div class="fcheck-group" data-key="regiao">
-          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Loja<b class="fch-count" id="fcount-regiao"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="regiao">todos</button><button type="button" class="fcheck-clear" data-key="regiao">limpar</button></span></div>
-          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="regiao" placeholder="Buscar..." autocomplete="off"></div>
-          <div class="fcheck-list scroll-limit-sm" id="fcheck-regiao"></div>
         </div>
         <div class="fcheck-group" data-key="marca">
           <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Marca<b class="fch-count" id="fcount-marca"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="marca">todos</button><button type="button" class="fcheck-clear" data-key="marca">limpar</button></span></div>
@@ -1709,15 +1739,29 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="modelo" placeholder="Buscar..." autocomplete="off"></div>
           <div class="fcheck-list scroll-limit-sm" id="fcheck-modelo"></div>
         </div>
-        <div class="fcheck-group" data-key="origem">
-          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Origem da venda<b class="fch-count" id="fcount-origem"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="origem">todos</button><button type="button" class="fcheck-clear" data-key="origem">limpar</button></span></div>
-          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="origem" placeholder="Buscar..." autocomplete="off"></div>
-          <div class="fcheck-list scroll-limit-sm" id="fcheck-origem"></div>
+        <div class="fcheck-group" data-key="aplicacao">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Aplicação (Chevrolet / multimarcas)<b class="fch-count" id="fcount-aplicacao"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="aplicacao">todos</button><button type="button" class="fcheck-clear" data-key="aplicacao">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="aplicacao" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-aplicacao"></div>
         </div>
-        <div class="fcheck-group" data-key="subcategoria">
-          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Subcategoria<b class="fch-count" id="fcount-subcategoria"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="subcategoria">todos</button><button type="button" class="fcheck-clear" data-key="subcategoria">limpar</button></span></div>
-          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="subcategoria" placeholder="Buscar..." autocomplete="off"></div>
-          <div class="fcheck-list scroll-limit-sm" id="fcheck-subcategoria"></div>
+        <div class="fcheck-group" data-key="curva_gm">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Curva GM<b class="fch-count" id="fcount-curva_gm"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="curva_gm">todos</button><button type="button" class="fcheck-clear" data-key="curva_gm">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="curva_gm" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-curva_gm"></div>
+        </div>
+        <div class="fbusca" data-key="produto">
+          <label class="frp-label" for="fbusca-produto">Produto<b class="fch-count" id="fcount-produto"></b></label>
+          <input type="text" class="fbusca-in" id="fbusca-produto" data-key="produto" placeholder="Código ou descrição" autocomplete="off">
+          <div class="fbusca-res" id="fres-produto"></div>
+          <div class="fbusca-sel" id="fsel-produto"></div>
+        </div>
+        </div>
+        <div class="frp-bloco" data-bloco="cliente">
+          <div class="frp-bloco-t">Clientes<span>quem comprou</span></div>
+        <div class="fcheck-group" data-key="cidade">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Cidade<b class="fch-count" id="fcount-cidade"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="cidade">todos</button><button type="button" class="fcheck-clear" data-key="cidade">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="cidade" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-cidade"></div>
         </div>
         <div class="fcheck-group" data-key="tipo_cliente">
           <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Tipo de cliente<b class="fch-count" id="fcount-tipo_cliente"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="tipo_cliente">todos</button><button type="button" class="fcheck-clear" data-key="tipo_cliente">limpar</button></span></div>
@@ -1734,10 +1778,19 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="pessoa" placeholder="Buscar..." autocomplete="off"></div>
           <div class="fcheck-list scroll-limit-sm" id="fcheck-pessoa"></div>
         </div>
-        <div class="fcheck-group" data-key="condicao">
-          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Condição de pagamento<b class="fch-count" id="fcount-condicao"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="condicao">todos</button><button type="button" class="fcheck-clear" data-key="condicao">limpar</button></span></div>
-          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="condicao" placeholder="Buscar..." autocomplete="off"></div>
-          <div class="fcheck-list scroll-limit-sm" id="fcheck-condicao"></div>
+        <div class="fbusca" data-key="cliente">
+          <label class="frp-label" for="fbusca-cliente">Razão social<b class="fch-count" id="fcount-cliente"></b></label>
+          <input type="text" class="fbusca-in" id="fbusca-cliente" data-key="cliente" placeholder="Nome ou código do cliente" autocomplete="off">
+          <div class="fbusca-res" id="fres-cliente"></div>
+          <div class="fbusca-sel" id="fsel-cliente"></div>
+        </div>
+        </div>
+        <div class="frp-bloco" data-bloco="vendedor">
+          <div class="frp-bloco-t">Vendedores<span>quem vendeu</span></div>
+        <div class="fcheck-group" data-key="vendedor">
+          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Vendedor<b class="fch-count" id="fcount-vendedor"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="vendedor">todos</button><button type="button" class="fcheck-clear" data-key="vendedor">limpar</button></span></div>
+          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="vendedor" placeholder="Buscar..." autocomplete="off"></div>
+          <div class="fcheck-list scroll-limit-sm" id="fcheck-vendedor"></div>
         </div>
         <div class="fcheck-group" data-key="equipe">
           <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Equipe de venda<b class="fch-count" id="fcount-equipe"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="equipe">todos</button><button type="button" class="fcheck-clear" data-key="equipe">limpar</button></span></div>
@@ -1749,50 +1802,9 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="funcao" placeholder="Buscar..." autocomplete="off"></div>
           <div class="fcheck-list scroll-limit-sm" id="fcheck-funcao"></div>
         </div>
-        <div class="fcheck-group" data-key="grupo_peca">
-          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Grupo de peça<b class="fch-count" id="fcount-grupo_peca"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="grupo_peca">todos</button><button type="button" class="fcheck-clear" data-key="grupo_peca">limpar</button></span></div>
-          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="grupo_peca" placeholder="Buscar..." autocomplete="off"></div>
-          <div class="fcheck-list scroll-limit-sm" id="fcheck-grupo_peca"></div>
         </div>
-        <div class="fcheck-group" data-key="aplicacao">
-          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Aplicação (Chevrolet / multimarcas)<b class="fch-count" id="fcount-aplicacao"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="aplicacao">todos</button><button type="button" class="fcheck-clear" data-key="aplicacao">limpar</button></span></div>
-          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="aplicacao" placeholder="Buscar..." autocomplete="off"></div>
-          <div class="fcheck-list scroll-limit-sm" id="fcheck-aplicacao"></div>
-        </div>
-        <div class="fcheck-group" data-key="curva_gm">
-          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Curva GM<b class="fch-count" id="fcount-curva_gm"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="curva_gm">todos</button><button type="button" class="fcheck-clear" data-key="curva_gm">limpar</button></span></div>
-          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="curva_gm" placeholder="Buscar..." autocomplete="off"></div>
-          <div class="fcheck-list scroll-limit-sm" id="fcheck-curva_gm"></div>
-        </div>
-        <div class="fcheck-group" data-key="vendedor">
-          <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Vendedor<b class="fch-count" id="fcount-vendedor"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="vendedor">todos</button><button type="button" class="fcheck-clear" data-key="vendedor">limpar</button></span></div>
-          <div class="fcheck-search-wrap"><input type="text" class="fcheck-search" data-key="vendedor" placeholder="Buscar..." autocomplete="off"></div>
-          <div class="fcheck-list scroll-limit-sm" id="fcheck-vendedor"></div>
-        </div>
-        <div class="frp-section frp-buscas">
-          <div class="frp-label" style="margin-bottom:6px;">Busca &middot; digite e escolha na lista</div>
-        <div class="fbusca" data-key="produto">
-          <label class="frp-label" for="fbusca-produto">Produto<b class="fch-count" id="fcount-produto"></b></label>
-          <input type="text" class="fbusca-in" id="fbusca-produto" data-key="produto" placeholder="Código ou descrição" autocomplete="off">
-          <div class="fbusca-res" id="fres-produto"></div>
-          <div class="fbusca-sel" id="fsel-produto"></div>
-        </div>
-        <div class="fbusca" data-key="cliente">
-          <label class="frp-label" for="fbusca-cliente">Razão social<b class="fch-count" id="fcount-cliente"></b></label>
-          <input type="text" class="fbusca-in" id="fbusca-cliente" data-key="cliente" placeholder="Nome ou código do cliente" autocomplete="off">
-          <div class="fbusca-res" id="fres-cliente"></div>
-          <div class="fbusca-sel" id="fsel-cliente"></div>
-        </div>
-        <div class="fbusca" data-key="nf">
-          <label class="frp-label" for="fbusca-nf">Nota fiscal<b class="fch-count" id="fcount-nf"></b></label>
-          <input type="text" class="fbusca-in" id="fbusca-nf" data-key="nf" placeholder="Número da NF" autocomplete="off" inputmode="numeric">
-          <div class="fbusca-res" id="fres-nf"></div>
-          <div class="fbusca-sel" id="fsel-nf"></div>
-        </div>
-        </div>
-
-        <div class="frp-section">
-          <label class="frp-label">Estoque</label>
+        <div class="frp-bloco" data-bloco="estoque">
+          <div class="frp-bloco-t">Estoque<span>saldo e giro</span></div>
           <div class="fcheck-group" data-key="status" style="margin-bottom:8px;">
             <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Status estoque<b class="fch-count" id="fcount-status"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="status">todos</button><button type="button" class="fcheck-clear" data-key="status">limpar</button></span></div>
             <div class="fcheck-list" id="fcheck-status"></div>
