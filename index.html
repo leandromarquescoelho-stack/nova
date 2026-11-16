@@ -1188,6 +1188,15 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .pl-capatit{margin:0; font-family:'Sora',sans-serif; font-weight:600; font-size:max(18px,5.4cqh); letter-spacing:.04em; color:#fff; text-align:center;}
 .pl-capatit::after{content:''; display:block; width:8cqw; height:.5cqh; min-height:3px; border-radius:4px; background:var(--pbi-grad); margin:2cqh auto 0;}
 :root[data-theme="light"] .pl-capatit{color:#353535;}
+/* página 1 (capa do conteúdo): barra do topo na mesma altura das demais páginas */
+.pl-capa > .pl-top{position:absolute; top:4.2cqh; left:4.2cqw; right:4.2cqw;}
+/* página final fixa */
+.pl-fim{align-items:center; justify-content:center; text-align:center; gap:3.4cqh;}
+.pl-fim > .pl-top{position:absolute; top:4.2cqh; left:4.2cqw; right:4.2cqw; justify-content:flex-end;}
+.pl-fim .pl-fim-h{margin:0; font-family:'Sora',sans-serif; font-weight:800; font-size:max(26px,8.4cqh); line-height:1.1; background:var(--pbi-grad); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.pl-fim .pl-fim-s{font-family:'Sora',sans-serif; font-weight:600; font-size:max(18px,5.4cqh); letter-spacing:.04em; color:#fff;}
+:root[data-theme="light"] .pl-fim .pl-fim-s{color:#353535;}
+.pl-fim .pl-fim-f{font-size:max(11px,2.3cqh); letter-spacing:.3em; text-transform:uppercase; font-weight:800; color:var(--text-muted); margin-top:3cqh;}
 .pl-pg{font-family:'JetBrains Mono',monospace; font-size:max(10.8px,1.82cqh); color:var(--text-muted);}
 .pl-h{font-family:'Sora',sans-serif; font-size:max(18.4px,5.72cqh); font-weight:800; line-height:1.12; margin:0; letter-spacing:-.01em;}
 .pl-h::after{content:''; display:block; width:6cqw; height:.55cqh; min-height:3px; border-radius:4px; background:var(--pbi-grad); margin-top:1.4cqh;}
@@ -3205,27 +3214,29 @@ function plSlide(sl, i, n, D){
 function plMontar(){
   var D = plDoc(), st = document.getElementById('plStage'), n = D.slides.length;
   // capa fixa com o logo antes do primeiro slide (não fica no banco); PL.idx 0 = capa, slide k do banco = PL.idx k+1
-  st.innerHTML = '<div class="pl-slide pl-logocapa"><span class="pl-logo" role="img" aria-label="NOVA Chevrolet"></span><h2 class="pl-capatit">Planejamento de Peças</h2></div>' + D.slides.map(function(sl, i){ return plSlide(sl, i, n, D); }).join('');
+  st.innerHTML = '<div class="pl-slide pl-logocapa"><span class="pl-logo" role="img" aria-label="NOVA Chevrolet"></span><h2 class="pl-capatit">Planejamento de Peças</h2></div>' + D.slides.map(function(sl, i){ return plSlide(sl, i, n, D); }).join('') +
+    '<div class="pl-slide pl-fim"><div class="pl-top"><span class="pl-logo pl-logo-mini" role="img" aria-label="NOVA Chevrolet"></span></div><h2 class="pl-fim-h">Juntos para um 2027 próspero!!!</h2><div class="pl-fim-s">Boas Vendas</div><div class="pl-fim-f">Fim</div></div>';
   var ed = document.getElementById('plEditar'); if(ed) ed.hidden = !(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi') || PL.edit;
   if(PL.edit) Array.prototype.forEach.call(st.querySelectorAll('.pl-ed'), function(el){
     try{ el.contentEditable = 'plaintext-only'; } catch(e){ el.contentEditable = 'true'; }
     if(el.contentEditable!=='plaintext-only') el.contentEditable = 'true';
     el.spellcheck = true;
   });
-  document.getElementById('plDots').innerHTML = '<button type="button" data-i="0" title="Capa" aria-label="Capa"></button>' + D.slides.map(function(sl, i){ return '<button type="button" data-i="'+(i+1)+'" title="'+plEsc(sl.titulo)+'" aria-label="Slide '+(i+1)+'"></button>'; }).join('');
-  plIr(Math.min(PL.idx, n));
+  document.getElementById('plDots').innerHTML = '<button type="button" data-i="0" title="Capa" aria-label="Capa"></button>' + D.slides.map(function(sl, i){ return '<button type="button" data-i="'+(i+1)+'" title="'+plEsc(sl.titulo)+'" aria-label="Slide '+(i+1)+'"></button>'; }).join('') + '<button type="button" data-i="'+(n+1)+'" title="Fim" aria-label="Fim"></button>';
+  plIr(Math.min(PL.idx, n+1));
 }
 function plIr(i){
   var D = plDoc(); if(!D) return;
-  var n = D.slides.length + 1; i = Math.max(0, Math.min(n-1, i)); PL.idx = i;
+  var n = D.slides.length + 2; i = Math.max(0, Math.min(n-1, i)); PL.idx = i;   // + capa do logo + página final
   Array.prototype.forEach.call(document.querySelectorAll('#plStage .pl-slide'), function(el, k){ el.classList.toggle('on', k===i); el.classList.toggle('antes', k<i); });
   Array.prototype.forEach.call(document.querySelectorAll('#plDots button'), function(el, k){ el.classList.toggle('on', k===i); });
-  document.getElementById('plNum').textContent = i===0 ? 'Capa' : i+' / '+(n-1);
+  document.getElementById('plNum').textContent = i===0 ? 'Capa' : i===n-1 ? 'Fim' : i+' / '+(n-2);
   document.getElementById('plAnt').disabled = i===0; document.getElementById('plProx').disabled = i===n-1;
   if(PL.edit){
     var bar = document.getElementById('plEdBar');
-    bar.querySelector('[data-op="esq"]').disabled = i<=1; bar.querySelector('[data-op="dir"]').disabled = i===0 || i===n-1;
-    bar.querySelector('[data-op="dup"]').disabled = i===0; bar.querySelector('[data-op="del"]').disabled = i===0 || n<=2;
+    var fixo = i===0 || i===n-1;   // capa do logo e página final não são editáveis
+    bar.querySelector('[data-op="esq"]').disabled = fixo || i===1; bar.querySelector('[data-op="dir"]').disabled = fixo || i===n-2;
+    bar.querySelector('[data-op="dup"]').disabled = fixo; bar.querySelector('[data-op="del"]').disabled = fixo || n<=3;
   }
 }
 /* ---- modo edição (perfil BI): textos e números editáveis no próprio slide; salva no banco (bi_conteudo_gravar) ---- */
@@ -3255,8 +3266,8 @@ function plModoEdicao(on){
 function plOperar(op){
   if(!PL.edit) return;
   plColetar();
-  var S = PL.rasc.slides, i = PL.idx - 1;   // a capa do logo não é editável
-  if(i<0 && op!=='cancelar' && op!=='salvar') return;
+  var S = PL.rasc.slides, i = PL.idx - 1;   // a capa do logo e a página final não são editáveis
+  if((i<0 || i>=S.length) && op!=='cancelar' && op!=='salvar') return;
   if(op==='esq' && i>0){ S.splice(i-1, 0, S.splice(i, 1)[0]); PL.idx = i; }
   else if(op==='dir' && i<S.length-1){ S.splice(i+1, 0, S.splice(i, 1)[0]); PL.idx = i+2; }
   else if(op==='dup'){ S.splice(i+1, 0, JSON.parse(JSON.stringify(S[i]))); PL.idx = i+2; }
