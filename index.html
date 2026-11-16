@@ -1132,6 +1132,9 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cc-busca{min-width:220px; padding:9px 12px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font:inherit; font-size:13px;}
 .cc-leg{display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--text-2); margin:4px 0 10px;}
 .cc-up{color:var(--critical);} .cc-dn{color:var(--good);}
+.cc-exp{font:inherit; font-size:13px; font-weight:700; padding:9px 14px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); cursor:pointer; white-space:nowrap;}
+.cc-exp:hover{border-color:#F2C811;}
+.cc-exp:disabled{opacity:.5; cursor:wait;}
 .cc-scroll{overflow:auto; max-height:calc(100vh - 330px); border:1px solid var(--border); border-radius:12px;}
 .cc-tbl{width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px;}
 .cc-tbl th{position:sticky; top:0; z-index:2; background:var(--surface-2); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); font-weight:800; padding:10px 12px; border-bottom:1px solid var(--border-strong); white-space:nowrap; cursor:pointer;}
@@ -2287,6 +2290,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
                 <option value="sem">Sem comparação</option>
               </select></label>
               <input type="search" class="cc-busca" id="ccBusca" placeholder="Buscar código ou nome…">
+              <button type="button" class="cc-exp" id="ccExportar" title="Baixar em Excel os itens que estão na tabela (com o filtro, a busca e a ordem atuais)">&#11015; Exportar Excel</button>
             </div>
           </div>
           <div class="cc-leg"><span><b class="cc-up">&#9650;</b> estamos mais caros</span><span><b class="cc-dn">&#9660;</b> estamos mais baratos</span><span>diferença = nosso preço − preço do concorrente</span></div>
@@ -3031,6 +3035,8 @@ function renderConcorrencia(){
     CC.ligado = true;
     document.getElementById('ccFiltro').addEventListener('change', ccTabela);
     document.getElementById('ccBusca').addEventListener('input', ccTabela);
+    document.getElementById('ccExportar').addEventListener('click', ccExportar);
+    window.addEventListener('resize', ccAltura);
     document.getElementById('ccTbl').addEventListener('click', function(e){
       if(e.target.closest('.cc-retry')){ renderConcorrencia(); return; }
       var th = e.target.closest('th[data-o]'); if(!th) return;
@@ -3058,6 +3064,44 @@ function renderConcorrencia(){
     })};
     ccTabela();
   });
+}
+// a tabela mostra 6 itens de altura; o resto rola dentro dela (cabeçalho fixo)
+function ccAltura(){
+  var sc = document.querySelector('.cc-scroll'), t = document.getElementById('ccTbl'); if(!sc || !t) return;
+  var h = t.tHead ? t.tHead.offsetHeight : 0, tr = t.tBodies[0] ? t.tBodies[0].rows : [];
+  if(!h || !tr.length){ sc.style.maxHeight = ''; return; }
+  for(var i=0; i<Math.min(6, tr.length); i++) h += tr[i].offsetHeight;
+  sc.style.maxHeight = (h + 2) + 'px';
+}
+function ccExportar(){
+  var L = CC.linhas, D = CC.dados; if(!D || !L){ toast('A tabela ainda está carregando.'); return; }
+  if(!L.length){ toast('Nenhum item na tabela para exportar.'); return; }
+  var bt = document.getElementById('ccExportar'); bt.disabled = true;
+  function n2(v){ return v==null ? null : Math.round(v*100)/100; }
+  function p1(v){ return v==null ? null : Math.round(v*10)/10; }
+  var cab = ['Posição', 'Código', 'Item', 'Fat. 90 dias (R$)', 'Qtd 90 dias', 'Preço médio vendido (R$)', 'Nosso site (R$)'];
+  CC_SITES.forEach(function(s){ cab.push(s.n+' (R$)', 'Dif. vs '+s.n+' (%)', s.n+' link'); });
+  cab.push('Menor concorrente (R$)', 'Dif. vs menor preço (%)', 'Situação', 'Observação');
+  var dados = L.map(function(it){
+    var obs = [];
+    if(it.nossoSusp) obs.push('Preço do nosso site ('+ccMoney(it.nossoBruto)+') muito diferente do preço médio vendido: conferir cadastro');
+    var r = [it.rank, it.pn, String(it.nome||'').replace(/^\S+\s*-\s*/, ''), n2(it.fat), it.qtd, n2(it.pmv), n2(it.nosso)];
+    it.cs.forEach(function(c, k){
+      if(!c){ r.push(null, null, null); return; }
+      if(c.susp) obs.push(CC_SITES[k].n+': preço muito diferente, provavelmente outro produto, kit ou embalagem');
+      else if(c.conf==='nome') obs.push(CC_SITES[k].n+': pareado pelo nome, conferir no link');
+      r.push(n2(c.preco), c.susp ? null : p1(c.pct), c.url || null);
+    });
+    var sit = it.pctMenor==null ? 'Sem comparação' : (it.pctMenor >= 0.5 ? 'Mais caro' : (it.pctMenor <= -0.5 ? 'Mais barato' : 'Igual'));
+    r.push(n2(it.menor), p1(it.pctMenor), sit, obs.join(' · '));
+    return r;
+  });
+  var dia = D.quando ? isoDia(new Date(D.quando)) : isoDia(new Date());
+  carregarXlsx().catch(function(){ return null; }).then(function(X){
+    var larg = [8, 14, 44, 16, 11, 18, 14]; CC_SITES.forEach(function(){ larg.push(14, 14, 30); }); larg.push(18, 18, 14, 60);
+    baixarPlanilha(X, 'concorrencia_top100_'+dia, 'Concorrência', cab, dados, larg);
+    toast(L.length+' itens exportados.');
+  }).finally(function(){ bt.disabled = false; });
 }
 function ccSeta(pct){
   if(pct==null) return '';
@@ -3087,6 +3131,7 @@ function ccTabela(){
     return true;
   });
   var o = CC.ordem, sg = CC.desc ? -1 : 1;
+  CC.linhas = linhas;
   linhas.sort(function(a,b){
     var va = o==='pct' ? a.pctMenor : (o==='rank' ? -a.rank : a[o]), vb = o==='pct' ? b.pctMenor : (o==='rank' ? -b.rank : b[o]);
     if(va==null && vb==null) return a.rank-b.rank; if(va==null) return 1; if(vb==null) return -1;
@@ -3106,6 +3151,7 @@ function ccTabela(){
         }).join('') +
         '<td class="num">'+(it.pctMenor==null ? '<span class="cc-vazio">—</span>' : ccSeta(it.pctMenor))+'</td></tr>';
     }).join('') + '</tbody>';
+  ccAltura();
   document.getElementById('ccSub').textContent = 'Itens que mais faturaram no e-commerce nos últimos 90 dias' + (D.quando ? ' · preços coletados em '+new Date(D.quando).toLocaleDateString('pt-BR') : ' · aguardando a primeira coleta');
   document.getElementById('ccNota').textContent = 'Preços de venda exibidos nos sites (sem desconto de Pix ou boleto e sem frete), coletados toda segunda-feira pelo código da peça. * pareado pelo nome, confira no link. ⚠ preço muito diferente (mais de 2,5 vezes ou menos de 40%): provavelmente outro produto, kit ou embalagem; fica fora do resumo. Vigorito não entra: o site bloqueia leitura automática. A seta compara o nosso preço com o de cada concorrente: vermelho ▲ = estamos mais caros; verde ▼ = estamos mais baratos.';
 }
