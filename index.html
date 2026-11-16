@@ -945,6 +945,8 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
   background:var(--surface); color:var(--text); font-size:12.5px; font-family:'Manrope',sans-serif; text-transform:none; letter-spacing:normal; font-weight:500;
 }
 .u-fields input:focus, .u-fields select:focus, .u-invite-grid input:focus, .u-invite-grid select:focus{ outline:none; border-color:var(--accent); }
+.u-eq-off{display:none !important;}
+.u-eq-nota{font-size:12px; color:var(--text-muted); margin-top:10px; padding:8px 10px; border-radius:8px; border:1px dashed var(--border-strong);}
 .u-abas-label{ font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin:12px 0 6px; }
 .u-card .u-abas-label{ margin:0 0 -6px; }
 .u-abas{ display:flex; flex-wrap:wrap; gap:6px; }
@@ -2400,8 +2402,9 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="u-abas u-esc" id="uiLojas" data-grp="lojas"></div>
           <div class="u-abas-label u-esc">Canais liberados</div>
           <div class="u-abas u-esc" id="uiCanais" data-grp="canais"></div>
-          <div class="u-abas-label u-esc-eq">Equipes de venda liberadas</div>
-          <div class="u-abas u-esc-eq" id="uiEquipes" data-grp="equipes"></div>
+          <div class="u-abas-label u-esc-eq u-eq-esc">Equipes de venda liberadas</div>
+          <div class="u-abas u-esc-eq u-eq-esc" id="uiEquipes" data-grp="equipes"></div>
+          <div class="u-eq-nota u-eq-off">E-commerce não tem equipe de vendas: com só esse canal liberado, não é preciso escolher equipe.</div>
           <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px;">
             <button class="login-btn" type="submit" style="max-width:200px; margin:0;">Enviar convite</button>
             <button class="tbtn" type="button" id="uiCancel">Cancelar</button>
@@ -8208,7 +8211,21 @@ function equipesDoPerfil(p){ var e = listaPerfil(p.equipes); return e.length ? e
 function equipesChips(sel, disabled){
   if(!USERS_TEM_EQUIPES || !EQUIPES.length) return '';
   var eu = uniaoOrd(EQUIPES, sel);
-  return '<div class="u-abas-label">Equipes de venda liberadas</div><div class="u-abas" data-grp="equipes">'+chipsHtml(eu.map(function(v){ return {k:v, t:v}; }), sel, disabled)+'</div>';
+  return '<div class="u-abas-label u-eq-esc">Equipes de venda liberadas</div><div class="u-abas u-eq-esc" data-grp="equipes">'+chipsHtml(eu.map(function(v){ return {k:v, t:v}; }), sel, disabled)+'</div>' +
+    '<div class="u-eq-nota u-eq-off">E-commerce não tem equipe de vendas: com só esse canal liberado, não é preciso escolher equipe.</div>';
+}
+// e-commerce não tem equipe de vendas: com só esse canal liberado, o bloco de equipes some e grava sem restrição de equipe
+function soEcommerce(canais){ return !!(canais && canais.length) && canais.every(function(c){ return /^e-?commerce$/i.test(String(c).replace(/[\s_]/g, '')); }); }
+function ajustaEquipesCanal(root){
+  if(!root) return;
+  var so = USERS_TEM_ESCOPO && soEcommerce(grpSel(root, 'canais'));
+  Array.prototype.forEach.call(root.querySelectorAll('.u-eq-esc'), function(el){ el.classList.toggle('u-eq-off', so); });
+  Array.prototype.forEach.call(root.querySelectorAll('.u-eq-nota'), function(el){ el.classList.toggle('u-eq-off', !so || !(USERS_TEM_EQUIPES && EQUIPES.length)); });
+}
+function ligarEquipesCanal(root){
+  if(!root || root.dataset.eqCanal) return; root.dataset.eqCanal = '1';
+  root.addEventListener('click', function(e){ if(e.target.closest('[data-grp="canais"] .u-aba')) ajustaEquipesCanal(root); });
+  ajustaEquipesCanal(root);
 }
 // vendedor: comparativo com os pares (média, mediana, posição), configurado no cadastro. Os outros vendedores aparecem sem nome
 function paresHtml(p){
@@ -8339,7 +8356,7 @@ function abrirUserPop(id){
   bg.querySelector('.u-pop-x').addEventListener('click', fecharUserPop);
   document.addEventListener('keydown', escUserPop);
   var card = bg.querySelector('.u-card');
-  bindAbas(card); ligarPares(card); ajustaEscopo(card);
+  bindAbas(card); ligarPares(card); ajustaEscopo(card); ligarEquipesCanal(card);
   card.querySelector('.u-role').addEventListener('change', function(){ ajustaEscopo(card); });
   card.querySelector('.u-save').addEventListener('click', function(){ salvarCard(card, false); });
   var lib = card.querySelector('.u-liberar'); if(lib) lib.addEventListener('click', function(){ salvarCard(card, true); });
@@ -8382,7 +8399,7 @@ async function salvarCard(card, liberar){
     payload.lojas = esc.lojas; payload.canais = esc.canais;
     if(role==='gerencia') payload.loja = (esc.lojas||[])[0] || null;
   }
-  if(USERS_TEM_EQUIPES && EQUIPES.length) payload.equipes = equipesPayload(role, grpSel(card,'equipes'));
+  if(USERS_TEM_EQUIPES && EQUIPES.length) payload.equipes = (USERS_TEM_ESCOPO && soEcommerce(grpSel(card,'canais'))) ? null : equipesPayload(role, grpSel(card,'equipes'));
   if(USERS_TEM_PARES){ var pp = paresPayload(card, role); payload.pares_modo = pp.pares_modo; payload.pares_equipes = pp.pares_equipes; }
   if(USERS_TEM_ABAS){ var ab = grpSel(card,'abas'); payload.abas = abasPayload(role, ab); }
   var erro = validaEscopo(payload);
@@ -8450,6 +8467,7 @@ async function renderUsersAdmin(){
     var uiR = document.getElementById('uiRole'); if(uiR) uiR.dispatchEvent(new Event('change'));
   }
   Array.prototype.forEach.call(document.querySelectorAll('#userInviteForm .u-esc'), function(el){ el.style.display = USERS_TEM_ESCOPO ? '' : 'none'; });
+  ligarEquipesCanal(document.getElementById('userInviteForm')); ajustaEquipesCanal(document.getElementById('userInviteForm'));
   document.getElementById('uVendList').innerHTML = VEND_PESSOAS.map(function(v){ return '<option value="'+escapeHtml(v)+'">'; }).join('');
   var uiL = document.getElementById('uiLoja'); if(uiL && !uiL.options.length) uiL.innerHTML = lojaOptions('');
   var uiA = document.getElementById('uiAbas');
@@ -8599,7 +8617,7 @@ if(userInviteFormEl){
     if(abasConv) abasConv = abasPayload(role, abasConv);
     var escConv = USERS_TEM_ESCOPO ? escopoPayload(role, grpSel(userInviteFormEl,'lojas'), grpSel(userInviteFormEl,'canais')) : {lojas:null, canais:null};
     if(USERS_TEM_ESCOPO && role==='gerencia') loja = (escConv.lojas||[])[0] || '';
-    var eqConv = (USERS_TEM_EQUIPES && EQUIPES.length) ? equipesPayload(role, grpSel(userInviteFormEl,'equipes')) : null;
+    var eqConv = (USERS_TEM_EQUIPES && EQUIPES.length && !(USERS_TEM_ESCOPO && soEcommerce(grpSel(userInviteFormEl,'canais')))) ? equipesPayload(role, grpSel(userInviteFormEl,'equipes')) : null;
     var erroEsc = validaEscopo({role:role, loja: role==='gerencia' ? loja : null, vendedor_nome: role==='vendedor' ? vendedorNome : null, abas: abasConv, lojas: escConv.lojas, canais: escConv.canais, equipes: eqConv});
     if(erroEsc){ msg.style.color='var(--critical)'; msg.textContent = erroEsc; return; }
     try{
@@ -8630,6 +8648,7 @@ if(userInviteFormEl){
       var uiE2 = document.getElementById('uiEquipes'); if(uiE2 && EQUIPES.length){ uiE2.innerHTML = chipsHtml(EQUIPES.map(function(v){ return {k:v,t:v}; }), EQUIPES, false); bindAbas(uiE2); }
       var uiC2 = document.getElementById('uiCanais'); if(uiC2 && USERS_TEM_ESCOPO){ uiC2.innerHTML = chipsHtml(canaisUniverso().map(function(v){ return {k:v,t:v}; }), canaisUniverso(), false); bindAbas(uiC2); }
       document.getElementById('uiRole').dispatchEvent(new Event('change'));
+      ajustaEquipesCanal(userInviteFormEl);
       renderUsersAdmin();
     } catch(ex){
       msg.style.color = 'var(--critical)';
