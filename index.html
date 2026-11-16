@@ -536,6 +536,7 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vx-loja-pin.on{box-shadow:0 0 0 4px #00e5ff, 0 0 18px 6px rgba(0,229,255,.7), 0 2px 8px rgba(0,0,0,.6); animation:vxPulso 1.6s ease-in-out infinite;}
 .vx-loja-pin.off{opacity:.45;}
 .vx-conc-pin{background:#F2C811; border:2px solid #1a1a1a; border-radius:4px; transform:rotate(45deg); box-shadow:0 1px 5px rgba(0,0,0,.6);}
+.vx-conc-pin.aprox{opacity:.55; border-style:dashed;}
 .vx-conc-pin::after{content:''; position:absolute; inset:3px; background:#1a1a1a; border-radius:1px;}
 @keyframes vxPulso{50%{box-shadow:0 0 0 4px #00e5ff, 0 0 26px 10px rgba(0,229,255,.45), 0 2px 8px rgba(0,0,0,.6);}}
 .vx-loja-aviso{position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:950; background:var(--surface); border:1px solid rgba(0,229,255,.45); color:var(--text); border-radius:10px; padding:6px 12px; font-size:12px; font-weight:600; box-shadow:0 6px 20px rgba(0,0,0,.35); display:flex; gap:10px; align-items:center; white-space:nowrap;}
@@ -2037,7 +2038,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
               <span class="vx-ml">UF<div class="msel vx-msel" id="vxMapUF"></div></span>
               <span class="vx-ml" id="vxMapRegL" hidden>Região<div class="msel vx-msel" id="vxMapReg"></div></span>
               <label class="vx-chk"><input type="checkbox" id="vxMapLojas" checked> Lojas</label>
-              <label class="vx-chk" title="Concessionárias Chevrolet (com venda de peças), fonte: OpenStreetMap"><input type="checkbox" id="vxMapConc"> Concessionárias Chevrolet</label>
+              <label class="vx-chk" title="Rede Chevrolet ativa (concessionárias e pontos com venda de peças)"><input type="checkbox" id="vxMapConc"> Concessionárias Chevrolet</label>
               <button type="button" class="vx-full-btn" id="vxMapFiltros" title="Abrir os filtros do painel sem sair do mapa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Filtros</span></button>
               <button type="button" class="vx-full-btn" id="vxMapFull" title="Ver o mapa em tela cheia" aria-label="Ver o mapa em tela cheia"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tela cheia</span></button>
             </div>
@@ -7388,17 +7389,26 @@ function vxDesenharMapa(cids, total, ufs, fora){
   // concessionárias Chevrolet (concorrentes diretos em peças): pontos públicos do OpenStreetMap, em geo/concessionarias.json
   if(VX.conc){ VX.map.removeLayer(VX.conc); VX.conc = null; }
   if(document.getElementById('vxMapConc').checked){
-    if(!VX.concPr) VX.concPr = fetch('geo/concessionarias.json').then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; });
+    // rede ativa Chevrolet (tabela bi_rede, só no banco); sem ela, os pontos públicos do OpenStreetMap
+    if(!VX.concPr) VX.concPr = carregarRede();
     VX.concPr.then(function(lista){
       if(!document.getElementById('vxMapConc').checked || VX.conc) return;
       VX.conc = L.layerGroup().addTo(VX.map);
+      var rede = lista.fonte==='rede', nAprox = 0, mesmoPonto = {};
       lista.forEach(function(c){
         if(ufs.length && ufs.indexOf(c.uf)===-1) return;
-        var mk = L.marker([c.lat, c.lon], {icon:L.divIcon({className:'vx-conc-pin', iconSize:[13,13]}), keyboard:false, zIndexOffset:-500}).addTo(VX.conc);
-        mk.bindTooltip('<b>'+escapeHtml(c.n||'Concessionária Chevrolet')+'</b>'+(c.cid ? '<br>'+escapeHtml(c.cid)+' ('+c.uf+')' : '')+(c.end ? '<br><span style="opacity:.75">'+escapeHtml(c.end)+'</span>' : '')+(c.tel ? '<br><span style="opacity:.75">'+escapeHtml(c.tel)+'</span>' : ''), {direction:'top', offset:[0,-8]});
+        var pos = [c.lat, c.lon];
+        if(c.aprox){ // vários pontos no centro do mesmo município: espalha um pouco em volta
+          nAprox++; var k = c.lat+','+c.lon, j = mesmoPonto[k] = (mesmoPonto[k]||0) + 1;
+          if(j>1){ var ang = j*2.4, r = 0.006*Math.sqrt(j); pos = [c.lat + r*Math.sin(ang), c.lon + r*Math.cos(ang)]; }
+        }
+        var mk = L.marker(pos, {icon:L.divIcon({className:'vx-conc-pin'+(c.aprox?' aprox':''), iconSize:[13,13]}), keyboard:false, zIndexOffset:-500}).addTo(VX.conc);
+        mk.bindTooltip('<b>'+escapeHtml(c.n||'Concessionária Chevrolet')+'</b>'+(c.tipo ? '<br>'+escapeHtml(REDE_TIPO[c.tipo] || c.tipo) : '')+(c.cid ? '<br>'+escapeHtml(c.cid)+' ('+c.uf+')' : '')+(c.end ? '<br><span style="opacity:.75">'+escapeHtml(c.end)+'</span>' : '')+(c.tel ? '<br><span style="opacity:.75">'+escapeHtml(c.tel)+'</span>' : '')+(c.aprox ? '<br><span style="opacity:.75">Posição aproximada (centro do município)</span>' : ''), {direction:'top', offset:[0,-8]});
       });
       var n = VX.conc.getLayers().length, nota = document.getElementById('vxConcNota');
-      if(nota) nota.textContent = n ? n+' concessionárias Chevrolet no mapa (fonte: OpenStreetMap; pode faltar alguma).' : 'Nenhuma concessionária Chevrolet encontrada para este recorte.';
+      if(nota) nota.textContent = !n ? 'Nenhuma loja da rede Chevrolet encontrada para este recorte.'
+        : rede ? n+' lojas da rede Chevrolet ativa no mapa'+(nAprox ? ' ('+nAprox+' em posição aproximada, no centro do município)' : '')+'.'
+        : n+' concessionárias Chevrolet no mapa (fonte: OpenStreetMap; pode faltar alguma).';
     });
   } else { var nt = document.getElementById('vxConcNota'); if(nt) nt.textContent = ''; }
   // enquadra as cidades que somam 90% do faturamento (evita que uma venda isolada afaste o mapa)
@@ -7415,6 +7425,18 @@ function vxDesenharMapa(cids, total, ufs, fora){
 }
 
 
+// rede Chevrolet ativa: lojas com coordenada da tabela bi_rede; vazia ou indisponível, usa o OpenStreetMap
+var REDE_TIPO = {CONC:'Concessionária'};
+function carregarRede(){
+  var db = window.__NC_supa || supa;
+  var osm = function(){ return fetch('geo/concessionarias.json').then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; }); };
+  if(!db) return osm();
+  return db.from('bi_rede').select('nome,endereco,uf,local,tipo,lat,lon,geo_fonte').not('lat', 'is', null).then(function(r){
+    if(r.error || !r.data || !r.data.length) return osm();
+    var l = r.data.map(function(x){ return {n:x.nome, end:x.endereco, uf:x.uf, cid:x.local, tipo:x.tipo, lat:x.lat, lon:x.lon, aprox:x.geo_fonte==='municipio'}; });
+    l.fonte = 'rede'; return l;
+  }).catch(osm);
+}
 // filtros do painel com a loja escolhida no mapa
 function vxFiltrosLoja(){
   var f = JSON.parse(JSON.stringify(PAINEL_F || painelFiltros(null)));
