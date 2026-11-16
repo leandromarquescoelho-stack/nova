@@ -3012,11 +3012,24 @@ function sparkBaldes(){
   });
   return {tipo:tipo, a:a, b:b, bs:out};
 }
-function sparkDesenhar(el, vals, labs, txts, bs, folga){
+function sparkDesenhar(el, vals, labs, txts, bs, folga, nReal){
   var w = 120, h = 26, n = vals.length;
   if(n < 1){ el.innerHTML = ''; el._sp = null; return; }
-  var vv = n===1 ? [vals[0], vals[0]] : vals;
-  var svg = sparklineSVG(vv, w, h, 'var(--accent)', true, folga), riscos = '';
+  var vv = n===1 ? [vals[0], vals[0]] : vals, riscos = '', svg;
+  if(nReal && nReal < n && nReal >= 1){
+    // parte real em destaque; projeção do mês em linha pontilhada neutra sobre fundo levemente marcado
+    var mx = Math.max.apply(null, vals), mn = Math.min.apply(null, vals);
+    if(folga && mx>mn){ var fg = (mx-mn)*folga; mx += fg; mn -= fg; }
+    if(mx===mn){ mx += 1; mn -= 1; }
+    var P = vals.map(function(v, i){ return (i/(n-1)*w).toFixed(2)+','+(h - (v-mn)/(mx-mn)*h).toFixed(2); });
+    var xr = (nReal-1)/(n-1)*w, real = P.slice(0, nReal), proj = P.slice(nReal-1);
+    svg = '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none">' +
+      '<rect x="'+xr.toFixed(2)+'" y="0" width="'+(w-xr).toFixed(2)+'" height="'+h+'" fill="var(--text-muted)" fill-opacity="0.08"/>' +
+      (real.length>1 ? '<polygon points="0,'+h+' '+real.join(' ')+' '+xr.toFixed(2)+','+h+'" fill="var(--accent)" opacity="0.12"/>' +
+        '<polyline points="'+real.join(' ')+'" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' : '') +
+      '<polyline points="'+proj.join(' ')+'" fill="none" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="2 3" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' +
+      '</svg>';
+  } else svg = sparklineSVG(vv, w, h, 'var(--accent)', true, folga);
   for(var i=1; i<n && bs; i++){
     if(bs[i].mes===bs[i-1].mes) continue;
     var x = (i/(n-1)*w).toFixed(1);
@@ -3046,18 +3059,55 @@ function sparkTip(el, e){
   if(y < 8) y = r.bottom + 8;
   t.style.left = x+'px'; t.style.top = y+'px';
 }
+// projeção do mês em andamento nos minigráficos: só quando o período termina no último dia carregado.
+// Dia a dia: cada dia que falta no mês. Semana: completa a semana atual e segue até o fim do mês. Mês: fechamento do mês atual.
+function sparkProjecao(J, sd){
+  if(J.b!==TODAY_IDX || !projAtiva()) return [];
+  var P = projecaoDiaria(); if(!P.length) return [];
+  var ult = DAYS[TODAY_IDX], fimMes = P[P.length-1].date, out = [];
+  function dm(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'); }
+  if(J.tipo==='d'){
+    P.forEach(function(p){ out.push({proj:true, d0:p.date, d1:p.date, fat:p.fat, lb:p.lb, lab:fmtDiaBR(p.date)+' ('+DIA_SEM[p.date.getDay()]+') · projeção'}); });
+  } else if(J.tipo==='s'){
+    var last = J.bs[J.bs.length-1], cur = null;
+    P.forEach(function(p){
+      var seg = new Date(p.date.getFullYear(), p.date.getMonth(), p.date.getDate() - (p.date.getDay()+6)%7), k = isoDia(seg);
+      if(!cur || cur.k!==k){
+        cur = {k:k, proj:true, d0:seg, d1:p.date, fat:0, lb:0};
+        if(k===last.k){ cur.d0 = DAYS[last.i0]; cur.fat = sumRange(sd.fat, last.i0, last.i1); cur.lb = sumRange(sd.lb, last.i0, last.i1); }
+        out.push(cur);
+      }
+      cur.d1 = p.date; cur.fat += p.fat; cur.lb += p.lb;
+    });
+    // semana final cortada pelo fim do mês com poucos dias: junta na anterior para não parecer queda
+    var ul = out[out.length-1];
+    if(out.length>=2 && (ul.d1 - ul.d0)/864e5 < 3){ var pe = out[out.length-2]; pe.d1 = ul.d1; pe.fat += ul.fat; pe.lb += ul.lb; out.pop(); }
+    out.forEach(function(x){ x.lab = 'Semana de '+dm(x.d0)+' a '+dm(x.d1)+'/'+x.d1.getFullYear()+' · projeção'; });
+    if(out.length && out[0].k===last.k) last.lab += ' (até '+dm(ult)+')';
+  } else {
+    var i0 = inicioMesAtual(), x = {proj:true, d0:DAYS[i0], d1:fimMes, fat:sumRange(sd.fat, i0, TODAY_IDX), lb:sumRange(sd.lb, i0, TODAY_IDX)};
+    P.forEach(function(p){ x.fat += p.fat; x.lb += p.lb; });
+    x.lab = MES_ABREV[ult.getMonth()]+'/'+ult.getFullYear()+' · projeção de fechamento'; out.push(x);
+    J.bs[J.bs.length-1].lab = MES_ABREV[ult.getMonth()]+'/'+ult.getFullYear()+' (até '+dm(ult)+')';
+  }
+  out.forEach(function(x){ x.mes = x.d1.getFullYear()*12 + x.d1.getMonth(); });
+  return out;
+}
 function kpiSparks(k){
-  var J = sparkBaldes(), bs = J.bs, sd = salesDaily(), labs = bs.map(function(x){ return x.lab; });
+  kpiSparks.k = k;
+  var J = sparkBaldes(), bs = J.bs, sd = salesDaily(), nReal = bs.length;
+  bs = bs.concat(sparkProjecao(J, sd));
+  var labs = bs.map(function(x){ return x.lab; });
   var fat = [], mg = [], md = [], ant = {mg:null, md:null};
   bs.forEach(function(x){
-    var f = sumRange(sd.fat, x.i0, x.i1), l = sumRange(sd.lb, x.i0, x.i1);
-    var c = contarDias(DAYS[x.i0], DAYS[x.i1], null), dias = k.soOnline ? c.corridos : c.uteis;
+    var f = x.proj ? x.fat : sumRange(sd.fat, x.i0, x.i1), l = x.proj ? x.lb : sumRange(sd.lb, x.i0, x.i1);
+    var c = x.proj ? contarDias(x.d0, x.d1, null) : contarDias(DAYS[x.i0], DAYS[x.i1], null), dias = k.soOnline ? c.corridos : c.uteis;
     fat.push(f);
     var m = f>0 ? l/f*100 : ant.mg; mg.push(m==null ? 0 : m); if(f>0) ant.mg = m;
     var me = dias>0 ? f/dias : ant.md; md.push(me==null ? 0 : me); if(dias>0) ant.md = me;
     x.dias = dias;
   });
-  var put = function(key, vals, txts, folga){ sparkDesenhar(kpiEls[key].s, vals, labs, txts, J.tipo==='m' ? null : bs, folga); };
+  var put = function(key, vals, txts, folga){ sparkDesenhar(kpiEls[key].s, vals, labs, txts, J.tipo==='m' ? null : bs, folga, nReal); };
   put('fat', fat, fat.map(function(v){ return fmtMoney(v); }));
   put('margem', mg, mg.map(function(v, i){ return fat[i]>0 ? v.toFixed(1).replace('.',',')+'%' : 'sem venda'; }));
   put('media', md, md.map(function(v, i){ return bs[i].dias>0 ? fmtMoney(v)+' por dia ('+bs[i].dias+(k.soOnline?' corrido':' út.')+(bs[i].dias===1?'':'s')+')' : 'dia sem expediente'; }));
@@ -3070,15 +3120,15 @@ function kpiSparks(k){
     (rows||[]).forEach(function(r){ if(r[6]!==1) return; var mi = mesIdx(r[1]); if(mi<0) return; ft[mi] = c2(r[2]); nn[mi] = +r[4]; nc[mi] = +r[5]; });
     var tn = [], tc = [], ln = [], ttn = [], ttc = [];
     bs.forEach(function(x){
-      var mi = monthIndexOfDay[x.i1], d = DAYS[x.i1];
+      var d = x.proj ? x.d1 : DAYS[x.i1], mi = x.proj ? monthIndexOfDay[TODAY_IDX] : monthIndexOfDay[x.i1];
       var vn = nn[mi] ? ft[mi]/nn[mi] : (tn.length ? tn[tn.length-1] : 0), vc = nc[mi] ? ft[mi]/nc[mi] : (tc.length ? tc[tc.length-1] : 0);
       tn.push(vn); tc.push(vc);
       ln.push(J.tipo==='m' ? x.lab : x.lab+' · competência '+MES_ABREV[d.getMonth()]+'/'+d.getFullYear());
-      ttn.push(nn[mi] ? fmtMoney2(vn)+' · '+fmtUn(nn[mi])+' notas no mês' : 'sem notas no mês');
-      ttc.push(nc[mi] ? fmtMoney2(vc)+' · '+fmtUn(nc[mi])+' clientes no mês' : 'sem clientes no mês');
+      ttn.push(x.proj ? fmtMoney2(vn)+' · a projeção mantém o ticket do mês' : nn[mi] ? fmtMoney2(vn)+' · '+fmtUn(nn[mi])+' notas no mês' : 'sem notas no mês');
+      ttc.push(x.proj ? fmtMoney2(vc)+' · a projeção mantém o ticket do mês' : nc[mi] ? fmtMoney2(vc)+' · '+fmtUn(nc[mi])+' clientes no mês' : 'sem clientes no mês');
     });
-    sparkDesenhar(kpiEls.tknf.s, tn, ln, ttn, J.tipo==='m' ? null : bs, 0.6);
-    sparkDesenhar(kpiEls.tkcli.s, tc, ln, ttc, J.tipo==='m' ? null : bs, 0.6);
+    sparkDesenhar(kpiEls.tknf.s, tn, ln, ttn, J.tipo==='m' ? null : bs, 0.6, nReal);
+    sparkDesenhar(kpiEls.tkcli.s, tc, ln, ttc, J.tipo==='m' ? null : bs, 0.6, nReal);
   }).catch(function(){ if(seq===kpiSparks.seq){ kpiEls.tknf.s.innerHTML = ''; kpiEls.tkcli.s.innerHTML = ''; } });
 }
 
@@ -7589,7 +7639,7 @@ async function renderAll(refreshing){
 function renderTudo(refreshing){
   renderKpis(refreshing);
   if(refreshing) return;
-  if(!PESOS_PR) carregarPesos().then(function(p){ if(p){ renderMonthToDate(); renderMainChart(); renderMonthChart(); renderHeatLoja(); } });
+  if(!PESOS_PR) carregarPesos().then(function(p){ if(p){ renderMonthToDate(); renderMainChart(); renderMonthChart(); renderHeatLoja(); if(kpiSparks.k) kpiSparks(kpiSparks.k); } });
   renderMonthToDate();
   renderAutoInsights();
   renderMainChart();
