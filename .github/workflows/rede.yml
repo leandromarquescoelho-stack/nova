@@ -1,0 +1,36 @@
+name: Rede Chevrolet -> coordenadas
+
+# Busca a latitude e a longitude das lojas da rede Chevrolet que estão no banco (tabela bi_rede) e ainda não
+# têm ponto no mapa. A lista fica só no banco; o log mostra apenas contagens. Roda toda segunda e à mão.
+on:
+  schedule:
+    - cron: '20 10 * * 1'
+  workflow_dispatch:
+    inputs:
+      todas:
+        description: 'Refazer todas as lojas (não só as sem coordenada)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rede
+  cancel-in-progress: false
+
+jobs:
+  rede:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependências
+        run: pip install "psycopg[binary]==3.2.3" requests==2.32.3
+      - name: Localizar as lojas
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python etl/rede_geocodificar.py ${{ inputs.todas && '--todas' || '' }}
