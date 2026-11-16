@@ -3032,6 +3032,7 @@ function renderConcorrencia(){
     document.getElementById('ccFiltro').addEventListener('change', ccTabela);
     document.getElementById('ccBusca').addEventListener('input', ccTabela);
     document.getElementById('ccTbl').addEventListener('click', function(e){
+      if(e.target.closest('.cc-retry')){ renderConcorrencia(); return; }
       var th = e.target.closest('th[data-o]'); if(!th) return;
       var o = th.getAttribute('data-o'); CC.desc = CC.ordem===o ? !CC.desc : true; CC.ordem = o; ccTabela();
     });
@@ -3041,7 +3042,7 @@ function renderConcorrencia(){
   document.getElementById('ccTbl').innerHTML = '<tr><td class="status-txt" style="padding:20px;">Carregando…</td></tr>';
   supa.rpc('bi_concorrencia_ler').then(function(r){
     CC.carregando = false;
-    if(r.error){ document.getElementById('ccTbl').innerHTML = '<tr><td style="padding:20px;">'+(/sem acesso/.test(r.error.message||'') ? 'A concorrência está disponível só para quem tem acesso a todas as lojas.' : 'Não foi possível carregar agora. Tente de novo em instantes.')+'</td></tr>'; return; }
+    if(r.error){ document.getElementById('ccTbl').innerHTML = '<tr><td style="padding:20px;">'+(/sem acesso/.test(r.error.message||'') ? 'A concorrência está disponível só para quem tem acesso a todas as lojas.' : 'Não foi possível carregar agora. <button type="button" class="pl-editar cc-retry">Tentar de novo</button>')+'</td></tr>'; return; }
     var d = r.data || {itens:[], precos:[]}, pm = {}, quando = null;
     (d.precos||[]).forEach(function(x){ (pm[x[1]] = pm[x[1]] || {})[x[0]] = {preco:+x[2], lista:x[3]==null?null:+x[3], disp:x[4], titulo:x[5], url:x[6], conf:x[7]}; if(!quando || x[8] > quando) quando = x[8]; });
     CC.dados = {quando:quando, itens:(d.itens||[]).map(function(x, i){
@@ -8802,6 +8803,28 @@ var supa = (window.supabase)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{persistSession:true, autoRefreshToken:true}})
   : null;
 window.__NC_supa = supa;
+// leituras que estouram o tempo do banco (servidor ocupado com várias buscas ao mesmo tempo) ou caem na rede tentam de novo
+// sozinhas até 2 vezes, com espera crescente; gravações nunca repetem
+if(supa){
+  var _rpcOrig = supa.rpc.bind(supa);
+  var RPC_GRAVA = /gravar|salvar|excluir|apagar|criar|definir|upsert/;
+  var rpcTransitorio = function(r){
+    var e = r && r.error; if(!e) return false;
+    var m = String(e.message||'') + ' ' + String(e.details||'');
+    return e.code==='57014' || /statement timeout|canceling statement|Failed to fetch|NetworkError|Load failed|fetch failed|upstream|timed? ?out/i.test(m) || (r.status>=500 && r.status!==501);
+  };
+  supa.rpc = function(fn, args, opt){
+    if(RPC_GRAVA.test(fn)) return _rpcOrig(fn, args, opt);
+    var tent = 0;
+    var vai = function(){
+      return Promise.resolve(_rpcOrig(fn, args, opt)).catch(function(err){ return {data:null, error:{message:String(err && err.message || err)}, status:0}; }).then(function(r){
+        if(tent < 2 && rpcTransitorio(r)){ tent++; return new Promise(function(ok){ setTimeout(ok, 1200*tent + Math.random()*600); }).then(vai); }
+        return r;
+      });
+    };
+    return vai();
+  };
+}
 
 // link de convite / redefinição de senha: o Supabase devolve type=invite|recovery no endereço
 var LINK_TYPE = (function(){
