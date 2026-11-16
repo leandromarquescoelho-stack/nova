@@ -2297,7 +2297,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <!-- ============ PLANEJAMENTO ============ -->
       <section class="view-panel" data-view-panel="planejamento" style="display:none;">
-        <div class="pl-guias" id="plGuias" role="tablist"><button type="button" class="on" data-ano="2027" role="tab" aria-selected="true">2027</button><button type="button" data-ano="2027v2" role="tab" aria-selected="false">2027 v2</button></div>
+        <div class="pl-guias" id="plGuias" role="tablist"><button type="button" class="on" data-ano="2027v2" role="tab" aria-selected="true">2027</button></div>
         <div class="pl-edbar" id="plEdBar" hidden>
           <span class="pl-edtxt">Modo edição: clique num texto ou número do slide para alterar.</span>
           <button type="button" data-op="esq" title="Mover este slide para a esquerda">&#9664; Mover</button>
@@ -3113,7 +3113,7 @@ function ccTabela(){
 /* ============================================================
    PLANEJAMENTO: apresentação anual (conteúdo no banco, só para quem vê todas as lojas)
    ============================================================ */
-var PL = {ano:'2027', dados:{}, idx:0, carregando:{}, edit:false, rasc:null};
+var PL = {ano:'2027v2', dados:{}, idx:0, carregando:{}, edit:false, rasc:null};
 function plDoc(){ return PL.edit ? PL.rasc : PL.dados[PL.ano]; }
 function plEsc(t){ return escapeHtml(String(t==null?'':t)); }
 function plPct(v, casas){ var c = casas==null ? 1 : casas; return (v>=0?'+':'')+v.toFixed(c).replace('.',',')+'%'; }
