@@ -38,7 +38,38 @@ ABAS_OBRIG = ('vendas', 'estoque', 'catalogo', 'marcas', 'vendedores')
 # colunas que podem faltar conforme a versão do arquivo (no formato com a aba transacionadores, os dados do
 # cliente e o nome do vendedor saíram da aba vendas)
 COLS_OPCIONAIS = {'razao', 'cidade', 'tipo_cliente', 'nome_vendedor', 'equipe', 'codigo_loja', 'subcategoria',
-                  'prazo', 'grupo_cliente', 'pessoa', 'funcao', 'grupo_peca', 'aplicacao', 'curva_gm'}
+                  'prazo', 'grupo_cliente', 'pessoa', 'funcao', 'grupo_peca', 'aplicacao', 'curva_gm', 'cep'}
+# CEP do cliente (zonas da capital): entra pela aba vendas ou transacionadores mesmo sem estar no mapa do banco
+CIDADE_CAPITAL = {'SP - SAO PAULO', 'SP - SÃO PAULO', 'SP - SP', 'SAO PAULO', 'SÃO PAULO'}
+CEP_NOMES = ('CEP', 'CEP_CLIENTE', 'CEP CLIENTE', 'CEP_CLI', 'NUM_CEP')
+# zonas da cidade de São Paulo pela faixa de CEP (Correios): só os 5 primeiros dígitos importam
+ZONAS_CEP = ((1000, 1599, 'Centro'), (2000, 2999, 'Norte'), (3000, 3999, 'Leste'), (8000, 8499, 'Leste'),
+             (4000, 4999, 'Sul'), (5000, 5899, 'Oeste'))
+
+
+def zona_cep(cep):
+    """'04571-010' -> 'Sul'; CEP fora da capital, incompleto ou vazio -> None."""
+    if not isinstance(cep, str):
+        return None
+    d = ''.join(ch for ch in cep if ch.isdigit())
+    if len(d) == 7:  # planilha que guarda o CEP como número perde o zero da frente (01310-100 -> 1310100)
+        d = '0' + d
+    if len(d) != 8:
+        return None
+    n = int(d[:5])  # 5 primeiros dígitos: 01310-100 -> 1310
+    return next((z for a, b, z in ZONAS_CEP if a <= n <= b), None)
+
+
+def cep_texto(serie):
+    """CEP como texto: número do Excel (1310100.0) vira '1310100'; vazio vira None."""
+    def um(x):
+        if x is None or (isinstance(x, float) and pd.isna(x)):
+            return None
+        if isinstance(x, (int, float)):
+            return str(int(x)) if float(x).is_integer() else None
+        x = str(x).strip()
+        return x or None
+    return serie.map(um)
 
 
 def ler_abas(nome, buf, spec):
@@ -65,6 +96,11 @@ def ler_abas(nome, buf, spec):
         # colunas opcionais que mudam entre versões do arquivo: entram só se existirem
         colunas = {k: c for k, c in abas[papel]['colunas'].items()
                    if k not in COLS_OPCIONAIS or (c and normaliza(c) in reais)}
+        if papel in ('vendas', 'transacionadores') and 'cep' not in colunas:
+            achada = next((c for c in CEP_NOMES if c in reais), None)
+            if achada:
+                colunas['cep'] = achada
+                log(f'{papel}: coluna de CEP encontrada')
         out[papel] = renomear(df, colunas, papel)
         log(f'{papel}: {len(out[papel])} linhas lidas')
     return out
@@ -101,6 +137,10 @@ def preparar(dfs, regras):
         for c in ('razao', 'cidade', 'tipo_cliente', 'grupo_cliente', 'pessoa'):
             if c in tra:
                 v[c] = v[c].fillna(cod_v.map(texto(tra[c])))
+    # CEP do cliente: o da venda; sem ele, o do cadastro (aba transacionadores)
+    v['cep'] = cep_texto(v['cep']) if 'cep' in v else None
+    if tra is not None and 'cep' in tra:
+        v['cep'] = v['cep'].fillna(_chave(v['codcli']).map(cep_texto(tra['cep'])))
     v['pessoa'] = v['pessoa'].map(lambda x: PESSOA.get(normaliza(x), x) if isinstance(x, str) else x)
 
     # condição de pagamento: código PRAZO da venda -> aba condicao_pagto (no formato antigo o PRAZO já vinha em texto)
@@ -193,7 +233,12 @@ def preparar(dfs, regras):
 
     # clientes: dados da venda mais recente de cada código
     cli = v.sort_values('data').groupby('codcli').agg(razao=('razao', 'last'), tipo_cliente=('tipo_cliente', 'last'),
-                                                      cidade=('cidade', 'last'))
+                                                      cidade=('cidade', 'last'), cep=('cep', 'last'))
+    # zona só para cliente da capital: CEP na faixa da capital e município São Paulo (cadastro com CEP e cidade
+    # divergentes fica sem zona, para não misturar cliente de outra cidade nas zonas)
+    capital = cli['cidade'].map(lambda x: isinstance(x, str) and normaliza(x) in CIDADE_CAPITAL)
+    cli['zona'] = cli['cep'].map(zona_cep).where(capital)
+    cli.attrs['tem_cep'] = bool(v['cep'].notna().any())
     return v, e, prod, cli
 
 
@@ -267,6 +312,16 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         for t in ATRIB:
             valores[t] |= set(prod[t].unique())
         valores['loja'] |= set(e['loja'].unique())
+        # zona da capital (pelo CEP): só quando o banco já tem a coluna e o arquivo trouxe CEP
+        cur.execute("""select exists (select 1 from information_schema.columns
+                       where table_schema = 'public' and table_name = 'bi_cliente' and column_name = 'zona')""")
+        com_zona = cur.fetchone()[0]
+        usar_zona = com_zona and cli.attrs.get('tem_cep', False)
+        if usar_zona:
+            valores['zona'] = set(cli['zona'].dropna())
+            log(f"CEP: {int(cli['cep'].notna().sum())} de {len(cli)} clientes com CEP; {int(cli['zona'].notna().sum())} com zona da capital")
+        elif cli.attrs.get('tem_cep', False):
+            log('CEP: o banco ainda não tem a coluna de zona; zonas ignoradas nesta carga')
         dims, n_novos = ids_dims(cur, valores)
 
         # produtos: insere os novos e atualiza os atributos dos que vieram no arquivo (nome só se o estoque trouxe)
@@ -287,13 +342,17 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         c = pd.DataFrame({'id': cli.index.map(cid), 'codcli': cli.index, 'razao': cli['razao'],
                           'tipo_cliente': cli['tipo_cliente'].fillna('N/D').map(dims['tipo_cliente']).astype('int64'),
                           'cidade': cli['cidade'].fillna('N/D').map(dims['cidade']).astype('int64')})
+        if usar_zona:
+            c['zona'] = cli['zona'].map(dims['zona']).astype('Int64')
         cur.execute('create temp table _c (like public.bi_cliente) on commit drop')
         copiar_tab(cur, '_c', c)
-        cur.execute("""update public.bi_cliente b set razao = coalesce(t.razao, b.razao), tipo_cliente = t.tipo_cliente,
-                       cidade = t.cidade from _c t where b.id = t.id""")
-        cur.execute("""insert into public.bi_cliente (id, codcli, razao, tipo_cliente, cidade)
-                       select id, codcli, razao, tipo_cliente, cidade from _c t
-                       where not exists (select 1 from public.bi_cliente b where b.id = t.id)""")
+        z = ', zona = t.zona' if usar_zona else ''
+        cur.execute(f"""update public.bi_cliente b set razao = coalesce(t.razao, b.razao), tipo_cliente = t.tipo_cliente,
+                        cidade = t.cidade{z} from _c t where b.id = t.id""")
+        zc = ', zona' if usar_zona else ''
+        cur.execute(f"""insert into public.bi_cliente (id, codcli, razao, tipo_cliente, cidade{zc})
+                        select id, codcli, razao, tipo_cliente, cidade{zc} from _c t
+                        where not exists (select 1 from public.bi_cliente b where b.id = t.id)""")
 
         # vendas do período do arquivo
         out = pd.DataFrame({'dia': v['data'].dt.date, 'mes': (v['data'].dt.year - 2000) * 100 + v['data'].dt.month})
@@ -344,6 +403,8 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         usos['loja'].append('select distinct loja from public.bi_estoque')
         usos['tipo_cliente'].append('select distinct tipo_cliente from public.bi_cliente')
         usos['cidade'].append('select distinct cidade from public.bi_cliente')
+        if com_zona:
+            usos['zona'] = ['select distinct zona from public.bi_cliente where zona is not null']
         for t, qs in usos.items():
             cur.execute(f"delete from public.bi_dim d where d.tipo = %s and d.id not in ({' union '.join(qs)})", (t,))
 
