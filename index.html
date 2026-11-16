@@ -402,7 +402,11 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .kpi-card .kdelta.up{color:var(--good);}
 .kpi-card .kdelta.down{color:var(--critical);}
 .kpi-card .kdelta.flat{color:var(--text-muted);}
-.kpi-card .kspark{margin-top:8px; height:26px;}
+.kpi-card .kspark{margin-top:8px; height:26px; position:relative; cursor:crosshair;}
+.kspark .sp-guia{position:absolute; top:0; bottom:0; width:1px; background:var(--text-muted); opacity:.7; display:none; pointer-events:none;}
+.sp-tip{position:fixed; z-index:3000; pointer-events:none; padding:7px 10px; border-radius:9px; background:var(--surface); border:1px solid var(--border-strong); box-shadow:0 8px 24px rgba(0,0,0,.3); font-size:12px; color:var(--text-2); display:none; white-space:nowrap;}
+.sp-tip span{display:block; font-size:11px; color:var(--text-muted);}
+.sp-tip b{display:block; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:12.5px; margin-top:2px;}
 .kpi-card.skel .kvalue, .kpi-card.skel .kdelta{ color:transparent; background:var(--surface-3); border-radius:5px; }
 /* ---- barra lateral colorida por KPI (identidade visual rápida por indicador) ---- */
 .kpi-card::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:3px 0 0 3px; background:var(--accent); }
@@ -2986,51 +2990,96 @@ function sparklineSVG(values, w, h, color, fill, folga){
   return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none">'+area+line+'</svg>';
 }
 
-// minigráfico dos cartões: últimos 3 meses (mesmo dia, 3 meses atrás, até hoje), com riscos discretos na virada de cada mês
-function janela3m(){
-  var b = TODAY_IDX, h = DAYS[b], ini = new Date(h.getFullYear(), h.getMonth()-3, h.getDate()+1);
-  var a = DIA_IDX[isoDia(ini)]; if(a===undefined) a = 0;
-  return {a:Math.max(0, a), b:b};
+// minigráficos dos cartões: acompanham o período selecionado. Até 45 dias = um ponto por dia; até 200 = por semana; acima = por mês.
+// Períodos de 1 dia (hoje/ontem) mostram os 7 dias que terminam nele. Passar o mouse mostra a competência e o valor.
+var DIA_SEM = ['dom','seg','ter','qua','qui','sex','sáb'];
+function fmtDiaBR(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+function sparkBaldes(){
+  var pr = periodRange(state.globalPeriod), a = pr.start, b = pr.end;
+  if(b - a < 6) a = Math.max(0, b - 6);
+  var n = b - a + 1, tipo = n <= 45 ? 'd' : (n <= 200 ? 's' : 'm'), out = [], cur = null;
+  for(var i=a; i<=b; i++){
+    var d = DAYS[i], chave = tipo==='d' ? i : (tipo==='m' ? d.getFullYear()*12 + d.getMonth() : Math.floor((i - ((d.getDay()+6)%7)) ));
+    if(tipo==='s'){ var seg = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay()+6)%7); chave = isoDia(seg); }
+    if(!cur || cur.k!==chave){ cur = {k:chave, i0:i, i1:i}; out.push(cur); } else cur.i1 = i;
+  }
+  out.forEach(function(x){
+    var d0 = DAYS[x.i0], d1 = DAYS[x.i1];
+    x.lab = tipo==='d' ? fmtDiaBR(d0)+' ('+DIA_SEM[d0.getDay()]+')'
+          : tipo==='m' ? MES_ABREV[d0.getMonth()]+'/'+d0.getFullYear()+(x.i0===a && d0.getDate()!==1 || (x.i1===b && b!==TODAY_IDX && new Date(d1.getFullYear(), d1.getMonth()+1, 0).getDate()!==d1.getDate()) ? ' (parcial)' : '')
+          : 'Semana de '+String(d0.getDate()).padStart(2,'0')+'/'+String(d0.getMonth()+1).padStart(2,'0')+' a '+String(d1.getDate()).padStart(2,'0')+'/'+String(d1.getMonth()+1).padStart(2,'0')+'/'+d1.getFullYear();
+    x.mes = d1.getFullYear()*12 + d1.getMonth();
+  });
+  return {tipo:tipo, a:a, b:b, bs:out};
 }
-function spark3m(vals, a, color, fill, folga){
-  var w = 120, h = 26, n = vals.length; if(n < 2) return '';
-  var svg = sparklineSVG(vals, w, h, color, fill, folga), riscos = '';
-  for(var i=1; i<n; i++){
-    if(DAYS[a+i].getDate()!==1) continue;
+function sparkDesenhar(el, vals, labs, txts, bs, folga){
+  var w = 120, h = 26, n = vals.length;
+  if(n < 1){ el.innerHTML = ''; el._sp = null; return; }
+  var vv = n===1 ? [vals[0], vals[0]] : vals;
+  var svg = sparklineSVG(vv, w, h, 'var(--accent)', true, folga), riscos = '';
+  for(var i=1; i<n && bs; i++){
+    if(bs[i].mes===bs[i-1].mes) continue;
     var x = (i/(n-1)*w).toFixed(1);
     riscos += '<line x1="'+x+'" y1="1" x2="'+x+'" y2="'+h+'" stroke="var(--text-muted)" stroke-opacity="0.45" stroke-width="1" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>';
   }
   var k = svg.indexOf('>')+1;
-  return svg.slice(0, k) + riscos + svg.slice(k);
+  el.innerHTML = svg.slice(0, k) + riscos + svg.slice(k) + '<i class="sp-guia"></i>';
+  el._sp = {labs:labs, txts:txts}; el.title = '';
+  if(!el._spLigado){
+    el._spLigado = true;
+    el.addEventListener('mousemove', function(e){ sparkTip(el, e); });
+    el.addEventListener('mouseleave', function(){ var t = document.getElementById('spTip'); if(t) t.style.display = 'none'; var g = el.querySelector('.sp-guia'); if(g) g.style.display = 'none'; });
+  }
 }
-// soma móvel de 7 dias (tira o sobe-e-desce de fim de semana)
-function movel7(arr, a, b){
-  var out = [];
-  for(var i=a; i<=b; i++){ var t = 0; for(var j=Math.max(0,i-6); j<=i; j++) t += arr[j]||0; out.push(t); }
-  return out;
+function sparkTip(el, e){
+  var sp = el._sp; if(!sp || !sp.labs.length) return;
+  var r = el.getBoundingClientRect(), n = sp.labs.length;
+  var i = n===1 ? 0 : Math.max(0, Math.min(n-1, Math.round((e.clientX - r.left)/r.width*(n-1))));
+  var t = document.getElementById('spTip');
+  if(!t){ t = document.createElement('div'); t.id = 'spTip'; t.className = 'sp-tip'; }
+  var casa = document.fullscreenElement || document.body; if(t.parentNode!==casa) casa.appendChild(t);
+  t.innerHTML = '<span>'+escapeHtml(sp.labs[i])+'</span><b>'+escapeHtml(sp.txts[i])+'</b>';
+  t.style.display = 'block';
+  var gx = n===1 ? r.width/2 : i/(n-1)*r.width, g = el.querySelector('.sp-guia');
+  if(g){ g.style.display = 'block'; g.style.left = gx+'px'; }
+  var x = Math.max(8, Math.min(window.innerWidth - t.offsetWidth - 8, r.left + gx - t.offsetWidth/2)), y = r.top - t.offsetHeight - 8;
+  if(y < 8) y = r.bottom + 8;
+  t.style.left = x+'px'; t.style.top = y+'px';
 }
 function kpiSparks(k){
-  var j = janela3m(), a = j.a, b = j.b, sd = salesDaily();
-  var f7 = movel7(sd.fat, a, b), l7 = movel7(sd.lb, a, b);
-  var dia = [];
-  for(var i=a; i<=b; i++){ var c = contarDias(DAYS[Math.max(0,i-6)], DAYS[i], null); dia.push(k.soOnline ? c.corridos : c.uteis); }
-  var put = function(key, html){ var el = kpiEls[key].s; el.innerHTML = html; el.title = html ? 'Gráfico dos últimos 3 meses' : ''; };
-  put('fat', spark3m(f7, a, 'var(--accent)', true));
-  put('margem', spark3m(f7.map(function(f,i){ return f>0 ? l7[i]/f*100 : 0; }), a, 'var(--accent)', true));
-  put('media', spark3m(f7.map(function(f,i){ return dia[i] ? f/dia[i] : 0; }), a, 'var(--accent)', true));
-  put('estoque', '');
-  // tickets: notas e clientes distintos só existem por mês (consulta do banco); cada mês vira um degrau
+  var J = sparkBaldes(), bs = J.bs, sd = salesDaily(), labs = bs.map(function(x){ return x.lab; });
+  var fat = [], mg = [], md = [], ant = {mg:null, md:null};
+  bs.forEach(function(x){
+    var f = sumRange(sd.fat, x.i0, x.i1), l = sumRange(sd.lb, x.i0, x.i1);
+    var c = contarDias(DAYS[x.i0], DAYS[x.i1], null), dias = k.soOnline ? c.corridos : c.uteis;
+    fat.push(f);
+    var m = f>0 ? l/f*100 : ant.mg; mg.push(m==null ? 0 : m); if(f>0) ant.mg = m;
+    var me = dias>0 ? f/dias : ant.md; md.push(me==null ? 0 : me); if(dias>0) ant.md = me;
+    x.dias = dias;
+  });
+  var put = function(key, vals, txts, folga){ sparkDesenhar(kpiEls[key].s, vals, labs, txts, J.tipo==='m' ? null : bs, folga); };
+  put('fat', fat, fat.map(function(v){ return fmtMoney(v); }));
+  put('margem', mg, mg.map(function(v, i){ return fat[i]>0 ? v.toFixed(1).replace('.',',')+'%' : 'sem venda'; }));
+  put('media', md, md.map(function(v, i){ return bs[i].dias>0 ? fmtMoney(v)+' por dia ('+bs[i].dias+(k.soOnline?' corrido':' út.')+(bs[i].dias===1?'':'s')+')' : 'dia sem expediente'; }));
+  kpiEls.estoque.s.innerHTML = ''; kpiEls.estoque.s._sp = null;
+  // tickets: notas e clientes distintos só existem por mês (consulta do banco): cada ponto mostra o ticket do mês (competência)
   var seq = kpiSparks.seq = (kpiSparks.seq||0) + 1;
   rpcMemo('bi_loja_mes', {f: painelFiltros(null)}).then(function(rows){
     if(seq!==kpiSparks.seq) return;
     var nM = REAL.months.length, ft = new Array(nM).fill(0), nn = new Array(nM).fill(0), nc = new Array(nM).fill(0);
     (rows||[]).forEach(function(r){ if(r[6]!==1) return; var mi = mesIdx(r[1]); if(mi<0) return; ft[mi] = c2(r[2]); nn[mi] = +r[4]; nc[mi] = +r[5]; });
-    var tn = [], tc = [];
-    for(var i=a; i<=b; i++){ var mi = monthIndexOfDay[i]; // mês ainda sem dado repete o anterior (não despenca a zero)
-      tn.push(nn[mi] ? ft[mi]/nn[mi] : (tn.length ? tn[tn.length-1] : 0)); tc.push(nc[mi] ? ft[mi]/nc[mi] : (tc.length ? tc[tc.length-1] : 0)); }
-    put('tknf', spark3m(tn, a, 'var(--accent)', true, 0.6));
-    put('tkcli', spark3m(tc, a, 'var(--accent)', true, 0.6));
-  }).catch(function(){ if(seq===kpiSparks.seq){ put('tknf', ''); put('tkcli', ''); } });
+    var tn = [], tc = [], ln = [], ttn = [], ttc = [];
+    bs.forEach(function(x){
+      var mi = monthIndexOfDay[x.i1], d = DAYS[x.i1];
+      var vn = nn[mi] ? ft[mi]/nn[mi] : (tn.length ? tn[tn.length-1] : 0), vc = nc[mi] ? ft[mi]/nc[mi] : (tc.length ? tc[tc.length-1] : 0);
+      tn.push(vn); tc.push(vc);
+      ln.push(J.tipo==='m' ? x.lab : x.lab+' · competência '+MES_ABREV[d.getMonth()]+'/'+d.getFullYear());
+      ttn.push(nn[mi] ? fmtMoney2(vn)+' · '+fmtUn(nn[mi])+' notas no mês' : 'sem notas no mês');
+      ttc.push(nc[mi] ? fmtMoney2(vc)+' · '+fmtUn(nc[mi])+' clientes no mês' : 'sem clientes no mês');
+    });
+    sparkDesenhar(kpiEls.tknf.s, tn, ln, ttn, J.tipo==='m' ? null : bs, 0.6);
+    sparkDesenhar(kpiEls.tkcli.s, tc, ln, ttc, J.tipo==='m' ? null : bs, 0.6);
+  }).catch(function(){ if(seq===kpiSparks.seq){ kpiEls.tknf.s.innerHTML = ''; kpiEls.tkcli.s.innerHTML = ''; } });
 }
 
 /* ============================================================
