@@ -1144,7 +1144,12 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cc-tbl .num{text-align:right; font-family:'JetBrains Mono',monospace; white-space:nowrap;}
 .cc-item b{display:block; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:12px;}
 .cc-item span{display:block; max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px;}
-.cc-nosso{color:var(--text); font-weight:800;}
+.cc-nosso{color:var(--text); font-weight:800; cursor:help;}
+.cc-tip{position:fixed; z-index:3000; pointer-events:none; min-width:220px; max-width:300px; padding:10px 12px; border-radius:10px; background:var(--surface); border:1px solid var(--border-strong); box-shadow:0 10px 30px rgba(0,0,0,.35); font-size:12.5px; color:var(--text-2); line-height:1.5; display:none;}
+.cc-tip b{color:var(--text); font-family:'JetBrains Mono',monospace;}
+.cc-tip .t{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); font-weight:800; margin-bottom:4px;}
+.cc-tip .r{display:flex; justify-content:space-between; gap:14px;}
+.cc-tip .n{font-size:11.5px; color:var(--text-muted); margin-top:4px;}
 .cc-c{display:flex; flex-direction:column; align-items:flex-end; gap:2px;}
 .cc-c a{color:var(--text); text-decoration:none; font-family:'JetBrains Mono',monospace;}
 .cc-c a:hover{text-decoration:underline;}
@@ -3036,6 +3041,10 @@ function renderConcorrencia(){
     document.getElementById('ccFiltro').addEventListener('change', ccTabela);
     document.getElementById('ccBusca').addEventListener('input', ccTabela);
     document.getElementById('ccExportar').addEventListener('click', ccExportar);
+    var tbl = document.getElementById('ccTbl');
+    tbl.addEventListener('mouseover', function(e){ var td = e.target.closest('td.cc-nosso'); if(td) ccTipMostrar(td); });
+    tbl.addEventListener('mouseout', function(e){ var td = e.target.closest('td.cc-nosso'); if(td && !td.contains(e.relatedTarget)) ccTipEsconder(); });
+    document.querySelector('.cc-scroll').addEventListener('scroll', ccTipEsconder);
     window.addEventListener('resize', ccAltura);
     document.getElementById('ccTbl').addEventListener('click', function(e){
       if(e.target.closest('.cc-retry')){ renderConcorrencia(); return; }
@@ -3063,8 +3072,52 @@ function renderConcorrencia(){
       return {rank:i+1, pn:x[0], nome:x[1], fat:c2(x[2]), qtd:+x[3], pmv:pmv, nosso:nosso, nossoSusp:nossoSusp, nossoBruto:p.nossa ? p.nossa.preco : null, nossoUrl:p.nossa && p.nossa.url, cs:cs, menor:menor, pctMenor:pctMenor, n:vals.length};
     })};
     ccTabela();
+    carregarProdutos().catch(function(){});   // estoque para o tooltip do nosso preço
   });
 }
+// estoque do item somado em todas as lojas e o maior custo médio entre elas (custo do estoque ÷ peças, só lojas com saldo)
+var CC_PN2PID = null;
+function ccEstoque(pn){
+  if(!PROD_OK) return null;
+  if(!CC_PN2PID){ CC_PN2PID = {}; Object.keys(PRODINFO).forEach(function(pid){ var x = PRODINFO[pid]; if(x && x.pn!=null) CC_PN2PID[String(x.pn)] = pid; }); }
+  var pid = CC_PN2PID[String(pn)], ix = pid!=null ? EST_POR_PROD[pid] : null;
+  var o = {est:0, maior:null, loja:null};
+  (ix||[]).forEach(function(i){
+    var e = n0(EST.est[i]), c = n0(EST.custo[i]);
+    o.est += e;
+    if(e > 0 && c > 0 && (o.maior==null || c/e > o.maior)){ o.maior = c/e; o.loja = dimNome('loja', EST.loja[i]); }
+  });
+  return o;
+}
+function ccTipHtml(it){
+  if(!PROD_OK) return '<div class="t">Estoque</div>Carregando o estoque…';
+  var e = ccEstoque(it.pn), h = '<div class="t">Estoque · todas as lojas</div>';
+  h += '<div class="r"><span>Saldo total</span><b>'+e.est.toLocaleString('pt-BR', {maximumFractionDigits:0})+' peça'+(Math.round(e.est)===1?'':'s')+'</b></div>';
+  h += '<div class="r"><span>Maior custo médio</span><b>'+(e.maior==null ? '—' : ccMoney(e.maior))+'</b></div>';
+  if(e.loja) h += '<div class="n">na loja '+escapeHtml(e.loja)+'</div>';
+  var preco = it.nosso || it.nossoBruto;
+  if(e.maior && preco){
+    var m = (preco/e.maior - 1)*100;
+    h += '<div class="r" style="margin-top:6px"><span>Nosso preço sobre esse custo</span><b style="color:'+(m<0?'var(--critical)':'inherit')+'">'+(m>0?'+':'')+m.toFixed(1).replace('.',',')+'%</b></div>';
+    if(it.menor && it.menor < e.maior) h += '<div class="n" style="color:var(--critical)">O menor concorrente ('+ccMoney(it.menor)+') vende abaixo desse custo.</div>';
+  }
+  if(!e.est && e.maior==null) h += '<div class="n">Sem saldo em nenhuma loja.</div>';
+  return h;
+}
+var CC_TIP_TD = null;
+function ccTipMostrar(td){
+  var it = (CC.linhas||[]).filter(function(x){ return String(x.pn)===td.getAttribute('data-pn'); })[0]; if(!it) return;
+  var tip = document.getElementById('ccTip');
+  if(!tip){ tip = document.createElement('div'); tip.id = 'ccTip'; tip.className = 'cc-tip'; }
+  var casa = document.fullscreenElement || document.body; if(tip.parentNode !== casa) casa.appendChild(tip);
+  CC_TIP_TD = td; tip.innerHTML = ccTipHtml(it); tip.style.display = 'block';
+  var r = td.getBoundingClientRect(), w = tip.offsetWidth, hh = tip.offsetHeight;
+  var x = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width/2 - w/2)), y = r.bottom + 6;
+  if(y + hh > window.innerHeight - 8) y = r.top - hh - 6;
+  tip.style.left = x+'px'; tip.style.top = y+'px';
+  if(!PROD_OK) carregarProdutos().then(function(){ if(CC_TIP_TD===td && tip.style.display==='block') tip.innerHTML = ccTipHtml(it); }).catch(function(){ if(CC_TIP_TD===td) tip.innerHTML = '<div class="t">Estoque</div>Não foi possível carregar o estoque agora.'; });
+}
+function ccTipEsconder(){ CC_TIP_TD = null; var t = document.getElementById('ccTip'); if(t) t.style.display = 'none'; }
 // a tabela mostra 6 itens de altura; o resto rola dentro dela (cabeçalho fixo)
 function ccAltura(){
   var sc = document.querySelector('.cc-scroll'), t = document.getElementById('ccTbl'); if(!sc || !t) return;
@@ -3077,15 +3130,19 @@ function ccExportar(){
   var L = CC.linhas, D = CC.dados; if(!D || !L){ toast('A tabela ainda está carregando.'); return; }
   if(!L.length){ toast('Nenhum item na tabela para exportar.'); return; }
   var bt = document.getElementById('ccExportar'); bt.disabled = true;
+  carregarProdutos().catch(function(){}).then(function(){ ccExportarMontar(L, D, bt); });
+}
+function ccExportarMontar(L, D, bt){
   function n2(v){ return v==null ? null : Math.round(v*100)/100; }
   function p1(v){ return v==null ? null : Math.round(v*10)/10; }
-  var cab = ['Posição', 'Código', 'Item', 'Fat. 90 dias (R$)', 'Qtd 90 dias', 'Preço médio vendido (R$)', 'Nosso site (R$)'];
+  var cab = ['Posição', 'Código', 'Item', 'Fat. 90 dias (R$)', 'Qtd 90 dias', 'Preço médio vendido (R$)', 'Nosso site (R$)', 'Estoque total (peças)', 'Maior custo médio (R$)', 'Loja do maior custo'];
   CC_SITES.forEach(function(s){ cab.push(s.n+' (R$)', 'Dif. vs '+s.n+' (%)', s.n+' link'); });
   cab.push('Menor concorrente (R$)', 'Dif. vs menor preço (%)', 'Situação', 'Observação');
   var dados = L.map(function(it){
     var obs = [];
     if(it.nossoSusp) obs.push('Preço do nosso site ('+ccMoney(it.nossoBruto)+') muito diferente do preço médio vendido: conferir cadastro');
-    var r = [it.rank, it.pn, String(it.nome||'').replace(/^\S+\s*-\s*/, ''), n2(it.fat), it.qtd, n2(it.pmv), n2(it.nosso)];
+    var e = ccEstoque(it.pn) || {};
+    var r = [it.rank, it.pn, String(it.nome||'').replace(/^\S+\s*-\s*/, ''), n2(it.fat), it.qtd, n2(it.pmv), n2(it.nosso), e.est==null ? null : Math.round(e.est), n2(e.maior), e.loja || null];
     it.cs.forEach(function(c, k){
       if(!c){ r.push(null, null, null); return; }
       if(c.susp) obs.push(CC_SITES[k].n+': preço muito diferente, provavelmente outro produto, kit ou embalagem');
@@ -3098,7 +3155,7 @@ function ccExportar(){
   });
   var dia = D.quando ? isoDia(new Date(D.quando)) : isoDia(new Date());
   carregarXlsx().catch(function(){ return null; }).then(function(X){
-    var larg = [8, 14, 44, 16, 11, 18, 14]; CC_SITES.forEach(function(){ larg.push(14, 14, 30); }); larg.push(18, 18, 14, 60);
+    var larg = [8, 14, 44, 16, 11, 18, 14, 14, 16, 16]; CC_SITES.forEach(function(){ larg.push(14, 14, 30); }); larg.push(18, 18, 14, 60);
     baixarPlanilha(X, 'concorrencia_top100_'+dia, 'Concorrência', cab, dados, larg);
     toast(L.length+' itens exportados.');
   }).finally(function(){ bt.disabled = false; });
@@ -3143,7 +3200,7 @@ function ccTabela(){
     linhas.map(function(it){
       return '<tr><td class="num">'+it.rank+'</td><td class="cc-item"><b>'+escapeHtml(it.pn)+'</b><span title="'+escapeHtml(it.nome||'')+'">'+escapeHtml(String(it.nome||'').replace(/^\S+\s*-\s*/, ''))+'</span></td>' +
         '<td class="num">'+fmtCurto(it.fat)+'</td><td class="num">'+ccMoney(it.pmv)+'</td>' +
-        '<td class="num cc-nosso">'+(it.nossoSusp ? '<a href="'+escapeHtml(it.nossoUrl||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="Preço do site muito diferente do preço médio vendido: confira o cadastro">⚠ '+ccMoney(it.nossoBruto)+'</a>' : it.nosso ? (it.nossoUrl ? '<a href="'+escapeHtml(it.nossoUrl)+'" target="_blank" rel="noopener" style="color:inherit">'+ccMoney(it.nosso)+'</a>' : ccMoney(it.nosso)) : '<span class="cc-vazio" title="Não encontrado no nosso site pelo código">—</span>')+'</td>' +
+        '<td class="num cc-nosso" data-pn="'+escapeHtml(it.pn)+'">'+(it.nossoSusp ? '<a href="'+escapeHtml(it.nossoUrl||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="Preço do site muito diferente do preço médio vendido: confira o cadastro">⚠ '+ccMoney(it.nossoBruto)+'</a>' : it.nosso ? (it.nossoUrl ? '<a href="'+escapeHtml(it.nossoUrl)+'" target="_blank" rel="noopener" style="color:inherit">'+ccMoney(it.nosso)+'</a>' : ccMoney(it.nosso)) : '<span class="cc-vazio" title="Não encontrado no nosso site pelo código">—</span>')+'</td>' +
         it.cs.map(function(c){
           if(!c) return '<td class="num cc-vazio">—</td>';
           if(c.susp) return '<td class="num"><div class="cc-c"><a href="'+escapeHtml(c.url||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="'+escapeHtml((c.titulo||'')+' · diferença grande demais: pode ser outro produto, kit ou embalagem. Confira no link.')+'">⚠ '+ccMoney(c.preco)+'</a></div></td>';
