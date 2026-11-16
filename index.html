@@ -1184,6 +1184,10 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .pl-logo-mini{height:max(11px,2.7cqh); width:auto; opacity:.9;}
 .pl-logocapa{align-items:center; justify-content:center;}
 .pl-logocapa .pl-logo{width:72cqw; max-height:40cqh;}
+.pl-logocapa{gap:6cqh;}
+.pl-capatit{margin:0; font-family:'Sora',sans-serif; font-weight:600; font-size:max(18px,5.4cqh); letter-spacing:.04em; color:#fff; text-align:center;}
+.pl-capatit::after{content:''; display:block; width:8cqw; height:.5cqh; min-height:3px; border-radius:4px; background:var(--pbi-grad); margin:2cqh auto 0;}
+:root[data-theme="light"] .pl-capatit{color:#353535;}
 .pl-pg{font-family:'JetBrains Mono',monospace; font-size:max(10.8px,1.82cqh); color:var(--text-muted);}
 .pl-h{font-family:'Sora',sans-serif; font-size:max(18.4px,5.72cqh); font-weight:800; line-height:1.12; margin:0; letter-spacing:-.01em;}
 .pl-h::after{content:''; display:block; width:6cqw; height:.55cqh; min-height:3px; border-radius:4px; background:var(--pbi-grad); margin-top:1.4cqh;}
@@ -3201,7 +3205,7 @@ function plSlide(sl, i, n, D){
 function plMontar(){
   var D = plDoc(), st = document.getElementById('plStage'), n = D.slides.length;
   // capa fixa com o logo antes do primeiro slide (não fica no banco); PL.idx 0 = capa, slide k do banco = PL.idx k+1
-  st.innerHTML = '<div class="pl-slide pl-logocapa"><span class="pl-logo" role="img" aria-label="NOVA Chevrolet"></span></div>' + D.slides.map(function(sl, i){ return plSlide(sl, i, n, D); }).join('');
+  st.innerHTML = '<div class="pl-slide pl-logocapa"><span class="pl-logo" role="img" aria-label="NOVA Chevrolet"></span><h2 class="pl-capatit">Planejamento de Peças</h2></div>' + D.slides.map(function(sl, i){ return plSlide(sl, i, n, D); }).join('');
   var ed = document.getElementById('plEditar'); if(ed) ed.hidden = !(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi') || PL.edit;
   if(PL.edit) Array.prototype.forEach.call(st.querySelectorAll('.pl-ed'), function(el){
     try{ el.contentEditable = 'plaintext-only'; } catch(e){ el.contentEditable = 'true'; }
