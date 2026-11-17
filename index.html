@@ -2876,7 +2876,7 @@ var state = {
   currentView:'dashboard',
   vendConsultSel:'',
   paresModo:'grupo', paresEquipes:[], // comparativo dos pares: todo o grupo ou só as equipes escolhidas
-  vendSortCol:'fat', vendSortDir:'desc', vendRankTodos:false, vendRankPct:false,
+  vendSortCol:'fat', vendSortDir:'desc', vendRankTodos:false, vendRankPct:false, vendDispNomes:false,
   soParados:false,
   diaSemana:'',   // filtro: '' todos os dias, 'util' segunda a sexta, 'fds' sábado e domingo
   diasMin:null,   // filtro: sem venda há pelo menos N dias
@@ -2886,6 +2886,12 @@ var state = {
 /* ============================================================
    HELPERS DE FORMATAÇÃO
    ============================================================ */
+// "CALIL BARBOSA - IP" -> "Calil Barbosa": primeiro e último nome, sem a loja
+function nomeCurtoVend(n){
+  var p = String(n||'').split(' - ')[0].trim().split(/\s+/);
+  var t = p.length>1 ? p[0]+' '+p[p.length-1] : p[0];
+  return t.toLowerCase().replace(/(^|\s)\S/g, function(c){ return c.toUpperCase(); });
+}
 function fmtMoney(n){ return 'R$ ' + Math.round(n).toLocaleString('pt-BR'); }
 function fmtMoney2(n){ return 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtUn(n){ return Math.round(n).toLocaleString('pt-BR'); }
@@ -4838,6 +4844,25 @@ function renderVendConsult(){
       out += '<circle class="vend-pt" data-vend="'+escapeHtml(r.name)+'" cx="'+xp(xs[i])+'" cy="'+yp(ys[i])+'" r="'+(isMe?7:4.5)+'" fill="'+(isMe?'var(--accent)':'var(--text-muted)')+'" fill-opacity="'+(isMe?1:0.6)+'"'+(isMe?' stroke="#fff" stroke-width="1.5"':'')+'>' +
         '<title>'+escapeHtml(r.name)+' · '+rotX+': '+fmtX(xs[i])+' · '+rotY+': '+fmtY(ys[i])+'</title></circle>';
     });
+    if(state.vendDispNomes){
+      // nomes discretos: o vendedor analisado primeiro, depois do maior faturamento para o menor; um nome só entra se não encostar em outro
+      var postos = xs.map(function(v,i){ var px = xp(v), py = yp(ys[i]), rr = rows[i].name===selName ? 7 : 4; return [px-rr, py-rr, px+rr, py+rr]; }), ordem = rows.map(function(r,i){ return i; }).sort(function(a,b){
+        var ma = rows[a].name===selName ? 1 : 0, mb = rows[b].name===selName ? 1 : 0;
+        return (mb-ma) || (rows[b].fat-rows[a].fat);
+      });
+      ordem.forEach(function(i){
+        var r = rows[i], nm = nomeCurtoVend(r.name), lw = nm.length*3.9+2, cx = xp(xs[i]), cy = yp(ys[i]), isMe = r.name===selName;
+        var d = isMe ? 9 : 6, opc = [[cx+d, cy+2.5, 'start'], [cx-d, cy+2.5, 'end'], [cx-lw/2, cy-d, 'start'], [cx-lw/2, cy+d+6, 'start']];
+        for(var k=0; k<opc.length; k++){
+          var o = opc[k], x0 = o[2]==='end' ? o[0]-lw : o[0], b = [x0, o[1]-7, x0+lw, o[1]+1];
+          if(b[0]<2 || b[2]>w-2 || b[1]<2 || b[3]>h-2) continue;
+          if(postos.some(function(q){ return b[0]<q[2] && b[2]>q[0] && b[1]<q[3] && b[3]>q[1]; })) continue;
+          postos.push(b);
+          out += '<text class="vd-nome" x="'+o[0].toFixed(1)+'" y="'+o[1].toFixed(1)+'" text-anchor="'+o[2]+'" font-size="7" fill="'+(isMe?'var(--accent)':'var(--text-muted)')+'" fill-opacity="'+(isMe?1:.8)+'" font-family="Manrope,sans-serif" pointer-events="none">'+escapeHtml(nm)+'</text>';
+          break;
+        }
+      });
+    }
     out += '<text x="'+(w-pad)+'" y="'+(h-pad+16)+'" text-anchor="end" font-size="9.5" fill="var(--text-muted)" font-family="Manrope,sans-serif">'+rotX+' →</text>' +
       '<text x="'+pad+'" y="'+(pad-8)+'" font-size="9.5" fill="var(--text-muted)" font-family="Manrope,sans-serif">↑ '+rotY+'</text>' +
       '<text x="'+(xp(mx)+4)+'" y="'+(h-pad-4)+'" font-size="9" fill="var(--text-muted)" font-family="Manrope,sans-serif">média '+fmtX(mx)+'</text>' +
@@ -4909,7 +4934,7 @@ function renderVendConsult(){
   }
 
   RD_SEL = null;
-  var quadHtml = '<div><h3 class="dh">Quadrante margem &times; faturamento (todo o grupo)</h3>' +
+  var quadHtml = '<div><div class="vr-head"><h3 class="dh">Quadrante margem &times; faturamento (todo o grupo)</h3>'+'<label class="vr-sw-l vd-sw-l" title="Mostra o nome dos vendedores nos pontos (os que couberem sem sobrepor)"><span>Nomes</span><button type="button" class="ia-sw vr-sw vd-nomes-sw" role="switch" aria-checked="'+(state.vendDispNomes?'true':'false')+'" aria-label="Mostrar nomes dos vendedores"></button></label>'+'</div>' +
         '<div class="chart-wrap" style="display:flex; justify-content:center;">'+scatterSvg+'</div>' +
         '<p style="font-size:11.5px; color:var(--text-2); margin-top:6px; line-height:1.6;">'+quadTexto+'</p>' +
         '<p style="font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.6;">Cada ponto é um vendedor; as linhas tracejadas marcam a média do grupo. Clique num ponto para analisar o vendedor.</p>' +
@@ -4974,7 +4999,7 @@ function renderVendConsult(){
       var muitosCliBaixoFat = comCli.filter(function(r){ return r.cli>=mCli && r.fat<mFat; }).map(function(r){ return r.name; });
       var poucosCliAltoFat = comCli.filter(function(r){ return r.cli<mCli && r.fat>=mFat; }).map(function(r){ return r.name; });
       cliBox.innerHTML = '<div class="grid-2" style="margin-bottom:0;">' +
-        '<div><h3 class="dh">Faturamento &times; clientes distintos</h3><div class="chart-wrap" style="display:flex; justify-content:center;">'+svgCli+'</div>' +
+        '<div><div class="vr-head"><h3 class="dh">Faturamento &times; clientes distintos</h3>'+'<label class="vr-sw-l vd-sw-l" title="Mostra o nome dos vendedores nos pontos (os que couberem sem sobrepor)"><span>Nomes</span><button type="button" class="ia-sw vr-sw vd-nomes-sw" role="switch" aria-checked="'+(state.vendDispNomes?'true':'false')+'" aria-label="Mostrar nomes dos vendedores"></button></label>'+'</div><div class="chart-wrap" style="display:flex; justify-content:center;">'+svgCli+'</div>' +
           '<p style="font-size:11.5px; color:var(--text-2); margin-top:6px; line-height:1.6;">'+meQ+'</p>' +
           (muitosCliBaixoFat.length ? '<p style="font-size:11.5px; color:var(--text-2); line-height:1.6;"><b>Muitos clientes e faturamento abaixo da média:</b> '+muitosCliBaixoFat.join(', ')+'.</p>' : '') +
           (poucosCliAltoFat.length ? '<p style="font-size:11.5px; color:var(--text-2); line-height:1.6;"><b>Poucos clientes e faturamento acima da média:</b> '+poucosCliAltoFat.join(', ')+'.</p>' : '') +
@@ -4994,6 +5019,9 @@ function renderVendConsult(){
   });
   var swPct = rankBox.querySelector('#vrPctSw');
   if(swPct) swPct.addEventListener('click', function(){ state.vendRankPct = !state.vendRankPct; renderVendSemRolar(); });
+  Array.prototype.forEach.call(document.querySelectorAll('.vd-nomes-sw'), function(b){
+    b.addEventListener('click', function(){ state.vendDispNomes = !state.vendDispNomes; renderVendSemRolar(); });
+  });
   var btTodos = rankBox.querySelector('[data-vend-todos]');
   if(btTodos) btTodos.addEventListener('click', function(){ state.vendRankTodos = !state.vendRankTodos; renderVendSemRolar(); });
 }
@@ -5188,7 +5216,7 @@ function salvarConsultoriaPdf(){
   var cmpTxt = prp.prevEnd>=0 ? fmtDateFull(DAYS[prp.prevStart])+' a '+fmtDateFull(DAYS[prp.prevEnd]) : '—';
   function cel(l, v){ return '<div class="pdf-cel"><span>'+l+'</span><b>'+v+'</b></div>'; }
   var cab = '<div class="pdf-cab"><div><div class="pdf-marca">Peças · BI · Consultoria de vendedor</div><h1>'+escapeHtml(nome)+'</h1></div>' +
-    '<img class="pdf-logo" alt="Nova" src="'+LOGO_PDF+'"></div>' +
+    '</div>' +
     '<div class="pdf-info">'+cel('Período', escapeHtml(perTxt))+cel('Comparado com', escapeHtml(cmpTxt))+
       cel('Base de dados', escapeHtml(cargaLabel(REAL.carga)))+
       cel('Gerado em', fmtDateFull(hoje)+' às '+String(hoje.getHours()).padStart(2,'0')+':'+String(hoje.getMinutes()).padStart(2,'0'))+'</div>' +
@@ -5206,7 +5234,10 @@ function salvarConsultoriaPdf(){
     '.pdf-sec{break-before:page;}' +
     '#rdInfo,.vend-pdf{display:none!important;} tr.vend-row,.vend-pt,.rd-lbl{cursor:default;}' +
     '.pdf-cab{display:flex;justify-content:space-between;gap:24px;align-items:center;padding-bottom:10px;margin-bottom:10px;border-bottom:2px solid var(--accent);}' +
-    '.pdf-logo{flex:none;height:34px;width:auto;max-width:none;object-fit:contain;display:block;}' +
+    // logo discreto no canto superior direito de todas as páginas (posição fixa se repete em cada folha impressa)
+    '.pdf-logo-pg{position:fixed;top:0;right:0;height:15px;width:auto;opacity:.75;z-index:5;}' +
+    '.pdf-cab{padding-right:90px;}' +
+    '.rd-bloco .chart-wrap svg{height:auto;max-height:260px;}' +
     '.pdf-cab h1{font-family:Sora,sans-serif;font-size:22px;margin:4px 0 0;color:var(--text);}' +
     '.pdf-info{display:grid;grid-template-columns:1.3fr 1fr 1.4fr .8fr;gap:10px;margin-bottom:10px;}' +
     '.pdf-cel{background:var(--surface-2,rgba(var(--ink),.04));border:1px solid var(--border);border-radius:8px;padding:7px 10px;}' +
@@ -5221,7 +5252,9 @@ function salvarConsultoriaPdf(){
     '@media print{.pdf-dica{display:none;}} .pdf-dica{font-size:12px;color:var(--text-muted);margin-bottom:10px;}';
   // versão impressa: as mesmas seções e a mesma ordem da aba (consultoria, funil, ranking, clientes e margem, análises)
   function copia(id){ var el = document.getElementById(id), d = document.createElement('div'); d.innerHTML = el ? el.innerHTML : ''; return d; }
-  function limpa(d){ Array.prototype.forEach.call(d.querySelectorAll('.vr-todos,.fun-limpar,[data-fun-tira],#rdInfo,.fun-seg button[aria-pressed="false"]'), function(x){ x.remove(); }); return d; }
+  function limpa(d){ Array.prototype.forEach.call(d.querySelectorAll('.vr-todos,.vr-sw-l,.fun-limpar,[data-fun-tira],#rdInfo,.fun-seg button[aria-pressed="false"]'), function(x){ x.remove(); });
+    // radares de marca/categoria/produto: abre espaço nas laterais para os nomes longos não serem cortados
+    Array.prototype.forEach.call(d.querySelectorAll('.rd-bloco svg'), function(g){ var v = (g.getAttribute('viewBox')||'').split(' ').map(Number); if(v.length===4) g.setAttribute('viewBox', (v[0]-60)+' '+v[1]+' '+(v[2]+120)+' '+v[3]); }); return d; }
   // tabelas longas: os 10 primeiros e o vendedor analisado
   function top10(d){
     Array.prototype.forEach.call(d.querySelectorAll('table'), function(t){
@@ -5237,16 +5270,17 @@ function salvarConsultoriaPdf(){
   var cIns = limpa(copia('vendInsBody'));
   printCss += '.fun-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;} .fun-lista{max-height:none!important;overflow:visible!important;}' +
     '.fun-row{grid-template-columns:minmax(0,1fr) 92px!important;cursor:default;} .fun-col{break-inside:avoid;} .fun-serie{break-inside:avoid;} .fun-col-g{cursor:default;}' +
-    '.fun-lista .fun-row:nth-child(n+9){display:none;} .fun-row{padding:1px 0!important;} .fun-barra{height:22px!important;} .fun-serie{margin-top:8px!important;padding:8px!important;} .fun-serie svg{max-height:120px;} .rank-vend-box{overflow:visible;} .fun-top{margin-bottom:8px;}';
+    '.fun-lista .fun-row:nth-child(n+7){display:none;} .fun-row{padding:1px 0!important;} .fun-barra{height:22px!important;} .fun-serie{margin-top:8px!important;padding:8px!important;} .fun-serie svg{max-height:100px;} .rank-vend-box{overflow:visible;} .fun-top{margin-bottom:8px;}';
   var tema = document.documentElement.getAttribute('data-theme');
   var html = '<!doctype html><html lang="pt-BR"'+(tema?' data-theme="'+tema+'"':'')+'><head><meta charset="utf-8"><title>Consultoria - '+escapeHtml(nome)+'</title>' +
     '<style>'+css+'</style><style>'+printCss+'</style></head><body>' +
+    '<img class="pdf-logo-pg" alt="Nova" src="'+LOGO_PDF+'">' +
     '<div class="pdf-dica">Na janela de impressão, escolha "Salvar como PDF" e marque "Gráficos de fundo".</div>' + cab +
     painel('', cKpi) +
     painel('Funil do vendedor: clientes, marcas, categorias e produtos', cFun) +
     painel('Ranking e comparação com o grupo', cRank, 'pdf-sec') +
     painel('Faturamento &times; clientes atendidos e margem', cCli, 'pdf-sec') +
-    painel('Análises não óbvias', cIns) +
+    painel('Análises não óbvias', cIns, 'pdf-sec') +
     '</body></html>';
   w.document.open(); w.document.write(html); w.document.close();
   function imprimir(){ try{ w.focus(); w.print(); }catch(e){} }
