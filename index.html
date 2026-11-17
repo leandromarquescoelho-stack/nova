@@ -403,6 +403,13 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .kpi-card .kdelta.down{color:var(--critical);}
 .kpi-card .kdelta.flat{color:var(--text-muted);}
 .kpi-card .kspark{margin-top:8px; height:26px; position:relative; cursor:crosshair;}
+.kpi-card .ksub{margin-top:5px; font-size:10.5px; line-height:1.55; color:var(--text-muted);}
+.kpi-card .ksub:empty{display:none;}
+.ksl{display:block;}
+.ksl + .ksl{margin-top:1px;}
+.ksl b{font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--text-2); white-space:nowrap;}
+.ksl i{font-style:normal; font-weight:700; white-space:nowrap;}
+.ksl i.up{color:var(--good);} .ksl i.down{color:var(--critical);}
 .kspark .sp-guia{position:absolute; top:0; bottom:0; width:1px; background:var(--text-muted); opacity:.7; display:none; pointer-events:none;}
 .sp-tip{position:fixed; z-index:3000; pointer-events:none; padding:7px 10px; border-radius:9px; background:var(--surface); border:1px solid var(--border-strong); box-shadow:0 8px 24px rgba(0,0,0,.3); font-size:12px; color:var(--text-2); display:none; white-space:nowrap;}
 .sp-tip span{display:block; font-size:11px; color:var(--text-muted);}
@@ -3181,9 +3188,8 @@ function kpiSparks(k){
       ttn.push(x.proj ? fmtMoney2(vn)+' · a projeção mantém o ticket do mês' : nn[mi] ? fmtMoney2(vn)+' · '+fmtUn(nn[mi])+' notas no mês' : 'sem notas no mês');
       ttc.push(x.proj ? fmtMoney2(vc)+' · a projeção mantém o ticket do mês' : nc[mi] ? fmtMoney2(vc)+' · '+fmtUn(nc[mi])+' clientes no mês' : 'sem clientes no mês');
     });
-    sparkDesenhar(kpiEls.tknf.s, tn, ln, ttn, J.tipo==='m' ? null : bs, 0.6, nReal);
-    sparkDesenhar(kpiEls.tkcli.s, tc, ln, ttc, J.tipo==='m' ? null : bs, 0.6, nReal);
-  }).catch(function(){ if(seq===kpiSparks.seq){ kpiEls.tknf.s.innerHTML = ''; kpiEls.tkcli.s.innerHTML = ''; } });
+    sparkDesenhar(kpiEls.ticket.s, tn, ln, ttn, J.tipo==='m' ? null : bs, 0.6, nReal);
+  }).catch(function(){ if(seq===kpiSparks.seq){ kpiEls.ticket.s.innerHTML = ''; } });
 }
 
 /* ============================================================
@@ -3705,15 +3711,35 @@ function deltaArrow(v){ return v>0.05?'▲':(v<-0.05?'▼':'●'); }
 function varPct(a, b){ return b>0 ? (a-b)/b*100 : 0; }
 
 var kpiEls = {};
+// faturamento do último dia da base (o dia de hoje, quando a carga já rodou) vs. a média diária do período;
+// abaixo, clientes e seguradoras (tipo de cliente) com a margem de cada um
+function kpiHoje(k){
+  var el = kpiEls.hoje; if(!el) return;
+  var i = TODAY_IDX, sd = salesDaily(), f = sd.fat[i]||0, l = sd.lb[i]||0, v = varPct(f, k.media);
+  var dia = DAYS[i], ehHoje = isoDia(dia)===isoDia(new Date());
+  el.card.querySelector('.klabel').textContent = ehHoje ? 'Faturamento de hoje' : 'Faturamento do dia '+fmtDateFull(dia).slice(0,5);
+  countUp(el.v, f, fmtMoney);
+  el.d.className = 'kdelta '+deltaClass(v);
+  el.d.innerHTML = deltaArrow(v)+' '+fmtPct(v)+' vs. média do período';
+  el.d.title = 'Faturamento de '+fmtDateFull(dia)+(ehHoje ? ' até a última carga ('+cargaLabel(REAL.carga)+')' : '')+' comparado com a média diária do período selecionado ('+fmtMoney(k.media)+'). Margem do dia: '+(f>0 ? (l/f*100).toFixed(1).replace('.',',')+'%' : '—')+'.';
+  el.x.innerHTML = '<div class="ksl"><span>Clientes</span><b>…</b></div><div class="ksl"><span>Seguradoras</span><b>…</b></div>';
+  var d0 = isoDia(dia), seq = kpiHoje.seq = (kpiHoje.seq||0) + 1;
+  rpcMemo('bi_painel', {f:PAINEL_F || painelFiltros(null), per:{ini:d0, fim:d0, pini:d0, pfim:d0}, parte:'c'}).then(function(c){
+    if(seq!==kpiHoje.seq) return;
+    var t = {}; ((c||{}).tipo_cliente||[]).forEach(function(r){ var n = dimNome('tipo_cliente', r[0]).toUpperCase(), g = /SEGURAD/.test(n) ? 'seg' : 'cli'; t[g] = t[g] || {f:0, l:0}; t[g].f += c2(r[1]); t[g].l += c2(r[3]); });
+    function lin(rot, x){ return '<div class="ksl"><span>'+rot+'</span> <b>'+fmtMoney(x ? x.f : 0)+'</b> · <i>mg '+(x && x.f>0 ? (x.l/x.f*100).toFixed(1).replace('.',',')+'%' : '—')+'</i></div>'; }
+    el.x.innerHTML = lin('Clientes', t.cli) + lin('Seguradoras', t.seg);
+  }).catch(function(){ if(seq===kpiHoje.seq) el.x.innerHTML = ''; });
+}
 function renderKpis(refreshing){
   var box = document.getElementById('kpiGrid');
   if(!box.dataset.built){
     var defs = [
       {key:'fat', label:'Faturamento'},
+      {key:'hoje', label:'Faturamento do dia'},
       {key:'margem', label:'Margem Bruta'},
       {key:'media', label:'Média Diária'},
-      {key:'tknf', label:'Ticket Médio NF'},
-      {key:'tkcli', label:'Ticket Médio Cliente'},
+      {key:'ticket', label:'Ticket Médio · NF'},
       {key:'estoque', label:'Estoque Total'}
     ];
     box.innerHTML = defs.map(function(d){
@@ -3721,11 +3747,12 @@ function renderKpis(refreshing){
         '<div class="klabel">'+d.label+'</div>' +
         '<div class="kvalue mono" id="kv-'+d.key+'">—</div>' +
         '<div class="kdelta" id="kd-'+d.key+'"></div>' +
-        '<div class="kspark" id="ks-'+d.key+'"></div>' +
+        '<div class="ksub" id="kx-'+d.key+'"></div>' +
+        (d.key==='hoje' ? '' : '<div class="kspark" id="ks-'+d.key+'"></div>') +
       '</div>';
     }).join('');
     box.dataset.built='1';
-    defs.forEach(function(d){ kpiEls[d.key] = { v:document.getElementById('kv-'+d.key), d:document.getElementById('kd-'+d.key), s:document.getElementById('ks-'+d.key), card:document.getElementById('kpi-'+d.key) }; });
+    defs.forEach(function(d){ kpiEls[d.key] = { v:document.getElementById('kv-'+d.key), d:document.getElementById('kd-'+d.key), s:document.getElementById('ks-'+d.key), x:document.getElementById('kx-'+d.key), card:document.getElementById('kpi-'+d.key) }; });
   }
 
   if(refreshing){
@@ -3750,16 +3777,18 @@ function renderKpis(refreshing){
   delta(kpiEls.media.d, varPct(k.media, k.prevMedia), '· '+k.dv+(k.dv===1?' dia':' dias')+(k.soOnline ? (k.dv===1?' corrido':' corridos') : (k.dv===1?' útil':' úteis')));
   kpiEls.media.d.title = k.soOnline ? 'Só e-commerce: faturamento ÷ dias corridos do período' : 'Faturamento ÷ dias úteis do período (seg. a sex., sem feriados). Com e-commerce junto de outros canais, prevalecem os dias úteis; só e-commerce usa dias corridos.';
 
+  // ticket médio: por nota em destaque e por cliente na linha de baixo
   if(k.nf!==null){
     var tk = k.nf>0 ? k.fat/k.nf : 0, tkp = k.nfp>0 ? k.prevFat/k.nfp : 0;
-    countUp(kpiEls.tknf.v, tk, fmtMoney2);
-    delta(kpiEls.tknf.d, varPct(tk, tkp), '· '+fmtUn(k.nf)+' notas');
-    var tc = k.cli>0 ? k.fat/k.cli : 0, tcp = k.clip>0 ? k.prevFat/k.clip : 0;
-    countUp(kpiEls.tkcli.v, tc, fmtMoney2);
-    delta(kpiEls.tkcli.d, varPct(tc, tcp), '· '+fmtUn(k.cli)+' clientes');
+    countUp(kpiEls.ticket.v, tk, fmtMoney2);
+    delta(kpiEls.ticket.d, varPct(tk, tkp), '· '+fmtUn(k.nf)+' notas');
+    var tc = k.cli>0 ? k.fat/k.cli : 0, tcp = k.clip>0 ? k.prevFat/k.clip : 0, vc = varPct(tc, tcp);
+    kpiEls.ticket.x.innerHTML = '<div class="ksl"><span>Por cliente</span> <b>'+fmtMoney2(tc)+'</b> <i class="'+deltaClass(vc)+'">'+deltaArrow(vc)+' '+fmtPct(vc)+'</i> · '+fmtUn(k.cli)+' clientes</div>';
+    kpiEls.ticket.x.title = 'Ticket por cliente = faturamento ÷ clientes distintos atendidos. '+compara;
   } else {
-    ['tknf','tkcli'].forEach(function(x){ kpiEls[x].v.textContent = '—'; kpiEls[x].d.className = 'kdelta flat'; kpiEls[x].d.textContent = 'Indisponível no momento'; });
+    kpiEls.ticket.v.textContent = '—'; kpiEls.ticket.d.className = 'kdelta flat'; kpiEls.ticket.d.textContent = 'Indisponível no momento'; kpiEls.ticket.x.innerHTML = '';
   }
+  kpiHoje(k);
 
   if(k.temEst){
     countUp(kpiEls.estoque.v, k.estValor, fmtMoney);
