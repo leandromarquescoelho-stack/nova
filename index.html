@@ -1129,7 +1129,7 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .msel-i:hover{background:var(--surface-2);}
 .msel-i input{accent-color:var(--accent); width:14px; height:14px; margin:0; flex:none;}
 /* ===== Concorrência ===== */
-.cc-kpis{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin-bottom:14px;}
+.cc-kpis{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; margin-bottom:14px;}
 .cc-kpi{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px;}
 .cc-kpi .l{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); font-weight:700;}
 .cc-kpi .v{font-family:'Sora',sans-serif; font-size:24px; font-weight:800; margin-top:6px; color:var(--text);}
@@ -1160,6 +1160,8 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cc-c{display:flex; flex-direction:column; align-items:flex-end; gap:2px;}
 .cc-c a{color:var(--text); text-decoration:none; font-family:'JetBrains Mono',monospace;}
 .cc-c a:hover{text-decoration:underline;}
+.cc-var{font-size:10.5px; font-family:'JetBrains Mono',monospace; color:var(--text-muted); white-space:nowrap; cursor:help;}
+.cc-var.desce{color:var(--warning, #d9a400);}
 .cc-d{font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:800; padding:1px 7px; border-radius:20px; white-space:nowrap;}
 .cc-d.up{color:var(--critical); background:color-mix(in srgb, var(--critical) 13%, transparent);}
 .cc-d.dn{color:var(--good); background:color-mix(in srgb, var(--good) 13%, transparent);}
@@ -2313,6 +2315,17 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="cc-scroll"><table class="cc-tbl" id="ccTbl"></table></div>
           <p class="note-muted" id="ccNota"></p>
         </div>
+        <div class="panel" style="margin-top:16px;">
+          <div class="panel-head">
+            <div><h2>Histórico de alterações de preço</h2><div class="psub" id="ccHistSub">Cada mudança de preço registrada nas coletas diárias (últimos 60 dias)</div></div>
+            <div class="cc-ctl">
+              <label>Site<select class="fsel" id="ccHistSite"><option value="">Todos</option></select></label>
+              <label>Mudança<select class="fsel" id="ccHistDir"><option value="">Subiu ou baixou</option><option value="dn">Só baixou</option><option value="up">Só subiu</option></select></label>
+              <button type="button" class="cc-exp" id="ccHistExp" title="Baixar em Excel o histórico de alterações (com os filtros atuais)">&#11015; Exportar Excel</button>
+            </div>
+          </div>
+          <div class="cc-scroll" id="ccHistScroll" style="max-height:340px;"><table class="cc-tbl" id="ccHistTbl"></table></div>
+        </div>
       </section>
 
       <!-- ============ PLANEJAMENTO ============ -->
@@ -3159,7 +3172,7 @@ function renderConcorrencia(){
       var o = th.getAttribute('data-o'); CC.desc = CC.ordem===o ? !CC.desc : true; CC.ordem = o; ccTabela();
     });
   }
-  if(CC.dados){ ccTabela(); return; }
+  if(CC.dados){ ccTabela(); ccHistorico(); return; }
   if(CC.carregando) return; CC.carregando = true;
   document.getElementById('ccTbl').innerHTML = '<tr><td class="status-txt" style="padding:20px;">Carregando…</td></tr>';
   supa.rpc('bi_concorrencia_ler').then(function(r){
@@ -3167,18 +3180,21 @@ function renderConcorrencia(){
     if(r.error){ document.getElementById('ccTbl').innerHTML = '<tr><td style="padding:20px;">'+(/sem acesso/.test(r.error.message||'') ? 'A concorrência está disponível só para quem tem acesso a todas as lojas.' : 'Não foi possível carregar agora. <button type="button" class="pl-editar cc-retry">Tentar de novo</button>')+'</td></tr>'; return; }
     var d = r.data || {itens:[], precos:[]}, pm = {}, quando = null;
     (d.precos||[]).forEach(function(x){ (pm[x[1]] = pm[x[1]] || {})[x[0]] = {preco:+x[2], lista:x[3]==null?null:+x[3], disp:x[4], titulo:x[5], url:x[6], conf:x[7]}; if(!quando || x[8] > quando) quando = x[8]; });
+    var hist = {};
+    (d.hist||[]).forEach(function(x){ (hist[x[0]+'|'+x[1]] = hist[x[0]+'|'+x[1]] || []).push([String(x[2]).slice(0,10), +x[3]]); });
+    CC.hist = hist; CC.dias = +d.dias || 0;
     CC.dados = {quando:quando, itens:(d.itens||[]).map(function(x, i){
       var p = pm[x[0]] || {}, nosso = p.nossa ? p.nossa.preco : null, pmv = x[3] ? c2(x[2])/x[3] : null;
       // preço muito longe do que vendemos (ou do nosso site) costuma ser outro produto, kit ou embalagem: fica marcado e fora do resumo
       function longe(a, b){ return a && b ? (a/b > 2.5 || a/b < 0.4) : false; }
       var nossoSusp = longe(nosso, pmv), ref = nosso && !nossoSusp ? nosso : pmv;
-      var cs = CC_SITES.map(function(s){ var c = p[s.k]; return c && c.preco>0 ? {site:s.k, preco:c.preco, url:c.url, titulo:c.titulo, conf:c.conf, susp:longe(c.preco, ref), pct: nosso ? (nosso/c.preco - 1)*100 : null} : null; });
+      var cs = CC_SITES.map(function(s){ var c = p[s.k]; return c && c.preco>0 ? {site:s.k, preco:c.preco, url:c.url, titulo:c.titulo, conf:c.conf, susp:longe(c.preco, ref), pct: nosso ? (nosso/c.preco - 1)*100 : null, v:ccVar(s.k, x[0], c.preco, quando)} : null; });
       if(nossoSusp) nosso = null;
       var vals = cs.filter(function(c){ return c && !c.susp; }).map(function(c){ return c.preco; }), menor = vals.length ? Math.min.apply(null, vals) : null;
       var pctMenor = nosso && menor ? (nosso/menor - 1)*100 : null;
-      return {rank:i+1, pn:x[0], nome:x[1], fat:c2(x[2]), qtd:+x[3], pmv:pmv, nosso:nosso, nossoSusp:nossoSusp, nossoBruto:p.nossa ? p.nossa.preco : null, nossoUrl:p.nossa && p.nossa.url, cs:cs, menor:menor, pctMenor:pctMenor, n:vals.length};
+      return {rank:i+1, pn:x[0], nome:x[1], fat:c2(x[2]), qtd:+x[3], pmv:pmv, nosso:nosso, nossoV:nosso ? ccVar('nossa', x[0], nosso, quando) : null, nossoSusp:nossoSusp, nossoBruto:p.nossa ? p.nossa.preco : null, nossoUrl:p.nossa && p.nossa.url, cs:cs, menor:menor, pctMenor:pctMenor, n:vals.length};
     })};
-    ccTabela();
+    ccTabela(); ccHistorico();
     carregarProdutos().catch(function(){});   // estoque para o tooltip do nosso preço
   });
 }
@@ -3267,6 +3283,72 @@ function ccExportarMontar(L, D, bt){
     toast(L.length+' itens exportados.');
   }).finally(function(){ bt.disabled = false; });
 }
+// variação do preço em 7 dias (histórico diário): compara com o último preço registrado até 7 dias antes da coleta atual;
+// com menos de 7 dias de histórico, compara com o registro mais antigo
+function ccVar(site, pn, atual, quando){
+  var h = (CC.hist||{})[site+'|'+pn]; if(!h || !h.length || !atual || !quando) return null;
+  var ref = new Date(new Date(quando).getTime() - 7*864e5).toISOString().slice(0,10), hoje = String(quando).slice(0,10), ant = null;
+  for(var i=0; i<h.length; i++){ if(h[i][0] <= ref) ant = h[i]; }
+  if(!ant){ ant = h[0]; if(ant[0] >= hoje) return null; }
+  var muds = h.filter(function(x, i){ return i>0; }).slice(-5);
+  return {pct:(atual/ant[1] - 1)*100, ant:ant[1], dia:ant[0], muds:muds, ini:h[0][0]};
+}
+function ccVarHtml(v, quem){
+  if(!v || Math.abs(v.pct) < 0.5) return '';
+  function d(iso){ return iso.slice(8,10)+'/'+iso.slice(5,7); }
+  var t = quem+': '+ccMoney(v.ant)+' em '+d(v.dia)+(v.muds.length ? ' · mudanças: '+v.muds.map(function(x){ return d(x[0])+' '+ccMoney(x[1]); }).join(', ') : '');
+  return '<span class="cc-var'+(v.pct<0?' desce':'')+'" title="'+escapeHtml(t)+'">'+(v.pct>0?'▲ +':'▼ ')+Math.abs(v.pct).toFixed(1).replace('.',',')+'% 7d</span>';
+}
+// histórico de alterações: cada mudança de preço (site x item) entre duas coletas, mais recente primeiro
+var CC_HIST_SITES = [{k:'nossa', n:'Nosso site'}].concat(CC_SITES);
+function ccHistLinhas(){
+  var D = CC.dados; if(!D || !CC.hist) return [];
+  var fs = (document.getElementById('ccHistSite')||{}).value || '', fd = (document.getElementById('ccHistDir')||{}).value || '', out = [];
+  D.itens.forEach(function(it){
+    CC_HIST_SITES.forEach(function(s){
+      if(fs && s.k!==fs) return;
+      var h = CC.hist[s.k+'|'+it.pn] || [];
+      for(var i=1; i<h.length; i++){
+        var pct = (h[i][1]/h[i-1][1] - 1)*100;
+        if(fd==='dn' && pct >= 0 || fd==='up' && pct <= 0) continue;
+        out.push({dia:h[i][0], diaAnt:h[i-1][0], rank:it.rank, pn:it.pn, nome:String(it.nome||'').replace(/^\S+\s*-\s*/, ''), site:s.n, de:h[i-1][1], para:h[i][1], pct:pct, nosso:it.nosso});
+      }
+    });
+  });
+  return out.sort(function(a,b){ return a.dia<b.dia ? 1 : (a.dia>b.dia ? -1 : Math.abs(b.pct)-Math.abs(a.pct)); });
+}
+function ccHistorico(){
+  var tb = document.getElementById('ccHistTbl'); if(!tb || !CC.dados) return;
+  var sel = document.getElementById('ccHistSite');
+  if(sel.options.length===1){
+    CC_HIST_SITES.forEach(function(s){ var o = document.createElement('option'); o.value = s.k; o.textContent = s.n; sel.appendChild(o); });
+    sel.onchange = ccHistorico; document.getElementById('ccHistDir').onchange = ccHistorico;
+    document.getElementById('ccHistExp').onclick = ccHistExportar;
+  }
+  var L = ccHistLinhas();
+  function d(iso){ return iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4); }
+  document.getElementById('ccHistSub').textContent = CC.dias >= 2
+    ? 'Cada mudança de preço registrada nas coletas diárias dos últimos 60 dias · '+L.length+' alteraç'+(L.length===1?'ão':'ões')
+    : 'O histórico começou em '+(CC.dias ? 'esta coleta' : 'breve')+': as alterações aparecem a partir da próxima coleta diária (7h).';
+  if(!L.length){ tb.innerHTML = '<tbody><tr><td class="status-txt" style="padding:16px;">Nenhuma alteração de preço registrada '+(CC.dias >= 2 ? 'com esses filtros.' : 'ainda.')+'</td></tr></tbody>'; return; }
+  tb.innerHTML = '<thead><tr><th>Data</th><th>Site</th><th>Item</th><th class="num">Antes</th><th class="num">Depois</th><th class="num">Mudança</th><th class="num">Nosso site hoje</th></tr></thead><tbody>' +
+    L.map(function(x){
+      return '<tr><td title="Coleta anterior: '+d(x.diaAnt)+'">'+d(x.dia)+'</td><td>'+escapeHtml(x.site)+'</td><td class="cc-item"><b>'+escapeHtml(x.pn)+'</b><span>'+escapeHtml(x.nome)+'</span></td>' +
+        '<td class="num">'+ccMoney(x.de)+'</td><td class="num">'+ccMoney(x.para)+'</td>' +
+        '<td class="num"><span class="cc-var'+(x.pct<0?' desce':'')+'" style="font-size:12px">'+(x.pct>0?'▲ +':'▼ ')+Math.abs(x.pct).toFixed(1).replace('.',',')+'%</span></td>' +
+        '<td class="num">'+(x.nosso ? ccMoney(x.nosso) : '<span class="cc-vazio">—</span>')+'</td></tr>';
+    }).join('') + '</tbody>';
+}
+function ccHistExportar(){
+  var L = ccHistLinhas(); if(!L.length){ toast('Nenhuma alteração para exportar.'); return; }
+  function n2(v){ return v==null ? null : Math.round(v*100)/100; }
+  var cab = ['Data', 'Coleta anterior', 'Site', 'Posição no top 100', 'Código', 'Item', 'Preço antes (R$)', 'Preço depois (R$)', 'Mudança (%)', 'Nosso site hoje (R$)'];
+  var dados = L.map(function(x){ return [x.dia, x.diaAnt, x.site, x.rank, x.pn, x.nome, n2(x.de), n2(x.para), Math.round(x.pct*10)/10, n2(x.nosso)]; });
+  carregarXlsx().catch(function(){ return null; }).then(function(X){
+    baixarPlanilha(X, 'concorrencia_alteracoes_'+isoDia(new Date()), 'Alterações', cab, dados, [12, 14, 14, 10, 14, 44, 16, 16, 12, 18]);
+    toast(L.length+' alterações exportadas.');
+  });
+}
 function ccSeta(pct){
   if(pct==null) return '';
   var c = Math.abs(pct) < 0.5 ? 'eq' : (pct > 0 ? 'up' : 'dn');
@@ -3285,7 +3367,9 @@ function ccTabela(){
     kpi('Mais caros', '▲ '+caro.length, 'itens acima do menor preço do mercado', 'var(--critical)') +
     kpi('Mais baratos', '▼ '+barato.length, 'itens abaixo do menor preço do mercado', 'var(--good)') +
     kpi('Diferença média', (medio>0?'+':'')+medio.toFixed(1).replace('.',',')+'%', 'nosso preço vs menor concorrente', medio>0.5?'var(--critical)':(medio<-0.5?'var(--good)':'')) +
-    kpi('Faturamento em risco', fmtCurto(fatCaro), '90 dias dos itens onde estamos mais caros');
+    kpi('Faturamento em risco', fmtCurto(fatCaro), '90 dias dos itens onde estamos mais caros') +
+    kpi('Concorrente baixou', '▼ '+D.itens.filter(function(it){ return it.cs.some(function(c){ return c && !c.susp && c.v && c.v.pct <= -0.5; }); }).length,
+        CC.dias >= 2 ? 'itens com preço menor que há 7 dias' : 'histórico começa a contar a partir de hoje', 'var(--warning, #d9a400)');
   var linhas = D.itens.filter(function(it){
     if(q && vxSemAcento(it.pn+' '+it.nome).indexOf(q)===-1) return false;
     if(f==='caro') return it.pctMenor!=null && it.pctMenor >= 0.5;
@@ -3307,17 +3391,17 @@ function ccTabela(){
     linhas.map(function(it){
       return '<tr><td class="num">'+it.rank+'</td><td class="cc-item"><b>'+escapeHtml(it.pn)+'</b><span title="'+escapeHtml(it.nome||'')+'">'+escapeHtml(String(it.nome||'').replace(/^\S+\s*-\s*/, ''))+'</span></td>' +
         '<td class="num">'+fmtCurto(it.fat)+'</td><td class="num">'+ccMoney(it.pmv)+'</td>' +
-        '<td class="num cc-nosso" data-pn="'+escapeHtml(it.pn)+'">'+(it.nossoSusp ? '<a href="'+escapeHtml(it.nossoUrl||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="Preço do site muito diferente do preço médio vendido: confira o cadastro">⚠ '+ccMoney(it.nossoBruto)+'</a>' : it.nosso ? (it.nossoUrl ? '<a href="'+escapeHtml(it.nossoUrl)+'" target="_blank" rel="noopener" style="color:inherit">'+ccMoney(it.nosso)+'</a>' : ccMoney(it.nosso)) : '<span class="cc-vazio" title="Não encontrado no nosso site pelo código">—</span>')+'</td>' +
+        '<td class="num cc-nosso" data-pn="'+escapeHtml(it.pn)+'">'+(it.nossoSusp ? '<a href="'+escapeHtml(it.nossoUrl||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="Preço do site muito diferente do preço médio vendido: confira o cadastro">⚠ '+ccMoney(it.nossoBruto)+'</a>' : it.nosso ? (it.nossoUrl ? '<a href="'+escapeHtml(it.nossoUrl)+'" target="_blank" rel="noopener" style="color:inherit">'+ccMoney(it.nosso)+'</a>' : ccMoney(it.nosso))+(it.nossoV && Math.abs(it.nossoV.pct)>=0.5 ? '<div class="cc-c">'+ccVarHtml(it.nossoV, 'Nosso site')+'</div>' : '') : '<span class="cc-vazio" title="Não encontrado no nosso site pelo código">—</span>')+'</td>' +
         it.cs.map(function(c){
           if(!c) return '<td class="num cc-vazio">—</td>';
           if(c.susp) return '<td class="num"><div class="cc-c"><a href="'+escapeHtml(c.url||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="'+escapeHtml((c.titulo||'')+' · diferença grande demais: pode ser outro produto, kit ou embalagem. Confira no link.')+'">⚠ '+ccMoney(c.preco)+'</a></div></td>';
-          return '<td class="num"><div class="cc-c"><a href="'+escapeHtml(c.url||'#')+'" target="_blank" rel="noopener" title="'+escapeHtml((c.titulo||'')+(c.conf==='nome'?' (pareado pelo nome)':''))+'">'+ccMoney(c.preco)+(c.conf==='nome'?'*':'')+'</a>'+ccSeta(c.pct)+'</div></td>';
+          return '<td class="num"><div class="cc-c"><a href="'+escapeHtml(c.url||'#')+'" target="_blank" rel="noopener" title="'+escapeHtml((c.titulo||'')+(c.conf==='nome'?' (pareado pelo nome)':''))+'">'+ccMoney(c.preco)+(c.conf==='nome'?'*':'')+'</a>'+ccSeta(c.pct)+ccVarHtml(c.v, (CC_SITES.filter(function(s){ return s.k===c.site; })[0]||{}).n || c.site)+'</div></td>';
         }).join('') +
         '<td class="num">'+(it.pctMenor==null ? '<span class="cc-vazio">—</span>' : ccSeta(it.pctMenor))+'</td></tr>';
     }).join('') + '</tbody>';
   ccAltura();
   document.getElementById('ccSub').textContent = 'Itens que mais faturaram no e-commerce nos últimos 90 dias' + (D.quando ? ' · preços coletados em '+new Date(D.quando).toLocaleDateString('pt-BR') : ' · aguardando a primeira coleta');
-  document.getElementById('ccNota').textContent = 'Preços de venda exibidos nos sites (sem desconto de Pix ou boleto e sem frete), coletados toda segunda-feira pelo código da peça. * pareado pelo nome, confira no link. ⚠ preço muito diferente (mais de 2,5 vezes ou menos de 40%): provavelmente outro produto, kit ou embalagem; fica fora do resumo. Vigorito não entra: o site bloqueia leitura automática. A seta compara o nosso preço com o de cada concorrente: vermelho ▲ = estamos mais caros; verde ▼ = estamos mais baratos.';
+  document.getElementById('ccNota').textContent = 'Preços de venda exibidos nos sites (sem desconto de Pix ou boleto e sem frete), coletados todo dia às 7h pelo código da peça. "7d" mostra quanto o preço mudou em 7 dias (passe o mouse para ver as últimas mudanças). * pareado pelo nome, confira no link. ⚠ preço muito diferente (mais de 2,5 vezes ou menos de 40%): provavelmente outro produto, kit ou embalagem; fica fora do resumo. Vigorito não entra: o site bloqueia leitura automática. A seta compara o nosso preço com o de cada concorrente: vermelho ▲ = estamos mais caros; verde ▼ = estamos mais baratos.';
 }
 
 /* ============================================================
