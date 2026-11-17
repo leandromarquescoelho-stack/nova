@@ -4565,8 +4565,8 @@ function renderParesCtl(eqLista){
     }
   });
 }
-function vcKpi(label, value, sub){
-  return '<div class="kpi-card"><div class="klabel">'+label+'</div><div class="kvalue">'+value+'</div>' +
+function vcKpi(label, value, sub, dica){
+  return '<div class="kpi-card"'+(dica ? ' title="'+String(dica).replace(/"/g,'&quot;')+'" style="cursor:help;"' : '')+'><div class="klabel">'+label+(dica ? ' <span style="opacity:.6">ⓘ</span>' : '')+'</div><div class="kvalue">'+value+'</div>' +
     '<div class="kdelta flat" style="margin-top:4px; white-space:normal;">'+sub+'</div></div>';
 }
 function renderVendConsult(){
@@ -4680,11 +4680,21 @@ function renderVendConsult(){
   var peerLbTotal = others.reduce(function(s,r){return s+r.lb;},0);
   var margemPeers = peerFatTotal>0 ? peerLbTotal/peerFatTotal*100 : 0;
   var margemVsPeers = me.margemPct - margemPeers;
+  var cliPeers = others.length ? others.reduce(function(s,r){ return s+(r.cli||0); },0)/others.length : 0;
+  function corPct(v){ return v>=0.5 ? 'var(--good)' : (v<=-0.5 ? 'var(--critical)' : 'inherit'); }
 
   var kpisHtml = '<div class="kpi-grid" style="margin-bottom:16px;">' +
     vcKpi('Faturamento no período', fmtMoney(me.fat), 'Posição '+posicao+' de '+rows.length+' vendedores') +
-    vcKpi('vs. média dos pares', fmtPct(vsAvgPct), 'Média dos demais: '+fmtMoney(peerAvg)) +
-    vcKpi('vs. mediana dos pares', fmtPct(vsMedPct), 'Mediana dos demais: '+fmtMoney(peerMedian)) +
+    vcKpi('vs. média · mediana', '<span style="color:'+corPct(vsAvgPct)+'">'+fmtPct(vsAvgPct)+'</span> <span style="font-size:.62em; color:var(--text-muted); font-weight:500;">·</span> <span style="color:'+corPct(vsMedPct)+'">'+fmtPct(vsMedPct)+'</span>',
+      'Pares: média '+fmtMoney(peerAvg)+' · mediana '+fmtMoney(peerMedian),
+      'Compara o faturamento de '+selName+' com o dos outros '+others.length+' vendedores, nos mesmos filtros e período.\n\n' +
+      'MÉDIA ('+fmtPct(vsAvgPct)+'): soma do faturamento dos demais dividida pelo número de vendedores ('+fmtMoney(peerAvg)+'). Poucos vendedores muito grandes puxam a média para cima.\n\n' +
+      'MEDIANA ('+fmtPct(vsMedPct)+'): o faturamento do vendedor que fica no meio da lista ('+fmtMoney(peerMedian)+'); metade vende mais e metade vende menos. Mostra o vendedor típico.\n\n' +
+      'Leitura: '+(vsAvgPct<0 ? 'vendeu '+Math.abs(vsAvgPct).toFixed(1).replace('.',',')+'% menos' : 'vendeu '+vsAvgPct.toFixed(1).replace('.',',')+'% mais')+' que a média e ' +
+      (vsMedPct<0 ? Math.abs(vsMedPct).toFixed(1).replace('.',',')+'% menos' : vsMedPct.toFixed(1).replace('.',',')+'% mais')+' que o vendedor típico.' +
+      (vsAvgPct < vsMedPct - 10 ? ' A distância bem maior para a média indica que alguns vendedores grandes concentram o faturamento do grupo.' : '')) +
+    vcKpi('Clientes atendidos', fmtUn(me.cli), 'Média dos pares: '+fmtUn(Math.round(cliPeers))+(cliPeers>0 ? ' ('+fmtPct((me.cli-cliPeers)/cliPeers*100)+')' : ''),
+      'Quantidade de clientes diferentes que compraram de '+selName+' no período, comparada com a média dos outros '+others.length+' vendedores. Faturamento por cliente: '+fmtMoney(me.cli ? me.fat/me.cli : 0)+' (pares: '+fmtMoney(cliPeers ? peerAvg/cliPeers : 0)+').') +
     vcKpi('Participação no grupo', share.toFixed(1)+'%', 'do faturamento filtrado, todos vendedores') +
     vcKpi('Ticket médio', fmtMoney2(ticketMe), 'Pares: '+fmtMoney2(ticketPeers)) +
     vcKpi('Margem bruta', me.margemPct.toFixed(1)+'%', (margemVsPeers>=0?'+':'')+margemVsPeers.toFixed(1)+' p.p. vs. pares ('+margemPeers.toFixed(1)+'%)') +
