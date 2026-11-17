@@ -1413,6 +1413,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .frp-bloco-t{ width:100%; background:none; border:none; padding:0; cursor:pointer; text-align:left; display:flex; align-items:baseline; gap:8px; margin-bottom:8px; font-family:'Sora',sans-serif; font-size:12.5px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:.04em; }
 .frp-bloco-t span{ font-family:'Manrope',sans-serif; font-size:10.5px; font-weight:600; color:var(--text-muted); text-transform:none; letter-spacing:0; }
 .frp-bloco .fbusca{ margin-top:8px; }
+.frp-est-nota{ margin:0 0 8px; font-size:10.5px; line-height:1.45; color:var(--text-muted); }
 .frp-bloco-sv{ display:inline-block; font-style:normal; font-size:10px; color:var(--text-muted); transform:rotate(90deg); transition:transform .15s; align-self:center; }
 .frp-bloco.fechado .frp-bloco-sv{ transform:rotate(0deg); }
 .frp-bloco.fechado{ padding-bottom:10px; }
@@ -1897,6 +1898,11 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
         <div class="frp-bloco" data-bloco="estoque">
           <button type="button" class="frp-bloco-t" aria-expanded="true"><i class="frp-bloco-sv">&#9656;</i>Estoque<span>saldo e giro</span><b class="frp-bloco-n" hidden></b></button>
+          <p class="frp-est-nota">O estoque (valor, giro, alertas e a aba Estoque) segue só os filtros deste bloco. Os demais filtros valem para as vendas.</p>
+          <div class="fcheck-group" data-key="estLoja" style="margin-bottom:8px;">
+            <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Loja do estoque<b class="fch-count" id="fcount-estLoja"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="estLoja">todos</button><button type="button" class="fcheck-clear" data-key="estLoja">limpar</button></span></div>
+            <div class="fcheck-list" id="fcheck-estLoja"></div>
+          </div>
           <div class="fcheck-group" data-key="status" style="margin-bottom:8px;">
             <div class="fcheck-head"><span class="fch-title"><i class="fch-chevron">&#9656;</i>Status estoque<b class="fch-count" id="fcount-status"></b></span><span class="fch-actions"><button type="button" class="fcheck-all" data-key="status">todos</button><button type="button" class="fcheck-clear" data-key="status">limpar</button></span></div>
             <div class="fcheck-list" id="fcheck-status"></div>
@@ -2696,8 +2702,27 @@ function novoProduto(id, r, lset){
   };
 }
 // produtos com venda no recorte (qualquer data) + itens em estoque sem venda, quando nenhum filtro exclusivo de venda está ativo
+function estLset(){ return state.estLoja.length ? toSet(state.estLoja) : null; }
+// filtros enviados ao banco para o estoque: só a loja do estoque (os demais filtros valem para as vendas)
+function filtrosEstoque(){
+  if(!state.estLoja.length) return {};
+  var m = DIMI.loja || {}, ids = state.estLoja.map(function(v){ return m[v]; }).filter(function(x){ return x!==undefined; });
+  return {loja: ids.length ? ids.sort(function(a,b){ return a-b; }) : [-1]};
+}
+// produtos do estoque: tudo o que tem saldo nas lojas do estoque + o que vendeu nelas (todas as vendas dessas lojas, sem os filtros de venda)
+function montarProdutosEstoque(b){
+  var lset = estLset(), vistos = {}, out = [];
+  (b.p||[]).forEach(function(r){ vistos[r[0]] = true; out.push(novoProduto(r[0], r, lset)); });
+  Object.keys(EST_POR_PROD).forEach(function(k){
+    var id = +k; if(vistos[id] || !PRODINFO[id]) return;
+    var p = novoProduto(id, null, lset);
+    if(p.estoqueAtual>0 || p.estCusto>0) out.push(p);
+  });
+  return out.sort(function(a,b){ return b.fat - a.fat; });
+}
+function estoqueProducts(){ return EST_BASE.filter(matchesFilters); }
 function montarProdutos(b, restrito){
-  var lset = state.regiao.length ? toSet(state.regiao) : null;
+  var lset = estLset();
   var vistos = {}, out = [];
   (b.p||[]).forEach(function(r){
     var id = r[0]; vistos[id] = true;
@@ -2720,7 +2745,7 @@ function montarProdutos(b, restrito){
 }
 
 var SEM_VENDEDOR = 'SEM VENDEDOR';
-var PRODUCTS = [], BASE_PRODUCTS = [], RESUMO = [], AG = {}, HAS_RESUMO = true;
+var PRODUCTS = [], BASE_PRODUCTS = [], EST_BASE = [], KPI_EST = null, DAILY_EST = null, RESUMO = [], AG = {}, HAS_RESUMO = true;
 var DAILY = {fat:[], qtd:[], lb:[]};
 var monthTotalFat = [], monthTotalQtd = [], dayWeightFat = [], dayWeightQtd = [];
 var DIM_LISTA = ['categoria','marca','montadora','loja','canal','vendedor','cidade'];
@@ -2861,7 +2886,7 @@ var STATUS_ICON = { normal:'🟢', atencao:'🟡', critico:'🔴', zerado:'⚫' 
 var state = {
   marca:[], categoria:[], modelo:[], vendedor:[], regiao:[], canal:[], origem:[], status:[],
   emitente:[], linha:[], tipo_cliente:[], cidade:[], classificacao:[], subcategoria:[],
-  grupo_cliente:[], pessoa:[], condicao:[], equipe:[], funcao:[], grupo_peca:[], aplicacao:[], curva_gm:[], zona:[],
+  grupo_cliente:[], pessoa:[], condicao:[], equipe:[], funcao:[], grupo_peca:[], aplicacao:[], curva_gm:[], zona:[], estLoja:[],
   produto:[], cliente:[], nf:[],   // códigos (busca)
   globalPeriod:'30d',
   perIni:null, perFim:null,        // período personalizado (índices do calendário)
@@ -3654,13 +3679,15 @@ function computeKpis(){
   var K = KPI_DB;
   // estoque: com produtos carregados respeita também os filtros de estoque; senão vem pronto do banco
   var estValor = 0, estQtd = 0, temEst = false;
+  // estoque: só os filtros do bloco Estoque (loja do estoque, status, parados, dias)
   if(PRODUTOS_NO_PAINEL){
-    filteredProducts().forEach(function(p){ estValor += p.estCusto; estQtd += p.estoqueAtual; });
+    estoqueProducts().forEach(function(p){ estValor += p.estCusto; estQtd += p.estoqueAtual; });
     temEst = true;
-  } else if(K){ estValor = +K.est_custo||0; estQtd = +K.est_qtd||0; temEst = true; }
+  } else if(KPI_EST){ estValor = +KPI_EST.est_custo||0; estQtd = +KPI_EST.est_qtd||0; temEst = true; }
+  var se = DAILY_EST || sd;
   // giro: custo das vendas dos últimos 12 meses (anualizado se a base tiver menos) ÷ estoque a custo
   var i0 = Math.max(0, TODAY_IDX-364), cmv = 0;
-  for(var i=i0; i<=TODAY_IDX; i++) cmv += (sd.fat[i]||0) - (sd.lb[i]||0);
+  for(var i=i0; i<=TODAY_IDX; i++) cmv += (se.fat[i]||0) - (se.lb[i]||0);
   cmv = cmv * 365 / Math.max(1, TODAY_IDX-i0+1);
   var giro = estValor>0 ? cmv/estValor : 0;
   return {
@@ -3873,7 +3900,7 @@ function fkAttr(key, val){
 }
 var FK_LABEL = {marca:'Marca', categoria:'Categoria', modelo:'Montadora', vendedor:'Vendedor', regiao:'Loja', canal:'Canal', origem:'Origem',
   emitente:'Emitente', linha:'Linha', tipo_cliente:'Tipo de cliente', cidade:'Cidade', classificacao:'Classificação', subcategoria:'Subcategoria',
-  grupo_cliente:'Grupo de cliente', pessoa:'Pessoa', condicao:'Condição de pagamento', equipe:'Equipe', funcao:'Função', grupo_peca:'Grupo de peça', aplicacao:'Aplicação', curva_gm:'Curva GM', zona:'Zona da capital',
+  grupo_cliente:'Grupo de cliente', pessoa:'Pessoa', condicao:'Condição de pagamento', equipe:'Equipe', funcao:'Função', grupo_peca:'Grupo de peça', aplicacao:'Aplicação', curva_gm:'Curva GM', zona:'Zona da capital', estLoja:'Loja do estoque',
   produto:'Produto', cliente:'Razão', nf:'NF'};
 // rótulos dos filtros que guardam códigos (produto, cliente, NF)
 var BUSCA_LBL = {produto:{}, cliente:{}, nf:{}};
@@ -3934,7 +3961,7 @@ function renderCategoryList(){
 }
 
 function renderGiroList(){
-  var prods = filteredProducts();
+  var prods = estoqueProducts();
   var map = {};
   prods.forEach(function(p){
     if(!map[p.categoria]) map[p.categoria]={sum:0,w:0};
@@ -5365,7 +5392,7 @@ function radarChartSVG(axes, w, h){
    ESTOQUE — saúde / alertas
    ============================================================ */
 function renderStockHealth(){
-  var prods = filteredProducts().filter(function(p){ return !p.isBucket; });
+  var prods = estoqueProducts().filter(function(p){ return !p.isBucket; });
   var counts = {normal:0,atencao:0,critico:0,zerado:0};
   prods.forEach(function(p){ counts[stockStatus(p)]++; });
   var total = prods.length || 1;
@@ -5401,7 +5428,7 @@ function simItens(){
   // usa os filtros do painel, exceto o próprio corte de dias (o simulador mostra todas as faixas)
   // (parte da lista completa do recorte, antes do filtro de estoque restringir os produtos)
   var dm = state.diasMin; state.diasMin = null;
-  var prods = BASE_PRODUCTS.filter(matchesFilters).filter(function(p){ return !p.isBucket && p.estCusto>0 && p.diasSemGiro!==null && p.diasSemGiro!==undefined; });
+  var prods = EST_BASE.filter(matchesFilters).filter(function(p){ return !p.isBucket && p.estCusto>0 && p.diasSemGiro!==null && p.diasSemGiro!==undefined; });
   state.diasMin = dm;
   return prods;
 }
@@ -5449,8 +5476,8 @@ function renderSimulador(){
 function renderEstoqueDestaque(){
   var box = document.getElementById('estDestaque'); if(!box) return;
   var k = computeKpis(), parado = 0, crit = 0, zer = 0, itens = 0;
-  var lset = state.regiao.length ? toSet(state.regiao) : null;
-  filteredProducts().forEach(function(p){
+  var lset = estLset();
+  estoqueProducts().forEach(function(p){
     if(p.isBucket) return;
     if(p.estoqueAtual>0) itens++;
     // parado: só o estoque das lojas em que o item está parado (não o produto inteiro)
@@ -5464,10 +5491,10 @@ function renderEstoqueDestaque(){
     ed('Cobertura', k.cobertura!==null ? Math.round(k.cobertura)+' dias' : '—', 'quanto o estoque dura no ritmo atual') +
     ed('Estoque parado', fmtMoney(parado), (k.estValor>0 ? (parado/k.estValor*100).toFixed(1).replace('.',',') : '0')+'% do valor · sem venda ou compra');
   var sub = document.getElementById('estDestSub');
-  if(sub) sub.textContent = 'Estoque atual a custo, com os filtros aplicados · '+fmtUn(crit)+' itens críticos e '+fmtUn(zer)+' sem estoque (veja os alertas abaixo)';
+  if(sub) sub.textContent = 'Estoque atual a custo, com os filtros do bloco Estoque · '+fmtUn(crit)+' itens críticos e '+fmtUn(zer)+' sem estoque (veja os alertas abaixo)';
 }
 function renderAlerts(){
-  var prods = filteredProducts().filter(function(p){ var s=stockStatus(p); return !p.isBucket && (s==='critico'||s==='zerado'||s==='atencao'); });
+  var prods = estoqueProducts().filter(function(p){ var s=stockStatus(p); return !p.isBucket && (s==='critico'||s==='zerado'||s==='atencao'); });
   var SEV = {zerado:0, critico:1, atencao:2};
   prods.sort(function(a,b){
     var sa = SEV[stockStatus(a)], sb = SEV[stockStatus(b)];
@@ -5641,7 +5668,7 @@ function renderSellers(){
    TABELA DETALHADA
    ============================================================ */
 function tableRows(){
-  var prods = filteredProducts();
+  var prods = estoqueProducts();
   var abcMap = {};
   if(state.abcFilter){ computeABC().forEach(function(r){ abcMap[r.p.id]=r.cls; }); }
   var rows = prods.map(function(p){
@@ -5712,7 +5739,7 @@ function renderTable(){
    DRAWER (drill-down)
    ============================================================ */
 function openDrawer(productId){
-  var p = PRODUCTS.filter(function(x){return x.id===productId;})[0] || BASE_PRODUCTS.filter(function(x){return x.id===productId;})[0];
+  var p = PRODUCTS.filter(function(x){return x.id===productId;})[0] || BASE_PRODUCTS.filter(function(x){return x.id===productId;})[0] || EST_BASE.filter(function(x){return x.id===productId;})[0];
   if(!p) return;
   drawerAtual = p.id;
   document.getElementById('drawerCode').textContent = p.codigo;
@@ -5776,7 +5803,7 @@ function fillSelect(id, values, placeholder){
   sel.innerHTML = '<option value="">'+placeholder+'</option>' + values.map(function(v){ return '<option value="'+v+'">'+v+'</option>'; }).join('');
 }
 /* ---- filtros multi-seleção (checkbox) ---- */
-var FILTER_KEYS = ['marca','categoria','modelo','vendedor','regiao','canal','origem','emitente','linha','classificacao','subcategoria','tipo_cliente','cidade','zona','grupo_cliente','pessoa','condicao','equipe','funcao','grupo_peca','aplicacao','curva_gm','status'];
+var FILTER_KEYS = ['marca','categoria','modelo','vendedor','regiao','canal','origem','emitente','linha','classificacao','subcategoria','tipo_cliente','cidade','zona','grupo_cliente','pessoa','condicao','equipe','funcao','grupo_peca','aplicacao','curva_gm','estLoja','status'];
 var BUSCA_KEYS = ['produto','cliente','nf'];
 // opções dos filtros em ordem alfabética (status mantém a ordem de gravidade)
 function ordemAZ(a){ return a.slice().sort(function(x,y){ return String(x).localeCompare(String(y), 'pt-BR', {sensitivity:'base', numeric:true}); }); }
@@ -5799,6 +5826,7 @@ function opcoesFiltro(key){
     case 'subcategoria': return SUBCATS;
     case 'cidade': return CIDADES;
     case 'status': return ['normal','atencao','critico','zerado'];
+    case 'estLoja': return REGIONS;
   }
   // filtros novos (arquivo infobi): opções direto da base
   if(FILTRO_COL[key]) return dimLista(FILTRO_COL[key]);
@@ -5924,7 +5952,7 @@ var TAG_DEFS = [
     ['marca','Marca'],['categoria','Categoria'],['modelo','Montadora'],['vendedor','Vendedor'],
     ['regiao','Loja'],['canal','Canal'],['origem','Origem'],['emitente','Emitente'],['linha','Linha'],
     ['classificacao','Classificação'],['subcategoria','Subcategoria'],['tipo_cliente','Tipo de cliente'],['cidade','Cidade'],['zona','Zona da capital'],
-    ['grupo_cliente','Grupo de cliente'],['pessoa','Pessoa'],['condicao','Condição de pagamento'],['equipe','Equipe'],['funcao','Função'],['grupo_peca','Grupo de peça'],['aplicacao','Aplicação'],['curva_gm','Curva GM'],
+    ['grupo_cliente','Grupo de cliente'],['pessoa','Pessoa'],['condicao','Condição de pagamento'],['equipe','Equipe'],['funcao','Função'],['grupo_peca','Grupo de peça'],['aplicacao','Aplicação'],['curva_gm','Curva GM'],['estLoja','Loja do estoque'],
     ['produto','Produto'],['cliente','Razão'],['nf','NF']
   ];
 var TAG_MAX = 3; // acima disso o filtro vira um chip "Vários"
@@ -5997,7 +6025,7 @@ function computeAutoInsights(){
   [['marca',byMarca,null],['canal',byCanal,byCanalPrev],['loja',byLoja,byLojaPrev]].forEach(function(t){
     var m = agMap(t[0]); Object.keys(m).forEach(function(k){ t[1][k] = m[k].fat; if(t[2]) t[2][k] = m[k].prevFat; });
   });
-  prods.forEach(function(p){
+  estoqueProducts().forEach(function(p){
     var f = p.fatP;
     if(p.parado){ paradoEstValor += p.estCusto; }
     var st = stockStatus(p);
@@ -6009,7 +6037,7 @@ function computeAutoInsights(){
     }
   });
 
-  if(!PRODUTOS_NO_PAINEL && KPI_DB) paradoEstValor = +KPI_DB.est_parado||0; // dashboard: estoque parado vem pronto do banco
+  if(!PRODUTOS_NO_PAINEL && KPI_EST) paradoEstValor = +KPI_EST.est_parado||0; // dashboard: estoque parado vem pronto do banco
   delete byMarca['Diversas']; // cauda longa não é uma marca
 
   var insights = [];
@@ -7764,7 +7792,7 @@ function vxLigar(){
 async function renderAll(refreshing){
   filtroAplicado();
   var fBase = painelFiltros(null), per = painelPeriodo(), comP = precisaProdutos();
-  var chave = JSON.stringify([fBase, per, state.status, state.soParados, state.diasMin, state.regiao, comP]);
+  var fEst = filtrosEstoque(), chave = JSON.stringify([fBase, per, state.status, state.soParados, state.diasMin, state.estLoja, comP]);
   if(chave===painelChave){ renderTudo(refreshing); return; }
   var seq = ++painelSeq;
   carregando(true);
@@ -7772,6 +7800,13 @@ async function renderAll(refreshing){
     if(comP) await carregarProdutos();
     if(seq!==painelSeq) return;
     var base = await buscarPainel(fBase, comP);
+    if(seq!==painelSeq) return;
+    // estoque: consulta própria, só com os filtros do bloco Estoque
+    var est = await Promise.all([
+      rpcMemo('bi_kpis', {f:fEst, per:per}).catch(function(){ return null; }),
+      rpcMemo('bi_painel', {f:fEst, per:{}, parte:'a'}).catch(function(){ return null; }),
+      comP ? rpcMemo('bi_painel', {f:fEst, per:per, parte:'b'}) : null
+    ]);
     if(seq!==painelSeq) return;
     var baseProds = comP ? montarProdutos(base.b, null) : [], view = base, prods = baseProds, fv = fBase;
     if(comP && estoqueFiltrosAtivos()){
@@ -7793,6 +7828,9 @@ async function renderAll(refreshing){
     res.forEach(function(x){ listas[x[0]] = (x[1]||{})[x[0]] || []; });
     aplicarPainel(view, baseProds, prods, listas);
     KPI_DB = view.k || base.k || null; PRODUTOS_NO_PAINEL = comP;
+    KPI_EST = est[0];
+    if(est[1] && est[1].d){ var de = new Array(N_DAYS).fill(0), le = de.slice(); est[1].d.forEach(function(r){ var i = DIA_IDX[r[0]]; if(i!==undefined){ de[i] = c2(r[1]); le[i] = c2(r[3]); } }); DAILY_EST = {fat:de, lb:le}; } else DAILY_EST = null;
+    EST_BASE = comP ? montarProdutosEstoque(est[2]||{}) : [];
     painelChave = chave; PAINEL_F = fv;
   } catch(ex){
     if(seq!==painelSeq) return;
@@ -7941,7 +7979,7 @@ function bindEvents(){
     if(state.currentView==='vendas') renderVendasAbas();
   });
   document.getElementById('notifBtn').addEventListener('click', function(){
-    var n = filteredProducts().filter(function(p){ var st=stockStatus(p); return !p.isBucket && (st==='critico'||st==='zerado'); }).length;
+    var n = estoqueProducts().filter(function(p){ var st=stockStatus(p); return !p.isBucket && (st==='critico'||st==='zerado'); }).length;
     toast(n ? n+' produto'+(n>1?'s':'')+' com estoque crítico ou zerado nos filtros atuais.' : 'Nenhum produto com estoque crítico nos filtros atuais.');
   });
   document.getElementById('userAvatar').addEventListener('click', function(){ if(CURRENT_USER) toast('Perfil: '+CURRENT_USER.nome+' · '+CURRENT_USER.perfil); });
