@@ -636,6 +636,11 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .canal-bar .seg[data-fk]{ cursor:pointer; }
 tr.vend-row, .vend-pt{ cursor:pointer; }
 .vr-cel{ display:flex; align-items:center; gap:8px; min-width:0; }
+.vr-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vr-sw-l{ display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text-2); cursor:pointer; }
+.vr-sw{ transform:scale(.8); transform-origin:right center; }
+.vr-part{ display:flex; align-items:center; justify-content:flex-end; gap:6px; }
+.vr-part .vr-bar{ flex:1; max-width:34px; }
 /* ranking de vendedores: cabe na largura da coluna, sem rolagem lateral nem interna */
 .rank-vend-box{ border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
 table.data-table.rank-vend{ min-width:0; table-layout:fixed; }
@@ -648,7 +653,7 @@ table.data-table.rank-vend thead th:nth-child(n+3){ text-align:right; }
 table.data-table.rank-vend thead th{ font-size:9.5px; letter-spacing:.02em; }
 table.data-table.rank-vend .vr-cel{ flex-wrap:wrap; row-gap:3px; column-gap:6px; }
 table.data-table.rank-vend .vr-nome{ flex:1 0 100%; }
-table.data-table.rank-vend .vr-bar{ flex:0 0 60px; }
+table.data-table.rank-vend .vr-part .vr-bar{ flex:0 0 28px; }
 .vr-todos{ display:block; width:100%; padding:8px; border:0; border-top:1px solid var(--border); background:var(--surface-2); color:var(--accent); font:600 12px Manrope,sans-serif; cursor:pointer; }
 .vr-todos:hover{ background:var(--surface-3); }
 .vr-nome{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -2871,7 +2876,7 @@ var state = {
   currentView:'dashboard',
   vendConsultSel:'',
   paresModo:'grupo', paresEquipes:[], // comparativo dos pares: todo o grupo ou só as equipes escolhidas
-  vendSortCol:'fat', vendSortDir:'desc', vendRankTodos:false,
+  vendSortCol:'fat', vendSortDir:'desc', vendRankTodos:false, vendRankPct:false,
   soParados:false,
   diaSemana:'',   // filtro: '' todos os dias, 'util' segunda a sexta, 'fds' sábado e domingo
   diasMin:null,   // filtro: sem venda há pelo menos N dias
@@ -4704,11 +4709,14 @@ function renderVendConsult(){
   var groupAvgMargem = rows.reduce(function(s,r){ return s+r.margemPct; },0)/rows.length;
   var VEND_RANK_COLS = [
     {key:null, label:'#'},
-    {key:'name', label:'Vendedor · % do total'},
-    {key:'fat', label:'Faturamento'},
+    {key:'name', label:'Vendedor'},
+    {key:'fat', label:'Faturamento', dica: state.vendRankPct ? 'Faturamento em % do total do grupo' : 'Faturamento no período'},
     {key:'margemPct', label:'Margem'},
     {key:'qtd', label:'Qtd.'},
-    {key:'ticket', label:'Ticket'}
+    {key:'ticket', label:'Ticket'},
+    {key:'cli', label:'Clientes', dica:'Clientes diferentes que compraram do vendedor no período'},
+    {key:'skuCount', label:'Mix', dica:'Mix de produtos: quantidade de produtos diferentes vendidos por mês, em média'},
+    {key:'share', label:'Particip.', dica:'Participação no faturamento do grupo (filtros aplicados)'}
   ];
   var maxShare = Math.max.apply(null, rows.map(function(r){ return r.share; }).concat([0]));
   function buildVendRankTable(){
@@ -4719,7 +4727,7 @@ function renderVendConsult(){
     });
     var thead = '<tr>'+VEND_RANK_COLS.map(function(c){
       var ico = c.key ? (state.vendSortCol===c.key ? (state.vendSortDir==='asc'?'▲':'▼') : '▵') : '';
-      return '<th'+(c.key?' data-col="'+c.key+'" data-active="'+(state.vendSortCol===c.key)+'"':'')+'>'+c.label+(c.key?' <span class="sort-ico">'+ico+'</span>':'')+'</th>';
+      return '<th'+(c.key?' data-col="'+c.key+'" data-active="'+(state.vendSortCol===c.key)+'"':'')+(c.dica?' title="'+c.dica+'"':'')+'>'+c.label+(c.key?' <span class="sort-ico">'+ico+'</span>':'')+'</th>';
     }).join('')+'</tr>';
     // à vista: os 10 primeiros + o vendedor analisado; "ver todos" abre a lista inteira na página, sem barra de rolagem
     var LIM_RANK = 10, total = sortedRows.length;
@@ -4728,17 +4736,18 @@ function renderVendConsult(){
       if(!state.vendRankTodos && i>=LIM_RANK && !isMe) return '';
       return '<tr class="vend-row" data-vend="'+escapeHtml(r.name)+'"'+(isMe?' style="background:rgba(34,211,238,.08);"':' title="Clique para analisar este vendedor"')+'>' +
         '<td class="mono" style="color:var(--text-muted);">'+(i+1)+'</td>' +
-        '<td class="prodcell"'+(isMe?' style="color:var(--accent);"':'')+'><div class="vr-cel"><span class="vr-nome">'+r.name+'</span>' +
-          '<span class="vr-bar" title="'+r.share.toFixed(1)+'% do faturamento do grupo"><i style="width:'+(maxShare>0?r.share/maxShare*100:0)+'%"></i></span>' +
-          '<span class="vr-pct">'+r.share.toFixed(1)+'%</span></div></td>' +
-        '<td class="mono">'+fmtMoney(r.fat)+'</td>' +
+        '<td class="prodcell"'+(isMe?' style="color:var(--accent);"':'')+' title="'+escapeHtml(r.name)+'"><span class="vr-nome">'+r.name+'</span></td>' +
+        '<td class="mono">'+(state.vendRankPct ? r.share.toFixed(1).replace('.',',')+'%' : fmtMoney(r.fat))+'</td>' +
         '<td class="mono" style="color:'+(r.margemPct>=groupAvgMargem?'var(--good)':'var(--critical)')+';">'+r.margemPct.toFixed(1)+'%</td>' +
         '<td class="mono">'+fmtUn(r.qtd)+'</td>' +
-        '<td class="mono">'+fmtMoney2(r.ticket)+'</td>' +
+        '<td class="mono" title="'+fmtMoney2(r.ticket)+'">'+fmtMoney(r.ticket)+'</td>' +
+        '<td class="mono">'+fmtUn(r.cli||0)+'</td>' +
+        '<td class="mono">'+fmtUn(Math.round(r.skuCount||0))+'</td>' +
+        '<td class="mono"><div class="vr-part"><span class="vr-bar" title="'+r.share.toFixed(1)+'% do faturamento do grupo"><i style="width:'+(maxShare>0?r.share/maxShare*100:0)+'%"></i></span>'+r.share.toFixed(1).replace('.',',')+'%</div></td>' +
       '</tr>';
     }).join('');
     var mais = total>LIM_RANK ? '<button type="button" class="vr-todos" data-vend-todos="1">'+(state.vendRankTodos ? 'Mostrar só os 10 primeiros' : 'Ver todos os '+total+' vendedores')+'</button>' : '';
-    return '<table class="data-table rank-vend"><colgroup><col style="width:32px"><col><col style="width:114px"><col style="width:72px"><col style="width:54px"><col style="width:82px"></colgroup>' +
+    return '<table class="data-table rank-vend"><colgroup><col style="width:34px"><col><col style="width:'+(state.vendRankPct?86:104)+'px"><col style="width:58px"><col style="width:52px"><col style="width:62px"><col style="width:60px"><col style="width:44px"><col style="width:80px"></colgroup>' +
       '<thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table>' + mais;
   }
   var rankHtml = buildVendRankTable();
@@ -4908,7 +4917,7 @@ function renderVendConsult(){
   box.innerHTML = kpisHtml;
   rankBox.innerHTML =
     '<div class="grid-2">' +
-      '<div><h3 class="dh">Ranking do grupo</h3><div class="rank-vend-box">'+rankHtml+'</div></div>' +
+      '<div><div class="vr-head"><h3 class="dh">Ranking do grupo</h3><label class="vr-sw-l" title="Mostra o faturamento de cada vendedor em % do total do grupo"><span>Faturamento em %</span><button type="button" class="ia-sw vr-sw" id="vrPctSw" role="switch" aria-checked="'+(state.vendRankPct?'true':'false')+'" aria-label="Mostrar faturamento em %"></button></label></div><div class="rank-vend-box">'+rankHtml+'</div></div>' +
       '<div>' +
         '<h3 class="dh">'+selName+' vs. média dos demais &middot; radar</h3>' +
         '<div class="radar-legend">' +
@@ -4942,9 +4951,9 @@ function renderVendConsult(){
         '<span><i style="background:var(--text-muted);"></i>Média dos demais</span>' +
       '</div>' +
       '<div class="grid-3">' +
-        dimRadarBlock('Top 10 Marcas — FAT normalizado', radarMarcaSvg) +
-        dimRadarBlock('Top 10 Categorias — FAT normalizado', radarCatSvg) +
-        dimRadarBlock('Top 10 Produtos — FAT normalizado', radarProdSvg) +
+        dimRadarBlock('Top 10 Marcas — Faturamento', radarMarcaSvg) +
+        dimRadarBlock('Top 10 Categorias — Faturamento', radarCatSvg) +
+        dimRadarBlock('Top 10 Produtos — Faturamento', radarProdSvg) +
         '<p id="rdInfo" class="rd-info">Clique numa marca, categoria ou produto para destacar os relacionados nos outros dois radares.</p>' +
       '</div>' +
     '</div>';
@@ -4983,6 +4992,8 @@ function renderVendConsult(){
       renderVendSemRolar();
     });
   });
+  var swPct = rankBox.querySelector('#vrPctSw');
+  if(swPct) swPct.addEventListener('click', function(){ state.vendRankPct = !state.vendRankPct; renderVendSemRolar(); });
   var btTodos = rankBox.querySelector('[data-vend-todos]');
   if(btTodos) btTodos.addEventListener('click', function(){ state.vendRankTodos = !state.vendRankTodos; renderVendSemRolar(); });
 }
