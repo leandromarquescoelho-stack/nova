@@ -220,6 +220,11 @@ def main():
             with con.cursor() as cur:
                 cur.executemany("""insert into public.bi_concorrencia (site, pn, preco, preco_lista, disponivel, titulo, url, confianca)
                                    values (%s,%s,%s,%s,%s,%s,%s,%s) on conflict (site, pn) do nothing""", linhas)
+            # histórico diário (um registro por dia, site e peça; a última coleta do dia vale)
+            if con.execute("select to_regclass('public.bi_concorrencia_hist') is not null").fetchone()[0]:
+                con.execute("""insert into public.bi_concorrencia_hist (dia, site, pn, preco, disponivel)
+                               select (now() at time zone 'America/Sao_Paulo')::date, site, pn, preco, disponivel from public.bi_concorrencia
+                               on conflict (dia, site, pn) do update set preco = excluded.preco, disponivel = excluded.disponivel""")
         print('accioly (diagnóstico):', ACC_DBG, flush=True)
         print('gravado: ' + ', '.join(f'{k} {v}' for k, v in achou.items()), flush=True)
 
