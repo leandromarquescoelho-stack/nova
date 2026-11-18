@@ -3754,9 +3754,10 @@ function kpiHoje(k){
   el.d.title = 'Faturamento de '+fmtDateFull(dia)+(ehHoje ? ' até a última carga ('+cargaLabel(REAL.carga)+')' : '')+' comparado com a média diária do período selecionado ('+fmtMoney(k.media)+'). Margem do dia: '+(f>0 ? (l/f*100).toFixed(1).replace('.',',')+'%' : '—')+'.';
   el.x.innerHTML = '<div class="ksl"><span>Clientes</span><b>…</b></div><div class="ksl"><span>Seguradoras</span><b>…</b></div>';
   var d0 = isoDia(dia), seq = kpiHoje.seq = (kpiHoje.seq||0) + 1;
-  rpcMemo('bi_painel', {f:PAINEL_F || painelFiltros(null), per:{ini:d0, fim:d0, pini:d0, pfim:d0}, parte:'c'}).then(function(c){
+  // consulta leve, só do dia (bi_hoje); banco sem a função: o card mostra só o total do dia
+  rpcMemo('bi_hoje', {f:PAINEL_F || painelFiltros(null), dia:d0}).then(function(c){
     if(seq!==kpiHoje.seq) return;
-    var t = {}; ((c||{}).tipo_cliente||[]).forEach(function(r){ var n = dimNome('tipo_cliente', r[0]).toUpperCase(), g = /SEGURAD/.test(n) ? 'seg' : 'cli'; t[g] = t[g] || {f:0, l:0}; t[g].f += c2(r[1]); t[g].l += c2(r[3]); });
+    var t = {}; (c||[]).forEach(function(r){ var n = dimNome('tipo_cliente', r[0]).toUpperCase(), g = /SEGURAD/.test(n) ? 'seg' : 'cli'; t[g] = t[g] || {f:0, l:0}; t[g].f += c2(r[1]); t[g].l += c2(r[2]); });
     function lin(rot, x){ return '<div class="ksl"><span>'+rot+'</span> <b>'+fmtMoney(x ? x.f : 0)+'</b> · <i>mg '+(x && x.f>0 ? (x.l/x.f*100).toFixed(1).replace('.',',')+'%' : '—')+'</i></div>'; }
     el.x.innerHTML = lin('Clientes', t.cli) + lin('Seguradoras', t.seg);
   }).catch(function(){ if(seq===kpiHoje.seq) el.x.innerHTML = ''; });
