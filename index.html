@@ -554,6 +554,8 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vx-conc-pin.aprox{opacity:.55; border-style:dashed;}
 .vx-conc-pin::after{content:''; position:absolute; inset:3px; background:#1a1a1a; border-radius:1px;}
 @keyframes vxPulso{50%{box-shadow:0 0 0 4px #00e5ff, 0 0 26px 10px rgba(0,229,255,.45), 0 2px 8px rgba(0,0,0,.6);}}
+.vx-loja-aviso.vx-bai-aviso{bottom:auto; top:12px; border-color:rgba(16,185,129,.5);}
+.vx-bai-aviso button, .vx-loja-aviso button{font:inherit;}
 .vx-loja-aviso{position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:950; background:var(--surface); border:1px solid rgba(0,229,255,.45); color:var(--text); border-radius:10px; padding:6px 12px; font-size:12px; font-weight:600; box-shadow:0 6px 20px rgba(0,0,0,.35); display:flex; gap:10px; align-items:center; white-space:nowrap;}
 .vx-loja-aviso[hidden]{display:none;}
 .vx-loja-aviso button{font:inherit; font-size:11.5px; font-weight:700; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--vx-cy-t); border-radius:7px; padding:3px 9px; cursor:pointer;}
@@ -2075,10 +2077,11 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             </div>
           </div>
           <div class="vx-leg" id="vxMapLeg"></div>
-          <div id="vxMapWrap"><div class="vx-flut" id="vxMapFlut"><button type="button" class="vx-full-btn" id="vxMapBarra" title="Ocultar a faixa de título e opções para ver mais mapa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Ocultar faixa</span></button><button type="button" class="vx-full-btn" id="vxMapSair2" title="Sair da tela cheia (Esc)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Sair</span></button></div><div class="vx-loja-aviso" id="vxLojaAviso" hidden></div><div id="vxMap"></div><div id="vxMapTip"></div><div class="vx-prog" id="vxProg" hidden role="status" aria-live="polite"><div class="vx-prog-t"><span id="vxProgTx">Aplicando filtros…</span><b id="vxProgPc">0%</b></div><div class="vx-prog-b"><i id="vxProgBar"></i></div></div><div class="vx-map-msg status-txt" id="vxMapMsg">Carregando mapa…</div></div>
+          <div id="vxMapWrap"><div class="vx-flut" id="vxMapFlut"><button type="button" class="vx-full-btn" id="vxMapBarra" title="Ocultar a faixa de título e opções para ver mais mapa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Ocultar faixa</span></button><button type="button" class="vx-full-btn" id="vxMapSair2" title="Sair da tela cheia (Esc)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Sair</span></button></div><div class="vx-loja-aviso" id="vxLojaAviso" hidden></div><div class="vx-loja-aviso vx-bai-aviso" id="vxBaiAviso" hidden></div><div id="vxMap"></div><div id="vxMapTip"></div><div class="vx-prog" id="vxProg" hidden role="status" aria-live="polite"><div class="vx-prog-t"><span id="vxProgTx">Aplicando filtros…</span><b id="vxProgPc">0%</b></div><div class="vx-prog-b"><i id="vxProgBar"></i></div></div><div class="vx-map-msg status-txt" id="vxMapMsg">Carregando mapa…</div></div>
           <div class="note-muted" id="vxConcNota" style="font-size:11px; margin-top:6px;"></div>
           <p class="note-muted" id="vxMapNota"></p>
         </div>
+        <div class="vx-card" id="vxBaiCard" hidden><div class="vx-ct" id="vxBaiTit">Tabela &mdash; Bairros</div><div class="vx-cs" id="vxBaiSub">Clique no cabeçalho para ordenar</div><div class="vx-scroll" style="max-height:380px;"><table class="vx-tbl" id="vxTB"></table></div><p class="note-muted" id="vxBaiNota" style="font-size:11px; margin:6px 0 0;"></p></div>
         <div class="vx-card"><div class="vx-ct">Tabela &mdash; Cidades</div><div class="vx-cs">Clique no cabeçalho para ordenar e na linha para filtrar</div><div class="vx-scroll" style="max-height:380px;"><table class="vx-tbl" id="vxTR"></table></div></div>
       </div>
 
@@ -7653,6 +7656,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
     else if(pts.length) VX.map.fitBounds(L.latLngBounds(pts), {padding:[40,40], maxZoom:9});
     else VX.map.setView([-22.5,-48.5], 6);
   }
+  if(VX.bairroQ){ var bq = VX.bairroQ; if(VX.camada && vendaPorId[bq.props.id]) vxBairros({o:vendaPorId[bq.props.id], props:bq.props}, true); else vxBairrosFechar(); }
   if(!document.getElementById('app').hasAttribute('data-carregando')) vxProg('fim');
 }
 
@@ -7753,7 +7757,8 @@ function vxQuadroHtml(q){
     ln('Automóveis', f[6] ? vxN(f[6]) : '—') +
     (vxChev(f) ? ln('Chevrolet na frota', vxN(vxChev(f).n)+' · '+vxChev(f).pct.toFixed(1).replace('.',',')+'%') + (f[7] ? ln('Peças por mil Chevrolet', (o.qtd/f[7]*1000).toFixed(1).replace('.',',')) : '') : '') +
     '</table>' + (cli!==null && cliP ? '<div class="vx-q-n">Período anterior: '+vxN(cliP)+' clientes, ticket '+vxM(tkP)+'</div>' : '') +
-    '<div class="vx-q-top" tabindex="0"><span>👥 Top 5 clientes</span><span class="seta">▸</span><div class="vx-q-sub">'+vxTopHtml(q.top)+'</div></div></div>';
+    '<div class="vx-q-top" tabindex="0"><span>👥 Top 5 clientes</span><span class="seta">▸</span><div class="vx-q-sub">'+vxTopHtml(q.top)+'</div></div>'+
+    (q.o ? '<button type="button" class="vx-q-exp vx-q-bai" title="Mostra no mapa o faturamento por bairro deste município, com os filtros atuais">🏘 Ver bairros no mapa</button>' : '')+'</div>';
   return h;
 }
 function vxQuadroCidade(latlng, o, props, total){
@@ -7765,12 +7770,112 @@ function vxQuadroCidade(latlng, o, props, total){
   VX.popup.setLatLng(latlng).setContent(vxQuadroHtml(VX.quadro)).openOn(VX.map);
   vxQuadroLigar();
 }
+/* ---------- bairros do município (bi_bairros: CEP do cliente -> bairro; na capital, também distritos) ---------- */
+var SP_CAPITAL = '3550308';
+function vxDistritosSP(){
+  if(!VX.distPr) VX.distPr = fetch('geo/SP_distritos.json').then(function(r){ if(!r.ok) throw new Error('geo'); return r.json(); }).catch(function(e){ VX.distPr = null; throw e; });
+  return VX.distPr;
+}
+function vxBairrosFechar(){
+  VX.bairroQ = null;
+  if(VX.bairros && VX.map){ VX.map.removeLayer(VX.bairros); }
+  VX.bairros = null;
+  var av = document.getElementById('vxBaiAviso'); if(av) av.hidden = true;
+  var cd = document.getElementById('vxBaiCard'); if(cd) cd.hidden = true;
+  if(VX.camada) VX.camada.eachLayer(function(l){ VX.camada.resetStyle(l); });
+}
+function vxBairros(q, semZoom){
+  if(!q || !q.o || !VX.map) return;
+  var nomes = q.o.nomes || [], ids = nomes.map(function(n){ return (DIMI.cidade||{})[n]; }).filter(function(x){ return x!==undefined; });
+  var f = VX.geo[q.props.uf].lista.filter(function(x){ return x[2]===q.props.id; })[0], nomeMun = f ? f[1] : 'Município';
+  var capital = q.props.id===SP_CAPITAL;
+  VX.bairroQ = {props:q.props};
+  var seq = VX.bairroSeq = (VX.bairroSeq||0) + 1;
+  VX.map.closePopup(); VX.quadro = null;
+  var av = document.getElementById('vxBaiAviso');
+  av.hidden = false; av.innerHTML = '<span>Carregando os bairros de <b>'+escapeHtml(nomeMun)+'</b>…</span>';
+  var per = painelPeriodo();
+  var args = {f:vxFiltrosLoja(), per:{ini:per.ini, fim:per.fim, pini:per.pini, pfim:per.pfim}, cidades:ids};
+  Promise.all([rpcMemo('bi_bairros', args), capital ? vxDistritosSP().catch(function(){ return null; }) : null]).then(function(r){
+    if(seq!==VX.bairroSeq) return;
+    vxBairrosDesenhar(q, nomeMun, r[0] || [], r[1], semZoom);
+  }).catch(function(){
+    if(seq!==VX.bairroSeq) return;
+    av.innerHTML = '<span>O mapa por bairro ainda não está disponível no banco.</span><button type="button">Fechar</button>';
+    av.querySelector('button').onclick = vxBairrosFechar;
+  });
+}
+function vxBairrosDesenhar(q, nomeMun, rows, distritos, semZoom){
+  var claro = vxClaro(), capital = !!distritos;
+  var bs = rows.map(function(x){ return {k:x[0]||'', dist:x[1]||null, lat:x[2], lon:x[3], fat:(x[4]||0)/100, lb:(x[5]||0)/100, prev:(x[6]||0)/100, cli:x[7]||0}; });
+  var tot = bs.reduce(function(s, b){ return s + b.fat; }, 0) || 1;
+  // o mesmo bairro pode vir em mais de uma linha (distritos diferentes): soma pelo nome
+  var porNome = {}, semBairro = {fat:0, cli:0};
+  bs.forEach(function(b){
+    if(!b.k){ semBairro.fat += b.fat; semBairro.cli += b.cli; return; }
+    var k = vxSemAcento(b.k), o = porNome[k];
+    if(!o){ o = porNome[k] = {k:b.k, dist:b.dist, fat:0, lb:0, prev:0, cli:0, sl:0, sn:0, n:0}; }
+    o.fat += b.fat; o.lb += b.lb; o.prev += b.prev; o.cli += b.cli; if(!o.dist && b.dist) o.dist = b.dist;
+    if(b.lat!==null && b.lat!==undefined){ o.sl += b.lat*Math.max(b.fat, .01); o.sn += b.lon*Math.max(b.fat, .01); o.n += Math.max(b.fat, .01); }
+  });
+  var lista = Object.keys(porNome).map(function(k){ var o = porNome[k]; o.lat = o.n ? o.sl/o.n : null; o.lon = o.n ? o.sn/o.n : null; o.mg = o.fat>0 ? o.lb/o.fat*100 : 0; o.vr = vxVarPct(o.fat, o.prev); o.sh = o.fat/tot*100; return o; })
+    .filter(function(o){ return o.fat>0.5 || o.prev>0.5; });
+  lista.sort(function(a,b){ return b.fat-a.fat; });
+  if(VX.bairros) VX.map.removeLayer(VX.bairros);
+  VX.bairros = L.layerGroup().addTo(VX.map);
+  // apaga os outros municípios para destacar o escolhido
+  if(VX.camada) VX.camada.eachLayer(function(l){ if(l.feature && l.feature.properties.id!==q.props.id) l.setStyle({fillOpacity:.05, opacity:.25}); else l.setStyle({fillOpacity:.08, weight:1.6}); });
+  // capital: distritos pintados pelo faturamento
+  var porDist = {};
+  if(capital){
+    lista.forEach(function(o){ if(!o.dist) return; var d = porDist[o.dist] || (porDist[o.dist] = {fat:0, lb:0, prev:0, cli:0, nb:0}); d.fat += o.fat; d.lb += o.lb; d.prev += o.prev; d.cli += o.cli; d.nb++; });
+    var mxD = 0; Object.keys(porDist).forEach(function(k){ if(porDist[k].fat>mxD) mxD = porDist[k].fat; }); mxD = mxD || 1;
+    distritos.forEach(function(d){
+      var o = porDist[d[1]], geom = d[4].length===1 ? {type:'Polygon', coordinates:d[4][0]} : {type:'MultiPolygon', coordinates:d[4]};
+      var ly = L.geoJSON({type:'Feature', properties:{}, geometry:geom}, {style:{fillColor: o ? '#10b981' : (claro?'#cbd5e1':'#2a3a4a'), fillOpacity: o ? .15+Math.pow(o.fat/mxD, .5)*.6 : .25, color:claro?'rgba(15,23,42,.4)':'rgba(255,255,255,.35)', weight:.8}}).addTo(VX.bairros);
+      ly.bindTooltip('<b>'+escapeHtml(d[1])+'</b> <span style="opacity:.7">(distrito · '+escapeHtml(d[5])+')</span>'+(o ? '<br>Faturamento: '+vxM(o.fat)+' · '+(o.fat/tot*100).toFixed(1).replace('.',',')+'%<br>Margem: '+vxP(o.fat>0 ? o.lb/o.fat*100 : 0)+'<br>Var. anterior: '+seta(vxVarPct(o.fat, o.prev))+'<br>Clientes com compra: '+vxN(o.cli)+'<br>Bairros com venda: '+o.nb : '<br>Sem vendas no filtro atual'), {sticky:true});
+    });
+  }
+  // bolhas por bairro: tamanho = faturamento, cor = margem
+  var mx = lista.length ? lista[0].fat : 1, pts = [];
+  lista.forEach(function(o){
+    if(o.lat===null || o.fat<=0.5) return;
+    var r = 4 + Math.sqrt(o.fat/mx)*(capital ? 16 : 22);
+    var mk = L.circleMarker([o.lat, o.lon], {radius:r, color:claro?'#0f172a':'#fff', weight:.8, fillColor:vxMc(o.mg), fillOpacity:.72}).addTo(VX.bairros);
+    mk.bindTooltip('<b>'+escapeHtml(o.k)+'</b>'+(o.dist ? ' <span style="opacity:.7">('+escapeHtml(o.dist)+')</span>' : '')+'<br>Faturamento: '+vxM(o.fat)+' · '+o.sh.toFixed(1).replace('.',',')+'%<br>Lucro bruto: '+vxM(o.lb)+'<br>Margem: '+vxP(o.mg)+'<br>Var. anterior: '+seta(o.vr)+'<br>Clientes com compra: '+vxN(o.cli), {direction:'top'});
+    pts.push([o.lat, o.lon]);
+  });
+  // enquadra o município (ou os bairros)
+  if(!semZoom){
+    var alvo = null; if(VX.camada) VX.camada.eachLayer(function(l){ if(l.feature && l.feature.properties.id===q.props.id) alvo = l; });
+    if(pts.length>=3) VX.map.fitBounds(L.latLngBounds(pts), {padding:[50,50], maxZoom:14});
+    else if(alvo) VX.map.fitBounds(alvo.getBounds(), {padding:[30,30], maxZoom:13});
+  }
+  var semPonto = lista.filter(function(o){ return o.lat===null; }).reduce(function(s, o){ return s + o.fat; }, 0);
+  var av = document.getElementById('vxBaiAviso');
+  av.innerHTML = '<span>Bairros de <b style="color:var(--vx-gr-t)">'+escapeHtml(nomeMun)+'</b> · '+vxN(lista.length)+' com venda</span><button type="button">Voltar aos municípios</button>';
+  av.querySelector('button').onclick = vxBairrosFechar;
+  // tabela
+  var cd = document.getElementById('vxBaiCard'); cd.hidden = false;
+  document.getElementById('vxBaiTit').innerHTML = 'Tabela &mdash; Bairros de '+escapeHtml(nomeMun);
+  var cols = [VX_COL.rk, {k:'k', t:'Bairro', td:function(r){ return '<td class="nm">'+escapeHtml(r.k)+'</td>'; }}];
+  if(capital) cols.push({k:'dist', t:'Distrito', td:function(r){ return '<td>'+escapeHtml(r.dist||'—')+'</td>'; }});
+  cols = cols.concat([VX_COL.fat, VX_COL.lb, VX_COL.mg, VX_COL.sh, VX_COL.vr, {k:'cli', t:'Clientes', td:function(r){ return '<td class="mn">'+vxN(r.cli)+'</td>'; }}]);
+  vxTabela('vxTB', cols, lista, {barra:VX_PAL.gr || VX_PAL.cy, limite:500});
+  var notas = [];
+  if(semBairro.fat>0.5) notas.push(vxM(semBairro.fat)+' ('+(semBairro.fat/tot*100).toFixed(1).replace('.',',')+'%) de clientes sem CEP ou com CEP ainda não localizado ficam fora dos bairros.');
+  if(semPonto>0.5) notas.push(vxM(semPonto)+' em bairros sem ponto no mapa (estão na tabela).');
+  if(!lista.length) notas.push('Os bairros deste município ainda não foram localizados. A rotina de CEPs completa a lista aos poucos.');
+  document.getElementById('vxBaiNota').textContent = notas.join(' ');
+}
 // o Leaflet não deixa o clique do quadro chegar à página: liga o botão direto no quadro
 function vxQuadroLigar(){
   var el = VX.popup && VX.popup.getElement(), tp = el && el.querySelector('.vx-q-top');
   if(tp) tp.onclick = function(ev){ if(!ev.target.closest('.vx-q-sub')) tp.classList.toggle('aberto'); };
   var ex = el && el.querySelector('.vx-q-exp');
   if(ex) ex.onclick = function(ev){ ev.stopPropagation(); vxExportarMun(ex); };
+  var bb = el && el.querySelector('.vx-q-bai');
+  if(bb) bb.onclick = function(ev){ ev.stopPropagation(); vxBairros(VX.quadro); };
 }
 // listagem completa dos clientes do município (mesmos filtros do Top 5), em Excel
 function vxExportarMun(bt){
