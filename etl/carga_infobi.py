@@ -13,6 +13,7 @@ Os nomes das abas e colunas ficam em bi_config.mapa_colunas.infobi (fora deste r
 """
 import io
 import json
+import re
 from datetime import date, datetime, timezone
 
 import pandas as pd
@@ -70,6 +71,14 @@ def cep_texto(serie):
         x = str(x).strip()
         return x or None
     return serie.map(um)
+
+
+def cep8(x):
+    """CEP com 8 dígitos ('1310100' -> '01310100'); fora do padrão vira None."""
+    if not isinstance(x, str):
+        return None
+    d = re.sub(r'\D', '', x)
+    return d.zfill(8) if 7 <= len(d) <= 8 and int(d) > 0 else None
 
 
 def ler_abas(nome, buf, spec):
@@ -345,12 +354,18 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
                           'cidade': cli['cidade'].fillna('N/D').map(dims['cidade']).astype('int64')})
         if usar_zona:
             c['zona'] = cli['zona'].map(dims['zona']).astype('Int64')
+        # CEP do cliente (mapa por bairro): só quando o banco já tem a coluna
+        cur.execute("""select exists (select 1 from information_schema.columns
+                       where table_schema = 'public' and table_name = 'bi_cliente' and column_name = 'cep')""")
+        usar_cep = cur.fetchone()[0] and cli.attrs.get('tem_cep', False)
+        if usar_cep:
+            c['cep'] = cli['cep'].map(cep8)
         cur.execute('create temp table _c (like public.bi_cliente) on commit drop')
         copiar_tab(cur, '_c', c)
-        z = ', zona = t.zona' if usar_zona else ''
+        z = (', zona = t.zona' if usar_zona else '') + (', cep = coalesce(t.cep, b.cep)' if usar_cep else '')
         cur.execute(f"""update public.bi_cliente b set razao = coalesce(t.razao, b.razao), tipo_cliente = t.tipo_cliente,
                         cidade = t.cidade{z} from _c t where b.id = t.id""")
-        zc = ', zona' if usar_zona else ''
+        zc = (', zona' if usar_zona else '') + (', cep' if usar_cep else '')
         cur.execute(f"""insert into public.bi_cliente (id, codcli, razao, tipo_cliente, cidade{zc})
                         select id, codcli, razao, tipo_cliente, cidade{zc} from _c t
                         where not exists (select 1 from public.bi_cliente b where b.id = t.id)""")

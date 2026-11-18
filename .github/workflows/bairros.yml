@@ -1,0 +1,41 @@
+name: Bairros (CEP) -> mapa
+
+# Localiza o bairro e o ponto de cada CEP de cliente (tabela bi_cep, só no banco) para o mapa por bairro.
+# Só os CEPs são consultados (ViaCEP, BrasilAPI e OpenStreetMap); o log mostra apenas contagens.
+# Cada execução para no limite de tempo e a próxima continua de onde parou; sem CEP novo, termina em segundos.
+on:
+  schedule:
+    - cron: '40 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      minutos:
+        description: 'Limite de tempo da execução (minutos)'
+        default: '50'
+      refazer:
+        description: 'Tentar de novo os CEPs e bairros que não foram encontrados'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bairros
+  cancel-in-progress: false
+
+jobs:
+  bairros:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependências
+        run: pip install "psycopg[binary]==3.2.3" requests==2.32.3
+      - name: Localizar os bairros
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          MINUTOS: ${{ inputs.minutos || '50' }}
+        run: python etl/cep_geocodificar.py --minutos "$MINUTOS" ${{ inputs.refazer && '--refazer' || '' }}
