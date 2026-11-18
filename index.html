@@ -4730,7 +4730,9 @@ var VEQ_CACHE = null;
 function vendEquipes(){
   if(VEQ_CACHE) return VEQ_CACHE;
   VEQ_CACHE = {};
-  (META.vequipe||[]).forEach(function(x){ VEQ_CACHE[dimNome('vendedor', x[0])] = x[1]; });
+  // só as equipes do escopo do usuário (META.dims.equipe já vem filtrada pelo banco; a lista vendedor→equipe vem completa)
+  var eqOk = META.dims && META.dims.equipe ? toSet(META.dims.equipe.map(function(e){ return e[1]; })) : null;
+  (META.vequipe||[]).forEach(function(x){ if(eqOk && !eqOk[x[1]]) return; VEQ_CACHE[dimNome('vendedor', x[0])] = x[1]; });
   return VEQ_CACHE;
 }
 function renderParesCtl(eqLista){
