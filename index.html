@@ -1025,6 +1025,7 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .u-switch input:checked + i::after{ left:16px; }
 .u-invite{ background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
 .ui-sem-email{ display:flex; align-items:center; gap:8px; margin:12px 0 2px; font-size:12px; color:var(--text-2); cursor:pointer; width:fit-content; }
+.ui-sem-email[hidden]{ display:none; }
 .ui-sem-email input{ accent-color:var(--accent); width:15px; height:15px; }
 .ui-senha-box{ position:relative; display:block; }
 .ui-senha-box input{ width:100%; padding-right:34px !important; }
@@ -2515,7 +2516,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             <label id="uiLojaWrap">Loja<select id="uiLoja"></select></label>
             <label id="uiSenhaWrap" hidden>Senha (você passa à pessoa)<span class="ui-senha-box"><input type="password" id="uiSenha" minlength="8" autocomplete="new-password" placeholder="mínimo 8 caracteres"><button type="button" class="ui-senha-olho" id="uiSenhaOlho" title="Mostrar a senha" aria-label="Mostrar a senha">&#128065;</button></span></label>
           </div>
-          <label class="ui-sem-email"><input type="checkbox" id="uiSemEmail"> Cadastrar sem enviar e-mail: eu mesmo defino a senha</label>
+          <label class="ui-sem-email" id="uiSemEmailWrap" hidden><input type="checkbox" id="uiSemEmail"> Cadastrar sem enviar e-mail: eu mesmo defino a senha</label>
           <div class="u-abas-label">Guias liberadas</div>
           <div class="u-abas" id="uiAbas" data-grp="abas"></div>
           <div class="u-abas-label u-esc">Lojas liberadas</div>
