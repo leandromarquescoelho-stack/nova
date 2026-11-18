@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { email, role, vendedor_nome, loja, full_name } = body ?? {};
+    const { email, role, vendedor_nome, loja, full_name, senha } = body ?? {};
 
     if (!email || !role) {
       return withCors(new Response(JSON.stringify({ error: "email e role são obrigatórios" }), { status: 400 }));
@@ -53,7 +53,14 @@ Deno.serve(async (req: Request) => {
     // Cliente admin (service role) — a chave nunca sai do servidor
     const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    const { data: invited, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email);
+    // Com senha: cadastra direto, já confirmado e sem enviar e-mail (o BI passa a senha à pessoa).
+    // Sem senha: envia o convite por e-mail, como antes.
+    if (senha != null && (typeof senha !== "string" || senha.length < 8)) {
+      return withCors(new Response(JSON.stringify({ error: "A senha precisa ter pelo menos 8 caracteres" }), { status: 400 }));
+    }
+    const { data: invited, error: inviteErr } = senha
+      ? await adminClient.auth.admin.createUser({ email, password: senha, email_confirm: true })
+      : await adminClient.auth.admin.inviteUserByEmail(email);
     if (inviteErr || !invited?.user) {
       return withCors(new Response(JSON.stringify({ error: inviteErr?.message || "Falha ao convidar usuário" }), { status: 400 }));
     }
