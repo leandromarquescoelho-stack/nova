@@ -660,6 +660,17 @@ tr.vend-row, .vend-pt{ cursor:pointer; }
 .vd-nomes-slot{margin-left:auto; align-self:center;}
 .vr-sw-l.vd-sw-mini{font-size:10px; gap:5px; color:var(--text-muted);}
 .vd-sw-mini .vr-sw{transform:scale(.78); transform-origin:center;}
+.vm-grid{display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:14px;}
+@media (max-width:900px){ .vm-grid{grid-template-columns:1fr;} }
+.vm-mapa-wrap{position:relative;}
+#vendMapa{height:400px; border-radius:12px; border:1px solid var(--border); background:var(--surface-2);}
+.vm-aviso{position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:950; background:var(--surface); border:1px solid rgba(16,185,129,.5); border-radius:10px; padding:5px 10px; font-size:11.5px; font-weight:600; display:flex; gap:8px; align-items:center; white-space:nowrap; box-shadow:0 6px 20px rgba(0,0,0,.3);}
+.vm-aviso button{font:inherit; font-size:11px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--vx-cy-t); border-radius:7px; padding:3px 8px; cursor:pointer;}
+.vm-lado{font-size:12px;}
+.vm-kpis{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;}
+.vm-kpi{background:var(--surface-2); border-radius:10px; padding:8px 10px;} .vm-kpi b{display:block; font-size:15px;} .vm-kpi span{font-size:10.5px; color:var(--text-muted);}
+.vm-tab{width:100%; border-collapse:collapse;} .vm-tab td{padding:5px 4px; border-bottom:1px solid var(--border); font-size:11.5px;} .vm-tab td.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;}
+.vm-tab tr{cursor:pointer;} .vm-tab tr:hover td{background:rgba(var(--ink),.04);}
 .vr-sw-l{ display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text-2); cursor:pointer; }
 .vr-sw{ transform:scale(.8); transform-origin:right center; }
 .vr-part{ display:flex; align-items:center; justify-content:flex-end; gap:6px; }
@@ -2275,6 +2286,13 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="vd-nomes-slot" id="vendNomesSlot"></div>
         </div>
         <div id="vendCliBody"></div>
+      </div>
+
+      <div class="panel" style="margin-bottom:14px;" id="vendMapaPanel">
+        <div class="panel-head">
+          <div><h2>Mapa de atuação</h2><div class="psub" id="vendMapaSub">Onde o vendedor selecionado faturou no período, com os filtros aplicados &middot; tamanho = faturamento, cor = margem &middot; clique num município para ver os bairros</div></div>
+        </div>
+        <div class="vm-grid"><div class="vm-mapa-wrap"><div id="vendMapa"></div><div class="vm-aviso" id="vendMapaAviso" hidden></div></div><div class="vm-lado" id="vendMapaLado"></div></div>
       </div>
 
       <div class="panel" style="margin-bottom:14px;" id="vendInsPanel">
@@ -4714,6 +4732,7 @@ function renderVendConsult(){
   var sel = document.getElementById('vendConsultSelect');
   if(sel.value!==state.vendConsultSel) sel.value = state.vendConsultSel;
   renderVendFunil();
+  renderVendMapa();
 
   var pr = periodRange(state.globalPeriod);
   var fv = JSON.parse(JSON.stringify(PAINEL_F || painelFiltros(null))); delete fv.vendedor; // o comparativo ignora o filtro de vendedor
@@ -5302,6 +5321,97 @@ function cliqueFunil(ev){
     if(i>=0) a.splice(i,1); else if(b.hasAttribute('data-fun')) a.push(id);
   }
   renderVendFunil();
+}
+
+/* ---- mapa de atuação do vendedor: faturamento por município (bi_painel parte c com o vendedor) e bairros ao clicar ---- */
+var VM = {map:null, camada:null, chave:null, seq:0};
+function renderVendMapa(){
+  var box = document.getElementById('vendMapa'), lado = document.getElementById('vendMapaLado'); if(!box) return;
+  var vid = DIMI.vendedor ? DIMI.vendedor[state.vendConsultSel] : undefined;
+  if(vid===undefined){ lado.innerHTML = '<p class="note-muted">Selecione um vendedor acima.</p>'; return; }
+  var f = JSON.parse(JSON.stringify(PAINEL_F || painelFiltros(null))); f.vendedor = [vid];
+  var per = painelPeriodo(), chave = JSON.stringify([f, per]);
+  if(VM.chave===chave && VM.map){ setTimeout(function(){ VM.map.invalidateSize(); }, 50); return; }
+  VM.chave = chave; var seq = ++VM.seq;
+  lado.innerHTML = '<p class="note-muted status-txt">Carregando o mapa do vendedor…</p>';
+  var pCli = {ini:per.ini, fim:per.fim, pini:per.pini, pfim:per.pfim};
+  Promise.all([rpcMemo('bi_painel', {f:f, per:per, parte:'c'}), rpcMemo('bi_cidade_clientes', {f:f, per:pCli}).catch(function(){ return null; }), vxLeafletLib()]).then(function(r){
+    if(seq!==VM.seq) return;
+    var cid = agLinhas('cidade', (r[0]||{}).cidade || []), cli = {};
+    (r[1]||[]).forEach(function(x){ cli[dimNome('cidade', x[0])] = +x[1]||0; });
+    var nomes = Object.keys(cid).filter(function(k){ return /^[A-Z]{2} - /.test(k) && cid[k].fat>0.5; });
+    var ufs = []; nomes.forEach(function(k){ var uf = k.slice(0,2); if(ufs.indexOf(uf)===-1 && uf!=='EX') ufs.push(uf); });
+    return Promise.all(ufs.map(function(uf){ return vxGeoUF(uf).catch(function(){ return null; }); })).then(function(){
+      if(seq!==VM.seq) return;
+      var porMun = {};
+      nomes.forEach(function(k){
+        var m = vxMunicipio(k); if(!m) return; var o = cid[k];
+        var x = porMun[m[2]] || (porMun[m[2]] = {m:m, uf:k.slice(0,2), nomes:[], fat:0, lb:0, prev:0, cli:0});
+        x.nomes.push(k); x.fat += o.fat; x.lb += o.lb; x.prev += o.prevFat; x.cli += cli[k]||0;
+      });
+      var lista = Object.keys(porMun).map(function(id){ var x = porMun[id]; x.mg = x.fat>0 ? x.lb/x.fat*100 : 0; x.vr = vxVarPct(x.fat, x.prev); return x; }).sort(function(a,b){ return b.fat-a.fat; });
+      vendMapaDesenhar(lista, vid, f, per);
+    });
+  }).catch(function(){ if(seq===VM.seq) lado.innerHTML = '<p class="note-muted">Não foi possível carregar o mapa agora.</p>'; });
+}
+function vendMapaDesenhar(lista, vid, f, per){
+  var claro = vxClaro(), lado = document.getElementById('vendMapaLado');
+  if(!VM.map){
+    VM.map = L.map('vendMapa', {preferCanvas:true, zoomControl:true, attributionControl:true, minZoom:3, scrollWheelZoom:false});
+    VM.map.attributionControl.setPrefix(false);
+    VM.map.on('focus', function(){ VM.map.scrollWheelZoom.enable(); }); VM.map.on('blur', function(){ VM.map.scrollWheelZoom.disable(); });
+  }
+  var tema = claro ? 'Light' : 'Dark';
+  if(VM.tema!==tema){ if(VM.tiles) VM.map.removeLayer(VM.tiles); VM.tiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_'+tema+'_Gray_Base/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, attribution:'Esri, HERE, Garmin, &copy; OpenStreetMap'}).addTo(VM.map); VM.tema = tema; }
+  VM.map.invalidateSize();
+  if(VM.camada) VM.map.removeLayer(VM.camada);
+  if(VM.bairros){ VM.map.removeLayer(VM.bairros); VM.bairros = null; }
+  VM.camada = L.layerGroup().addTo(VM.map);
+  document.getElementById('vendMapaAviso').hidden = true;
+  var tot = lista.reduce(function(s, x){ return s + x.fat; }, 0), mx = lista.length ? lista[0].fat : 1, pts = [];
+  lista.forEach(function(x){
+    var r = 4 + Math.sqrt(x.fat/mx)*24;
+    var mk = L.circleMarker(x.m[3], {radius:r, color:claro?'#0f172a':'#fff', weight:.8, fillColor:vxMc(x.mg), fillOpacity:.72}).addTo(VM.camada);
+    mk.bindTooltip('<b>'+escapeHtml(x.m[1])+'</b> ('+x.uf+')<br>Faturamento: '+vxM(x.fat)+' · '+(tot>0 ? (x.fat/tot*100).toFixed(1).replace('.',',') : '0')+'%<br>Margem: '+vxP(x.mg)+'<br>Var. anterior: '+seta(x.vr)+'<br>Clientes com compra: '+vxN(x.cli)+'<br><span style="opacity:.7">Clique para ver os bairros</span>', {direction:'top'});
+    mk.on('click', function(){ vendMapaBairros(x, f, per); });
+    pts.push(x.m[3]);
+  });
+  // enquadra os municípios que somam 90% do faturamento
+  var acum = 0, fit = [];
+  for(var i=0; i<lista.length; i++){ fit.push(lista[i].m[3]); acum += lista[i].fat; if(acum>=tot*0.9 && fit.length>=2) break; }
+  if(fit.length>1) VM.map.fitBounds(L.latLngBounds(fit), {padding:[30,30], maxZoom:11}); else if(fit.length) VM.map.setView(fit[0], 11); else VM.map.setView([-23.55,-46.63], 9);
+  // resumo ao lado
+  var n80 = 0, a = 0; for(var j=0; j<lista.length; j++){ a += lista[j].fat; n80++; if(a>=tot*0.8) break; }
+  var cliT = lista.reduce(function(s, x){ return s + x.cli; }, 0);
+  lado.innerHTML = !lista.length ? '<p class="note-muted">Sem vendas com município identificado para este vendedor no período.</p>' :
+    '<div class="vm-kpis"><div class="vm-kpi"><b>'+vxN(lista.length)+'</b><span>municípios com venda</span></div><div class="vm-kpi"><b>'+vxN(n80)+'</b><span>somam 80% do faturamento</span></div>' +
+    '<div class="vm-kpi"><b>'+(tot>0 ? (lista[0].fat/tot*100).toFixed(0) : 0)+'%</b><span>no maior município</span></div><div class="vm-kpi"><b>'+vxN(cliT)+'</b><span>clientes com compra</span></div></div>' +
+    '<table class="vm-tab">'+lista.slice(0, 10).map(function(x, i){ return '<tr data-vm="'+i+'"><td>'+(i+1)+'. '+escapeHtml(x.m[1])+'</td><td class="n">'+vxM(x.fat)+'</td><td class="n">'+vxP(x.mg)+'</td></tr>'; }).join('')+'</table>' +
+    (lista.length>10 ? '<p class="note-muted" style="font-size:10.5px; margin-top:6px;">E mais '+(lista.length-10)+' municípios no mapa.</p>' : '');
+  Array.prototype.forEach.call(lado.querySelectorAll('tr[data-vm]'), function(tr){ tr.onclick = function(){ vendMapaBairros(lista[+tr.getAttribute('data-vm')], f, per); }; });
+}
+// bairros do município para o vendedor (mesma consulta do mapa de vendas)
+function vendMapaBairros(x, f, per){
+  var ids = x.nomes.map(function(n){ return (DIMI.cidade||{})[n]; }).filter(function(v){ return v!==undefined; });
+  var av = document.getElementById('vendMapaAviso'); av.hidden = false; av.innerHTML = '<span>Carregando os bairros de '+escapeHtml(x.m[1])+'…</span>';
+  var seq = VM.seq;
+  rpcMemo('bi_bairros', {f:f, per:{ini:per.ini, fim:per.fim, pini:per.pini, pfim:per.pfim}, cidades:ids}).then(function(rows){
+    if(seq!==VM.seq) return;
+    var claro = vxClaro(), bs = (rows||[]).filter(function(b){ return b[0] && b[2]!==null && (b[4]||0)>50; });
+    if(VM.bairros) VM.map.removeLayer(VM.bairros);
+    VM.bairros = L.layerGroup().addTo(VM.map);
+    if(VM.camada) VM.camada.eachLayer(function(l){ l.setStyle({opacity:.2, fillOpacity:.1}); });
+    var mx = bs.reduce(function(m, b){ return Math.max(m, b[4]); }, 1), pts = [];
+    bs.forEach(function(b){
+      var fat = b[4]/100, lb = b[5]/100, mg = fat>0 ? lb/fat*100 : 0;
+      L.circleMarker([b[2], b[3]], {radius:3 + Math.sqrt(b[4]/mx)*14, color:claro?'#0f172a':'#fff', weight:.6, fillColor:vxMc(mg), fillOpacity:.8}).addTo(VM.bairros)
+        .bindTooltip('<b>'+escapeHtml(b[0])+'</b>'+(b[1] ? ' ('+escapeHtml(b[1])+')' : '')+'<br>Faturamento: '+vxM(fat)+'<br>Margem: '+vxP(mg)+'<br>Clientes com compra: '+vxN(b[7]), {direction:'top'});
+      pts.push([b[2], b[3]]);
+    });
+    if(pts.length>=2) VM.map.fitBounds(L.latLngBounds(pts), {padding:[30,30], maxZoom:14}); else VM.map.setView(x.m[3], 12);
+    av.innerHTML = '<span>'+escapeHtml(x.m[1])+' · '+(pts.length ? vxN(pts.length)+' bairros' : 'bairros ainda sendo localizados')+'</span><button type="button">Voltar</button>';
+    av.querySelector('button').onclick = function(){ if(VM.bairros){ VM.map.removeLayer(VM.bairros); VM.bairros = null; } av.hidden = true; VM.chave = null; renderVendMapa(); };
+  }).catch(function(){ av.innerHTML = '<span>Bairros indisponíveis agora.</span>'; setTimeout(function(){ av.hidden = true; }, 2500); });
 }
 
 /* ---- PDF da consultoria: abre só a consultoria do vendedor numa janela de impressão ("Salvar como PDF") ---- */
@@ -7772,7 +7882,10 @@ function vxTopHtml(t){
   return '<div class="vx-q-tt">'+tit+'</div><table>'+t.rows.map(function(c, i){
     var v = t.semVenda ? c.f12 : c.fp;
     return '<tr><td><span class="rk">'+(i+1)+'</span> '+escapeHtml(c.razao.length>30 ? c.razao.slice(0,29)+'…' : c.razao)+'<div class="sub">'+escapeHtml(c.cod)+' · '+escapeHtml(c.resp)+' · última compra '+cliData(c.ult)+'</div></td><td>'+vxM(v)+'</td></tr>';
-  }).join('')+'</table><button type="button" class="vx-q-exp" title="Baixa todos os clientes cadastrados neste município, com os filtros atuais">⬇ Listagem completa em Excel</button>';
+  }).join('')+'</table>'+(t.semVenda
+    ? '<button type="button" class="vx-q-exp" title="Baixa todos os clientes cadastrados neste município">⬇ Todos os clientes do município (Excel)</button>'
+    : '<button type="button" class="vx-q-exp" title="Baixa os clientes deste município com os filtros atuais">⬇ Clientes filtrados (Excel)</button>' +
+      '<button type="button" class="vx-q-exp vx-q-exp-todos" title="Baixa todos os clientes cadastrados neste município, sem os filtros do painel">⬇ Todos os clientes do município (Excel)</button>');
 }
 // quadro fixo ao clicar no município: faturamento, clientes, ticket médio por cliente (sem mexer no zoom)
 function vxQuadroHtml(q){
@@ -7930,19 +8043,22 @@ function vxBairrosDesenhar(q, nomeMun, rows, distritos, semZoom, zonas){
 function vxQuadroLigar(){
   var el = VX.popup && VX.popup.getElement(), tp = el && el.querySelector('.vx-q-top');
   if(tp) tp.onclick = function(ev){ if(!ev.target.closest('.vx-q-sub')) tp.classList.toggle('aberto'); };
-  var ex = el && el.querySelector('.vx-q-exp');
-  if(ex) ex.onclick = function(ev){ ev.stopPropagation(); vxExportarMun(ex); };
+  var ex = el && el.querySelector('.vx-q-exp:not(.vx-q-exp-todos):not(.vx-q-bai)');
+  if(ex) ex.onclick = function(ev){ ev.stopPropagation(); vxExportarMun(ex, !VX.quadro || !VX.quadro.o); };
+  var ext = el && el.querySelector('.vx-q-exp-todos');
+  if(ext) ext.onclick = function(ev){ ev.stopPropagation(); vxExportarMun(ext, true); };
   var bb = el && el.querySelector('.vx-q-bai');
   if(bb) bb.onclick = function(ev){ ev.stopPropagation(); vxBairros(VX.quadro); };
 }
 // listagem completa dos clientes do município (mesmos filtros do Top 5), em Excel
-function vxExportarMun(bt){
+function vxExportarMun(bt, todos){
   var q = VX.quadro; if(!q) return;
+  var txt0 = bt.textContent;
   var nomes = q.o ? q.o.nomes : vxNomesDoMun(q.props.uf, q.props.id);
   var ids = nomes.map(function(n){ return (DIMI.cidade||{})[n]; }).filter(function(x){ return x!==undefined; });
   if(!ids.length){ toast('Nenhum cliente cadastrado neste município.'); return; }
   var per = painelPeriodo(), f = VX.geo[q.props.uf].lista.filter(function(x){ return x[2]===q.props.id; })[0];
-  var args = {f: q.o ? vxFiltrosLoja() : {}, per:{ini:per.ini, fim:per.fim}, o:{cidade:ids, ordem: q.o ? 'fat' : 'f12', limite:50000}};
+  var args = {f: todos ? {} : vxFiltrosLoja(), per:{ini:per.ini, fim:per.fim}, o:{cidade:ids, ordem: todos ? 'f12' : 'fat', limite:50000}};
   bt.disabled = true; bt.textContent = 'Preparando a planilha…';
   Promise.all([window.__NC_rpc('bi_clientes', args), carregarXlsx().catch(function(){ return null; })]).then(function(r){
     var dl = ((r[0]||{}).linhas||[]).map(cliLinhaObj), X = r[1];
@@ -7952,11 +8068,11 @@ function vxExportarMun(bt){
     var dados = dl.map(function(c){ return [c.cod, c.razao, c.cidade, c.tipo, c.grupo, c.pessoa, c.resp, c.equipe,
       Math.round(c.fp*100)/100, Math.round(c.lp*100)/100, c.fp>0 ? Math.round(c.lp/c.fp*1000)/10 : null,
       Math.round(c.f12*100)/100, Math.round(c.med*100)/100, c.mg, cliData(c.ult), c.dias, c.ncomp, c.intv, (TERMO[c.termo]||{}).t || c.termo || '']; });
-    var nome = 'clientes_'+vxSemAcento(f ? f[1] : 'municipio').replace(/[^A-Z0-9]+/g, '_').toLowerCase()+'_'+q.props.uf.toLowerCase()+'_'+per.ini+'_a_'+per.fim;
+    var nome = 'clientes_'+vxSemAcento(f ? f[1] : 'municipio').replace(/[^A-Z0-9]+/g, '_').toLowerCase()+'_'+q.props.uf.toLowerCase()+(todos ? '_todos' : '_'+per.ini+'_a_'+per.fim);
     baixarPlanilha(X, nome, f ? f[1] : 'Clientes', cab, dados, [10,42,22,18,18,14,26,14,16,16,12,16,14,10,13,12,12,14,24]);
     toast(fmtUn(dl.length)+' clientes exportados.');
   }).catch(function(){ toast('Não foi possível exportar agora. Tente de novo.'); })
-    .then(function(){ bt.disabled = false; bt.textContent = '⬇ Listagem completa em Excel'; });
+    .then(function(){ bt.disabled = false; bt.textContent = txt0; });
 }
 // caixa de marcar do mapa: só remonta quando as opções mudam (assim o painel fica aberto enquanto se marca)
 function vxMselMapa(id, chave, opcoes, vazio){
