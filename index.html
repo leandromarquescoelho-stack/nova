@@ -5986,9 +5986,18 @@ function rebuildCheckGroup(key){
   if(key==='zona'){ var g = document.querySelector('.fcheck-group[data-key="zona"]'); if(g) g.hidden = !ops.length && !state.zona.length; }
   buildCheckGroup(key, ops, labelFn);
 }
+// seletor de vendedor: "RE - Nome" (o RE vem da carga; sem RE, só o nome); a ordem continua pelo nome
+var VEND_RE = {}, VEND_RE_PR = null;
+function vendSelectOpcoes(){
+  var sel = document.getElementById('vendConsultSelect'); if(!sel) return;
+  var atual = sel.value || state.vendConsultSel;
+  sel.innerHTML = ordemAZ(VEND_PESSOAS).map(function(s){ var re = VEND_RE[s]; return '<option value="'+escapeHtml(s)+'">'+escapeHtml(re ? re+' - '+s : s)+'</option>'; }).join('');
+  if(atual && VEND_PESSOAS.indexOf(atual)!==-1) sel.value = atual;
+}
 function initFilterSelects(){
   FILTER_KEYS.forEach(rebuildCheckGroup);
-  document.getElementById('vendConsultSelect').innerHTML = ordemAZ(VEND_PESSOAS).map(function(s){ return '<option value="'+s+'">'+s+'</option>'; }).join('');
+  vendSelectOpcoes();
+  if(!VEND_RE_PR) VEND_RE_PR = window.__NC_rpc('bi_vendedor_re').then(function(r){ (r||[]).forEach(function(x){ VEND_RE[x[0]] = x[1]; }); vendSelectOpcoes(); }).catch(function(){}); // banco ainda sem a tabela: fica só o nome
   if(VEND_PESSOAS.indexOf(state.vendConsultSel)===-1) state.vendConsultSel = VEND_PESSOAS[0]||'';
   document.getElementById('vendConsultSelect').value = state.vendConsultSel;
 }
