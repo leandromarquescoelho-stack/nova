@@ -659,8 +659,9 @@ tr.vend-row, .vend-pt{ cursor:pointer; }
 .vr-part{ display:flex; align-items:center; justify-content:flex-end; gap:6px; }
 .vr-part .vr-bar{ flex:1; max-width:34px; }
 /* ranking de vendedores: cabe na largura da coluna, sem rolagem lateral nem interna */
-.rank-vend-box{ border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
-table.data-table.rank-vend{ min-width:0; table-layout:fixed; }
+.rank-vend-box{ border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; overflow-x:auto; }
+/* o nome do vendedor fica com pelo menos ~130px; em caixas estreitas a tabela rola para o lado em vez de esconder o nome */
+table.data-table.rank-vend{ min-width:536px; table-layout:fixed; }
 table.data-table.rank-vend thead th, table.data-table.rank-vend tbody td{ padding:5px 6px; overflow:hidden; text-overflow:ellipsis; }
 table.data-table.rank-vend thead th{ padding-top:8px; padding-bottom:8px; text-overflow:clip; }
 table.data-table.rank-vend thead th .sort-ico{ margin-left:2px; }
@@ -4719,7 +4720,7 @@ function renderVendConsult(){
     var catHHI = hhi(m.categorias, sumOf(m.categorias));
     return {name:n, fat:m.fat, qtd:m.qtd, lb:m.lb, skuCount:skuCount, ticket:ticket, metaPct:metaPct,
       margemPct:margemPct, marcas:m.marcas, categorias:m.categorias, produtos:m.produtos, marcaHHI:marcaHHI, catHHI:catHHI,
-      cli:m.cli||0, nfs:m.nfs||0};
+      cli:m.cli||0, nfs:m.nfs||0, tkCli: m.cli>0 ? m.fat/m.cli : 0};
   }).sort(function(a,b){ return b.fat-a.fat; });
 
   // pares: todo o grupo ou só os vendedores das equipes escolhidas (o vendedor analisado fica sempre)
@@ -4784,10 +4785,8 @@ function renderVendConsult(){
     {key:'name', label:'Vendedor'},
     {key:'fat', label:'Faturamento', dica: state.vendRankPct ? 'Faturamento em % do total do grupo' : 'Faturamento no período'},
     {key:'margemPct', label:'Margem'},
-    {key:'qtd', label:'Qtd.'},
-    {key:'ticket', label:'Ticket'},
+    {key:'tkCli', label:'Ticket', dica:'Ticket médio por cliente: faturamento ÷ clientes diferentes atendidos no período'},
     {key:'cli', label:'Clientes', dica:'Clientes diferentes que compraram do vendedor no período'},
-    {key:'skuCount', label:'Mix', dica:'Mix de produtos: quantidade de produtos diferentes vendidos por mês, em média'},
     {key:'share', label:'Particip.', dica:'Participação no faturamento do grupo (filtros aplicados)'}
   ];
   var maxShare = Math.max.apply(null, rows.map(function(r){ return r.share; }).concat([0]));
@@ -4811,15 +4810,13 @@ function renderVendConsult(){
         '<td class="prodcell"'+(isMe?' style="color:var(--accent);"':'')+' title="'+escapeHtml(r.name)+'"><span class="vr-nome">'+r.name+'</span></td>' +
         '<td class="mono">'+(state.vendRankPct ? r.share.toFixed(1).replace('.',',')+'%' : fmtMoney(r.fat))+'</td>' +
         '<td class="mono" style="color:'+(r.margemPct>=groupAvgMargem?'var(--good)':'var(--critical)')+';">'+r.margemPct.toFixed(1)+'%</td>' +
-        '<td class="mono">'+fmtUn(r.qtd)+'</td>' +
-        '<td class="mono" title="'+fmtMoney2(r.ticket)+'">'+fmtMoney(r.ticket)+'</td>' +
+        '<td class="mono" title="Ticket por cliente: '+fmtMoney2(r.tkCli||0)+'">'+(r.cli>0 ? fmtMoney(r.tkCli) : '—')+'</td>' +
         '<td class="mono">'+fmtUn(r.cli||0)+'</td>' +
-        '<td class="mono">'+fmtUn(Math.round(r.skuCount||0))+'</td>' +
         '<td class="mono"><div class="vr-part"><span class="vr-bar" title="'+r.share.toFixed(1)+'% do faturamento do grupo"><i style="width:'+(maxShare>0?r.share/maxShare*100:0)+'%"></i></span>'+r.share.toFixed(1).replace('.',',')+'%</div></td>' +
       '</tr>';
     }).join('');
     var mais = total>LIM_RANK ? '<button type="button" class="vr-todos" data-vend-todos="1">'+(state.vendRankTodos ? 'Mostrar só os 10 primeiros' : 'Ver todos os '+total+' vendedores')+'</button>' : '';
-    return '<table class="data-table rank-vend"><colgroup><col style="width:34px"><col><col style="width:'+(state.vendRankPct?86:104)+'px"><col style="width:58px"><col style="width:52px"><col style="width:62px"><col style="width:60px"><col style="width:44px"><col style="width:80px"></colgroup>' +
+    return '<table class="data-table rank-vend"><colgroup><col style="width:36px"><col><col style="width:'+(state.vendRankPct?86:100)+'px"><col style="width:56px"><col style="width:78px"><col style="width:62px"><col style="width:78px"></colgroup>' +
       '<thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table>' + mais;
   }
   var rankHtml = buildVendRankTable();
