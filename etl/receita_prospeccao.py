@@ -45,7 +45,7 @@ LIMITE = 400_000   # proteção do espaço do banco (plano gratuito)
 def baixar(url, destino):
     for tent in range(4):
         try:
-            with requests.get(url, headers=UA, stream=True, timeout=60) as r:
+            with requests.get(url, headers=UA, stream=True, timeout=60, auth=AUTH[0]) as r:
                 r.raise_for_status()
                 with open(destino, 'wb') as f:
                     for bloco in r.iter_content(1 << 20):
@@ -57,27 +57,62 @@ def baixar(url, destino):
     raise SystemExit('não foi possível baixar os arquivos da Receita')
 
 
+AUTH = [None]   # compartilhamento Nextcloud da Receita: usuário = token, senha vazia
+HOST = 'https://arquivos.receitafederal.gov.br'
+TOKENS = [t for t in (os.environ.get('RECEITA_TOKEN'), 'YggdBLfdninEJX9', 'gn672Ad4CF8N6TK') if t]
+
+
+def _meses(ref):
+    if ref:
+        return [ref]
+    h = date.today()
+    return [f'{(h.year * 12 + h.month - 1 - k) // 12}-{(h.year * 12 + h.month - 1 - k) % 12 + 1:02d}' for k in range(4)]
+
+
+def _existe(url, auth=None):
+    try:
+        r = requests.head(url, headers=UA, timeout=60, allow_redirects=True, auth=auth)
+        return r.status_code
+    except Exception as ex:  # noqa: BLE001
+        return type(ex).__name__
+
+
 def achar_pasta(ref):
-    """URL da pasta do mês mais recente (ou do mês pedido) que tem os arquivos."""
+    """URL da pasta do mês mais recente (ou do mês pedido) que tem os arquivos. O log mostra o que foi tentado."""
+    # 1) endereço antigo (pastas AAAA-MM com listagem)
     for base in BASES:
-        meses = [ref] if ref else []
-        if not ref:
-            try:
-                r = requests.get(base, headers=UA, timeout=60)
-                meses = sorted(set(re.findall(r'href="(\d{4}-\d{2})/?"', r.text)), reverse=True)
-            except Exception:  # noqa: BLE001
-                meses = []
-            if not meses:   # sem listagem: tenta os últimos meses
-                h = date.today()
-                meses = [f'{(h.year * 12 + h.month - 1 - k) // 12}-{(h.year * 12 + h.month - 1 - k) % 12 + 1:02d}' for k in range(4)]
-        for m in meses[:4]:
-            url = f'{base}{m}/'
-            try:
-                r = requests.head(url + 'Estabelecimentos0.zip', headers=UA, timeout=60, allow_redirects=True)
-                if r.status_code == 200:
-                    return url, m
-            except Exception:  # noqa: BLE001
-                pass
+        meses = []
+        try:
+            r = requests.get(base, headers=UA, timeout=60)
+            log(f'{base} -> {r.status_code} ({r.url})')
+            meses = sorted(set(re.findall(r'(\d{4}-\d{2})/', r.text)), reverse=True)
+            achados = re.findall(r'/s/([A-Za-z0-9]{10,20})', r.url + ' ' + r.text)   # redireciona para um compartilhamento
+            for t in achados:
+                if t not in TOKENS:
+                    TOKENS.insert(0, t)
+        except Exception as ex:  # noqa: BLE001
+            log(f'{base} -> {type(ex).__name__}')
+        for m in ([ref] if ref else meses[:4] or _meses(None)):
+            st = _existe(f'{base}{m}/Estabelecimentos0.zip')
+            log(f'  {m}: {st}')
+            if st == 200:
+                return f'{base}{m}/', m
+    # 2) compartilhamento Nextcloud (WebDAV público)
+    for t in TOKENS:
+        dav = f'{HOST}/public.php/webdav/'
+        meses = []
+        try:
+            r = requests.request('PROPFIND', dav, headers={**UA, 'Depth': '1'}, auth=(t, ''), timeout=60)
+            meses = sorted(set(re.findall(r'(\d{4}-\d{2})/?</d:href>', r.text)), reverse=True)
+            log(f'compartilhamento {t[:4]}…: {r.status_code}; meses {",".join(meses[:3]) or "nenhum"}')
+        except Exception as ex:  # noqa: BLE001
+            log(f'compartilhamento {t[:4]}…: {type(ex).__name__}')
+        for m in ([ref] if ref else meses[:4] or _meses(None)):
+            st = _existe(f'{dav}{m}/Estabelecimentos0.zip', (t, ''))
+            log(f'  {m}: {st}')
+            if st == 200:
+                AUTH[0] = (t, '')
+                return f'{dav}{m}/', m
     raise SystemExit('pasta dos dados abertos de CNPJ não encontrada')
 
 
