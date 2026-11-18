@@ -507,6 +507,7 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 #vxMapTip .tg span:nth-child(odd){color:var(--text-muted);}
 #vxMapTip .tg span:nth-child(even){font-family:'JetBrains Mono',monospace; text-align:right;}
 #vxMapTip .sep{grid-column:1/-1; height:1px; background:var(--border); margin:3px 0;}
+#vxMapTip .tpros{margin-top:8px; padding-top:6px; border-top:1px dashed var(--border); color:var(--vx-cy-t); font-size:10.5px; line-height:1.4;}
 #vxMapTip .sv{background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); border-radius:6px; padding:4px 8px; color:var(--vx-am-t); margin-bottom:6px;}
 .vx-full-btn{display:inline-flex; align-items:center; gap:6px; font:inherit; font-size:12px; font-weight:700; padding:6px 11px; border-radius:8px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); cursor:pointer;}
 .vx-full-btn:hover{border-color:var(--vx-cy); color:var(--vx-cy-t);}
@@ -7803,7 +7804,8 @@ function vxDesenharMapa(cids, total, ufs, fora){
           '<div class="tg">'+linhaTip('Faturamento', vxM(o.fat))+linhaTip('Lucro bruto', '<span style="color:var(--vx-gr-t)">'+vxM(o.lb)+'</span>')+linhaTip('Margem', vxP(o.mg))+
           linhaTip('Volume', vxN(o.qtd)+' un.')+linhaTip('Var. anterior', seta(o.vr))+linhaTip('Share', (total>0?(o.fat/total*100).toFixed(2).replace('.',','):'0')+'%')+
           '<div class="sep"></div>'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+(vxChev(f) ? linhaTip('Chevrolet na frota', vxChev(f).pct.toFixed(1).replace('.',',')+'%') : '')+(f[5] ? linhaTip('R$ por mil hab.', vxM(o.fat/f[5]*1000)) : '')+(f[6] ? linhaTip('Peças por mil autos', (o.qtd/f[6]*1000).toFixed(1).replace('.',',')) : '')+'</div>'
-          : '<div class="sv">Sem vendas no filtro atual</div><div class="tg">'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+'</div>');
+          : '<div class="sv">Sem vendas no filtro atual</div><div class="tg">'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+'</div>') +
+        '<div class="tpros">🔎 Clique para gerar a prospecção de autopeças, oficinas e funilarias</div>';
       tip.style.display = 'block'; mover(e);
     });
     ly.on('mousemove', function(e){ if(!VX.bairroQ) mover(e); });
@@ -7948,7 +7950,7 @@ function vxQuadroHtml(q){
   function ln(a, b){ return '<tr><td>'+a+'</td><td>'+b+'</td></tr>'; }
   var h = '<div class="vx-q"><div class="vx-q-t">'+escapeHtml(f[1])+' <span>('+pr.uf+')</span></div>';
   if(!o){
-    return h+'<div class="vx-q-sv">Sem vendas no filtro atual</div><div class="vx-q-top" tabindex="0"><span>👥 Melhores clientes</span><span class="seta">▸</span><div class="vx-q-sub">'+vxTopHtml(q.top)+'</div></div><table>'+ln('População', f[5]?vxN(f[5]):'—')+ln('Automóveis', f[6]?vxN(f[6]):'—')+(vxChev(f) ? ln('Chevrolet na frota', vxChev(f).pct.toFixed(1).replace('.',',')+'%') : '')+'</table></div>';
+    return h+'<div class="vx-q-sv">Sem vendas no filtro atual</div><div class="vx-q-top" tabindex="0"><span>👥 Melhores clientes</span><span class="seta">▸</span><div class="vx-q-sub">'+vxTopHtml(q.top)+'</div></div><table>'+ln('População', f[5]?vxN(f[5]):'—')+ln('Automóveis', f[6]?vxN(f[6]):'—')+(vxChev(f) ? ln('Chevrolet na frota', vxChev(f).pct.toFixed(1).replace('.',',')+'%') : '')+'</table>'+'<button type="button" class="vx-q-exp vx-q-prosp" title="Empresas do ramo neste município (OpenStreetMap), com endereço e contato quando houver, marcando as que parecem já ser clientes">🔎 Prospecção: autopeças, oficinas e funilarias (Excel)</button>'+'</div>';
   }
   var cli = null, cliP = null;
   if(CID_CLI){ cli = 0; cliP = 0; o.nomes.forEach(function(n){ var c = CID_CLI[n]; if(c){ cli += c.n; cliP += c.p; } }); }
@@ -7971,7 +7973,7 @@ function vxQuadroHtml(q){
     (vxChev(f) ? ln('Chevrolet na frota', vxN(vxChev(f).n)+' · '+vxChev(f).pct.toFixed(1).replace('.',',')+'%') + (f[7] ? ln('Peças por mil Chevrolet', (o.qtd/f[7]*1000).toFixed(1).replace('.',',')) : '') : '') +
     '</table>' + (cli!==null && cliP ? '<div class="vx-q-n">Período anterior: '+vxN(cliP)+' clientes, ticket '+vxM(tkP)+'</div>' : '') +
     '<div class="vx-q-top" tabindex="0"><span>👥 Top 5 clientes</span><span class="seta">▸</span><div class="vx-q-sub">'+vxTopHtml(q.top)+'</div></div>'+
-    (q.o ? '<button type="button" class="vx-q-exp vx-q-bai" title="Mostra no mapa o faturamento por bairro deste município, com os filtros atuais">🏘 Ver bairros no mapa</button>' : '')+'</div>';
+    (q.o ? '<button type="button" class="vx-q-exp vx-q-bai" title="Mostra no mapa o faturamento por bairro deste município, com os filtros atuais">🏘 Ver bairros no mapa</button>' : '')+'<button type="button" class="vx-q-exp vx-q-prosp" title="Empresas do ramo neste município (OpenStreetMap), com endereço e contato quando houver, marcando as que parecem já ser clientes">🔎 Prospecção: autopeças, oficinas e funilarias (Excel)</button>'+'</div>';
   return h;
 }
 function vxQuadroCidade(latlng, o, props, total){
@@ -8177,12 +8179,73 @@ function vxBairrosDesenhar(q, nomeMun, rows, distritos, semZoom, zonas){
 function vxQuadroLigar(){
   var el = VX.popup && VX.popup.getElement(), tp = el && el.querySelector('.vx-q-top');
   if(tp) tp.onclick = function(ev){ if(!ev.target.closest('.vx-q-sub')) tp.classList.toggle('aberto'); };
-  var ex = el && el.querySelector('.vx-q-exp:not(.vx-q-exp-todos):not(.vx-q-bai)');
+  var ex = el && el.querySelector('.vx-q-exp:not(.vx-q-exp-todos):not(.vx-q-bai):not(.vx-q-prosp)');
   if(ex) ex.onclick = function(ev){ ev.stopPropagation(); vxExportarMun(ex, !VX.quadro || !VX.quadro.o); };
   var ext = el && el.querySelector('.vx-q-exp-todos');
   if(ext) ext.onclick = function(ev){ ev.stopPropagation(); vxExportarMun(ext, true); };
   var bb = el && el.querySelector('.vx-q-bai');
   if(bb) bb.onclick = function(ev){ ev.stopPropagation(); vxBairros(VX.quadro); };
+  var bp = el && el.querySelector('.vx-q-prosp');
+  if(bp) bp.onclick = function(ev){ ev.stopPropagation(); vxProspectar(bp); };
+}
+// prospecção: autopeças, oficinas e funilarias do município no OpenStreetMap (só o código IBGE do município sai daqui),
+// cruzadas pelo nome com os clientes cadastrados no município
+var OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+function vxOverpass(q, i){
+  i = i||0;
+  return fetch(OVERPASS[i], {method:'POST', body:'data='+encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}})
+    .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
+    .catch(function(e){ if(i+1<OVERPASS.length) return vxOverpass(q, i+1); throw e; });
+}
+var PROSP_RX_FUN = /FUNILAR|LANTERNAG|MARTELINHO|PINTURA AUTO|AUTO ?PINTURA|CAR ?BODY|REPARACAO DE CARROCER/;
+var PROSP_RX_PECA = /AUTO ?PECAS|AUTOPECAS|PECAS|AUTO PARTS|DISTRIBUIDORA DE PECAS/;
+function prospNorm(s){
+  return vxSemAcento(s||'').replace(/[^A-Z0-9 ]+/g, ' ').replace(/\b(LTDA|ME|EPP|EIRELI|S ?A|MEI|CIA|COMERCIO|COM|DE|DA|DO|DAS|DOS|E)\b/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function vxProspectar(bt){
+  var q = VX.quadro; if(!q) return;
+  var pr = q.props, f = VX.geo[pr.uf].lista.filter(function(x){ return x[2]===pr.id; })[0], nomeMun = f ? f[1] : 'municipio';
+  var txt0 = bt.textContent;
+  var ql = '[out:json][timeout:90];area["IBGE:GEOCODIGO"="'+pr.id+'"]["boundary"="administrative"]->.a;(' +
+    'nwr["shop"="car_parts"](area.a);nwr["shop"="car_repair"](area.a);nwr["craft"="car_repair"](area.a);nwr["craft"="car_painter"](area.a);' +
+    'nwr["name"~"funilaria|lanternagem|martelinho|auto ?pe[cç]as",i](area.a););out center tags;';
+  var nomes = q.o ? q.o.nomes : vxNomesDoMun(pr.uf, pr.id);
+  var ids = nomes.map(function(n){ return (DIMI.cidade||{})[n]; }).filter(function(x){ return x!==undefined; });
+  var cliP = ids.length ? window.__NC_rpc('bi_clientes', {f:{}, per:{ini:painelPeriodo().ini, fim:painelPeriodo().fim}, o:{cidade:ids, ordem:'f12', limite:50000}}).catch(function(){ return null; }) : Promise.resolve(null);
+  bt.disabled = true; bt.textContent = 'Buscando empresas no mapa…';
+  Promise.all([vxOverpass(ql), cliP, carregarXlsx().catch(function(){ return null; })]).then(function(r){
+    var els = (r[0]||{}).elements||[], cli = ((r[1]||{}).linhas||[]).map(cliLinhaObj), X = r[2];
+    var idx = cli.map(function(c){ return {c:c, n:prospNorm(c.razao)}; }).filter(function(x){ return x.n.length>=4; });
+    var vistos = {}, linhas = [], cont = {'Autopeças':0, 'Oficina mecânica':0, 'Funilaria e pintura':0}, nCli = 0, semNome = 0;
+    els.forEach(function(e){
+      var t = e.tags||{}, nome = t.name || t.brand || '';
+      if(!nome){ semNome++; return; }
+      var lat = e.lat!=null ? e.lat : (e.center||{}).lat, lon = e.lon!=null ? e.lon : (e.center||{}).lon;
+      var k = prospNorm(nome)+'|'+(lat ? lat.toFixed(3)+','+lon.toFixed(3) : '');
+      if(vistos[k]) return; vistos[k] = 1;
+      var nn = vxSemAcento(nome).replace(/[^A-Z0-9 ]+/g, ' ');
+      var tipo = (t.car_repair==='bodywork' || t.car_repair==='body_repair' || t['service:vehicle:body_repair']==='yes' || t.craft==='car_painter' || PROSP_RX_FUN.test(nn)) ? 'Funilaria e pintura'
+               : (t.shop==='car_parts' || PROSP_RX_PECA.test(nn)) ? 'Autopeças' : 'Oficina mecânica';
+      cont[tipo]++;
+      var pn = prospNorm(nome), achou = null;
+      if(pn.length>=4) for(var i=0;i<idx.length;i++){ var cn = idx[i].n; if(cn===pn || (pn.length>=6 && cn.indexOf(pn)>=0) || (cn.length>=6 && pn.indexOf(cn)>=0)){ achou = idx[i].c; break; } }
+      if(achou) nCli++;
+      var end = [t['addr:street'], t['addr:housenumber']].filter(Boolean).join(', ');
+      linhas.push([tipo, nome, t.operator||'', end, t['addr:suburb']||t['addr:neighbourhood']||'', t['addr:postcode']||'', t['addr:city']||nomeMun,
+        t.phone||t['contact:phone']||'', t['contact:whatsapp']||t['contact:mobile']||t.mobile||'', t.website||t['contact:website']||t['contact:instagram']||t['contact:facebook']||'', t.email||t['contact:email']||'', t.opening_hours||'',
+        achou ? 'Possível cliente' : 'Não encontrado na base', achou ? achou.cod+' · '+achou.razao : '', achou ? cliData(achou.ult) : '', achou && achou.f12 ? Math.round(achou.f12*100)/100 : null,
+        lat ? Math.round(lat*1e6)/1e6 : null, lon ? Math.round(lon*1e6)/1e6 : null, lat ? 'https://www.google.com/maps/search/?api=1&query='+lat+','+lon : '']);
+    });
+    if(!linhas.length){ toast('Nenhuma empresa do ramo encontrada no mapa para '+nomeMun+'.'); return; }
+    var ord = {'Autopeças':0, 'Oficina mecânica':1, 'Funilaria e pintura':2};
+    linhas.sort(function(a, b){ return (a[12]===b[12] ? 0 : a[12]==='Possível cliente' ? 1 : -1) || ord[a[0]]-ord[b[0]] || String(a[1]).localeCompare(String(b[1]), 'pt-BR'); });
+    var cab = ['Ramo','Nome','Responsável/rede','Endereço','Bairro','CEP','Cidade','Telefone','WhatsApp/celular','Site/rede social','E-mail','Horário',
+      'Na nossa base?','Cliente parecido (código · razão social)','Última compra','Faturamento 12 meses','Latitude','Longitude','Ver no Google Maps'];
+    var nome = 'prospeccao_'+vxSemAcento(nomeMun).replace(/[^A-Z0-9]+/g, '_').toLowerCase()+'_'+pr.uf.toLowerCase();
+    baixarPlanilha(X, nome, 'Prospecção', cab, linhas, [18,36,20,36,20,11,18,17,17,30,26,22,20,42,13,16,11,11,40]);
+    toast(fmtUn(linhas.length)+' empresas em '+nomeMun+': '+cont['Autopeças']+' autopeças, '+cont['Oficina mecânica']+' oficinas e '+cont['Funilaria e pintura']+' funilarias. '+fmtUn(linhas.length-nCli)+' não aparecem na nossa base.');
+  }).catch(function(){ toast('O OpenStreetMap não respondeu agora. Tente de novo em alguns instantes.'); })
+    .then(function(){ bt.disabled = false; bt.textContent = txt0; });
 }
 // listagem completa dos clientes do município (mesmos filtros do Top 5), em Excel
 function vxExportarMun(bt, todos){
