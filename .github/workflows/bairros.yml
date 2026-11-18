@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  actions: write   # para disparar a próxima execução enquanto houver CEPs ou bairros por localizar
 
 concurrency:
   group: bairros
@@ -35,7 +36,13 @@ jobs:
       - name: Instalar dependências
         run: pip install "psycopg[binary]==3.2.3" requests==2.32.3
       - name: Localizar os bairros
+        id: loc
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           MINUTOS: ${{ inputs.minutos || '50' }}
         run: python etl/cep_geocodificar.py --minutos "$MINUTOS" ${{ inputs.refazer && '--refazer' || '' }}
+      - name: Disparar a próxima execução
+        if: steps.loc.outputs.continuar == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run bairros.yml --ref main -f minutos=50

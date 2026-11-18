@@ -176,6 +176,7 @@ def main():
             log('ViaCEP recusou as consultas; seguiu só com a BrasilAPI')
         if falhas_seg >= 3:
             log('consultas de CEP falhando seguidamente; o restante fica para a próxima execução')
+        feitos1 = sum(v for k, v in cont.items() if k != 'falha')
         log('CEPs: ' + (', '.join(f'{k} {v}' for k, v in sorted(cont.items())) or 'nenhum novo'))
 
         # 2) bairro -> ponto: reaproveita bairros já localizados e consulta o resto (os com mais clientes primeiro)
@@ -210,6 +211,17 @@ def main():
         log('bairros: ' + (', '.join(f'{k} {v}' for k, v in sorted(cont.items())) or 'nenhum novo'))
         cur.execute("select fonte, count(*) from public.bi_cep group by 1 order by 1")
         log('situação: ' + ', '.join(f'{k} {v}' for k, v in cur.fetchall()))
+        # ainda falta e esta execução avançou: pede a próxima em seguida (o workflow dispara de novo)
+        cur.execute("""select (select count(distinct c.cep) from public.bi_cliente c where c.cep is not null
+                        and not exists (select 1 from public.bi_cep e where e.cep = c.cep))
+                       + (select count(*) from public.bi_cep where fonte = 'pendente')""")
+        falta = cur.fetchone()[0]
+        avancou = feitos1 + sum(cont.values()) > 0
+        log(f'faltam {falta}; ' + ('continua na próxima execução' if falta and avancou else 'nada mais a fazer agora'))
+        saida = os.environ.get('GITHUB_OUTPUT')
+        if saida:
+            with open(saida, 'a') as fo:
+                fo.write(f"continuar={'true' if falta and avancou else 'false'}\n")
 
 
 if __name__ == '__main__':
