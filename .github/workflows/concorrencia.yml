@@ -2,9 +2,8 @@ name: Concorrência (preços do e-commerce)
 
 # Todo dia às 7h (Brasília) compara o preço do top 100 do nosso e-commerce com os sites concorrentes e grava no banco
 # (tabela bi_concorrencia com a última coleta e bi_concorrencia_hist com o histórico diário). Nada da empresa é impresso no log nem gravado no repositório.
+# O horário fica no banco (pg_cron "disparar-concorrencia", 7h): o agendamento do GitHub falhava em alguns dias.
 on:
-  schedule:
-    - cron: '0 10 * * *'
   workflow_dispatch:
     inputs:
       modo:
