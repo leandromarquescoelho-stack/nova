@@ -8419,6 +8419,11 @@ function bindEvents(){
     if(this.value==='custom' && state.perIni===null){ var pr0 = periodRange(state.globalPeriod); state.perIni = pr0.start; state.perFim = pr0.end; }
     state.globalPeriod = this.value;
     syncPeriodChips();
+    if(this.value==='custom'){   // Personalizado: abre os filtros já nas datas De/Até, sem recarregar (o período não mudou)
+      var fr = document.getElementById('filterRail'); fr.classList.remove('recolhido'); fr.classList.add('pinned');
+      var fd = document.getElementById('fDe'); if(fd){ fd.scrollIntoView({block:'center'}); setTimeout(function(){ fd.focus(); try{ fd.showPicker(); }catch(e){} }, 150); }
+      return;
+    }
     state.page=1; renderAll(false);
   });
   document.getElementById('filtersBtn').addEventListener('click', function(){
