@@ -5018,7 +5018,7 @@ function renderVendConsult(){
   }
 
   RD_SEL = null;
-  var quadHtml = '<div><div class="vr-head"><h3 class="dh">Faturamento &times; Margem</h3>'+'<label class="vr-sw-l vd-sw-l" title="Mostra o nome dos vendedores nos pontos (os que couberem sem sobrepor)"><span>Nomes</span><button type="button" class="ia-sw vr-sw vd-nomes-sw" role="switch" aria-checked="'+(state.vendDispNomes?'true':'false')+'" aria-label="Mostrar nomes dos vendedores"></button></label>'+'</div>' +
+  var quadHtml = '<div><div class="vr-head"><h3 class="dh">Faturamento &times; Margem</h3>'+'<label class="vr-sw-l vd-sw-l" title="Mostra o nome dos vendedores nos pontos dos dois gráficos (os que couberem sem sobrepor)"><span>Nomes</span><button type="button" class="ia-sw vr-sw vd-nomes-sw" role="switch" aria-checked="'+(state.vendDispNomes?'true':'false')+'" aria-label="Mostrar nomes dos vendedores"></button></label>'+'</div>' +
         '<div class="chart-wrap" style="display:flex; justify-content:center;">'+scatterSvg+'</div>' +
         '<p style="font-size:11.5px; color:var(--text-2); margin-top:6px; line-height:1.6;">'+quadTexto+'</p>' +
         '<p style="font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.6;">Cada ponto é um vendedor; as linhas tracejadas marcam a média do grupo. Clique num ponto para analisar o vendedor.</p>' +
@@ -5080,12 +5080,12 @@ function renderVendConsult(){
       var muitosCliBaixoFat = comCli.filter(function(r){ return r.cli>=mCli && r.fat<mFat; }).map(function(r){ return r.name; });
       var poucosCliAltoFat = comCli.filter(function(r){ return r.cli<mCli && r.fat>=mFat; }).map(function(r){ return r.name; });
       cliBox.innerHTML = '<div class="grid-2" style="margin-bottom:0;">' +
-        '<div><div class="vr-head"><h3 class="dh">Faturamento &times; Clientes</h3>'+'<label class="vr-sw-l vd-sw-l" title="Mostra o nome dos vendedores nos pontos (os que couberem sem sobrepor)"><span>Nomes</span><button type="button" class="ia-sw vr-sw vd-nomes-sw" role="switch" aria-checked="'+(state.vendDispNomes?'true':'false')+'" aria-label="Mostrar nomes dos vendedores"></button></label>'+'</div><div class="chart-wrap" style="display:flex; justify-content:center;">'+svgCli+'</div>' +
+        '<div><div class="vr-head"><h3 class="dh">Faturamento &times; Clientes</h3>'+'<label class="vr-sw-l vd-sw-l" title="Mostra o nome dos vendedores nos pontos dos dois gráficos (os que couberem sem sobrepor)"><span>Nomes</span><button type="button" class="ia-sw vr-sw vd-nomes-sw" role="switch" aria-checked="'+(state.vendDispNomes?'true':'false')+'" aria-label="Mostrar nomes dos vendedores"></button></label>'+'</div><div class="chart-wrap" style="display:flex; justify-content:center;">'+svgCli+'</div>' +
           '<p style="font-size:11.5px; color:var(--text-2); margin-top:6px; line-height:1.6;">'+meQ+'</p>' +
           (muitosCliBaixoFat.length ? '<p style="font-size:11.5px; color:var(--text-2); line-height:1.6;"><b>Muitos clientes e faturamento abaixo da média:</b> '+muitosCliBaixoFat.join(', ')+'.</p>' : '') +
           (poucosCliAltoFat.length ? '<p style="font-size:11.5px; color:var(--text-2); line-height:1.6;"><b>Poucos clientes e faturamento acima da média:</b> '+poucosCliAltoFat.join(', ')+'.</p>' : '') +
         '</div>' +
-        quadHtml +
+        quadHtml.replace(/<label class="vr-sw-l vd-sw-l"[\s\S]*?<\/label>/, '') + // uma chave só (a do primeiro gráfico) vale para os dois
       '</div>';
     }
   }
