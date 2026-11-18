@@ -581,6 +581,8 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .grid-main{display:grid; grid-template-columns:1.7fr 1fr; gap:14px; margin-bottom:14px; align-items:stretch;}
 .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;}
 .grid-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;}
+/* radares de marca, categoria e produto: sempre lado a lado (só empilham no celular) */
+@media (min-width:640px){ .rd-trio .grid-3{ grid-template-columns:repeat(3,minmax(0,1fr)) !important; } }
 @media (max-width:1100px){ .grid-main,.grid-2,.grid-3{ grid-template-columns:1fr; } }
 .grid-main>*,.grid-2>*,.grid-3>*{ min-width:0; }
 
@@ -5035,7 +5037,7 @@ function renderVendConsult(){
         '<p style="font-size:11px; color:var(--text-muted); margin-top:10px; line-height:1.6;">O radar compara cada eixo contra o melhor valor do grupo inteiro (100% da escala) — quanto mais a área azul cobre o eixo, mais próximo do topo do grupo o vendedor está naquele quesito.</p>' +
       '</div>' +
     '</div>' +
-    '<div style="margin-top:14px;">' +
+    '<div class="rd-trio" style="margin-top:14px;">' +
       '<div class="radar-legend">' +
         '<span><i style="background:var(--accent);"></i>'+selName+'</span>' +
         '<span><i style="background:var(--text-muted);"></i>Média dos demais</span>' +
@@ -5303,6 +5305,7 @@ function salvarConsultoriaPdf(){
     '.pdf-logo-pg{position:fixed;top:0;right:0;height:15px;width:auto;opacity:.75;z-index:5;}' +
     '.pdf-cab{padding-right:90px;}' +
     '.rd-bloco .chart-wrap svg{height:auto;max-height:260px;}' +
+    '.rd-trio{break-inside:avoid;page-break-inside:avoid;} .rd-trio .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))!important;}' +
     '.pdf-cab h1{font-family:Sora,sans-serif;font-size:22px;margin:4px 0 0;color:var(--text);}' +
     '.pdf-info{display:grid;grid-template-columns:1.3fr 1fr 1.4fr .8fr;gap:10px;margin-bottom:10px;}' +
     '.pdf-cel{background:var(--surface-2,rgba(var(--ink),.04));border:1px solid var(--border);border-radius:8px;padding:7px 10px;}' +
