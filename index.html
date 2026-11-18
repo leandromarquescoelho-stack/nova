@@ -2393,10 +2393,11 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <!-- ============ CONCORRÊNCIA ============ -->
       <section class="view-panel" data-view-panel="concorrencia" style="display:none;">
+        <div class="pl-guias cc-guias" id="ccGuias" role="tablist"><button type="button" class="on" data-f="vtex" role="tab" aria-selected="true">VTEX</button><button type="button" data-f="pc" role="tab" aria-selected="false">Peça Chevrolet</button></div>
         <div class="cc-kpis" id="ccKpis"></div>
         <div class="panel">
           <div class="panel-head">
-            <div><h2>Top 100 do e-commerce: nosso preço x concorrentes</h2><div class="psub" id="ccSub">Itens que mais faturaram no e-commerce nos últimos 90 dias</div></div>
+            <div><h2 id="ccTit">Top 100 do e-commerce: nosso preço x concorrentes</h2><div class="psub" id="ccSub">Itens que mais faturaram no e-commerce nos últimos 90 dias</div></div>
             <div class="cc-ctl">
               <label>Mostrar<select class="fsel" id="ccFiltro">
                 <option value="todos">Todos os itens</option>
@@ -3317,13 +3318,28 @@ function kpiSparks(k){
    CONCORRÊNCIA: top 100 do e-commerce x preços coletados nos sites concorrentes (rotina semanal no GitHub)
    ============================================================ */
 var CC = {dados:null, carregando:false, ordem:'fat', desc:true, ligado:false};
-var CC_SITES = [{k:'accioly', n:'Accioly GM'}, {k:'carrera', n:'Carrera'}];
+var CC_FONTES = {
+  vtex:{nosso:'nossa', nossoN:'Nosso site', itens:'itens', sites:[{k:'accioly', n:'Accioly GM'}, {k:'carrera', n:'Carrera'}],
+        tit:'Top 100 do e-commerce: nosso preço x concorrentes', sub:'Itens que mais faturaram no e-commerce nos últimos 90 dias', arq:'concorrencia_top100_'},
+  pc:{nosso:'pc_nova', nossoN:'Nova', itens:'itens_pc', sites:[{k:'pc_accioly', n:'Accioly'}, {k:'pc_vigorito', n:'Vigorito'}, {k:'pc_carrera', n:'Carrera'}],
+      tit:'Peça Chevrolet: preço da Nova x Accioly, Vigorito e Carrera', sub:'Itens que mais faturaram na loja Peça Chevrolet nos últimos 90 dias, com os preços de cada concessionária no site pecachevrolet.com.br', arq:'concorrencia_pecachevrolet_'}
+};
+var CC_FONTE = 'vtex', CC_SITES = CC_FONTES.vtex.sites, CC_NOSSO = 'nossa', CC_NOSSO_N = 'Nosso site';
+function ccFonte(f){
+  var c = CC_FONTES[f]; CC_FONTE = f; CC_SITES = c.sites; CC_NOSSO = c.nosso; CC_NOSSO_N = c.nossoN;
+  CC_HIST_SITES = [{k:c.nosso, n:c.nossoN}].concat(c.sites);
+  document.querySelectorAll('#ccGuias button').forEach(function(b){ var on = b.getAttribute('data-f')===f; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  document.getElementById('ccTit').textContent = c.tit;
+  var sel = document.getElementById('ccHistSite'); while(sel.options.length > 1) sel.remove(1);
+  if(CC.raw){ ccMontar(); ccTabela(); ccHistorico(); }
+}
 function renderConcorrencia(){
   if(!CC.ligado){
     CC.ligado = true;
     document.getElementById('ccFiltro').addEventListener('change', ccTabela);
     document.getElementById('ccBusca').addEventListener('input', ccTabela);
     document.getElementById('ccExportar').addEventListener('click', ccExportar);
+    document.getElementById('ccGuias').addEventListener('click', function(e){ var b = e.target.closest('button[data-f]'); if(b && b.getAttribute('data-f')!==CC_FONTE) ccFonte(b.getAttribute('data-f')); });
     var tbl = document.getElementById('ccTbl');
     tbl.addEventListener('mouseover', function(e){ var td = e.target.closest('td.cc-nosso'); if(td) ccTipMostrar(td); });
     tbl.addEventListener('mouseout', function(e){ var td = e.target.closest('td.cc-nosso'); if(td && !td.contains(e.relatedTarget)) ccTipEsconder(); });
@@ -3341,25 +3357,29 @@ function renderConcorrencia(){
   supa.rpc('bi_concorrencia_ler').then(function(r){
     CC.carregando = false;
     if(r.error){ document.getElementById('ccTbl').innerHTML = '<tr><td style="padding:20px;">'+(/sem acesso/.test(r.error.message||'') ? 'A concorrência está disponível só para quem tem acesso a todas as lojas.' : 'Não foi possível carregar agora. <button type="button" class="pl-editar cc-retry">Tentar de novo</button>')+'</td></tr>'; return; }
-    var d = r.data || {itens:[], precos:[]}, pm = {}, quando = null;
-    (d.precos||[]).forEach(function(x){ (pm[x[1]] = pm[x[1]] || {})[x[0]] = {preco:+x[2], lista:x[3]==null?null:+x[3], disp:x[4], titulo:x[5], url:x[6], conf:x[7]}; if(!quando || x[8] > quando) quando = x[8]; });
-    var hist = {};
-    (d.hist||[]).forEach(function(x){ (hist[x[0]+'|'+x[1]] = hist[x[0]+'|'+x[1]] || []).push([String(x[2]).slice(0,10), +x[3]]); });
-    CC.hist = hist; CC.dias = +d.dias || 0;
-    CC.dados = {quando:quando, itens:(d.itens||[]).map(function(x, i){
-      var p = pm[x[0]] || {}, nosso = p.nossa ? p.nossa.preco : null, pmv = x[3] ? c2(x[2])/x[3] : null;
-      // preço muito longe do que vendemos (ou do nosso site) costuma ser outro produto, kit ou embalagem: fica marcado e fora do resumo
-      function longe(a, b){ return a && b ? (a/b > 2.5 || a/b < 0.4) : false; }
-      var nossoSusp = longe(nosso, pmv), ref = nosso && !nossoSusp ? nosso : pmv;
-      var cs = CC_SITES.map(function(s){ var c = p[s.k]; return c && c.preco>0 ? {site:s.k, preco:c.preco, url:c.url, titulo:c.titulo, conf:c.conf, susp:longe(c.preco, ref), pct: nosso ? (nosso/c.preco - 1)*100 : null, v:ccVar(s.k, x[0], c.preco, quando)} : null; });
-      if(nossoSusp) nosso = null;
-      var vals = cs.filter(function(c){ return c && !c.susp; }).map(function(c){ return c.preco; }), menor = vals.length ? Math.min.apply(null, vals) : null;
-      var pctMenor = nosso && menor ? (nosso/menor - 1)*100 : null;
-      return {rank:i+1, pn:x[0], nome:x[1], fat:c2(x[2]), qtd:+x[3], pmv:pmv, nosso:nosso, nossoV:nosso ? ccVar('nossa', x[0], nosso, quando) : null, nossoSusp:nossoSusp, nossoBruto:p.nossa ? p.nossa.preco : null, nossoUrl:p.nossa && p.nossa.url, cs:cs, menor:menor, pctMenor:pctMenor, n:vals.length};
-    })};
+    CC.raw = r.data || {itens:[], precos:[]};
+    ccMontar();
     ccTabela(); ccHistorico();
     carregarProdutos().catch(function(){});   // estoque para o tooltip do nosso preço
   });
+}
+function ccMontar(){
+  var d = CC.raw, cfg = CC_FONTES[CC_FONTE], pm = {}, quando = null;
+  (d.precos||[]).forEach(function(x){ (pm[x[1]] = pm[x[1]] || {})[x[0]] = {preco:+x[2], lista:x[3]==null?null:+x[3], disp:x[4], titulo:x[5], url:x[6], conf:x[7]}; if((x[0]===CC_NOSSO || cfg.sites.some(function(s){ return s.k===x[0]; })) && (!quando || x[8] > quando)) quando = x[8]; });
+  var hist = {};
+  (d.hist||[]).forEach(function(x){ (hist[x[0]+'|'+x[1]] = hist[x[0]+'|'+x[1]] || []).push([String(x[2]).slice(0,10), +x[3]]); });
+  CC.hist = hist; CC.dias = +d.dias || 0;
+  CC.dados = {quando:quando, itens:(d[cfg.itens]||[]).map(function(x, i){
+    var p = pm[x[0]] || {}, nosso = p[CC_NOSSO] ? p[CC_NOSSO].preco : null, pmv = x[3] ? c2(x[2])/x[3] : null;
+    // preço muito longe do que vendemos (ou do nosso site) costuma ser outro produto, kit ou embalagem: fica marcado e fora do resumo
+    function longe(a, b){ return a && b ? (a/b > 2.5 || a/b < 0.4) : false; }
+    var nossoSusp = longe(nosso, pmv), ref = nosso && !nossoSusp ? nosso : pmv;
+    var cs = CC_SITES.map(function(s){ var c = p[s.k]; return c && c.preco>0 ? {site:s.k, preco:c.preco, url:c.url, titulo:c.titulo, conf:c.conf, susp:longe(c.preco, ref), pct: nosso ? (nosso/c.preco - 1)*100 : null, v:ccVar(s.k, x[0], c.preco, quando)} : null; });
+    if(nossoSusp) nosso = null;
+    var vals = cs.filter(function(c){ return c && !c.susp; }).map(function(c){ return c.preco; }), menor = vals.length ? Math.min.apply(null, vals) : null;
+    var pctMenor = nosso && menor ? (nosso/menor - 1)*100 : null;
+    return {rank:i+1, pn:x[0], nome:x[1], fat:c2(x[2]), qtd:+x[3], pmv:pmv, nosso:nosso, nossoV:nosso ? ccVar(CC_NOSSO, x[0], nosso, quando) : null, nossoSusp:nossoSusp, nossoBruto:p[CC_NOSSO] ? p[CC_NOSSO].preco : null, nossoUrl:p[CC_NOSSO] && p[CC_NOSSO].url, cs:cs, menor:menor, pctMenor:pctMenor, n:vals.length};
+  })};
 }
 // estoque do item somado em todas as lojas e o maior custo médio entre elas (custo do estoque ÷ peças, só lojas com saldo)
 var CC_PN2PID = null;
@@ -3421,12 +3441,12 @@ function ccExportar(){
 function ccExportarMontar(L, D, bt){
   function n2(v){ return v==null ? null : Math.round(v*100)/100; }
   function p1(v){ return v==null ? null : Math.round(v*10)/10; }
-  var cab = ['Posição', 'Código', 'Item', 'Fat. 90 dias (R$)', 'Qtd 90 dias', 'Preço médio vendido (R$)', 'Nosso site (R$)', 'Estoque total (peças)', 'Maior custo médio (R$)', 'Loja do maior custo'];
+  var cab = ['Posição', 'Código', 'Item', 'Fat. 90 dias (R$)', 'Qtd 90 dias', 'Preço médio vendido (R$)', CC_NOSSO_N+' (R$)', 'Estoque total (peças)', 'Maior custo médio (R$)', 'Loja do maior custo'];
   CC_SITES.forEach(function(s){ cab.push(s.n+' (R$)', 'Dif. vs '+s.n+' (%)', s.n+' link'); });
   cab.push('Menor concorrente (R$)', 'Dif. vs menor preço (%)', 'Situação', 'Observação');
   var dados = L.map(function(it){
     var obs = [];
-    if(it.nossoSusp) obs.push('Preço do nosso site ('+ccMoney(it.nossoBruto)+') muito diferente do preço médio vendido: conferir cadastro');
+    if(it.nossoSusp) obs.push('Preço '+(CC_FONTE==='pc' ? 'da Nova no Peça Chevrolet' : 'do nosso site')+' ('+ccMoney(it.nossoBruto)+') muito diferente do preço médio vendido: conferir cadastro');
     var e = ccEstoque(it.pn) || {};
     var r = [it.rank, it.pn, String(it.nome||'').replace(/^\S+\s*-\s*/, ''), n2(it.fat), it.qtd, n2(it.pmv), n2(it.nosso), e.est==null ? null : Math.round(e.est), n2(e.maior), e.loja || null];
     it.cs.forEach(function(c, k){
@@ -3442,7 +3462,7 @@ function ccExportarMontar(L, D, bt){
   var dia = D.quando ? isoDia(new Date(D.quando)) : isoDia(new Date());
   carregarXlsx().catch(function(){ return null; }).then(function(X){
     var larg = [8, 14, 44, 16, 11, 18, 14, 14, 16, 16]; CC_SITES.forEach(function(){ larg.push(14, 14, 30); }); larg.push(18, 18, 14, 60);
-    baixarPlanilha(X, 'concorrencia_top100_'+dia, 'Concorrência', cab, dados, larg);
+    baixarPlanilha(X, CC_FONTES[CC_FONTE].arq+dia, 'Concorrência', cab, dados, larg);
     toast(L.length+' itens exportados.');
   }).finally(function(){ bt.disabled = false; });
 }
@@ -3494,7 +3514,7 @@ function ccHistorico(){
     ? 'Cada mudança de preço registrada nas coletas diárias dos últimos 60 dias · '+L.length+' alteraç'+(L.length===1?'ão':'ões')
     : 'O histórico começou em '+(CC.dias ? 'esta coleta' : 'breve')+': as alterações aparecem a partir da próxima coleta diária (7h).';
   if(!L.length){ tb.innerHTML = '<tbody><tr><td class="status-txt" style="padding:16px;">Nenhuma alteração de preço registrada '+(CC.dias >= 2 ? 'com esses filtros.' : 'ainda.')+'</td></tr></tbody>'; return; }
-  tb.innerHTML = '<thead><tr><th>Data</th><th>Site</th><th>Item</th><th class="num">Antes</th><th class="num">Depois</th><th class="num">Mudança</th><th class="num">Nosso site hoje</th></tr></thead><tbody>' +
+  tb.innerHTML = '<thead><tr><th>Data</th><th>Site</th><th>Item</th><th class="num">Antes</th><th class="num">Depois</th><th class="num">Mudança</th><th class="num">'+CC_NOSSO_N+' hoje</th></tr></thead><tbody>' +
     L.map(function(x){
       return '<tr><td title="Coleta anterior: '+d(x.diaAnt)+'">'+d(x.dia)+'</td><td>'+escapeHtml(x.site)+'</td><td class="cc-item"><b>'+escapeHtml(x.pn)+'</b><span>'+escapeHtml(x.nome)+'</span></td>' +
         '<td class="num">'+ccMoney(x.de)+'</td><td class="num">'+ccMoney(x.para)+'</td>' +
@@ -3505,7 +3525,7 @@ function ccHistorico(){
 function ccHistExportar(){
   var L = ccHistLinhas(); if(!L.length){ toast('Nenhuma alteração para exportar.'); return; }
   function n2(v){ return v==null ? null : Math.round(v*100)/100; }
-  var cab = ['Data', 'Coleta anterior', 'Site', 'Posição no top 100', 'Código', 'Item', 'Preço antes (R$)', 'Preço depois (R$)', 'Mudança (%)', 'Nosso site hoje (R$)'];
+  var cab = ['Data', 'Coleta anterior', 'Site', 'Posição no top 100', 'Código', 'Item', 'Preço antes (R$)', 'Preço depois (R$)', 'Mudança (%)', CC_NOSSO_N+' hoje (R$)'];
   var dados = L.map(function(x){ return [x.dia, x.diaAnt, x.site, x.rank, x.pn, x.nome, n2(x.de), n2(x.para), Math.round(x.pct*10)/10, n2(x.nosso)]; });
   carregarXlsx().catch(function(){ return null; }).then(function(X){
     baixarPlanilha(X, 'concorrencia_alteracoes_'+isoDia(new Date()), 'Alterações', cab, dados, [12, 14, 14, 10, 14, 44, 16, 16, 12, 18]);
@@ -3549,12 +3569,12 @@ function ccTabela(){
     return (va-vb)*sg || a.rank-b.rank;
   });
   function th(t, k, num){ return '<th'+(num?' class="num"':'')+(k?' data-o="'+k+'"':'')+'>'+t+(k && CC.ordem===k ? (CC.desc?' ▾':' ▴') : '')+'</th>'; }
-  document.getElementById('ccTbl').innerHTML = '<thead><tr>'+th('#','rank')+th('Item')+th('Fat. 90 dias','fat',1)+th('Preço médio vendido','pmv',1)+th('Nosso site','nosso',1) +
+  document.getElementById('ccTbl').innerHTML = '<thead><tr>'+th('#','rank')+th('Item')+th('Fat. 90 dias','fat',1)+th('Preço médio vendido','pmv',1)+th(CC_NOSSO_N,'nosso',1) +
     CC_SITES.map(function(s){ return th(s.n, '', 1); }).join('') + th('vs menor preço','pct',1)+'</tr></thead><tbody>' +
     linhas.map(function(it){
       return '<tr><td class="num">'+it.rank+'</td><td class="cc-item"><b>'+escapeHtml(it.pn)+'</b><span title="'+escapeHtml(it.nome||'')+'">'+escapeHtml(String(it.nome||'').replace(/^\S+\s*-\s*/, ''))+'</span></td>' +
         '<td class="num">'+fmtCurto(it.fat)+'</td><td class="num">'+ccMoney(it.pmv)+'</td>' +
-        '<td class="num cc-nosso" data-pn="'+escapeHtml(it.pn)+'">'+(it.nossoSusp ? '<a href="'+escapeHtml(it.nossoUrl||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="Preço do site muito diferente do preço médio vendido: confira o cadastro">⚠ '+ccMoney(it.nossoBruto)+'</a>' : it.nosso ? (it.nossoUrl ? '<a href="'+escapeHtml(it.nossoUrl)+'" target="_blank" rel="noopener" style="color:inherit">'+ccMoney(it.nosso)+'</a>' : ccMoney(it.nosso))+(it.nossoV && Math.abs(it.nossoV.pct)>=0.5 ? '<div class="cc-c">'+ccVarHtml(it.nossoV, 'Nosso site')+'</div>' : '') : '<span class="cc-vazio" title="Não encontrado no nosso site pelo código">—</span>')+'</td>' +
+        '<td class="num cc-nosso" data-pn="'+escapeHtml(it.pn)+'">'+(it.nossoSusp ? '<a href="'+escapeHtml(it.nossoUrl||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="Preço do site muito diferente do preço médio vendido: confira o cadastro">⚠ '+ccMoney(it.nossoBruto)+'</a>' : it.nosso ? (it.nossoUrl ? '<a href="'+escapeHtml(it.nossoUrl)+'" target="_blank" rel="noopener" style="color:inherit">'+ccMoney(it.nosso)+'</a>' : ccMoney(it.nosso))+(it.nossoV && Math.abs(it.nossoV.pct)>=0.5 ? '<div class="cc-c">'+ccVarHtml(it.nossoV, CC_NOSSO_N)+'</div>' : '') : '<span class="cc-vazio" title="'+(CC_FONTE==='pc' ? 'A Nova não tem oferta desta peça no Peça Chevrolet' : 'Não encontrado no nosso site pelo código')+'">—</span>')+'</td>' +
         it.cs.map(function(c){
           if(!c) return '<td class="num cc-vazio">—</td>';
           if(c.susp) return '<td class="num"><div class="cc-c"><a href="'+escapeHtml(c.url||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="'+escapeHtml((c.titulo||'')+' · diferença grande demais: pode ser outro produto, kit ou embalagem. Confira no link.')+'">⚠ '+ccMoney(c.preco)+'</a></div></td>';
@@ -3563,8 +3583,8 @@ function ccTabela(){
         '<td class="num">'+(it.pctMenor==null ? '<span class="cc-vazio">—</span>' : ccSeta(it.pctMenor))+'</td></tr>';
     }).join('') + '</tbody>';
   ccAltura();
-  document.getElementById('ccSub').textContent = 'Itens que mais faturaram no e-commerce nos últimos 90 dias' + (D.quando ? ' · preços coletados em '+new Date(D.quando).toLocaleDateString('pt-BR') : ' · aguardando a primeira coleta');
-  document.getElementById('ccNota').textContent = 'Preços de venda exibidos nos sites (sem desconto de Pix ou boleto e sem frete), coletados todo dia às 7h pelo código da peça. "7d" mostra quanto o preço mudou em 7 dias (passe o mouse para ver as últimas mudanças). * pareado pelo nome, confira no link. ⚠ preço muito diferente (mais de 2,5 vezes ou menos de 40%): provavelmente outro produto, kit ou embalagem; fica fora do resumo. Vigorito não entra: o site bloqueia leitura automática. A seta compara o nosso preço com o de cada concorrente: vermelho ▲ = estamos mais caros; verde ▼ = estamos mais baratos.';
+  document.getElementById('ccSub').textContent = CC_FONTES[CC_FONTE].sub + (D.quando ? ' · preços coletados em '+new Date(D.quando).toLocaleDateString('pt-BR') : ' · aguardando a primeira coleta');
+  document.getElementById('ccNota').textContent = CC_FONTE==='pc' ? 'Preço ao consumidor de cada concessionária no site Peça Chevrolet (sem frete), coletado todo dia às 7h pelo código da peça. Quando a rede tem mais de uma loja no site, vale a menor oferta com estoque. "7d" mostra quanto o preço mudou em 7 dias. ⚠ preço muito diferente do que vendemos (mais de 2,5 vezes ou menos de 40%): provavelmente outro produto; fica fora do resumo. A seta compara o preço da Nova com o de cada concorrente: vermelho ▲ = estamos mais caros; verde ▼ = estamos mais baratos.' : 'Preços de venda exibidos nos sites (sem desconto de Pix ou boleto e sem frete), coletados todo dia às 7h pelo código da peça. "7d" mostra quanto o preço mudou em 7 dias (passe o mouse para ver as últimas mudanças). * pareado pelo nome, confira no link. ⚠ preço muito diferente (mais de 2,5 vezes ou menos de 40%): provavelmente outro produto, kit ou embalagem; fica fora do resumo. Vigorito não entra: o site bloqueia leitura automática. A seta compara o nosso preço com o de cada concorrente: vermelho ▲ = estamos mais caros; verde ▼ = estamos mais baratos.';
 }
 
 /* ============================================================

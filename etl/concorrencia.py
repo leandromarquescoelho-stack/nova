@@ -5,6 +5,8 @@ Fontes (só páginas públicas, respeitando o robots.txt de cada site, com pausa
   accioly  www.acciolygm.com.br       busca da loja + dados estruturados (JSON-LD) da página do produto (mpn = código)
   carrera  pecas.carrera.com.br       mapa do site (o código está no fim do endereço do produto) + JSON-LD da página
 Vigorito fica de fora: o site bloqueia acesso automatizado (verificação anti-robô), e não contornamos isso.
+Peça Chevrolet (www.pecachevrolet.com.br, marketplace da GM): top 100 da loja PEÇA CHEVROLET; para cada peça, a lista pública de
+  preços por concessionária que a própria página do produto usa. Guarda Nova, Accioly, Vigorito e Carrera (sites pc_*).
 O log mostra só contagens: nenhum código, nome ou preço da empresa é impresso (o repositório é público).
 """
 import gzip, html as H, json, os, re, sys, time, urllib.parse, urllib.request
@@ -186,6 +188,50 @@ def carrera(cs):
 
 SITES = [('nossa', nossa), ('accioly', accioly), ('carrera', carrera)]
 
+# ---------------- Peça Chevrolet (marketplace GM) ----------------
+PC = 'https://www.pecachevrolet.com.br'
+PC_API = 'https://api.pecachevroletapi.com/api/v1/dealers/-/parts/{}?latitude=-23.550413&longitude=-46.633904'
+PC_REDES = {'pc_nova': r'\bNOVA\b', 'pc_accioly': r'ACCIOLY', 'pc_vigorito': r'VIGORITO', 'pc_carrera': r'CARRERA'}
+
+
+def pc_redes_log():
+    # nomes das concessionárias de cada rede (dado público do site) para conferir a identificação
+    st, body = get(PC + '/active_dealers.json')
+    try:
+        ds = json.loads(body)
+    except Exception:
+        print(f'peça chevrolet: lista de concessionárias indisponível ({st})', flush=True); return
+    for site, rx in PC_REDES.items():
+        nomes = sorted({d.get('dealer_name', '') for d in ds if re.search(rx, (d.get('dealer_name', '') + ' ' + d.get('dealer_shortname', '')).upper())})
+        print(f'peça chevrolet {site}: {len(nomes)} concessionária(s): {nomes}', flush=True)
+
+
+def peca_chevrolet(cs):
+    """{site: oferta} das redes acompanhadas para a peça; a menor oferta com estoque de cada rede (sem estoque, a menor)."""
+    for c in cs:
+        st, body = get(PC_API.format(urllib.parse.quote(c)))
+        try:
+            ds = json.loads(body)
+        except Exception:
+            continue
+        if not isinstance(ds, list) or not ds:
+            continue
+        out = {}
+        for d in ds:
+            nome = str(d.get('dealer_name') or '')
+            pr = d.get('price_b2c')
+            if not pr:
+                continue
+            for site, rx in PC_REDES.items():
+                if re.search(rx, nome.upper()):
+                    cand = dict(preco=float(pr), lista=float(d['price_b2b']) if d.get('price_b2b') else None,
+                                disp=(d.get('stock_position') or 0) > 0, titulo=nome[:200], url=f'{PC}/pesquisa/?q={c}', conf='codigo')
+                    old = out.get(site)
+                    if old is None or (cand['disp'], -cand['preco']) > (old['disp'], -old['preco']):
+                        out[site] = cand
+        return out, len(ds)
+    return {}, 0
+
 
 def main():
     url = os.environ.get('SUPABASE_DB_URL')
@@ -215,8 +261,36 @@ def main():
                     linhas.append((site, pn, r['preco'], r['lista'], r['disp'], (r['titulo'] or '')[:200], r['url'], r['conf']))
             if i % 10 == 0:
                 print(f'{i} itens processados · encontrados: ' + ', '.join(f'{k} {v}' for k, v in achou.items()), flush=True)
+        # Peça Chevrolet: top 100 da loja PEÇA CHEVROLET (90 dias)
+        itens_pc = con.execute("""
+          with l as (select id from public.bi_dim where tipo = 'loja' and valor = 'PEÇA CHEVROLET'),
+          t as (select v.produto, sum(v.fat) fat from public.bi_venda_det v, l
+                where v.loja = l.id and v.dia >= (select max(dia) from public.bi_venda_det) - 89 and v.fat > 0
+                group by 1 order by 2 desc limit 100)
+          select p.pn, p.nome from t join public.bi_produto p on p.id = t.produto order by t.fat desc""").fetchall()
+        print(f'{len(itens_pc)} itens no top 100 da loja Peça Chevrolet', flush=True)
+        if itens_pc:
+            pc_redes_log()
+        achou_pc, com_lista = {s: 0 for s in PC_REDES}, 0
+        for i, (pn, nome) in enumerate(itens_pc, 1):
+            cs = codigos(pn, nome)
+            if not cs:
+                continue
+            try:
+                ofs, n = peca_chevrolet(cs)
+            except Exception as e:
+                ofs, n = {}, 0
+                print(f'  peça chevrolet: erro {type(e).__name__}', flush=True)
+            com_lista += n > 0
+            for site, r in ofs.items():
+                achou_pc[site] += 1
+                linhas.append((site, pn, r['preco'], r['lista'], r['disp'], r['titulo'], r['url'], r['conf']))
+            if i % 20 == 0:
+                print(f'peça chevrolet: {i} itens · com concessionárias {com_lista} · ' + ', '.join(f'{k} {v}' for k, v in achou_pc.items()), flush=True)
+        achou.update(achou_pc)
+        sites_ok = [k for k, v in achou.items() if v]   # um site sem nenhum resultado mantém a coleta anterior
         with con.transaction():
-            con.execute('delete from public.bi_concorrencia')
+            con.execute('delete from public.bi_concorrencia where site = any(%s)', (sites_ok,))
             with con.cursor() as cur:
                 cur.executemany("""insert into public.bi_concorrencia (site, pn, preco, preco_lista, disponivel, titulo, url, confianca)
                                    values (%s,%s,%s,%s,%s,%s,%s,%s) on conflict (site, pn) do nothing""", linhas)
