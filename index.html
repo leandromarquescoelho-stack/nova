@@ -512,6 +512,14 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vx-full-btn:hover{border-color:var(--vx-cy); color:var(--vx-cy-t);}
 #vxMapCard:fullscreen, #vxMapCard.vx-full{display:flex; flex-direction:column; margin:0; border-radius:0; padding:16px 18px; background:var(--surface); overflow:auto;}
 #vxMapCard.vx-full{position:fixed; inset:0; z-index:2000;}
+/* tela cheia: botão flutuante no mapa para ocultar a faixa de título e opções (e sair, com a faixa oculta) */
+.vx-flut{display:none; position:absolute; top:10px; right:10px; z-index:1001; gap:6px;}
+.vx-flut .vx-full-btn{box-shadow:0 4px 14px rgba(0,0,0,.25); background:var(--surface);}
+#vxMapCard:fullscreen .vx-flut, #vxMapCard.vx-full .vx-flut{display:flex;}
+#vxMapSair2{display:none;}
+#vxMapCard.vx-sem-faixa #vxMapSair2{display:inline-flex;}
+#vxMapCard.vx-sem-faixa .vx-map-top{display:none;}
+#vxMapCard.vx-sem-faixa #vxMapBarra svg{transform:rotate(180deg);}
 #vxMapCard > .filter-rail{z-index:1200;} #vxMapCard > #toastStack{z-index:1400;}
 #vxMapCard:fullscreen #vxMapWrap, #vxMapCard.vx-full #vxMapWrap{flex:1; height:auto; min-height:300px;}
 #vxMapWrap .leaflet-control-attribution{background:rgba(0,0,0,.35); color:var(--text-muted); font-size:10px;}
@@ -2064,7 +2072,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             </div>
           </div>
           <div class="vx-leg" id="vxMapLeg"></div>
-          <div id="vxMapWrap"><div class="vx-loja-aviso" id="vxLojaAviso" hidden></div><div id="vxMap"></div><div id="vxMapTip"></div><div class="vx-prog" id="vxProg" hidden role="status" aria-live="polite"><div class="vx-prog-t"><span id="vxProgTx">Aplicando filtros…</span><b id="vxProgPc">0%</b></div><div class="vx-prog-b"><i id="vxProgBar"></i></div></div><div class="vx-map-msg status-txt" id="vxMapMsg">Carregando mapa…</div></div>
+          <div id="vxMapWrap"><div class="vx-flut" id="vxMapFlut"><button type="button" class="vx-full-btn" id="vxMapBarra" title="Ocultar a faixa de título e opções para ver mais mapa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Ocultar faixa</span></button><button type="button" class="vx-full-btn" id="vxMapSair2" title="Sair da tela cheia (Esc)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Sair</span></button></div><div class="vx-loja-aviso" id="vxLojaAviso" hidden></div><div id="vxMap"></div><div id="vxMapTip"></div><div class="vx-prog" id="vxProg" hidden role="status" aria-live="polite"><div class="vx-prog-t"><span id="vxProgTx">Aplicando filtros…</span><b id="vxProgPc">0%</b></div><div class="vx-prog-b"><i id="vxProgBar"></i></div></div><div class="vx-map-msg status-txt" id="vxMapMsg">Carregando mapa…</div></div>
           <div class="note-muted" id="vxConcNota" style="font-size:11px; margin-top:6px;"></div>
           <p class="note-muted" id="vxMapNota"></p>
         </div>
@@ -7791,6 +7799,7 @@ function vxAoTrocarTela(){
   var cheia = document.fullscreenElement===card || card.classList.contains('vx-full');
   btn.querySelector('span').textContent = cheia ? 'Sair da tela cheia' : 'Tela cheia';
   btn.title = cheia ? 'Sair da tela cheia (Esc)' : 'Ver o mapa em tela cheia';
+  if(!cheia && card.classList.contains('vx-sem-faixa')){ card.classList.remove('vx-sem-faixa'); var bb = document.getElementById('vxMapBarra'); bb.querySelector('span').textContent = 'Ocultar faixa'; }
   // em tela cheia só o card aparece: leva a barra de filtros para dentro dele e devolve ao sair
   // (e os avisos, como "clientes exportados", que senão ficariam escondidos atrás da tela cheia)
   VX.casas = VX.casas || {};
@@ -7804,6 +7813,13 @@ function vxAoTrocarTela(){
 }
 function vxLigar(){
   document.getElementById('vxMapFull').addEventListener('click', vxTelaCheia);
+  document.getElementById('vxMapSair2').addEventListener('click', vxTelaCheia);
+  document.getElementById('vxMapBarra').addEventListener('click', function(){
+    var c = document.getElementById('vxMapCard'), sem = c.classList.toggle('vx-sem-faixa');
+    this.querySelector('span').textContent = sem ? 'Mostrar faixa' : 'Ocultar faixa';
+    this.title = sem ? 'Mostrar de novo a faixa de título e opções' : 'Ocultar a faixa de título e opções para ver mais mapa';
+    setTimeout(function(){ if(VX.map) VX.map.invalidateSize(); }, 60);
+  });
   document.getElementById('vxMapFiltros').addEventListener('click', function(){
     var rail = document.getElementById('filterRail'); rail.classList.remove('recolhido'); rail.classList.toggle('pinned');
   });
