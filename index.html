@@ -657,9 +657,17 @@ tr.vend-row, .vend-pt{ cursor:pointer; }
 .vr-cel{ display:flex; align-items:center; gap:8px; min-width:0; }
 .vr-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
 #vendCliPanel .panel-head h2{font-size:17px;}
-.vd-nomes-slot{margin-left:auto; align-self:center;}
+.vd-nomes-slot{margin-left:auto; align-self:center;} .vd-nomes-slot + .copy-img{margin-left:6px;}
+#vendCliBody .vr-head{justify-content:center;} #vendCliBody .vr-head .dh{text-align:center;}
 .vr-sw-l.vd-sw-mini{font-size:10px; gap:5px; color:var(--text-muted);}
 .vd-sw-mini .vr-sw{transform:scale(.78); transform-origin:center;}
+.vend-status{position:fixed; bottom:22px; left:50%; transform:translateX(-50%); z-index:1200; display:flex; align-items:center; gap:10px; width:max-content; max-width:calc(100% - 32px); padding:9px 16px; border-radius:999px; background:var(--surface); border:1px solid rgba(0,229,255,.45); box-shadow:0 8px 24px rgba(0,0,0,.3); font-size:12.5px; font-weight:600; color:var(--text);}
+.vend-status[hidden]{display:none;}
+.vs-spin{width:14px; height:14px; border-radius:50%; border:2px solid rgba(0,229,255,.25); border-top-color:var(--accent); animation:vsGira .8s linear infinite;}
+.vs-dots i{font-style:normal; animation:vsPisca 1.2s infinite; opacity:0;} .vs-dots i:nth-child(2){animation-delay:.2s;} .vs-dots i:nth-child(3){animation-delay:.4s;}
+@keyframes vsGira{to{transform:rotate(360deg);}}
+@keyframes vsPisca{0%,20%{opacity:0;} 40%,80%{opacity:1;} 100%{opacity:0;}}
+.vx-bq-top td{vertical-align:top;} .vx-bq-top td:first-child{font-weight:600; white-space:normal;} .vx-bq-top .sub{font-size:10px; color:var(--text-muted); font-weight:500;} .vx-bq-top .rk{color:var(--text-muted); margin-right:3px;}
 .vm-grid{display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:14px;}
 @media (max-width:900px){ .vm-grid{grid-template-columns:1fr;} }
 .vm-mapa-wrap{position:relative;}
@@ -2258,6 +2266,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <!-- ============ VENDEDORES ============ -->
       <section class="view-panel" data-view-panel="vendedores" style="display:none;">
+      <div class="vend-status" id="vendStatus" hidden role="status" aria-live="polite"><span class="vs-spin"></span>Preparando o relatório. Aguarde<span class="vs-dots"><i>.</i><i>.</i><i>.</i></span></div>
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
           <div><h2>Consultoria de Vendedor</h2><div class="psub">Compare um vendedor com os demais, dentro dos filtros aplicados acima</div></div>
@@ -4741,7 +4750,7 @@ function renderVendConsult(){
     if(VC.pend!==vk){
       VC.pend = vk;
       box.innerHTML = '<p class="note-muted status-txt">Carregando o comparativo dos vendedores…</p>';
-      rpcMemo('bi_vendedores', {f: fv, per: {ini: painelPeriodo().ini, fim: painelPeriodo().fim}}).then(function(d){
+      vendEspera(rpcMemo('bi_vendedores', {f: fv, per: {ini: painelPeriodo().ini, fim: painelPeriodo().fim}})).then(function(d){
         if(VC.pend!==vk) return;
         VC = {key:vk, d:d||{}, pend:null};
         if(state.currentView==='vendedores') renderVendConsult();
@@ -5005,10 +5014,10 @@ function renderVendConsult(){
         }
       });
     }
-    out += '<text x="'+(w-pad)+'" y="'+(h-pad+16)+'" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text-2)" font-family="Manrope,sans-serif">'+rotX+' →</text>' +
-      '<text x="'+pad+'" y="'+(pad-8)+'" font-size="10.5" font-weight="600" fill="var(--text-2)" font-family="Manrope,sans-serif">↑ '+rotY+'</text>' +
+    out += '<text x="'+(w-pad)+'" y="'+(h-pad+16)+'" text-anchor="end" font-size="9" font-weight="600" fill="var(--text-2)" font-family="Manrope,sans-serif">'+rotX+' →</text>' +
+      '<text x="'+pad+'" y="'+(pad-8)+'" font-size="9" font-weight="600" fill="var(--text-2)" font-family="Manrope,sans-serif">↑ '+rotY+'</text>' +
       // médias nas pontas das linhas tracejadas: a do eixo x no topo, a do eixo y à direita, fora da área dos pontos
-      '<text x="'+Math.max(xp(mx), pad+122)+'" y="'+(pad-8)+'" text-anchor="middle" font-size="9" font-style="italic" fill="var(--text-muted)" font-family="Manrope,sans-serif">média '+fmtX(mx)+'</text>' +
+      '<text x="'+Math.max(xp(mx), pad+105)+'" y="'+(pad-8)+'" text-anchor="middle" font-size="9" font-style="italic" fill="var(--text-muted)" font-family="Manrope,sans-serif">média '+fmtX(mx)+'</text>' +
       '<text x="'+(w-pad+4)+'" y="'+(yp(my)-2)+'" font-size="9" font-style="italic" fill="var(--text-muted)" font-family="Manrope,sans-serif"><tspan x="'+(w-pad+4)+'">média</tspan><tspan x="'+(w-pad+4)+'" dy="10">'+fmtY(my)+'</tspan></text>';
     return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" role="img" style="overflow:visible">'+out+'</svg>';
   }
@@ -5223,7 +5232,7 @@ function renderVendFunil(){
   // com uma coluna clicada, os funis usam o período dela e o gráfico continua no período inteiro
   var pedidos = [rpcMemo('bi_vendedor_funil', {f:f, per:perF, lim:20})];
   if(FUN.pk) pedidos.push(rpcMemo('bi_vendedor_funil', {f:f, per:per, lim:20}));
-  Promise.all(pedidos).then(function(rs){
+  vendEspera(Promise.all(pedidos)).then(function(rs){
     if(meu!==FUN.req) return;
     var d = Object.assign({}, rs[0] || {}); if(rs[1]) d.serie = rs[1].serie;
     FUN.d = d; FUN.chave = chave; FUN.per = per;
@@ -5323,6 +5332,20 @@ function cliqueFunil(ev){
   renderVendFunil();
 }
 
+/* ---- aviso "Preparando o relatório" da aba Vendedores: aparece enquanto o painel ou alguma parte da aba está carregando ---- */
+var VEND_ESPERA = 0;
+function vendEspera(p){
+  VEND_ESPERA++; vendStatus();
+  var fim = function(){ VEND_ESPERA = Math.max(0, VEND_ESPERA-1); setTimeout(vendStatus, 120); };
+  p.then(fim, fim); return p;
+}
+function vendStatus(){
+  var el = document.getElementById('vendStatus'); if(!el) return;
+  var app = document.getElementById('app');
+  el.hidden = !(typeof state!=='undefined' && state.currentView==='vendedores' && (VEND_ESPERA>0 || (app && app.hasAttribute('data-carregando'))));
+}
+setInterval(vendStatus, 400);
+
 /* ---- mapa de atuação do vendedor: faturamento por município (bi_painel parte c com o vendedor) e bairros ao clicar ---- */
 var VM = {map:null, camada:null, chave:null, seq:0};
 function renderVendMapa(){
@@ -5335,7 +5358,7 @@ function renderVendMapa(){
   VM.chave = chave; var seq = ++VM.seq;
   lado.innerHTML = '<p class="note-muted status-txt">Carregando o mapa do vendedor…</p>';
   var pCli = {ini:per.ini, fim:per.fim, pini:per.pini, pfim:per.pfim};
-  Promise.all([rpcMemo('bi_painel', {f:f, per:per, parte:'c'}), rpcMemo('bi_cidade_clientes', {f:f, per:pCli}).catch(function(){ return null; }), vxLeafletLib()]).then(function(r){
+  vendEspera(Promise.all([rpcMemo('bi_painel', {f:f, per:per, parte:'c'}), rpcMemo('bi_cidade_clientes', {f:f, per:pCli}).catch(function(){ return null; }), vxLeafletLib()])).then(function(r){
     if(seq!==VM.seq) return;
     var cid = agLinhas('cidade', (r[0]||{}).cidade || []), cli = {};
     (r[1]||[]).forEach(function(x){ cli[dimNome('cidade', x[0])] = +x[1]||0; });
@@ -7968,6 +7991,80 @@ function vxBairros(q, semZoom){
     av.querySelector('button').onclick = vxBairrosFechar;
   });
 }
+// passar o mouse em qualquer ponto do município mostra o bairro mais próximo; clicar abre o quadro do bairro
+function vxBairroPerto(e){
+  if(!VX.bairroQ || !VX.baiPts || !VX.baiPts.length) return null;
+  var p = e.containerPoint, melhor = null, dm = Infinity;
+  VX.baiPts.forEach(function(b){ var q = VX.map.latLngToContainerPoint(b.mk.getLatLng()), d = Math.hypot(q.x-p.x, q.y-p.y) - b.r; if(d<dm){ dm = d; melhor = b; } });
+  return dm <= 70 ? melhor : null;
+}
+function vxBairroTipHtml(o){
+  var tot = (VX.bairroQ && VX.bairroQ.tot) || 1;
+  function ln(a, b){ return '<span>'+a+'</span><span>'+b+'</span>'; }
+  return '<div class="tn" style="color:'+vxMc(o.mg)+'">'+escapeHtml(o.k)+(o.dist ? ' <span style="color:var(--text-muted); font-size:10.5px; font-weight:500;">('+escapeHtml(o.dist)+')</span>' : '')+'</div>' +
+    '<div class="tcli"><b>'+vxN(o.cli)+'</b> '+(o.cli===1 ? 'cliente' : 'clientes')+' com compra</div>' +
+    '<div class="tg">'+ln('Faturamento', vxM(o.fat))+ln('Lucro bruto', '<span style="color:var(--vx-gr-t)">'+vxM(o.lb)+'</span>')+ln('Margem', vxP(o.mg))+ln('Var. anterior', seta(o.vr))+ln('Share no município', (o.fat/tot*100).toFixed(1).replace('.',',')+'%')+'</div>' +
+    (VX.distAtual || '') + '<div class="sv" style="margin-top:4px">Clique para ver os clientes do bairro</div>';
+}
+function vxBairroEventos(){
+  if(VX.baiEv) return; VX.baiEv = true;
+  var tip = document.getElementById('vxMapTip'), wrap = document.getElementById('vxMapWrap');
+  VX.map.on('mousemove', function(e){
+    if(!VX.bairroQ) return;
+    var b = vxBairroPerto(e);
+    if(VX.baiHl && VX.baiHl!==b){ VX.baiHl.mk.setStyle({weight:.8}); VX.baiHl = null; }
+    if(!b){ tip.style.display = VX.distAtual ? 'block' : 'none'; if(VX.distAtual) tip.innerHTML = VX.distAtual.replace('<div class="sep"></div>', ''); else return; }
+    else { b.mk.setStyle({weight:2.5}); VX.baiHl = b; tip.innerHTML = vxBairroTipHtml(b.o); tip.style.display = 'block'; }
+    var r = wrap.getBoundingClientRect(), x = e.originalEvent.clientX-r.left+16, y = e.originalEvent.clientY-r.top+16, tw = tip.offsetWidth||220, th = tip.offsetHeight||160;
+    if(x+tw>r.width-8) x = e.originalEvent.clientX-r.left-tw-16;
+    if(y+th>r.height-8) y = e.originalEvent.clientY-r.top-th-16;
+    tip.style.left = Math.max(4,x)+'px'; tip.style.top = Math.max(4,y)+'px';
+  });
+  VX.map.on('mouseout', function(){ if(VX.bairroQ) tip.style.display = 'none'; });
+  VX.map.on('click', function(e){ if(!VX.bairroQ) return; var b = vxBairroPerto(e); if(b){ tip.style.display = 'none'; vxBairroQuadro(b.o, b.mk.getLatLng()); } });
+}
+// quadro do bairro: números, 5 maiores clientes e Excel (filtrados ou todos do bairro)
+function vxBairroQuadro(o, latlng){
+  var bq = VX.bairroQ; if(!bq) return;
+  var per = painelPeriodo(), seq = VX.baiQSeq = (VX.baiQSeq||0) + 1;
+  function ln(a, b){ return '<tr><td>'+a+'</td><td>'+b+'</td></tr>'; }
+  var h = '<div class="vx-q"><div class="vx-q-t">'+escapeHtml(o.k)+' <span>('+escapeHtml(bq.nomeMun)+(o.dist ? ' · '+escapeHtml(o.dist) : '')+')</span></div><table>' +
+    ln('Faturamento', vxM(o.fat)+' '+seta(o.vr)) + ln('Lucro bruto', '<span style="color:var(--vx-gr-t)">'+vxM(o.lb)+'</span>') + ln('Margem', vxBdg(o.mg)) +
+    ln('Clientes com compra', vxN(o.cli)) + ln('Ticket por cliente', o.cli ? vxM(o.fat/o.cli) : '—') + ln('Share no município', (o.fat/(bq.tot||1)*100).toFixed(1).replace('.',',')+'%') +
+    '</table><div class="vx-q-top" tabindex="0"><span>👥 Top 5 clientes e Excel</span><span class="seta">▸</span><div class="vx-q-sub"><div class="vx-q-tt">Maiores clientes no período (com os filtros)</div><div class="vx-bq-top status-txt">Carregando…</div>' +
+    '<button type="button" class="vx-q-exp vx-bq-exp">⬇ Clientes filtrados (Excel)</button><button type="button" class="vx-q-exp vx-bq-todos">⬇ Todos os clientes do bairro (Excel)</button></div></div></div>';
+  if(!VX.popup) VX.popup = L.popup({maxWidth:300, minWidth:250, autoPan:true, autoPanPadding:[20,20], className:'vx-pop', closeButton:true});
+  VX.popup.setLatLng(latlng).setContent(h).openOn(VX.map);
+  var el = VX.popup.getElement(), tp = el.querySelector('.vx-q-top');
+  tp.onclick = function(ev){ if(!ev.target.closest('.vx-q-sub')) tp.classList.toggle('aberto'); };
+  el.querySelector('.vx-bq-exp').onclick = function(ev){ ev.stopPropagation(); vxExportarBairro(this, o, false); };
+  el.querySelector('.vx-bq-todos').onclick = function(ev){ ev.stopPropagation(); vxExportarBairro(this, o, true); };
+  rpcMemo('bi_clientes', {f:vxFiltrosLoja(), per:{ini:per.ini, fim:per.fim}, o:{cidade:bq.ids, bairro:o.k, ordem:'fat', limite:5}}).then(function(d){
+    if(seq!==VX.baiQSeq) return;
+    var rows = ((d||{}).linhas||[]).map(cliLinhaObj).filter(function(c){ return c.fp>0.5; }), box = VX.popup.getElement() && VX.popup.getElement().querySelector('.vx-bq-top');
+    if(!box) return; box.classList.remove('status-txt');
+    box.innerHTML = rows.length ? '<table>'+rows.map(function(c, i){ return '<tr><td><span class="rk">'+(i+1)+'</span> '+escapeHtml(c.razao.length>30 ? c.razao.slice(0,29)+'…' : c.razao)+'<div class="sub">'+escapeHtml(c.cod)+' · '+escapeHtml(c.resp)+'</div></td><td>'+vxM(c.fp)+'</td></tr>'; }).join('')+'</table>' : '<div class="vx-q-n">Nenhum cliente com compra no período.</div>';
+  }).catch(function(){ var box = VX.popup.getElement() && VX.popup.getElement().querySelector('.vx-bq-top'); if(box) box.innerHTML = '<div class="vx-q-n">A lista de clientes por bairro ainda não está disponível no banco.</div>'; });
+}
+function vxExportarBairro(bt, o, todos){
+  var bq = VX.bairroQ; if(!bq) return;
+  var per = painelPeriodo(), txt0 = bt.textContent;
+  var args = {f: todos ? {} : vxFiltrosLoja(), per:{ini:per.ini, fim:per.fim}, o:{cidade:bq.ids, bairro:o.k, ordem: todos ? 'f12' : 'fat', limite:50000}};
+  bt.disabled = true; bt.textContent = 'Preparando a planilha…';
+  Promise.all([window.__NC_rpc('bi_clientes', args), carregarXlsx().catch(function(){ return null; })]).then(function(r){
+    var dl = ((r[0]||{}).linhas||[]).map(cliLinhaObj), X = r[1];
+    var cab = ['Código','Razão social','Bairro','Cidade','Tipo de cliente','Grupo','Pessoa','Último responsável','Equipe',
+      'Faturamento no período','Lucro bruto no período','Margem no período %','Faturamento 12 meses','Média mensal (12m)','Margem 12m %',
+      'Última compra','Dias sem compra','Dias com compra (12m)','Intervalo médio entre compras (dias)','Situação'];
+    var dados = dl.map(function(c){ return [c.cod, c.razao, o.k, c.cidade, c.tipo, c.grupo, c.pessoa, c.resp, c.equipe,
+      Math.round(c.fp*100)/100, Math.round(c.lp*100)/100, c.fp>0 ? Math.round(c.lp/c.fp*1000)/10 : null,
+      Math.round(c.f12*100)/100, Math.round(c.med*100)/100, c.mg, cliData(c.ult), c.dias, c.ncomp, c.intv, (TERMO[c.termo]||{}).t || c.termo || '']; });
+    var nome = 'clientes_'+vxSemAcento(o.k+'_'+bq.nomeMun).replace(/[^A-Z0-9]+/g, '_').toLowerCase()+(todos ? '_todos' : '_'+per.ini+'_a_'+per.fim);
+    baixarPlanilha(X, nome, o.k.slice(0, 30), cab, dados, [10,42,22,22,18,18,14,26,14,16,16,12,16,14,10,13,12,12,14,24]);
+    toast(fmtUn(dl.length)+' clientes exportados.');
+  }).catch(function(){ toast('Não foi possível exportar agora. Tente de novo.'); })
+    .then(function(){ bt.disabled = false; bt.textContent = txt0; });
+}
 // subprefeituras da capital por zona (para mostrar só os distritos da zona escolhida)
 var SP_ZONA_SUB = {Centro:['Sé'], Norte:['Perus','Pirituba/Jaraguá','Freguesia/Brasilândia','Casa Verde/Cachoeirinha','Santana/Tucuruvi','Jaçanã/Tremembé','Vila Maria/Vila Guilherme'],
   Oeste:['Lapa','Butantã','Pinheiros'], Sul:['Vila Mariana','Ipiranga','Santo Amaro','Jabaquara','Cidade Ademar','Campo Limpo',"M'Boi Mirim",'Capela do Socorro','Parelheiros'],
@@ -7991,8 +8088,12 @@ function vxBairrosDesenhar(q, nomeMun, rows, distritos, semZoom, zonas){
   lista.sort(function(a,b){ return b.fat-a.fat; });
   if(VX.bairros) VX.map.removeLayer(VX.bairros);
   VX.bairros = L.layerGroup().addTo(VX.map);
+  vxBairroEventos();
   // apaga os outros municípios para destacar o escolhido
-  if(VX.camada) VX.camada.eachLayer(function(l){ if(l.feature && l.feature.properties.id!==q.props.id) l.setStyle({fillOpacity:.05, opacity:.25}); else l.setStyle({fillOpacity:.08, weight:1.6}); });
+  // município escolhido com a borda destacada; os demais apagados
+  if(VX.camada) VX.camada.eachLayer(function(l){ if(l.feature && l.feature.properties.id!==q.props.id) l.setStyle({fillOpacity:.05, opacity:.25}); else { l.setStyle({fillOpacity:.04, weight:3, color:claro?'#047857':'#34d399', opacity:1}); if(l.bringToFront) l.bringToFront(); } });
+  VX.baiPts = []; VX.distAtual = null;
+  VX.bairroQ.nomeMun = nomeMun; VX.bairroQ.ids = (q.o && q.o.nomes || []).map(function(n){ return (DIMI.cidade||{})[n]; }).filter(function(x){ return x!==undefined; }); VX.bairroQ.tot = tot;
   // capital: distritos pintados pelo faturamento
   var porDist = {};
   if(capital){
@@ -8001,7 +8102,8 @@ function vxBairrosDesenhar(q, nomeMun, rows, distritos, semZoom, zonas){
     distritos.forEach(function(d){
       var o = porDist[d[1]], geom = d[4].length===1 ? {type:'Polygon', coordinates:d[4][0]} : {type:'MultiPolygon', coordinates:d[4]};
       var ly = L.geoJSON({type:'Feature', properties:{}, geometry:geom}, {style:{fillColor: o ? '#10b981' : (claro?'#cbd5e1':'#2a3a4a'), fillOpacity: o ? .15+Math.pow(o.fat/mxD, .5)*.6 : .25, color:claro?'rgba(15,23,42,.4)':'rgba(255,255,255,.35)', weight:.8}}).addTo(VX.bairros);
-      ly.bindTooltip('<b>'+escapeHtml(d[1])+'</b> <span style="opacity:.7">(distrito · '+escapeHtml(d[5])+')</span>'+(o ? '<br>Faturamento: '+vxM(o.fat)+' · '+(o.fat/tot*100).toFixed(1).replace('.',',')+'%<br>Margem: '+vxP(o.fat>0 ? o.lb/o.fat*100 : 0)+'<br>Var. anterior: '+seta(vxVarPct(o.fat, o.prev))+'<br>Clientes com compra: '+vxN(o.cli)+'<br>Bairros com venda: '+o.nb : '<br>Sem vendas no filtro atual'), {sticky:true});
+      var dHtml = '<div class="sep"></div><div class="tn" style="font-size:11.5px">Distrito '+escapeHtml(d[1])+' <span style="color:var(--text-muted); font-weight:500">('+escapeHtml(d[5])+')</span></div>'+(o ? '<div class="tg"><span>Faturamento</span><span>'+vxM(o.fat)+' · '+(o.fat/tot*100).toFixed(1).replace('.',',')+'%</span><span>Margem</span><span>'+vxP(o.fat>0 ? o.lb/o.fat*100 : 0)+'</span><span>Bairros com venda</span><span>'+o.nb+'</span></div>' : '<div class="sv">Distrito sem vendas no filtro atual</div>');
+      ly.on('mouseover', function(){ VX.distAtual = dHtml; }); ly.on('mouseout', function(){ if(VX.distAtual===dHtml) VX.distAtual = null; });
     });
   }
   // bolhas por bairro: tamanho = faturamento, cor = margem
@@ -8010,7 +8112,7 @@ function vxBairrosDesenhar(q, nomeMun, rows, distritos, semZoom, zonas){
     if(o.lat===null || o.fat<=0.5) return;
     var r = 4 + Math.sqrt(o.fat/mx)*(capital ? 16 : 22);
     var mk = L.circleMarker([o.lat, o.lon], {radius:r, color:claro?'#0f172a':'#fff', weight:.8, fillColor:vxMc(o.mg), fillOpacity:.72}).addTo(VX.bairros);
-    mk.bindTooltip('<b>'+escapeHtml(o.k)+'</b>'+(o.dist ? ' <span style="opacity:.7">('+escapeHtml(o.dist)+')</span>' : '')+'<br>Faturamento: '+vxM(o.fat)+' · '+o.sh.toFixed(1).replace('.',',')+'%<br>Lucro bruto: '+vxM(o.lb)+'<br>Margem: '+vxP(o.mg)+'<br>Var. anterior: '+seta(o.vr)+'<br>Clientes com compra: '+vxN(o.cli), {direction:'top'});
+    VX.baiPts.push({o:o, mk:mk, r:r});
     pts.push([o.lat, o.lon]);
   });
   // enquadra o município (ou os bairros)
