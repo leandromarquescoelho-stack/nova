@@ -61,10 +61,23 @@ def _req(url):
         return None, None
 
 
+FONTES = {}
+
+
+def _conta(k):
+    FONTES[k] = FONTES.get(k, 0) + 1
+
+
 def consultar_cep(cep):
     """(bairro, cidade, uf, lat, lon) | 'nenhuma' (CEP não existe) | None (falha: tenta na próxima execução)."""
+    st0, z = _req(f'https://opencep.com/v1/{cep}')  # arquivos estáticos em CDN: o mais rápido
+    if st0 == 200 and isinstance(z, dict) and z.get('localidade'):
+        _conta('opencep')
+        return (z.get('bairro') or '').strip(), z['localidade'].strip(), (z.get('uf') or '').strip(), None, None
+    _conta(f'opencep_{st0}')
     st, x = _req(f'https://brasilapi.com.br/api/cep/v1/{cep}')
     if st == 200 and x and x.get('city'):
+        _conta('brasilapi')
         return (x.get('neighborhood') or '').strip(), x['city'].strip(), (x.get('state') or '').strip(), None, None
     nao_existe = st == 404
     if _viacep_ok[0]:
@@ -72,6 +85,7 @@ def consultar_cep(cep):
         if st2 == 200 and isinstance(y, dict):
             _viacep_falhas[0] = 0
             if y.get('localidade'):
+                _conta('viacep')
                 return (y.get('bairro') or '').strip(), y['localidade'].strip(), (y.get('uf') or '').strip(), None, None
             if y.get('erro'):
                 return 'nenhuma'
@@ -156,8 +170,8 @@ def main():
                     cur.execute("""insert into public.bi_cep (cep, bairro, cidade, uf, lat, lon, distrito, fonte)
                                    values (%s, %s, %s, %s, %s, %s, %s, %s) on conflict (cep) do nothing""", linha)
                 conn.commit()
-                if (i // 40) % 25 == 24:
-                    log(f'{i + len(lote)} de {len(ceps)} CEPs')
+                if (i // 40) % 25 == 24 or i == 160:
+                    log(f'{i + len(lote)} de {len(ceps)} CEPs em {time.time() - t0:.0f} s; fontes: ' + ', '.join(f'{k} {v}' for k, v in sorted(FONTES.items())))
         if not _viacep_ok[0]:
             log('ViaCEP recusou as consultas; seguiu só com a BrasilAPI')
         if falhas_seg >= 3:
