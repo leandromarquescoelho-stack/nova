@@ -167,6 +167,7 @@ def preparar(dfs, regras):
     nome_v = nome_v.where(~tem, [n[:len(n) - len(r)] if t else n for n, r, t in zip(nome_v, sufixo, tem)])
     nome_v = nome_v.str.strip().str.upper()
     v['vendedor'] = re_v.map(ven).fillna(nome_v).fillna(vazio)
+    v.attrs['re_vendedor'] = pd.DataFrame({'vendedor': v['vendedor'], 're': re_v})  # RE de cada vendedor (seletor "RE - Nome")
 
     # catálogo por PN e marcas pela LINHA de cada venda
     cat = dfs['catalogo'].copy()
@@ -416,6 +417,18 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
                              for a, b, c in ven_eq[['vendedor', 'equipe', 'funcao']].itertuples(index=False)])
         for t, col in (('equipe', 'equipe'), ('funcao', 'funcao')):
             cur.execute(f"delete from public.bi_dim where tipo = %s and valor not in (select {col} from public.bi_vendedor_equipe where {col} is not null)", (t,))
+
+        # RE de cada vendedor (o mais usado nas vendas): o site mostra "RE - Nome" no seletor de vendedor
+        cur.execute("select to_regclass('public.bi_vendedor_re') is not null")
+        rv = v.attrs.get('re_vendedor')
+        if cur.fetchone()[0] and rv is not None:
+            rv = rv.dropna()
+            rv = rv[(rv['re'].astype(str).str.strip() != '') & (rv['vendedor'] != regras['vendedor_vazio'])]
+            pares = rv.groupby('vendedor')['re'].agg(lambda s: s.value_counts().index[0]).reset_index()
+            cur.execute('delete from public.bi_vendedor_re')
+            cur.executemany('insert into public.bi_vendedor_re (vendedor, re) values (%s, %s)',
+                            [(a, str(b)) for a, b in pares.itertuples(index=False)])
+            log(f'RE de {len(pares)} vendedores')
 
         cur.execute('delete from public.bi_vendedor_loja')
         cur.execute("""insert into public.bi_vendedor_loja (vendedor, loja)
