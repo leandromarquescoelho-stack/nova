@@ -71,3 +71,12 @@ jobs:
           MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
           ONEDRIVE_LINK: ${{ secrets.ONEDRIVE_LINK }}
         run: python etl/carga_drive.py ${{ inputs.forcar && '--forcar' || '' }}
+
+      # deixa prontas as respostas da abertura do painel de cada usuário (a carga limpa a memória do banco)
+      - name: Aquecer o painel
+        if: steps.cfg.outputs.ok == 'true'
+        continue-on-error: true
+        timeout-minutes: 8
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python etl/aquecer_cache.py --minutos 6

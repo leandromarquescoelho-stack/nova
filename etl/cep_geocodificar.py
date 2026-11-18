@@ -1,7 +1,7 @@
 """Bairro e coordenada dos CEPs dos clientes (tabela bi_cep do banco) para o mapa por bairro.
 
 Só os CEPs saem daqui (nunca nomes, códigos ou valores de clientes). A tabela fica só no banco.
-  1. CEP -> bairro, cidade e UF no ViaCEP; sem resposta, na BrasilAPI (que às vezes traz o ponto do CEP).
+  1. CEP -> bairro, cidade e UF na BrasilAPI; sem resposta, no ViaCEP.
   2. Bairro -> ponto central no OpenStreetMap (Nominatim, 1 consulta por segundo), uma vez por bairro.
      O ponto só vale se cair dentro do município (contornos do IBGE em geo/UF.json).
   3. Na cidade de São Paulo, o ponto também diz o distrito (geo/SP_distritos.json).
@@ -45,35 +45,43 @@ def distrito_sp(lat, lon):
     return None
 
 
+_viacep_ok = [True]  # ViaCEP costuma recusar os servidores do GitHub: depois de algumas falhas seguidas, para de tentar
+_viacep_falhas = [0]
+
+
+def _req(url):
+    """(status, json) ou (None, None) em falha de rede."""
+    try:
+        r = requests.get(url, headers=UA, timeout=8)
+        try:
+            return r.status_code, r.json()
+        except ValueError:
+            return r.status_code, None
+    except Exception:  # noqa: BLE001
+        return None, None
+
+
 def consultar_cep(cep):
-    """(bairro, cidade, uf, lat, lon) | 'nenhuma' (CEP não existe nas duas bases) | None (falha de rede: tenta depois)."""
-    falhou = False
-    for tent in range(3):
-        try:
-            r = requests.get(f'https://viacep.com.br/ws/{cep}/json/', headers=UA, timeout=15)
-        except Exception:  # noqa: BLE001
-            r = None
-        if r is not None and r.status_code == 200:
-            try:
-                x = r.json()
-            except ValueError:
-                x = {}
-            if x.get('localidade'):
-                return (x.get('bairro') or '').strip(), x['localidade'].strip(), (x.get('uf') or '').strip(), None, None
-            break  # {"erro": true}: tenta a BrasilAPI
-        if r is not None and r.status_code == 400:
-            break
-        falhou = True
-        time.sleep(2 * (tent + 1))
-    x = get(f'https://brasilapi.com.br/api/cep/v2/{cep}')
-    if x and x.get('city'):
-        c = (x.get('location') or {}).get('coordinates') or {}
-        try:
-            lat, lon = float(c['latitude']), float(c['longitude'])
-        except (KeyError, TypeError, ValueError):
-            lat = lon = None
-        return (x.get('neighborhood') or '').strip(), x['city'].strip(), (x.get('state') or '').strip(), lat, lon
-    return None if falhou and x is None else 'nenhuma'
+    """(bairro, cidade, uf, lat, lon) | 'nenhuma' (CEP não existe) | None (falha: tenta na próxima execução)."""
+    st, x = _req(f'https://brasilapi.com.br/api/cep/v1/{cep}')
+    if st == 200 and x and x.get('city'):
+        return (x.get('neighborhood') or '').strip(), x['city'].strip(), (x.get('state') or '').strip(), None, None
+    nao_existe = st == 404
+    if _viacep_ok[0]:
+        st2, y = _req(f'https://viacep.com.br/ws/{cep}/json/')
+        if st2 == 200 and isinstance(y, dict):
+            _viacep_falhas[0] = 0
+            if y.get('localidade'):
+                return (y.get('bairro') or '').strip(), y['localidade'].strip(), (y.get('uf') or '').strip(), None, None
+            if y.get('erro'):
+                return 'nenhuma'
+        else:
+            _viacep_falhas[0] += 1
+            if _viacep_falhas[0] >= 20:
+                _viacep_ok[0] = False
+    if st == 429:
+        time.sleep(3)
+    return 'nenhuma' if nao_existe else None
 
 
 def ponto_bairro(bairro, m, uf):
@@ -122,7 +130,7 @@ def main():
         ceps = [x[0] for x in cur.fetchall()]
         log(f'{len(ceps)} CEPs novos para consultar')
         cont, falhas_seg = {}, 0
-        with ThreadPoolExecutor(4) as ex:
+        with ThreadPoolExecutor(6) as ex:
             for i in range(0, len(ceps), 40):
                 if time.time() > fim1 or falhas_seg >= 3:
                     break
@@ -148,8 +156,10 @@ def main():
                     cur.execute("""insert into public.bi_cep (cep, bairro, cidade, uf, lat, lon, distrito, fonte)
                                    values (%s, %s, %s, %s, %s, %s, %s, %s) on conflict (cep) do nothing""", linha)
                 conn.commit()
-                if (i // 40) % 125 == 124:
+                if (i // 40) % 25 == 24:
                     log(f'{i + len(lote)} de {len(ceps)} CEPs')
+        if not _viacep_ok[0]:
+            log('ViaCEP recusou as consultas; seguiu só com a BrasilAPI')
         if falhas_seg >= 3:
             log('consultas de CEP falhando seguidamente; o restante fica para a próxima execução')
         log('CEPs: ' + (', '.join(f'{k} {v}' for k, v in sorted(cont.items())) or 'nenhum novo'))
