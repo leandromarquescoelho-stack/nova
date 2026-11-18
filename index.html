@@ -6183,12 +6183,12 @@ function rebuildCheckGroup(key){
   if(key==='zona'){ var g = document.querySelector('.fcheck-group[data-key="zona"]'); if(g) g.hidden = !ops.length && !state.zona.length; }
   buildCheckGroup(key, ops, labelFn);
 }
-// seletor de vendedor: "RE - Nome" (o RE vem da carga; sem RE, só o nome); a ordem continua pelo nome
+// seletor de vendedor: "Nome - RE" (o RE vem da carga; sem RE, só o nome); a ordem continua pelo nome
 var VEND_RE = {}, VEND_RE_PR = null;
 function vendSelectOpcoes(){
   var sel = document.getElementById('vendConsultSelect'); if(!sel) return;
   var atual = sel.value || state.vendConsultSel;
-  sel.innerHTML = ordemAZ(VEND_PESSOAS).map(function(s){ var re = VEND_RE[s]; return '<option value="'+escapeHtml(s)+'">'+escapeHtml(re ? re+' - '+s : s)+'</option>'; }).join('');
+  sel.innerHTML = ordemAZ(VEND_PESSOAS).map(function(s){ var re = VEND_RE[s]; return '<option value="'+escapeHtml(s)+'">'+escapeHtml(re ? s+' - '+re : s)+'</option>'; }).join('');
   if(atual && VEND_PESSOAS.indexOf(atual)!==-1) sel.value = atual;
 }
 function initFilterSelects(){
