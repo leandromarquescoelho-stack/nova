@@ -62,7 +62,7 @@ jobs:
               print('IBGE|%s|%s|%s|%s|%s' % (m['id'], m['nome'], ri.get('nome',''), rg.get('nome',''), mi.get('nome','')))
           "
       - name: Coletar preços
-        if: ${{ github.event.inputs.modo != 'sonda' && github.event.inputs.modo != 'concessionarias' && github.event.inputs.modo != 'ibge' }}
+        if: ${{ github.event.inputs.modo != 'sonda' && github.event.inputs.modo != 'sonda_pc' && github.event.inputs.modo != 'concessionarias' && github.event.inputs.modo != 'ibge' }}
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: python etl/concorrencia.py
