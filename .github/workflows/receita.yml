@@ -1,0 +1,40 @@
+name: Prospecção (Receita) -> mapa
+
+# Empresas ativas do ramo (autopeças, oficinas, funilarias...) dos dados abertos de CNPJ da Receita Federal (tabela bi_prospect).
+# Só lê os arquivos públicos da Receita; nada da base de clientes sai daqui. O log mostra apenas contagens.
+on:
+  schedule:
+    - cron: '0 7 20 * *'   # a Receita publica os arquivos no meio do mês
+  workflow_dispatch:
+    inputs:
+      ufs:
+        description: 'UFs separadas por vírgula'
+        default: 'SP'
+      ref:
+        description: 'Mês dos arquivos (AAAA-MM); vazio = o mais recente'
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: receita
+  cancel-in-progress: false
+
+jobs:
+  receita:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependências
+        run: pip install "psycopg[binary]==3.2.3" requests==2.32.3
+      - name: Carregar as empresas do ramo
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          UFS: ${{ inputs.ufs || 'SP' }}
+          REF: ${{ inputs.ref || '' }}
+        run: python etl/receita_prospeccao.py --ufs "$UFS" ${REF:+--ref "$REF"}
