@@ -5490,6 +5490,8 @@ function salvarConsultoriaPdf(){
     '.pdf-radar svg{max-height:250px;width:auto;margin:0 auto;display:block;}' +
     '.pdf-radar{display:grid;grid-template-columns:1.1fr 1fr;column-gap:24px;align-items:center;} .pdf-radar>h3,.pdf-radar>.radar-legend{grid-column:1/-1;}' +
     '.pdf-sec{break-before:page;}' +
+    // dispersão: os dois gráficos lado a lado e com altura limitada, para caber numa folha (sem página com uma linha só)
+    '.pdf-disp .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:22px!important;} .pdf-disp .chart-wrap svg{max-height:300px;width:100%;} .pdf-disp .grid-2>div{break-inside:avoid;page-break-inside:avoid;} .pdf-disp p{font-size:10px!important;line-height:1.45!important;}' +
     '#rdInfo,.vend-pdf{display:none!important;} tr.vend-row,.vend-pt,.rd-lbl{cursor:default;}' +
     '.pdf-cab{display:flex;justify-content:space-between;gap:24px;align-items:center;padding-bottom:10px;margin-bottom:10px;border-bottom:2px solid var(--accent);}' +
     // logo discreto no canto superior direito de todas as páginas (posição fixa se repete em cada folha impressa)
@@ -5538,7 +5540,7 @@ function salvarConsultoriaPdf(){
     painel('', cKpi) +
     painel('Funil do vendedor: clientes, marcas, categorias e produtos', cFun) +
     painel('Ranking e comparação com o grupo', cRank, 'pdf-sec') +
-    painel('Dispersão de Faturamento', cCli, 'pdf-sec') +
+    painel('Dispersão de Faturamento', cCli, 'pdf-sec pdf-disp') +
     painel('Análises não óbvias', cIns, 'pdf-sec') +
     '</body></html>';
   w.document.open(); w.document.write(html); w.document.close();
