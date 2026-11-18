@@ -656,6 +656,10 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 tr.vend-row, .vend-pt{ cursor:pointer; }
 .vr-cel{ display:flex; align-items:center; gap:8px; min-width:0; }
 .vr-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+#vendCliPanel .panel-head h2{font-size:17px;}
+.vd-nomes-slot{margin-left:auto; align-self:center;}
+.vr-sw-l.vd-sw-mini{font-size:10px; gap:5px; color:var(--text-muted);}
+.vd-sw-mini .vr-sw{transform:scale(.78); transform-origin:center;}
 .vr-sw-l{ display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text-2); cursor:pointer; }
 .vr-sw{ transform:scale(.8); transform-origin:right center; }
 .vr-part{ display:flex; align-items:center; justify-content:flex-end; gap:6px; }
@@ -2245,6 +2249,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <div class="panel" style="margin-bottom:14px;" id="vendCliPanel">
         <div class="panel-head">
           <div><h2>Dispersão de Faturamento</h2><div class="psub">Cada ponto é um vendedor &middot; clientes distintos no período, com os filtros aplicados &middot; clique num ponto para analisar o vendedor</div></div>
+          <div class="vd-nomes-slot" id="vendNomesSlot"></div>
         </div>
         <div id="vendCliBody"></div>
       </div>
@@ -4950,15 +4955,15 @@ function renderVendConsult(){
         }
       });
     }
-    out += '<text x="'+(w-pad)+'" y="'+(h-pad+16)+'" text-anchor="end" font-size="9.5" fill="var(--text-muted)" font-family="Manrope,sans-serif">'+rotX+' →</text>' +
-      '<text x="'+pad+'" y="'+(pad-8)+'" font-size="9.5" fill="var(--text-muted)" font-family="Manrope,sans-serif">↑ '+rotY+'</text>' +
+    out += '<text x="'+(w-pad)+'" y="'+(h-pad+16)+'" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--text-2)" font-family="Manrope,sans-serif">'+rotX+' →</text>' +
+      '<text x="'+pad+'" y="'+(pad-8)+'" font-size="10.5" font-weight="600" fill="var(--text-2)" font-family="Manrope,sans-serif">↑ '+rotY+'</text>' +
       // médias nas pontas das linhas tracejadas: a do eixo x no topo, a do eixo y à direita, fora da área dos pontos
-      '<text x="'+Math.max(xp(mx), pad+92)+'" y="'+(pad-8)+'" text-anchor="middle" font-size="9" fill="var(--text-muted)" font-family="Manrope,sans-serif">média '+fmtX(mx)+'</text>' +
-      '<text x="'+(w-pad+4)+'" y="'+(yp(my)-2)+'" font-size="9" fill="var(--text-muted)" font-family="Manrope,sans-serif"><tspan x="'+(w-pad+4)+'">média</tspan><tspan x="'+(w-pad+4)+'" dy="10">'+fmtY(my)+'</tspan></text>';
+      '<text x="'+Math.max(xp(mx), pad+122)+'" y="'+(pad-8)+'" text-anchor="middle" font-size="9" font-style="italic" fill="var(--text-muted)" font-family="Manrope,sans-serif">média '+fmtX(mx)+'</text>' +
+      '<text x="'+(w-pad+4)+'" y="'+(yp(my)-2)+'" font-size="9" font-style="italic" fill="var(--text-muted)" font-family="Manrope,sans-serif"><tspan x="'+(w-pad+4)+'">média</tspan><tspan x="'+(w-pad+4)+'" dy="10">'+fmtY(my)+'</tspan></text>';
     return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" role="img" style="overflow:visible">'+out+'</svg>';
   }
   // faturamento sempre no eixo vertical, como no gráfico de clientes ao lado
-  var scatterSvg = dispersaoSVG(420, 270, function(r){ return r.margemPct; }, function(r){ return r.fat; }, 'margem', 'faturamento', function(v){ return v.toFixed(1)+'%'; }, fmtCurto, true);
+  var scatterSvg = dispersaoSVG(420, 270, function(r){ return r.margemPct; }, function(r){ return r.fat; }, 'Margem', 'Faturamento', function(v){ return v.toFixed(1)+'%'; }, fmtCurto, true);
   var fatAlto = me.fat >= avgOf('fat'), mgAlta = me.margemPct >= avgOf('margemPct');
   var quadTexto = selName+' está no quadrante de <b>faturamento '+(fatAlto?'acima':'abaixo')+'</b> e <b>margem '+(mgAlta?'acima':'abaixo')+'</b> da média do grupo ('+fmtMoney(me.fat)+' e '+me.margemPct.toFixed(1)+'%; médias '+fmtMoney(avgOf('fat'))+' e '+avgOf('margemPct').toFixed(1)+'%).';
 
@@ -5077,14 +5082,16 @@ function renderVendConsult(){
     var comCli = rows.filter(function(r){ return r.cli>0; });
     if(!comCli.length){ cliBox.innerHTML = '<div class="grid-2" style="margin-bottom:0;"><p class="note-muted">Sem dados de clientes para este recorte.</p>'+quadHtml+'</div>'; }
     else {
-      var svgCli = dispersaoSVG(420, 270, function(r){ return r.cli; }, function(r){ return r.fat; }, 'clientes distintos', 'faturamento', fmtUn, fmtCurto);
+      var svgCli = dispersaoSVG(420, 270, function(r){ return r.cli; }, function(r){ return r.fat; }, 'Clientes distintos', 'Faturamento', fmtUn, fmtCurto);
       var mCli = avgOf('cli'), mFat = avgOf('fat');
       var porCli = comCli.slice().sort(function(a,b){ return b.cli-a.cli; });
       var meQ = me.cli ? (selName+': '+fmtUn(me.cli)+' clientes ('+(me.cli>=mCli?'acima':'abaixo')+' da média de '+fmtUn(mCli)+') e '+fmtMoney(me.fat)+' de faturamento ('+(me.fat>=mFat?'acima':'abaixo')+' da média de '+fmtMoney(mFat)+').') : '';
       var muitosCliBaixoFat = comCli.filter(function(r){ return r.cli>=mCli && r.fat<mFat; }).map(function(r){ return r.name; });
       var poucosCliAltoFat = comCli.filter(function(r){ return r.cli<mCli && r.fat>=mFat; }).map(function(r){ return r.name; });
+      var slotN = document.getElementById('vendNomesSlot'); // chave dos nomes no canto do painel (vale para os dois gráficos)
+      if(slotN) slotN.innerHTML = '<label class="vr-sw-l vd-sw-l vd-sw-mini" title="Mostra o nome dos vendedores nos pontos dos dois gráficos (os que couberem sem sobrepor)"><span>Nomes</span><button type="button" class="ia-sw vr-sw vd-nomes-sw" role="switch" aria-checked="'+(state.vendDispNomes?'true':'false')+'" aria-label="Mostrar nomes dos vendedores"></button></label>';
       cliBox.innerHTML = '<div class="grid-2" style="margin-bottom:0;">' +
-        '<div><div class="vr-head"><h3 class="dh">Faturamento &times; Clientes</h3>'+'<label class="vr-sw-l vd-sw-l" title="Mostra o nome dos vendedores nos pontos dos dois gráficos (os que couberem sem sobrepor)"><span>Nomes</span><button type="button" class="ia-sw vr-sw vd-nomes-sw" role="switch" aria-checked="'+(state.vendDispNomes?'true':'false')+'" aria-label="Mostrar nomes dos vendedores"></button></label>'+'</div><div class="chart-wrap" style="display:flex; justify-content:center;">'+svgCli+'</div>' +
+        '<div><div class="vr-head"><h3 class="dh">Faturamento &times; Clientes</h3></div><div class="chart-wrap" style="display:flex; justify-content:center;">'+svgCli+'</div>' +
           '<p style="font-size:11.5px; color:var(--text-2); margin-top:6px; line-height:1.6;">'+meQ+'</p>' +
           (muitosCliBaixoFat.length ? '<p style="font-size:11.5px; color:var(--text-2); line-height:1.6;"><b>Muitos clientes e faturamento abaixo da média:</b> '+muitosCliBaixoFat.join(', ')+'.</p>' : '') +
           (poucosCliAltoFat.length ? '<p style="font-size:11.5px; color:var(--text-2); line-height:1.6;"><b>Poucos clientes e faturamento acima da média:</b> '+poucosCliAltoFat.join(', ')+'.</p>' : '') +
