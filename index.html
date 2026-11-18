@@ -923,6 +923,10 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
   background:var(--surface-2); color:var(--text); font-size:14px; font-family:'Manrope',sans-serif;
 }
 .login-input:focus{outline:none; border-color:var(--accent);}
+.login-pass-wrap{position:relative;}
+.login-pass-wrap .login-input{padding-right:42px;}
+.login-olho{position:absolute; right:6px; top:50%; transform:translateY(-50%); width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:none; background:transparent; color:var(--text-muted); cursor:pointer; border-radius:8px;}
+.login-olho:hover{color:var(--text); background:rgba(var(--ink),.06);}
 .login-btn{
   width:100%; margin-top:18px; padding:12px; border:none; border-radius:10px; cursor:pointer;
   background:var(--pbi-grad); color:var(--pbi-ink);
@@ -1602,6 +1606,25 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
     <button class="login-voltar" type="button" id="setPassVoltar" style="display:none;">&larr; Voltar à página anterior</button>
   </form>
 </div>
+<script>
+// olho para mostrar/ocultar a senha nos campos de senha do login
+(function(){
+  var olho = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var fechado = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.9 17.9A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a18.5 18.5 0 0 1 5.1-5.9M9.9 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a18.6 18.6 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2M2 2l20 20"/></svg>';
+  Array.prototype.forEach.call(document.querySelectorAll('#loginScreen input.login-input[type="password"]'), function(inp){
+    var w = document.createElement('div'); w.className = 'login-pass-wrap';
+    inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'login-olho'; b.innerHTML = olho;
+    b.setAttribute('aria-label', 'Mostrar senha'); b.title = 'Mostrar senha';
+    b.addEventListener('click', function(){
+      var ver = inp.type==='password'; inp.type = ver ? 'text' : 'password';
+      b.innerHTML = ver ? fechado : olho; b.title = ver ? 'Ocultar senha' : 'Mostrar senha'; b.setAttribute('aria-label', b.title);
+      inp.focus();
+    });
+    w.appendChild(b);
+  });
+})();
+</script>
 
 <div class="app" id="app" data-sidebar="expanded" style="display:none;">
 
@@ -7495,6 +7518,8 @@ function vxRegioes(){
     var set = {}, rUfs = [];
     regObjs.forEach(function(x){ x[1].m.forEach(function(id){ set[id] = 1; }); if(rUfs.indexOf(x[0])===-1) rUfs.push(x[0]); });
     VX.reg = {t:regObjs.map(function(x){ return x[1].t; }).join(', '), n:regObjs.length, set:set};
+    var zs = regObjs.filter(function(x){ return x[1].zona; }).map(function(x){ return x[1].zona; });
+    VX.reg.zonas = zs.length && zs.length===regObjs.length ? zs : null; // só zonas escolhidas: abre os distritos da capital
     ufs = rUfs; fora = [];
     cids = cids.filter(function(r){ return rUfs.indexOf(r.k.slice(0,2))!==-1; });
   }
@@ -7505,7 +7530,9 @@ function vxRegioes(){
   if(vxMapaCheio()){ vxProg('Desenhando o mapa…'); clearTimeout(VX_PROG.fb); VX_PROG.fb = setTimeout(function(){ vxProg('fim'); }, 8000); }
   vxTabelaCidades(cids, null);
   if(!VX.regPr) VX.regPr = fetch('geo/regioes.json').then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; }).then(function(d){
-    var tinha = !!VX.regioes; VX.regioes = d||{}; if(!tinha && Object.keys(VX.regioes).length && VX.aba==='regioes' && state.currentView==='vendas') vxRegioes(); return d;
+    var tinha = !!VX.regioes; VX.regioes = d||{};
+    // zonas da capital (pelo CEP do cliente) também entram no filtro de região do mapa
+    if(VX.regioes.SP) ['Centro','Norte','Sul','Leste','Oeste'].forEach(function(z){ VX.regioes.SP.push({k:'zona_'+z.toLowerCase(), t:'Capital · Zona '+z, m:[SP_CAPITAL], zona:z}); }); if(!tinha && Object.keys(VX.regioes).length && VX.aba==='regioes' && state.currentView==='vendas') vxRegioes(); return d;
   });
   Promise.all([vxLeafletLib(), vxFrota()].concat(ufs.map(function(uf){ return vxGeoUF(uf).catch(function(){ return null; }); }))).then(function(){
     if(seq!==VX.mapSeq || state.currentView!=='vendas' || VX.aba!=='regioes') return;
@@ -7600,6 +7627,7 @@ function vxDesenharMapa(cids, total, ufs, fora){
   function linhaTip(a, b){ return '<span>'+a+'</span><span>'+b+'</span>'; }
   VX.camada = L.geoJSON({type:'FeatureCollection', features:feats}, {style:estilo, onEachFeature:function(ft, ly){
     ly.on('mouseover', function(e){
+      if(VX.bairroQ) return; // vendo os bairros: os municípios ficam apagados, sem realce nem quadro ao passar o mouse
       var o = vendaPorId[ft.properties.id], f = VX.geo[ft.properties.uf].lista.filter(function(x){ return x[2]===ft.properties.id; })[0];
       ly.setStyle({weight:2, color:claro?'#0f172a':'#fff', fillOpacity:Math.min(.95, (ly.options.fillOpacity||.5)+.2)});
       var pop = f[5] ? vxN(f[5]) : '—', fro = f[6] ? vxN(f[6]) : '—';
@@ -7613,9 +7641,9 @@ function vxDesenharMapa(cids, total, ufs, fora){
           : '<div class="sv">Sem vendas no filtro atual</div><div class="tg">'+linhaTip('População', pop)+linhaTip('Automóveis', fro)+'</div>');
       tip.style.display = 'block'; mover(e);
     });
-    ly.on('mousemove', mover);
-    ly.on('mouseout', function(){ VX.camada.resetStyle(ly); tip.style.display = 'none'; });
-    ly.on('click', function(e){ var o = vendaPorId[ft.properties.id]; tip.style.display = 'none'; vxQuadroCidade(e.latlng, o, ft.properties, total); });
+    ly.on('mousemove', function(e){ if(!VX.bairroQ) mover(e); });
+    ly.on('mouseout', function(){ if(VX.bairroQ) return; VX.camada.resetStyle(ly); tip.style.display = 'none'; });
+    ly.on('click', function(e){ if(VX.bairroQ && VX.bairroQ.props.id===ft.properties.id) return; var o = vendaPorId[ft.properties.id]; tip.style.display = 'none'; vxQuadroCidade(e.latlng, o, ft.properties, total); });
   }}).addTo(VX.map);
   // lojas físicas: um ícone por loja (lojas da mesma cidade ficam lado a lado); clique pinta só as vendas daquela loja
   if(VX.pinos){ VX.map.removeLayer(VX.pinos); VX.pinos = null; }
@@ -7671,7 +7699,9 @@ function vxDesenharMapa(cids, total, ufs, fora){
     else if(pts.length) VX.map.fitBounds(L.latLngBounds(pts), {padding:[40,40], maxZoom:9});
     else VX.map.setView([-22.5,-48.5], 6);
   }
-  if(VX.bairroQ){ var bq = VX.bairroQ; if(VX.camada && vendaPorId[bq.props.id]) vxBairros({o:vendaPorId[bq.props.id], props:bq.props}, true); else vxBairrosFechar(); }
+  if(VX.reg && VX.reg.zonas && vendaPorId[SP_CAPITAL]){ vxBairros({o:vendaPorId[SP_CAPITAL], props:{id:SP_CAPITAL, uf:'SP'}}, false); }
+  else if(VX.bairroQ && VX.bairroQ.zonas){ VX.bairroQ.zonas = null; vxBairrosFechar(); }
+  else if(VX.bairroQ){ var bq = VX.bairroQ; if(VX.camada && vendaPorId[bq.props.id]) vxBairros({o:vendaPorId[bq.props.id], props:bq.props}, true); else vxBairrosFechar(); }
   if(!document.getElementById('app').hasAttribute('data-carregando')) vxProg('fim');
 }
 
@@ -7792,7 +7822,9 @@ function vxDistritosSP(){
   return VX.distPr;
 }
 function vxBairrosFechar(){
+  var tinhaZona = VX.bairroQ && VX.bairroQ.zonas;
   VX.bairroQ = null;
+  if(tinhaZona && VX.mapF){ VX.mapF.reg = VX.mapF.reg.filter(function(v){ return v.indexOf('|zona_')===-1; }); setTimeout(function(){ if(VX.aba==='regioes') vxRegioes(); }, 0); }
   if(VX.bairros && VX.map){ VX.map.removeLayer(VX.bairros); }
   VX.bairros = null;
   var av = document.getElementById('vxBaiAviso'); if(av) av.hidden = true;
@@ -7810,17 +7842,25 @@ function vxBairros(q, semZoom){
   var av = document.getElementById('vxBaiAviso');
   av.hidden = false; av.innerHTML = '<span>Carregando os bairros de <b>'+escapeHtml(nomeMun)+'</b>…</span>';
   var per = painelPeriodo();
-  var args = {f:vxFiltrosLoja(), per:{ini:per.ini, fim:per.fim, pini:per.pini, pfim:per.pfim}, cidades:ids};
+  var fz = vxFiltrosLoja(), zonas = capital && VX.reg && VX.reg.zonas ? VX.reg.zonas : null;
+  if(zonas){ fz.zona = zonas.map(function(z){ return (DIMI.zona||{})[z]; }).filter(function(x){ return x!==undefined; }); if(!fz.zona.length) fz.zona = [-1]; }
+  VX.bairroQ.zonas = zonas;
+  var args = {f:fz, per:{ini:per.ini, fim:per.fim, pini:per.pini, pfim:per.pfim}, cidades:ids};
   Promise.all([rpcMemo('bi_bairros', args), capital ? vxDistritosSP().catch(function(){ return null; }) : null]).then(function(r){
     if(seq!==VX.bairroSeq) return;
-    vxBairrosDesenhar(q, nomeMun, r[0] || [], r[1], semZoom);
+    vxBairrosDesenhar(q, zonas ? nomeMun+' · Zona '+zonas.join(', ') : nomeMun, r[0] || [], r[1], semZoom, zonas);
   }).catch(function(){
     if(seq!==VX.bairroSeq) return;
     av.innerHTML = '<span>O mapa por bairro ainda não está disponível no banco.</span><button type="button">Fechar</button>';
     av.querySelector('button').onclick = vxBairrosFechar;
   });
 }
-function vxBairrosDesenhar(q, nomeMun, rows, distritos, semZoom){
+// subprefeituras da capital por zona (para mostrar só os distritos da zona escolhida)
+var SP_ZONA_SUB = {Centro:['Sé'], Norte:['Perus','Pirituba/Jaraguá','Freguesia/Brasilândia','Casa Verde/Cachoeirinha','Santana/Tucuruvi','Jaçanã/Tremembé','Vila Maria/Vila Guilherme'],
+  Oeste:['Lapa','Butantã','Pinheiros'], Sul:['Vila Mariana','Ipiranga','Santo Amaro','Jabaquara','Cidade Ademar','Campo Limpo',"M'Boi Mirim",'Capela do Socorro','Parelheiros'],
+  Leste:['Mooca','Aricanduva/Formosa/Carrão','Penha','Ermelino Matarazzo','São Miguel','Itaim Paulista','Guaianases','Itaquera','Cidade Tiradentes','São Mateus','Vila Prudente','Sapopemba']};
+function vxBairrosDesenhar(q, nomeMun, rows, distritos, semZoom, zonas){
+  if(distritos && zonas){ var subs = {}; zonas.forEach(function(z){ (SP_ZONA_SUB[z]||[]).forEach(function(x){ subs[x] = 1; }); }); distritos = distritos.filter(function(d){ return subs[d[5]]; }); }
   var claro = vxClaro(), capital = !!distritos;
   var bs = rows.map(function(x){ return {k:x[0]||'', dist:x[1]||null, lat:x[2], lon:x[3], fat:(x[4]||0)/100, lb:(x[5]||0)/100, prev:(x[6]||0)/100, cli:x[7]||0}; });
   var tot = bs.reduce(function(s, b){ return s + b.fat; }, 0) || 1;
@@ -7863,12 +7903,15 @@ function vxBairrosDesenhar(q, nomeMun, rows, distritos, semZoom){
   // enquadra o município (ou os bairros)
   if(!semZoom){
     var alvo = null; if(VX.camada) VX.camada.eachLayer(function(l){ if(l.feature && l.feature.properties.id===q.props.id) alvo = l; });
+    var bDist = null; if(zonas && distritos && distritos.length){ bDist = L.latLngBounds([]); distritos.forEach(function(d){ d[4].forEach(function(pl){ pl[0].forEach(function(c){ bDist.extend([c[1], c[0]]); }); }); }); }
     if(pts.length>=3) VX.map.fitBounds(L.latLngBounds(pts), {padding:[50,50], maxZoom:14});
+    else if(bDist) VX.map.fitBounds(bDist, {padding:[30,30], maxZoom:14});
     else if(alvo) VX.map.fitBounds(alvo.getBounds(), {padding:[30,30], maxZoom:13});
   }
   var semPonto = lista.filter(function(o){ return o.lat===null; }).reduce(function(s, o){ return s + o.fat; }, 0);
   var av = document.getElementById('vxBaiAviso');
-  av.innerHTML = '<span>Bairros de <b style="color:var(--vx-gr-t)">'+escapeHtml(nomeMun)+'</b> · '+vxN(lista.length)+' com venda</span><button type="button">Voltar aos municípios</button>';
+  var nPts = lista.filter(function(o){ return o.lat!==null && o.fat>0.5; }).length;
+  av.innerHTML = '<span>Bairros de <b style="color:var(--vx-gr-t)">'+escapeHtml(nomeMun)+'</b> · '+(nPts ? vxN(nPts)+' no mapa' : 'ainda sendo localizados pela rotina de CEPs')+'</span><button type="button">Voltar aos municípios</button>';
   av.querySelector('button').onclick = vxBairrosFechar;
   // tabela
   var cd = document.getElementById('vxBaiCard'); cd.hidden = false;
