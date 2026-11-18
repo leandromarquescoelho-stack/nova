@@ -249,6 +249,11 @@ def preparar(dfs, regras):
     capital = cli['cidade'].map(lambda x: isinstance(x, str) and normaliza(x) in CIDADE_CAPITAL)
     cli['zona'] = cli['cep'].map(zona_cep).where(capital)
     cli.attrs['tem_cep'] = bool(v['cep'].notna().any())
+    # CEP do cadastro de todos os transacionadores: completa o CEP de clientes sem venda neste arquivo
+    if 'transacionadores' in dfs and 'cep' in dfs['transacionadores']:
+        t = dfs['transacionadores']
+        cc = pd.DataFrame({'codcli': sku_texto(t['cod']), 'cep': cep_texto(t['cep']).map(cep8)}).dropna()
+        cli.attrs['cep_cadastro'] = cc.drop_duplicates('codcli')
     return v, e, prod, cli
 
 
@@ -369,6 +374,13 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         cur.execute(f"""insert into public.bi_cliente (id, codcli, razao, tipo_cliente, cidade{zc})
                         select id, codcli, razao, tipo_cliente, cidade{zc} from _c t
                         where not exists (select 1 from public.bi_cliente b where b.id = t.id)""")
+        cc = cli.attrs.get('cep_cadastro')
+        if usar_cep and cc is not None and len(cc):
+            cur.execute('create temp table _cc (codcli text, cep text) on commit drop')
+            copiar_tab(cur, '_cc', cc)
+            cur.execute("""update public.bi_cliente b set cep = t.cep from _cc t
+                           where b.codcli = t.codcli and b.cep is distinct from t.cep and b.cep is null""")
+            log(f'CEP do cadastro: {cur.rowcount} clientes sem venda no arquivo receberam CEP')
 
         # vendas do período do arquivo
         out = pd.DataFrame({'dia': v['data'].dt.date, 'mes': (v['data'].dt.year - 2000) * 100 + v['data'].dt.month})
