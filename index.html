@@ -1445,6 +1445,8 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .dup-salvar:disabled{ opacity:.5; cursor:default; }
 .fs-box{ border:1px solid rgba(34,211,238,.25); border-radius:10px; padding:10px; background:rgba(34,211,238,.04); }
 .fs-box.fs-fim{ margin-top:16px; }
+.vd-dias{ margin:2px 0 8px; gap:6px; }
+.vd-dias .period-chip{ padding:4px 11px; font-size:11.5px; }
 .fs-box.foco{ box-shadow:0 0 0 2px var(--accent); }
 .fs-lista{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
 .fs-lista:empty{ display:none; }
@@ -2987,7 +2989,7 @@ var state = {
   currentView:'dashboard',
   vendConsultSel:'',
   paresModo:'grupo', paresEquipes:[], // comparativo dos pares: todo o grupo ou só as equipes escolhidas
-  vendSortCol:'fat', vendSortDir:'desc', vendRankTodos:false, vendRankPct:false, vendDispNomes:false,
+  vendSortCol:'fat', vendSortDir:'desc', vendRankTodos:false, vendRankPct:false, vendDispNomes:false, vendDiarioUtil:false,
   soParados:false,
   diaSemana:'',   // filtro: '' todos os dias, 'util' segunda a sexta, 'fds' sábado e domingo
   diasMin:null,   // filtro: sem venda há pelo menos N dias
@@ -3101,6 +3103,18 @@ function countUp(el, to, formatter, duration){
    SPARKLINE (SVG)
    ============================================================ */
 // eixo de datas discreto embaixo de gráficos diários (índices de DAYS, do início ao fim)
+// eixo de datas para uma lista de dias (posições pela ordem na lista, como no gráfico)
+function eixoDatasIdx(idx){
+  var n = idx.length; if(n<2) return '';
+  var nt = Math.min(6, n), longo = (idx[n-1]-idx[0])>120, out = '';
+  for(var t=0; t<nt; t++){
+    var k = Math.round(t*(n-1)/(nt-1)), d = DAYS[idx[k]], p = k/(n-1)*100;
+    var lbl = longo ? MES_ABREV[d.getMonth()]+'/'+String(d.getFullYear()).slice(2) : String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+    var al = t===0 ? 'translateX(0)' : (t===nt-1 ? 'translateX(-100%)' : 'translateX(-50%)');
+    out += '<span style="left:'+p+'%; transform:'+al+'">'+lbl+'</span>';
+  }
+  return '<div class="eixo-datas">'+out+'</div>';
+}
 function eixoDatasHtml(s0, s1){
   var n = s1-s0+1; if(n<2) return '';
   var nt = Math.min(6, n), longo = n>120, out = '';
@@ -3113,7 +3127,7 @@ function eixoDatasHtml(s0, s1){
   return '<div class="eixo-datas">'+out+'</div>';
 }
 // vendedor x média diária dos demais no mesmo gráfico e na mesma escala (passe o mouse num dia para ver os dois valores)
-function vendDiarioSVG(me, peer, s0, nomeMe){
+function vendDiarioSVG(me, peer, idx, nomeMe){
   var n = me.length; if(!n) return '';
   var w = 380, h = 140, pt = 14, pb = 4, max = Math.max.apply(null, me.concat(peer).concat([1]))*1.08;
   function x(i){ return n<=1 ? w/2 : i/(n-1)*w; }
@@ -3123,7 +3137,7 @@ function vendDiarioSVG(me, peer, s0, nomeMe){
   var grade = [0.5, 1].map(function(f){ var yy = y(max/1.08*f); return '<line x1="0" x2="'+w+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'" stroke="rgba(var(--ink),.07)"/><text x="2" y="'+(yy-3).toFixed(1)+'" font-size="8" fill="var(--text-muted)" font-family="Manrope,sans-serif">'+fmtCurto(max/1.08*f)+'</text>'; }).join('');
   var faixas = '', bw = w/Math.max(1,n);
   for(var i=0;i<n;i++){
-    var d = DAYS[s0+i];
+    var d = DAYS[idx[i]];
     faixas += '<rect x="'+(x(i)-bw/2).toFixed(1)+'" y="0" width="'+bw.toFixed(1)+'" height="'+h+'" fill="transparent"><title>'+fmtDateFull(d)+'\n'+escapeHtml(nomeMe)+': '+fmtMoney(me[i])+'\nMédia dos demais: '+fmtMoney(peer[i])+'</title></rect>';
   }
   return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none" style="display:block">' + grade +
@@ -4918,9 +4932,11 @@ function renderVendConsult(){
     peerAvgDaily[i] = others.length ? s/others.length : 0;
   }
   var s0 = Math.max(0,pr.start), s1 = pr.end;
-  var meSlice = map[selName].dailyFat.slice(s0, s1+1);
-  var peerSlice = peerAvgDaily.slice(s0, s1+1);
-  var diarioSvg = vendDiarioSVG(meSlice, peerSlice, s0, selName);
+  var diaIdx = [];   // só neste gráfico: "Segunda a sexta" tira sábados e domingos
+  for(var di0=s0; di0<=s1; di0++){ var wd = DAYS[di0].getDay(); if(!state.vendDiarioUtil || (wd>0 && wd<6)) diaIdx.push(di0); }
+  var meSlice = diaIdx.map(function(i){ return map[selName].dailyFat[i]; });
+  var peerSlice = diaIdx.map(function(i){ return peerAvgDaily[i]; });
+  var diarioSvg = vendDiarioSVG(meSlice, peerSlice, diaIdx, selName);
 
   var verdict = rows.length<3 ? 'Poucos vendedores nesse recorte de filtros — compare com cautela.' :
     (vsAvgPct>=15 ? 'Desempenho consistentemente acima da média do grupo neste recorte — bom exemplo para replicar práticas comerciais.' :
@@ -5098,10 +5114,11 @@ function renderVendConsult(){
     '<div class="grid-2">' +
       '<div><div class="vr-head"><h3 class="dh">Ranking do grupo</h3><label class="vr-sw-l" title="Mostra o faturamento de cada vendedor em % do total do grupo"><span>Faturamento em %</span><button type="button" class="ia-sw vr-sw" id="vrPctSw" role="switch" aria-checked="'+(state.vendRankPct?'true':'false')+'" aria-label="Mostrar faturamento em %"></button></label></div><div class="rank-vend-box">'+rankHtml+'</div>' +
         '<div class="vd-diario" style="margin-top:16px;"><h3 class="dh">'+selName+' vs. Média dos Demais &middot; por dia</h3>' +
+        '<div class="vd-dias fgroup" role="group" aria-label="Dias da semana deste gráfico"><button type="button" class="period-chip vdd-chip" data-vdd="0" aria-pressed="'+(!state.vendDiarioUtil)+'">Todos os dias</button><button type="button" class="period-chip vdd-chip" data-vdd="1" aria-pressed="'+(!!state.vendDiarioUtil)+'">Segunda a sexta</button></div>' +
         '<div class="radar-legend"><span><i style="background:var(--accent);"></i>'+selName+'</span><span><i style="background:var(--text-muted);"></i>Média diária dos demais vendedores</span></div>' +
         '<div style="border:1px solid rgba(var(--ink),.06); border-radius:10px; padding:8px;">'+diarioSvg+'</div>' +
-        '<div style="padding:0 8px;">'+eixoDatasHtml(s0, s1)+'</div>' +
-        '<p style="font-size:11px; color:var(--text-muted); margin-top:8px;">Mesma escala para os dois, sob os mesmos filtros. Passe o mouse num dia para ver os valores.</p></div>' +
+        '<div style="padding:0 8px;">'+eixoDatasIdx(diaIdx)+'</div>' +
+        '<p style="font-size:11px; color:var(--text-muted); margin-top:8px;">Mesma escala para os dois, sob os mesmos filtros'+(state.vendDiarioUtil?', só de segunda a sexta (vale apenas para este gráfico)':'')+'. Passe o mouse num dia para ver os valores.</p></div>' +
       '</div>' +
       '<div>' +
         '<h3 class="dh">'+selName+' vs. Média dos Demais</h3>' +
@@ -5170,6 +5187,7 @@ function renderVendConsult(){
       renderVendSemRolar();
     });
   });
+  rankBox.querySelectorAll('[data-vdd]').forEach(function(b){ b.addEventListener('click', function(){ var u = b.dataset.vdd==='1'; if(u===state.vendDiarioUtil) return; state.vendDiarioUtil = u; renderVendSemRolar(); }); });
   var swPct = rankBox.querySelector('#vrPctSw');
   if(swPct) swPct.addEventListener('click', function(){ state.vendRankPct = !state.vendRankPct; renderVendSemRolar(); });
   Array.prototype.forEach.call(document.querySelectorAll('.vd-nomes-sw'), function(b){
