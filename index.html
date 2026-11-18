@@ -2597,16 +2597,24 @@ EST.produto.forEach(function(pid, i){ (EST_POR_PROD[pid] = EST_POR_PROD[pid] || 
 var REF_DIA = DAYS[N_DAYS-1];
 // cadastro de produtos e estoque item a item: só quando uma aba precisa (o dashboard não precisa)
 var PROD_OK = false, PROD_PR = null;
-var VIEWS_COM_PRODUTOS = ['estoque','vendedores','insights'];
+var VIEWS_COM_PRODUTOS = ['estoque','insights']; // vendedores só precisa do cadastro (nomes, marca e categoria dos produtos)
 function precisaProdutos(){ return VIEWS_COM_PRODUTOS.indexOf(state.currentView)!==-1 || (state.currentView==='vendas' && VX.aba==='produtos') || estoqueFiltrosAtivos() || state.produto.length>0; }
+// só o cadastro de produtos (sem o estoque item a item): basta para a aba Vendedores
+var CAT_PR = null;
+function carregarCatalogo(){
+  if(!CAT_PR) CAT_PR = (META.produtos ? Promise.resolve(META.produtos) : window.__NC_rpc('bi_produtos')).then(function(lista){
+    (lista||[]).forEach(function(x){ PRODINFO[x[0]] = {pn:x[1], nome:x[2], cat:x[3], marca:x[4], mont:x[5], linha:x[6], classif:x[7], subcat:x[8], gpeca:x[9], aplic:x[10], curva:x[11]}; });
+    PRODBUSCA = null;
+  }).catch(function(ex){ CAT_PR = null; throw ex; });
+  return CAT_PR;
+}
 function carregarProdutos(){
   if(PROD_OK) return Promise.resolve();
   if(PROD_PR) return PROD_PR;
   PROD_PR = Promise.all([
-    META.produtos ? Promise.resolve(META.produtos) : window.__NC_rpc('bi_produtos'),
+    carregarCatalogo(),
     window.__NC_rpc('bi_estoque_itens')
   ]).then(function(r){
-    (r[0]||[]).forEach(function(x){ PRODINFO[x[0]] = {pn:x[1], nome:x[2], cat:x[3], marca:x[4], mont:x[5], linha:x[6], classif:x[7], subcat:x[8], gpeca:x[9], aplic:x[10], curva:x[11]}; });
     var e = r[1] || {};
     ['loja','produto','est','custo','vend','comp','parado'].forEach(function(k){ EST[k] = Array.isArray(e[k]) ? e[k] : []; });
     Object.keys(EST_POR_PROD).forEach(function(k){ delete EST_POR_PROD[k]; });
@@ -7982,9 +7990,12 @@ async function renderAll(refreshing){
   var seq = ++painelSeq;
   carregando(true);
   try{
+    // vendedores: cadastro de produtos em paralelo com o painel (antes vinha também o estoque item a item, em sequência)
+    var catPr = !comP && state.currentView==='vendedores' ? carregarCatalogo().catch(function(){ return null; }) : null;
     if(comP) await carregarProdutos();
     if(seq!==painelSeq) return;
     var base = await buscarPainel(fBase, comP);
+    if(catPr) await catPr;
     if(seq!==painelSeq) return;
     // estoque: consulta própria, só com os filtros do bloco Estoque
     var est = await Promise.all([
@@ -8114,7 +8125,11 @@ function bindEvents(){
     if(view==='clientes'){ renderClientes(); }
     if(view==='vendas'){ renderVendasAbas(); }
     if(view==='clientes' && (CLI_ABA==='cidades' || CLI_ABA==='cidmov')){ renderCidades(); }
-    if(view==='vendedores'){ renderVendConsult(); }
+    if(view==='vendedores'){
+      // nomes dos produtos nos radares: cadastro leve; quando chega, redesenha
+      if(!CAT_PR) carregarCatalogo().then(function(){ if(state.currentView==='vendedores') renderVendConsult(); }).catch(function(){});
+      renderVendConsult();
+    }
     if(view==='insights'){ renderInsights(); }
     if(view==='planejamento'){ renderPlanejamento(); }
     if(view==='concorrencia'){ renderConcorrencia(); }
