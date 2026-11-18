@@ -1024,6 +1024,12 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .u-switch input:checked + i{ background:var(--good); }
 .u-switch input:checked + i::after{ left:16px; }
 .u-invite{ background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
+.ui-sem-email{ display:flex; align-items:center; gap:8px; margin:12px 0 2px; font-size:12px; color:var(--text-2); cursor:pointer; width:fit-content; }
+.ui-sem-email[hidden]{ display:none; }
+.ui-sem-email input{ accent-color:var(--accent); width:15px; height:15px; }
+.ui-senha-box{ position:relative; display:block; }
+.ui-senha-box input{ width:100%; padding-right:34px !important; }
+.ui-senha-olho{ position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:0; color:var(--text-muted); cursor:pointer; font-size:14px; padding:2px 4px; }
 .u-invite-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
 .u-msg{ font-size:11.5px; }
 .user-form{padding:16px 22px 20px;}
@@ -2508,7 +2514,9 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             </label>
             <label id="uiVendedorWrap">Vendedor (como aparece nos dados)<input type="text" id="uiVendedorNome" list="uVendList" placeholder="comece a digitar o nome"></label>
             <label id="uiLojaWrap">Loja<select id="uiLoja"></select></label>
+            <label id="uiSenhaWrap" hidden>Senha (você passa à pessoa)<span class="ui-senha-box"><input type="password" id="uiSenha" minlength="8" autocomplete="new-password" placeholder="mínimo 8 caracteres"><button type="button" class="ui-senha-olho" id="uiSenhaOlho" title="Mostrar a senha" aria-label="Mostrar a senha">&#128065;</button></span></label>
           </div>
+          <label class="ui-sem-email" id="uiSemEmailWrap" hidden><input type="checkbox" id="uiSemEmail"> Cadastrar sem enviar e-mail: eu mesmo defino a senha</label>
           <div class="u-abas-label">Guias liberadas</div>
           <div class="u-abas" id="uiAbas" data-grp="abas"></div>
           <div class="u-abas-label u-esc">Lojas liberadas</div>
@@ -2519,7 +2527,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="u-abas u-esc-eq u-eq-esc" id="uiEquipes" data-grp="equipes"></div>
           <div class="u-eq-nota u-eq-off">E-commerce não tem equipe de vendas: com só esse canal liberado, não é preciso escolher equipe.</div>
           <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px;">
-            <button class="login-btn" type="submit" style="max-width:200px; margin:0;">Enviar convite</button>
+            <button class="login-btn" type="submit" id="uiEnviar" style="max-width:200px; margin:0;">Enviar convite</button>
             <button class="tbtn" type="button" id="uiCancel">Cancelar</button>
             <div class="login-error" id="uiMsg" style="margin:0;"></div>
           </div>
@@ -9394,18 +9402,30 @@ if(uiRoleEl){
   uiRoleEl.dispatchEvent(new Event('change'));
 }
 var userInviteFormEl = document.getElementById('userInviteForm');
+// cadastro sem e-mail: mostra o campo de senha e troca o texto do botão
+function uiSemEmailSync(){
+  var on = document.getElementById('uiSemEmail').checked;
+  document.getElementById('uiSenhaWrap').hidden = !on;
+  document.getElementById('uiSenha').required = on;
+  document.getElementById('uiEnviar').textContent = on ? 'Cadastrar usuário' : 'Enviar convite';
+}
 if(userInviteFormEl){
+  document.getElementById('uiSemEmail').addEventListener('change', function(){ uiSemEmailSync(); if(this.checked) document.getElementById('uiSenha').focus(); });
+  document.getElementById('uiSenhaOlho').addEventListener('click', function(){ var i = document.getElementById('uiSenha'); var v = i.type==='password'; i.type = v ? 'text' : 'password'; this.title = v ? 'Ocultar a senha' : 'Mostrar a senha'; this.setAttribute('aria-label', this.title); });
+  userInviteFormEl.addEventListener('reset', function(){ setTimeout(function(){ document.getElementById('uiSenha').type = 'password'; uiSemEmailSync(); }, 0); });
   userInviteFormEl.addEventListener('submit', async function(e){
     e.preventDefault();
     var msg = document.getElementById('uiMsg');
     msg.style.color = 'var(--status-txt)';
-    msg.textContent = 'Enviando convite…';
+    var semEmail = document.getElementById('uiSemEmail').checked, senha = document.getElementById('uiSenha').value;
+    msg.textContent = semEmail ? 'Cadastrando…' : 'Enviando convite…';
     var email = document.getElementById('uiEmail').value.trim();
     var nome = document.getElementById('uiNome').value.trim();
     var role = document.getElementById('uiRole').value;
     var vendedorNome = document.getElementById('uiVendedorNome').value.trim();
     var loja = document.getElementById('uiLoja').value.trim();
     if(!email){ msg.textContent = 'Informe um e-mail.'; return; }
+    if(semEmail && senha.length < 8){ msg.style.color='var(--critical)'; msg.textContent = 'A senha precisa ter pelo menos 8 caracteres.'; return; }
     var abasConv = USERS_TEM_ABAS && role!=='bi' ? grpSel(userInviteFormEl,'abas') : null;
     if(abasConv) abasConv = abasPayload(role, abasConv);
     var escConv = USERS_TEM_ESCOPO ? escopoPayload(role, grpSel(userInviteFormEl,'lojas'), grpSel(userInviteFormEl,'canais')) : {lojas:null, canais:null};
@@ -9420,7 +9440,7 @@ if(userInviteFormEl){
       var resp = await fetch(SUPABASE_URL + '/functions/v1/admin-invite-user', {
         method: 'POST',
         headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+token},
-        body: JSON.stringify({email:email, role:role, full_name: nome||null, vendedor_nome: vendedorNome||null, loja: loja||null})
+        body: JSON.stringify({email:email, role:role, full_name: nome||null, vendedor_nome: vendedorNome||null, loja: loja||null, senha: semEmail ? senha : null})
       });
       var json = await resp.json().catch(function(){ return {}; });
       if(!resp.ok){
@@ -9435,7 +9455,7 @@ if(userInviteFormEl){
       if(eqConv) extra.equipes = eqConv;
       if(Object.keys(extra).length){ await supa.from('profiles').update(extra).eq('email', email); }
       msg.style.color = 'var(--good)';
-      msg.textContent = 'Convite enviado para '+email+'.';
+      msg.textContent = semEmail ? email+' cadastrado. Já pode entrar com a senha que você definiu.' : 'Convite enviado para '+email+'.';
       userInviteFormEl.reset();
       var uiA2 = document.getElementById('uiAbas'); uiA2.innerHTML = abasChips(ABAS_PADRAO, false); bindAbas(uiA2);
       var uiE2 = document.getElementById('uiEquipes'); if(uiE2 && EQUIPES.length){ uiE2.innerHTML = chipsHtml(EQUIPES.map(function(v){ return {k:v,t:v}; }), EQUIPES, false); bindAbas(uiE2); }
