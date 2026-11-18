@@ -55,8 +55,8 @@ Deno.serve(async (req: Request) => {
 
     // Com senha: cadastra direto, já confirmado e sem enviar e-mail (o BI passa a senha à pessoa).
     // Sem senha: envia o convite por e-mail, como antes.
-    if (senha != null && (typeof senha !== "string" || senha.length < 8)) {
-      return withCors(new Response(JSON.stringify({ error: "A senha precisa ter pelo menos 8 caracteres" }), { status: 400 }));
+    if (senha != null && (typeof senha !== "string" || senha.length < 6)) {
+      return withCors(new Response(JSON.stringify({ error: "A senha precisa ter pelo menos 6 caracteres" }), { status: 400 }));
     }
     const { data: invited, error: inviteErr } = senha
       ? await adminClient.auth.admin.createUser({ email, password: senha, email_confirm: true })
