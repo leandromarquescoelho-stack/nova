@@ -8200,9 +8200,56 @@ function vxOverpass(q, i){
 var PROSP_RX_FUN = /FUNILAR|LANTERNAG|MARTELINHO|PINTURA AUTO|AUTO ?PINTURA|CAR ?BODY|REPARACAO DE CARROCER/;
 var PROSP_RX_PECA = /AUTO ?PECAS|AUTOPECAS|PECAS|AUTO PARTS|DISTRIBUIDORA DE PECAS/;
 function prospNorm(s){
-  return vxSemAcento(s||'').replace(/[^A-Z0-9 ]+/g, ' ').replace(/\b(LTDA|ME|EPP|EIRELI|S ?A|MEI|CIA|COMERCIO|COM|DE|DA|DO|DAS|DOS|E)\b/g, ' ').replace(/\s+/g, ' ').trim();
+  return vxSemAcento(s||'').replace(/[^A-Z0-9 ]+/g, ' ').replace(/\b\d{3,}\b/g, ' ').replace(/\b(LTDA|ME|EPP|EIRELI|S ?A|MEI|CIA|COMERCIO|COM|DE|DA|DO|DAS|DOS|E)\b/g, ' ').replace(/\s+/g, ' ').trim();
 }
+// fonte principal: CNPJs ativos do ramo da Receita Federal (tabela do banco, atualizada todo mês); sem ela, o OpenStreetMap
+var CNAE_PROSP = {4530701:['Autopeças','Comércio atacadista de peças e acessórios'], 4530703:['Autopeças','Comércio varejista de peças e acessórios'],
+  4530702:['Pneus','Comércio atacadista de pneus e câmaras'], 4530704:['Pneus','Comércio varejista de pneus e câmaras'],
+  4520001:['Oficina mecânica','Manutenção e reparação mecânica'], 4520002:['Funilaria e pintura','Lanternagem ou funilaria e pintura'],
+  4520003:['Auto elétrica','Manutenção elétrica de veículos'], 4520004:['Alinhamento e balanceamento','Alinhamento e balanceamento'],
+  4520007:['Instalação de acessórios','Instalação de acessórios em veículos']};
+var PORTE_RF = {1:'Microempresa', 3:'Pequeno porte', 5:'Demais'};
 function vxProspectar(bt){
+  var q = VX.quadro; if(!q) return;
+  var pr = q.props, f = VX.geo[pr.uf].lista.filter(function(x){ return x[2]===pr.id; })[0], nomeMun = f ? f[1] : 'municipio';
+  var txt0 = bt.textContent;
+  bt.disabled = true; bt.textContent = 'Buscando empresas na Receita…';
+  window.__NC_rpc('bi_prospeccao', {p_ibge: +pr.id, p_uf: pr.uf, p_nome: nomeMun}).catch(function(){ return null; }).then(function(res){
+    if(!res || !res.ref){ bt.disabled = false; bt.textContent = txt0; return vxProspectarOSM(bt); }
+    var nomes = q.o ? q.o.nomes : vxNomesDoMun(pr.uf, pr.id);
+    var ids = nomes.map(function(n){ return (DIMI.cidade||{})[n]; }).filter(function(x){ return x!==undefined; });
+    var cliP = ids.length ? window.__NC_rpc('bi_clientes', {f:{}, per:{ini:painelPeriodo().ini, fim:painelPeriodo().fim}, o:{cidade:ids, ordem:'f12', limite:50000}}).catch(function(){ return null; }) : Promise.resolve(null);
+    return Promise.all([cliP, carregarXlsx().catch(function(){ return null; })]).then(function(r){
+      var cli = ((r[0]||{}).linhas||[]).map(cliLinhaObj), X = r[1], emp = res.linhas||[];
+      if(!emp.length){ toast('A Receita não tem empresas ativas do ramo em '+nomeMun+'.'); return; }
+      var idx = {}; cli.forEach(function(c){ var n = prospNorm(c.razao); if(n.length>=4 && !idx[n]) idx[n] = c; });
+      var chaves = Object.keys(idx), cont = {}, nCli = 0, hoje = new Date();
+      var linhas = emp.map(function(e){
+        var rz = e[1]||'', fa = e[2]||'', pn = prospNorm(rz), pf = prospNorm(fa), achou = idx[pn] || (pf.length>=4 && idx[pf]) || null;
+        if(!achou && pn.length>=8) for(var i=0;i<chaves.length;i++){ var cn = chaves[i]; if(cn.length>=8 && (cn.indexOf(pn)===0 || pn.indexOf(cn)===0)){ achou = idx[cn]; break; } }
+        if(achou) nCli++;
+        var cn2 = CNAE_PROSP[e[3]] || ['Outro', String(e[3])], ramo = cn2[0]; cont[ramo] = (cont[ramo]||0)+1;
+        var c = String(e[0]||''), cnpj = c.length===14 ? c.slice(0,2)+'.'+c.slice(2,5)+'.'+c.slice(5,8)+'/'+c.slice(8,12)+'-'+c.slice(12) : c;
+        var ini = e[5] ? new Date(e[5]+'T12:00:00') : null, anos = ini ? Math.floor((hoje-ini)/(365.25*864e5)) : null;
+        var cep = e[8] ? String(e[8]).replace(/^(\d{5})(\d{3})$/, '$1-$2') : '';
+        var end = [e[6], e[7], nomeMun+' - '+pr.uf, cep].filter(Boolean).join(', ');
+        return [ramo, cn2[1], e[4] ? 'Secundária' : 'Principal', cnpj, rz, fa, PORTE_RF[e[11]]||'', e[12] ? 'Matriz' : 'Filial',
+          ini ? fmtDiaBR(ini) : '', anos, e[6]||'', e[7]||'', cep, nomeMun, e[9]||'', e[10]||'',
+          achou ? 'Possível cliente' : 'Não encontrado na base', achou ? achou.cod+' · '+achou.razao : '', achou ? cliData(achou.ult) : '', achou && achou.f12 ? Math.round(achou.f12*100)/100 : null,
+          'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(end)];
+      });
+      linhas.sort(function(a, b){ return (a[16]===b[16] ? 0 : a[16]==='Possível cliente' ? 1 : -1) || String(a[0]).localeCompare(String(b[0]), 'pt-BR') || String(a[4]).localeCompare(String(b[4]), 'pt-BR'); });
+      var cab = ['Ramo','Atividade (CNAE)','Atividade é','CNPJ','Razão social','Nome fantasia','Porte','Matriz/filial','Início de atividade','Anos de empresa',
+        'Endereço','Bairro','CEP','Município','Telefone','E-mail','Na nossa base?','Cliente parecido (código · razão social)','Última compra','Faturamento 12 meses','Ver no Google Maps'];
+      var nome = 'prospeccao_'+vxSemAcento(nomeMun).replace(/[^A-Z0-9]+/g, '_').toLowerCase()+'_'+pr.uf.toLowerCase()+'_receita_'+res.ref;
+      baixarPlanilha(X, nome, 'Prospecção', cab, linhas, [20,36,12,20,40,28,14,10,12,10,40,22,11,18,28,30,20,42,13,16,40]);
+      var resumo = Object.keys(cont).sort(function(a, b){ return cont[b]-cont[a]; }).slice(0,3).map(function(k){ return fmtUn(cont[k])+' '+k.toLowerCase(); }).join(', ');
+      toast(fmtUn(linhas.length)+' empresas ativas em '+nomeMun+' (Receita, '+res.ref+'): '+resumo+'. '+fmtUn(linhas.length-nCli)+' não aparecem na nossa base.');
+    });
+  }).catch(function(){ toast('Não foi possível gerar a prospecção agora. Tente de novo.'); })
+    .then(function(){ bt.disabled = false; bt.textContent = txt0; });
+}
+function vxProspectarOSM(bt){
   var q = VX.quadro; if(!q) return;
   var pr = q.props, f = VX.geo[pr.uf].lista.filter(function(x){ return x[2]===pr.id; })[0], nomeMun = f ? f[1] : 'municipio';
   var txt0 = bt.textContent;
@@ -8213,7 +8260,7 @@ function vxProspectar(bt){
   var ids = nomes.map(function(n){ return (DIMI.cidade||{})[n]; }).filter(function(x){ return x!==undefined; });
   var cliP = ids.length ? window.__NC_rpc('bi_clientes', {f:{}, per:{ini:painelPeriodo().ini, fim:painelPeriodo().fim}, o:{cidade:ids, ordem:'f12', limite:50000}}).catch(function(){ return null; }) : Promise.resolve(null);
   bt.disabled = true; bt.textContent = 'Buscando empresas no mapa…';
-  Promise.all([vxOverpass(ql), cliP, carregarXlsx().catch(function(){ return null; })]).then(function(r){
+  return Promise.all([vxOverpass(ql), cliP, carregarXlsx().catch(function(){ return null; })]).then(function(r){
     var els = (r[0]||{}).elements||[], cli = ((r[1]||{}).linhas||[]).map(cliLinhaObj), X = r[2];
     var idx = cli.map(function(c){ return {c:c, n:prospNorm(c.razao)}; }).filter(function(x){ return x.n.length>=4; });
     var vistos = {}, linhas = [], cont = {'Autopeças':0, 'Oficina mecânica':0, 'Funilaria e pintura':0}, nCli = 0, semNome = 0;
