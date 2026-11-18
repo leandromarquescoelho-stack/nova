@@ -661,7 +661,9 @@ tr.vend-row, .vend-pt{ cursor:pointer; }
 #vendCliBody .vr-head{justify-content:center;} #vendCliBody .vr-head .dh{text-align:center;}
 .vr-sw-l.vd-sw-mini{font-size:10px; gap:5px; color:var(--text-muted);}
 .vd-sw-mini .vr-sw{transform:scale(.78); transform-origin:center;}
-.vend-status{position:fixed; bottom:22px; left:50%; transform:translateX(-50%); z-index:1200; display:flex; align-items:center; gap:10px; width:max-content; max-width:calc(100% - 32px); padding:9px 16px; border-radius:999px; background:var(--surface); border:1px solid rgba(0,229,255,.45); box-shadow:0 8px 24px rgba(0,0,0,.3); font-size:12.5px; font-weight:600; color:var(--text);}
+.vend-status{position:fixed; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center; background:rgba(8,12,20,.28); -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px);}
+:root[data-theme="light"] .vend-status{background:rgba(241,245,249,.35);}
+.vs-card{display:flex; align-items:center; gap:12px; max-width:calc(100% - 32px); padding:14px 22px; font-size:14px; border-radius:999px; background:var(--surface); border:1px solid rgba(0,229,255,.45); box-shadow:0 8px 24px rgba(0,0,0,.3); font-weight:600; color:var(--text);}
 .vend-status[hidden]{display:none;}
 .vs-spin{width:14px; height:14px; border-radius:50%; border:2px solid rgba(0,229,255,.25); border-top-color:var(--accent); animation:vsGira .8s linear infinite;}
 .vs-dots i{font-style:normal; animation:vsPisca 1.2s infinite; opacity:0;} .vs-dots i:nth-child(2){animation-delay:.2s;} .vs-dots i:nth-child(3){animation-delay:.4s;}
@@ -2266,7 +2268,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 
       <!-- ============ VENDEDORES ============ -->
       <section class="view-panel" data-view-panel="vendedores" style="display:none;">
-      <div class="vend-status" id="vendStatus" hidden role="status" aria-live="polite"><span class="vs-spin"></span>Preparando o relatório. Aguarde<span class="vs-dots"><i>.</i><i>.</i><i>.</i></span></div>
+      <div class="vend-status" id="vendStatus" hidden role="status" aria-live="polite"><div class="vs-card"><span class="vs-spin"></span>Preparando o relatório. Aguarde<span class="vs-dots"><i>.</i><i>.</i><i>.</i></span></div></div>
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
           <div><h2>Consultoria de Vendedor</h2><div class="psub">Compare um vendedor com os demais, dentro dos filtros aplicados acima</div></div>
