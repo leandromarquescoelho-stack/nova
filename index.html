@@ -661,7 +661,7 @@ tr.vend-row, .vend-pt{ cursor:pointer; }
 /* ranking de vendedores: cabe na largura da coluna, sem rolagem lateral nem interna */
 .rank-vend-box{ border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; overflow-x:auto; }
 /* o nome do vendedor fica com pelo menos ~130px; em caixas estreitas a tabela rola para o lado em vez de esconder o nome */
-table.data-table.rank-vend{ min-width:536px; table-layout:fixed; }
+table.data-table.rank-vend{ min-width:510px; table-layout:fixed; }
 table.data-table.rank-vend thead th, table.data-table.rank-vend tbody td{ padding:5px 6px; overflow:hidden; text-overflow:ellipsis; }
 table.data-table.rank-vend thead th{ padding-top:8px; padding-bottom:8px; text-overflow:clip; }
 table.data-table.rank-vend thead th .sort-ico{ margin-left:2px; }
@@ -3044,6 +3044,25 @@ function eixoDatasHtml(s0, s1){
   }
   return '<div class="eixo-datas">'+out+'</div>';
 }
+// vendedor x média diária dos demais no mesmo gráfico e na mesma escala (passe o mouse num dia para ver os dois valores)
+function vendDiarioSVG(me, peer, s0, nomeMe){
+  var n = me.length; if(!n) return '';
+  var w = 380, h = 140, pt = 14, pb = 4, max = Math.max.apply(null, me.concat(peer).concat([1]))*1.08;
+  function x(i){ return n<=1 ? w/2 : i/(n-1)*w; }
+  function y(v){ return pt + (1 - v/max)*(h-pt-pb); }
+  function linha(a){ return a.map(function(v,i){ return (i?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1); }).join(''); }
+  var dMe = linha(me), area = dMe+'L'+x(n-1).toFixed(1)+','+(h-pb)+'L0,'+(h-pb)+'Z';
+  var grade = [0.5, 1].map(function(f){ var yy = y(max/1.08*f); return '<line x1="0" x2="'+w+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'" stroke="rgba(var(--ink),.07)"/><text x="2" y="'+(yy-3).toFixed(1)+'" font-size="8" fill="var(--text-muted)" font-family="Manrope,sans-serif">'+fmtCurto(max/1.08*f)+'</text>'; }).join('');
+  var faixas = '', bw = w/Math.max(1,n);
+  for(var i=0;i<n;i++){
+    var d = DAYS[s0+i];
+    faixas += '<rect x="'+(x(i)-bw/2).toFixed(1)+'" y="0" width="'+bw.toFixed(1)+'" height="'+h+'" fill="transparent"><title>'+fmtDateFull(d)+'\n'+escapeHtml(nomeMe)+': '+fmtMoney(me[i])+'\nMédia dos demais: '+fmtMoney(peer[i])+'</title></rect>';
+  }
+  return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none" style="display:block">' + grade +
+    '<path d="'+area+'" fill="var(--accent)" fill-opacity=".14"/>' +
+    '<path d="'+linha(peer)+'" fill="none" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="4,3" vector-effect="non-scaling-stroke"/>' +
+    '<path d="'+dMe+'" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/>' + faixas + '</svg>';
+}
 function sparklineSVG(values, w, h, color, fill, folga){
   if(!values.length) return '';
   var max = Math.max.apply(null,values), min = Math.min.apply(null,values);
@@ -4753,8 +4772,10 @@ function renderVendConsult(){
   var pctl = rows.length>1 ? Math.round((1-(idx/(rows.length-1)))*100) : 100;
   var vsAvgPct = peerAvg>0 ? (me.fat-peerAvg)/peerAvg*100 : (me.fat>0?100:0);
   var vsMedPct = peerMedian>0 ? (me.fat-peerMedian)/peerMedian*100 : (me.fat>0?100:0);
-  var ticketMe = me.qtd>0 ? me.fat/me.qtd : 0;
-  var ticketPeers = peerQtdTotal>0 ? peerFatTotal/peerQtdTotal : 0;
+  // ticket médio por cliente (faturamento ÷ clientes diferentes), o mesmo do ranking
+  var peerCliTotal = others.reduce(function(t,r){ return t+(r.cli||0); }, 0);
+  var ticketMe = me.cli>0 ? me.fat/me.cli : 0;
+  var ticketPeers = peerCliTotal>0 ? peerFatTotal/peerCliTotal : 0;
   var peerLbTotal = others.reduce(function(s,r){return s+r.lb;},0);
   var margemPeers = peerFatTotal>0 ? peerLbTotal/peerFatTotal*100 : 0;
   var margemVsPeers = me.margemPct - margemPeers;
@@ -4774,7 +4795,7 @@ function renderVendConsult(){
     vcKpi('Clientes atendidos', fmtUn(me.cli), 'Média dos pares: '+fmtUn(Math.round(cliPeers))+(cliPeers>0 ? ' ('+fmtPct((me.cli-cliPeers)/cliPeers*100)+')' : ''),
       'Quantidade de clientes diferentes que compraram de '+selName+' no período, comparada com a média dos outros '+others.length+' vendedores. Faturamento por cliente: '+fmtMoney(me.cli ? me.fat/me.cli : 0)+' (pares: '+fmtMoney(cliPeers ? peerAvg/cliPeers : 0)+').') +
     vcKpi('Participação no grupo', share.toFixed(1)+'%', 'do faturamento filtrado, todos vendedores') +
-    vcKpi('Ticket médio', fmtMoney2(ticketMe), 'Pares: '+fmtMoney2(ticketPeers)) +
+    vcKpi('Ticket médio por cliente', fmtMoney2(ticketMe), 'Pares: '+fmtMoney2(ticketPeers), 'Faturamento ÷ clientes diferentes atendidos no período. Pares: faturamento dos outros vendedores ÷ clientes atendidos por eles.') +
     vcKpi('Margem bruta', me.margemPct.toFixed(1)+'%', (margemVsPeers>=0?'+':'')+margemVsPeers.toFixed(1)+' p.p. vs. pares ('+margemPeers.toFixed(1)+'%)') +
   '</div>';
 
@@ -4816,7 +4837,7 @@ function renderVendConsult(){
       '</tr>';
     }).join('');
     var mais = total>LIM_RANK ? '<button type="button" class="vr-todos" data-vend-todos="1">'+(state.vendRankTodos ? 'Mostrar só os 10 primeiros' : 'Ver todos os '+total+' vendedores')+'</button>' : '';
-    return '<table class="data-table rank-vend"><colgroup><col style="width:36px"><col><col style="width:'+(state.vendRankPct?86:100)+'px"><col style="width:56px"><col style="width:78px"><col style="width:62px"><col style="width:78px"></colgroup>' +
+    return '<table class="data-table rank-vend"><colgroup><col style="width:36px"><col><col style="width:'+(state.vendRankPct?86:100)+'px"><col style="width:56px"><col style="width:78px"><col style="width:56px"><col style="width:70px"></colgroup>' +
       '<thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table>' + mais;
   }
   var rankHtml = buildVendRankTable();
@@ -4829,8 +4850,7 @@ function renderVendConsult(){
   var s0 = Math.max(0,pr.start), s1 = pr.end;
   var meSlice = map[selName].dailyFat.slice(s0, s1+1);
   var peerSlice = peerAvgDaily.slice(s0, s1+1);
-  var sparkMe = sparklineSVG(meSlice, 380, 60, 'var(--accent)', true);
-  var sparkPeer = sparklineSVG(peerSlice, 380, 60, 'var(--text-muted)', false);
+  var diarioSvg = vendDiarioSVG(meSlice, peerSlice, s0, selName);
 
   var verdict = rows.length<3 ? 'Poucos vendedores nesse recorte de filtros — compare com cautela.' :
     (vsAvgPct>=15 ? 'Desempenho consistentemente acima da média do grupo neste recorte — bom exemplo para replicar práticas comerciais.' :
@@ -4847,7 +4867,7 @@ function renderVendConsult(){
   var radarAxes = [
     {label:'Faturamento', meVal:me.fat, peerVal:peerAvg, groupMax:maxOf('fat'), fmt:fmtMoney},
     {label:'Quantidade', meVal:me.qtd, peerVal:peerAvgQtd, groupMax:maxOf('qtd'), fmt:function(v){return fmtUn(v)+' un';}},
-    {label:'Ticket médio', meVal:ticketMe, peerVal:ticketPeers, groupMax:maxOf('ticket'), fmt:fmtMoney2},
+    {label:'Ticket por cliente', meVal:ticketMe, peerVal:ticketPeers, groupMax:maxOf('tkCli'), fmt:fmtMoney2},
     {label:'Mix de produtos', meVal:me.skuCount, peerVal:peerAvgSku, groupMax:maxOf('skuCount'), fmt:function(v){return Math.round(v)+(salesFromResumo()?' SKUs/mês':' SKUs');}},
     {label:'Margem bruta', meVal:me.margemPct, peerVal:peerAvgMargem, groupMax:Math.max(1,maxOf('margemPct')), fmt:function(v){return v.toFixed(1)+'%';}},
     {label:'Participação', meVal:share, peerVal:peerAvgShare, groupMax:Math.max(share,peerAvgShare,1)*1.15, fmt:function(v){return v.toFixed(1)+'%';}}
@@ -5006,9 +5026,15 @@ function renderVendConsult(){
   box.innerHTML = kpisHtml;
   rankBox.innerHTML =
     '<div class="grid-2">' +
-      '<div><div class="vr-head"><h3 class="dh">Ranking do grupo</h3><label class="vr-sw-l" title="Mostra o faturamento de cada vendedor em % do total do grupo"><span>Faturamento em %</span><button type="button" class="ia-sw vr-sw" id="vrPctSw" role="switch" aria-checked="'+(state.vendRankPct?'true':'false')+'" aria-label="Mostrar faturamento em %"></button></label></div><div class="rank-vend-box">'+rankHtml+'</div></div>' +
+      '<div><div class="vr-head"><h3 class="dh">Ranking do grupo</h3><label class="vr-sw-l" title="Mostra o faturamento de cada vendedor em % do total do grupo"><span>Faturamento em %</span><button type="button" class="ia-sw vr-sw" id="vrPctSw" role="switch" aria-checked="'+(state.vendRankPct?'true':'false')+'" aria-label="Mostrar faturamento em %"></button></label></div><div class="rank-vend-box">'+rankHtml+'</div>' +
+        '<div class="vd-diario" style="margin-top:16px;"><h3 class="dh">'+selName+' vs. Média dos Demais &middot; por dia</h3>' +
+        '<div class="radar-legend"><span><i style="background:var(--accent);"></i>'+selName+'</span><span><i style="background:var(--text-muted);"></i>Média diária dos demais vendedores</span></div>' +
+        '<div style="border:1px solid rgba(var(--ink),.06); border-radius:10px; padding:8px;">'+diarioSvg+'</div>' +
+        '<div style="padding:0 8px;">'+eixoDatasHtml(s0, s1)+'</div>' +
+        '<p style="font-size:11px; color:var(--text-muted); margin-top:8px;">Mesma escala para os dois, sob os mesmos filtros. Passe o mouse num dia para ver os valores.</p></div>' +
+      '</div>' +
       '<div>' +
-        '<h3 class="dh">'+selName+' vs. média dos demais &middot; radar</h3>' +
+        '<h3 class="dh">'+selName+' vs. Média dos Demais</h3>' +
         '<div class="radar-legend">' +
           '<span><i style="background:var(--accent);"></i>'+selName+'</span>' +
           '<span><i style="background:var(--text-muted);"></i>Média dos demais ('+others.length+' vendedores)</span>' +
@@ -5018,20 +5044,11 @@ function renderVendConsult(){
           '<div class="radar-row radar-head"><span class="rr-label">Eixo</span><span class="rr-me">'+selName.split(' ')[0]+'</span><span class="rr-peer">Média dos demais</span></div>' +
           radarTable +
         '</div>' +
-      '</div>' +
-    '</div>' +
-    '<div class="grid-2" style="margin-top:14px;">' +
-      '<div>' +
-        '<h3 class="dh">'+selName+' vs. média diária dos demais</h3>' +
-        '<div style="border:1px solid rgba(var(--ink),.06); border-radius:10px; padding:8px; margin-bottom:6px;">'+sparkMe+'</div>' +
-        '<div style="border:1px solid rgba(var(--ink),.06); border-radius:10px; padding:8px; opacity:.75;">'+sparkPeer+'</div>' +
-        '<div style="padding:0 8px;">'+eixoDatasHtml(s0, s1)+'</div>' +
-        '<p style="font-size:11px; color:var(--text-muted); margin-top:8px;">Acima: '+selName+'. Abaixo: média diária dos demais vendedores, sob os mesmos filtros.</p>' +
-      '</div>' +
-      '<div>' +
+        '<div style="margin-top:16px;">' +
         '<h3 class="dh">Leitura</h3>' +
         '<p style="font-size:12.5px; color:var(--text-2); line-height:1.7;">'+verdict+'</p>' +
         '<p style="font-size:11px; color:var(--text-muted); margin-top:10px; line-height:1.6;">O radar compara cada eixo contra o melhor valor do grupo inteiro (100% da escala) — quanto mais a área azul cobre o eixo, mais próximo do topo do grupo o vendedor está naquele quesito.</p>' +
+        '</div>' +
       '</div>' +
     '</div>' +
     '<div class="rd-trio" style="margin-top:14px;">' +
