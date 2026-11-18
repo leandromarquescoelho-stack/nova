@@ -1444,6 +1444,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .dup-salvar{ height:32px; padding:0 14px; border-radius:8px; border:1px solid var(--accent); background:var(--accent); color:#06121a; font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
 .dup-salvar:disabled{ opacity:.5; cursor:default; }
 .fs-box{ border:1px solid rgba(34,211,238,.25); border-radius:10px; padding:10px; background:rgba(34,211,238,.04); }
+.fs-box.fs-fim{ margin-top:16px; }
 .fs-box.foco{ box-shadow:0 0 0 2px var(--accent); }
 .fs-lista{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
 .fs-lista:empty{ display:none; }
@@ -1792,13 +1793,6 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           <div class="frp-acoes"><button class="clear-filters" id="clearFilters">Limpar tudo</button><button type="button" class="aplicar-filtros" id="aplicarFiltros" title="Atualiza o painel com todos os filtros marcados">Aplicar</button></div>
         </div>
 
-        <div class="frp-section fs-box" id="fsBox">
-          <label class="frp-label">Meus filtros salvos</label>
-          <div class="fs-lista" id="fsLista"></div>
-          <div class="fs-salvar"><input type="text" id="fsNome" maxlength="40" placeholder="Nome do filtro (ex.: Atacado SP 90 dias)" autocomplete="off"><button type="button" id="fsSalvar">Salvar</button></div>
-          <div class="fs-nota" id="fsNota">Marque os filtros abaixo, dê um nome e salve. O período escolhido também é guardado, e o filtro vale no celular e em outros computadores.</div>
-        </div>
-
         <div class="frp-section">
           <label class="frp-label">Período rápido</label>
           <div class="fgroup" id="periodChips">
@@ -1977,6 +1971,12 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
           </div>
           <label class="frp-checkbox"><input type="checkbox" id="fParado"> Somente itens sem giro (parados)</label>
           <label class="frp-dias">Sem venda ou compra há pelo menos <input type="number" id="fDiasMin" min="0" step="1" placeholder="—" inputmode="numeric"> dias</label>
+        </div>
+        <div class="frp-section fs-box fs-fim" id="fsBox">
+          <label class="frp-label">Meus filtros salvos</label>
+          <div class="fs-lista" id="fsLista"></div>
+          <div class="fs-salvar"><input type="text" id="fsNome" maxlength="40" placeholder="Nome do filtro (ex.: Atacado SP 90 dias)" autocomplete="off"><button type="button" id="fsSalvar">Salvar</button></div>
+          <div class="fs-nota" id="fsNota">Marque os filtros acima, dê um nome e salve. O período escolhido também é guardado, e o filtro vale no celular e em outros computadores.</div>
         </div>
       </div>
     </div>
