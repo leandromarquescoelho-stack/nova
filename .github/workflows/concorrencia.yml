@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       modo:
-        description: 'coleta (padrão), sonda, concessionarias ou ibge (só para desenvolver)'
+        description: 'coleta (padrão), sonda, sonda_pc, concessionarias ou ibge (só para desenvolver)'
         required: false
         default: 'coleta'
 
@@ -31,6 +31,9 @@ jobs:
         run: |
           pip install "psycopg[binary]==3.2.3"
           if [ "${{ github.event.inputs.modo }}" = "sonda" ] || [ "${{ github.event.inputs.modo }}" = "concessionarias" ]; then pip install playwright && python -m playwright install --with-deps chromium; fi
+      - name: Sondar o Peça Chevrolet
+        if: ${{ github.event.inputs.modo == 'sonda_pc' }}
+        run: python etl/pc_sonda.py
       - name: Sondar os sites
         if: ${{ github.event.inputs.modo == 'sonda' }}
         run: python etl/concorrencia_probe.py
