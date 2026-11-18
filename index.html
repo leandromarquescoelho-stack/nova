@@ -4929,9 +4929,10 @@ function renderVendConsult(){
     }
     out += '<text x="'+(w-pad)+'" y="'+(h-pad+16)+'" text-anchor="end" font-size="9.5" fill="var(--text-muted)" font-family="Manrope,sans-serif">'+rotX+' →</text>' +
       '<text x="'+pad+'" y="'+(pad-8)+'" font-size="9.5" fill="var(--text-muted)" font-family="Manrope,sans-serif">↑ '+rotY+'</text>' +
-      '<text x="'+(xp(mx)+4)+'" y="'+(h-pad-4)+'" font-size="9" fill="var(--text-muted)" font-family="Manrope,sans-serif">média '+fmtX(mx)+'</text>' +
-      '<text x="'+(w-pad)+'" y="'+(yp(my)-4)+'" text-anchor="end" font-size="9" fill="var(--text-muted)" font-family="Manrope,sans-serif">média '+fmtY(my)+'</text>';
-    return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" role="img">'+out+'</svg>';
+      // médias nas pontas das linhas tracejadas: a do eixo x no topo, a do eixo y à direita, fora da área dos pontos
+      '<text x="'+Math.max(xp(mx), pad+92)+'" y="'+(pad-8)+'" text-anchor="middle" font-size="9" fill="var(--text-muted)" font-family="Manrope,sans-serif">média '+fmtX(mx)+'</text>' +
+      '<text x="'+(w-pad+4)+'" y="'+(yp(my)-2)+'" font-size="9" fill="var(--text-muted)" font-family="Manrope,sans-serif"><tspan x="'+(w-pad+4)+'">média</tspan><tspan x="'+(w-pad+4)+'" dy="10">'+fmtY(my)+'</tspan></text>';
+    return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" role="img" style="overflow:visible">'+out+'</svg>';
   }
   // faturamento sempre no eixo vertical, como no gráfico de clientes ao lado
   var scatterSvg = dispersaoSVG(420, 270, function(r){ return r.margemPct; }, function(r){ return r.fat; }, 'margem', 'faturamento', function(v){ return v.toFixed(1)+'%'; }, fmtCurto, true);
