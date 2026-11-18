@@ -1626,7 +1626,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
       <div><b>Nova Chevrolet</b><span>Business Intelligence</span></div>
     </div>
     <h1>Defina sua senha</h1>
-    <p class="login-sub">Use pelo menos 8 caracteres. Você vai usar esta senha nos próximos acessos.</p>
+    <p class="login-sub">Use pelo menos 6 caracteres. Você vai usar esta senha nos próximos acessos.</p>
     <label class="login-label">Nova senha</label>
     <input class="login-input" id="newPass" type="password" autocomplete="new-password">
     <label class="login-label">Repita a senha</label>
@@ -2514,7 +2514,7 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
             </label>
             <label id="uiVendedorWrap">Vendedor (como aparece nos dados)<input type="text" id="uiVendedorNome" list="uVendList" placeholder="comece a digitar o nome"></label>
             <label id="uiLojaWrap">Loja<select id="uiLoja"></select></label>
-            <label id="uiSenhaWrap" hidden>Senha (você passa à pessoa)<span class="ui-senha-box"><input type="password" id="uiSenha" minlength="8" autocomplete="new-password" placeholder="mínimo 8 caracteres"><button type="button" class="ui-senha-olho" id="uiSenhaOlho" title="Mostrar a senha" aria-label="Mostrar a senha">&#128065;</button></span></label>
+            <label id="uiSenhaWrap" hidden>Senha (você passa à pessoa)<span class="ui-senha-box"><input type="password" id="uiSenha" minlength="6" autocomplete="new-password" placeholder="mínimo 6 caracteres"><button type="button" class="ui-senha-olho" id="uiSenhaOlho" title="Mostrar a senha" aria-label="Mostrar a senha">&#128065;</button></span></label>
           </div>
           <label class="ui-sem-email" id="uiSemEmailWrap"><input type="checkbox" id="uiSemEmail"> Cadastrar sem enviar e-mail: eu mesmo defino a senha</label>
           <div class="u-abas-label">Guias liberadas</div>
@@ -9427,7 +9427,7 @@ if(userInviteFormEl){
     var vendedorNome = document.getElementById('uiVendedorNome').value.trim();
     var loja = document.getElementById('uiLoja').value.trim();
     if(!email){ msg.textContent = 'Informe um e-mail.'; return; }
-    if(semEmail && senha.length < 8){ msg.style.color='var(--critical)'; msg.textContent = 'A senha precisa ter pelo menos 8 caracteres.'; return; }
+    if(semEmail && senha.length < 6){ msg.style.color='var(--critical)'; msg.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; return; }
     var abasConv = USERS_TEM_ABAS && role!=='bi' ? grpSel(userInviteFormEl,'abas') : null;
     if(abasConv) abasConv = abasPayload(role, abasConv);
     var escConv = USERS_TEM_ESCOPO ? escopoPayload(role, grpSel(userInviteFormEl,'lojas'), grpSel(userInviteFormEl,'canais')) : {lojas:null, canais:null};
@@ -9887,7 +9887,7 @@ document.getElementById('setPassForm').addEventListener('submit', async function
   var f = this, perr = document.getElementById('setPassError');
   perr.textContent = '';
   var a = document.getElementById('newPass').value, b = document.getElementById('newPass2').value;
-  if(a.length < 8){ perr.textContent = 'A senha precisa ter pelo menos 8 caracteres.'; return; }
+  if(a.length < 6){ perr.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; return; }
   if(a !== b){ perr.textContent = 'As senhas não são iguais.'; return; }
   var sb = f.querySelector('.login-btn'), label = sb.textContent; sb.disabled = true; sb.textContent = 'Salvando…';
   var res = await supa.auth.updateUser({password: a});
