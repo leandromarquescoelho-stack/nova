@@ -1,0 +1,49 @@
+name: Sugestão de cadastro (pesquisa de produto)
+
+# Disparado pelo site (aba E-commerce > Sugestão Cadastro): pesquisa um código de peça em fontes públicas
+# (nossa loja, Peça Chevrolet, Mercado Livre, buscadores e site do fabricante) e grava a sugestão no banco.
+# O log mostra só contagens; nada de vendas, estoque ou clientes da empresa.
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: 'pesquisa (padrão) ou sonda (só para desenvolver)'
+        required: false
+        default: 'pesquisa'
+      pn:
+        description: 'código do produto'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cadastro-${{ github.event.inputs.pn }}
+  cancel-in-progress: false
+
+jobs:
+  pesquisa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependências
+        run: |
+          pip install "psycopg[binary]==3.2.3"
+          if [ "${{ github.event.inputs.modo }}" = "sonda" ]; then pip install playwright && python -m playwright install --with-deps chromium; fi
+      - name: Sondar as fontes
+        if: ${{ github.event.inputs.modo == 'sonda' }}
+        env:
+          PN: ${{ github.event.inputs.pn }}
+          NAV: '1'
+        run: python etl/cadastro_sonda.py
+      - name: Pesquisar o produto
+        if: ${{ github.event.inputs.modo != 'sonda' }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PN: ${{ github.event.inputs.pn }}
+        run: python etl/cadastro.py
