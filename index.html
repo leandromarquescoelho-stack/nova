@@ -2891,7 +2891,7 @@ function montarProdutos(b, restrito){
 
 var SEM_VENDEDOR = 'SEM VENDEDOR';
 var PRODUCTS = [], BASE_PRODUCTS = [], EST_BASE = [], KPI_EST = null, DAILY_EST = null, RESUMO = [], AG = {}, HAS_RESUMO = true;
-var DAILY = {fat:[], qtd:[], lb:[]};
+var DAILY = {fat:[], qtd:[], lb:[], ct:null};
 var monthTotalFat = [], monthTotalQtd = [], dayWeightFat = [], dayWeightQtd = [];
 var DIM_LISTA = ['categoria','marca','montadora','loja','canal','vendedor','cidade'];
 var AG_LISTA = {};
@@ -2905,8 +2905,10 @@ function agLinhas(t, linhas){
 }
 function aplicarPainel(v, baseProds, prods, listas){
   var fat = new Array(N_DAYS).fill(0), qtd = fat.slice(), lb = fat.slice();
-  ((v.a && v.a.d)||[]).forEach(function(r){ var i = DIA_IDX[r[0]]; if(i===undefined) return; fat[i] = c2(r[1]); qtd[i] = n0(r[2]); lb[i] = c2(r[3]); });
-  DAILY = {fat:fat, qtd:qtd, lb:lb};
+  var ct = null;   // custo das vendas por dia (banco antigo não manda: fica null)
+  ((v.a && v.a.d)||[]).forEach(function(r){ var i = DIA_IDX[r[0]]; if(i===undefined) return; fat[i] = c2(r[1]); qtd[i] = n0(r[2]); lb[i] = c2(r[3]);
+    if(r.length > 4){ if(!ct) ct = new Array(N_DAYS).fill(0); ct[i] = c2(r[4]); } });
+  DAILY = {fat:fat, qtd:qtd, lb:lb, ct:ct};
   monthTotalFat = new Array(REAL.months.length).fill(0); monthTotalQtd = monthTotalFat.slice();
   for(var i=0;i<N_DAYS;i++){ var mi = monthIndexOfDay[i]; monthTotalFat[mi] += fat[i]; monthTotalQtd[mi] += qtd[i]; }
   // peso de cada dia dentro do seu mês (usado só no ritmo do mês e no painel de qualidade)
@@ -4006,17 +4008,18 @@ function computeKpis(){
     temEst = true;
   } else if(KPI_EST){ estValor = +KPI_EST.est_custo||0; estQtd = +KPI_EST.est_qtd||0; temEst = true; }
   var se = DAILY_EST || sd;
-  // giro: custo das vendas dos últimos 12 meses (anualizado se a base tiver menos) ÷ estoque a custo
-  var i0 = Math.max(0, TODAY_IDX-364), cmv = 0;
-  for(var i=i0; i<=TODAY_IDX; i++) cmv += (se.fat[i]||0) - (se.lb[i]||0);
-  cmv = cmv * 365 / Math.max(1, TODAY_IDX-i0+1);
-  var giro = estValor>0 ? cmv/estValor : 0;
+  // giro de estoque em dias = (valor do estoque a custo ÷ CMV do mês) × 30; CMV do mês = custo das vendas dos últimos 30 dias
+  // (banco sem o custo por dia: faturamento − lucro bruto, que inclui os impostos)
+  var i0 = Math.max(0, TODAY_IDX-29), cmv = 0, cmvExato = !!se.ct;
+  for(var i=i0; i<=TODAY_IDX; i++) cmv += cmvExato ? (se.ct[i]||0) : (se.fat[i]||0) - (se.lb[i]||0);
+  cmv = cmv * 30 / Math.max(1, TODAY_IDX-i0+1);
+  var giroDias = cmv>0 && estValor>0 ? estValor/cmv*30 : null;
   return {
     pr:pr, fat:fat, prevFat:prevFat, lb:lb, prevLb:prevLb,
     margem: fat>0 ? lb/fat*100 : 0, prevMargem: prevFat>0 ? prevLb/prevFat*100 : 0,
     media: dv ? fat/dv : 0, prevMedia: dvp ? prevFat/dvp : 0, dv:dv, dvp:dvp, soOnline:soOnline,
     nf: K ? +K.nf||0 : null, nfp: K ? +K.nfp||0 : null, cli: K ? +K.cli||0 : null, clip: K ? +K.clip||0 : null,
-    temEst:temEst, estValor:estValor, estQtd:estQtd, giro:giro, cobertura: giro>0 ? 365/giro : null,
+    temEst:temEst, estValor:estValor, estQtd:estQtd, giroDias:giroDias, cmvMes:cmv, cmvExato:cmvExato,
     spark: sd.fat.slice(Math.max(0,TODAY_IDX-13), TODAY_IDX+1)
   };
 }
@@ -4109,8 +4112,8 @@ function renderKpis(refreshing){
   if(k.temEst){
     countUp(kpiEls.estoque.v, k.estValor, fmtMoney);
     kpiEls.estoque.d.className = 'kdelta flat';
-    kpiEls.estoque.d.textContent = 'Giro '+k.giro.toFixed(1).replace('.',',')+'x ao ano'+(k.cobertura!==null ? ' · cobre '+Math.round(k.cobertura)+' dias' : '');
-    kpiEls.estoque.d.title = 'Valor a custo do estoque atual. Giro = custo das vendas dos últimos 12 meses ÷ estoque a custo (filtros aplicados). '+fmtUn(k.estQtd)+' peças.';
+    kpiEls.estoque.d.textContent = 'Giro '+(k.giroDias!==null ? fmtUn(k.giroDias)+' dias' : '—');
+    kpiEls.estoque.d.title = 'Valor a custo do estoque atual. Giro = (valor do estoque ÷ CMV do mês) × 30, com o CMV dos últimos 30 dias ('+fmtMoney(k.cmvMes)+(k.cmvExato ? '' : ', estimado pelo faturamento menos o lucro bruto')+'). '+fmtUn(k.estQtd)+' peças.';
   } else { kpiEls.estoque.v.textContent = '—'; kpiEls.estoque.d.textContent = ''; }
   kpiSparks(k);
 }
@@ -6118,8 +6121,8 @@ function renderEstoqueDestaque(){
   function ed(l, v, s, big){ return '<div class="ed'+(big?' big':'')+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>'; }
   box.innerHTML =
     ed('Valor total do estoque', fmtMoney(k.estValor), fmtUn(k.estQtd)+' peças em '+fmtUn(itens)+' itens · a custo', true) +
-    ed('Giro de estoque', k.giro.toFixed(1).replace('.',',')+'x', 'ao ano · custo das vendas de 12 meses ÷ estoque', true) +
-    ed('Cobertura', k.cobertura!==null ? Math.round(k.cobertura)+' dias' : '—', 'quanto o estoque dura no ritmo atual') +
+    ed('Giro de estoque', k.giroDias!==null ? fmtUn(k.giroDias)+' dias' : '—', '(estoque a custo ÷ CMV do mês) × 30', true) +
+    ed('CMV do mês', fmtMoney(k.cmvMes), 'custo das vendas dos últimos 30 dias'+(k.cmvExato ? '' : ' (estimado: faturamento − lucro bruto)')) +
     ed('Estoque parado', fmtMoney(parado), (k.estValor>0 ? (parado/k.estValor*100).toFixed(1).replace('.',',') : '0')+'% do valor · sem venda ou compra');
   var sub = document.getElementById('estDestSub');
   if(sub) sub.textContent = 'Estoque atual a custo, com os filtros do bloco Estoque · '+fmtUn(crit)+' itens críticos e '+fmtUn(zer)+' sem estoque (veja os alertas abaixo)';
@@ -8803,7 +8806,7 @@ async function renderAll(refreshing){
     aplicarPainel(view, baseProds, prods, listas);
     KPI_DB = view.k || base.k || null; PRODUTOS_NO_PAINEL = comP;
     KPI_EST = est[0];
-    if(est[1] && est[1].d){ var de = new Array(N_DAYS).fill(0), le = de.slice(); est[1].d.forEach(function(r){ var i = DIA_IDX[r[0]]; if(i!==undefined){ de[i] = c2(r[1]); le[i] = c2(r[3]); } }); DAILY_EST = {fat:de, lb:le}; } else DAILY_EST = null;
+    if(est[1] && est[1].d){ var de = new Array(N_DAYS).fill(0), le = de.slice(), ce = null; est[1].d.forEach(function(r){ var i = DIA_IDX[r[0]]; if(i!==undefined){ de[i] = c2(r[1]); le[i] = c2(r[3]); if(r.length > 4){ if(!ce) ce = new Array(N_DAYS).fill(0); ce[i] = c2(r[4]); } } }); DAILY_EST = {fat:de, lb:le, ct:ce}; } else DAILY_EST = null;
     EST_BASE = comP ? montarProdutosEstoque(est[2]||{}) : [];
     painelChave = chave; PAINEL_F = fv;
   } catch(ex){
