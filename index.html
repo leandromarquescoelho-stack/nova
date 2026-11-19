@@ -1223,6 +1223,9 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cc-sug-in:focus{outline:none; border-style:solid; border-color:var(--accent);}
 .cc-sug.ed .cc-sug-in{border-style:solid; border-color:rgba(242,200,17,.6);}
 .cc-sug-rst{border:0; background:none; color:var(--text-muted); cursor:pointer; font-size:13px; padding:0 2px;}
+.cc-pct-w{display:inline-flex; align-items:center; gap:1px; margin-left:4px; text-transform:none;}
+.cc-pct-in{width:34px; text-align:center; font:inherit; font-family:'JetBrains Mono',monospace; font-size:11px; padding:2px 3px; border-radius:6px; border:1px dashed var(--accent); background:var(--surface); color:var(--accent);}
+.cc-pct-in:focus{outline:none; border-style:solid;}
 .cc-mg{display:block; font-size:10.5px; margin-top:3px; font-family:'Manrope',sans-serif;}
 .cc-nosso{color:var(--text); font-weight:800; cursor:help;}
 .cc-tip{position:fixed; z-index:3000; pointer-events:none; min-width:220px; max-width:300px; padding:10px 12px; border-radius:10px; background:var(--surface); border:1px solid var(--border-strong); box-shadow:0 10px 30px rgba(0,0,0,.35); font-size:12.5px; color:var(--text-2); line-height:1.5; display:none;}
@@ -3460,7 +3463,7 @@ function ccExportarMontar(L, D, bt){
   function p1(v){ return v==null ? null : Math.round(v*10)/10; }
   var cab = ['Posição', 'Código', 'Item', 'Fat. 90 dias (R$)', 'Qtd 90 dias', 'Preço MD (R$)', CC_NOSSO_N+' (R$)', 'Estoque total (peças)', 'Maior custo médio (R$)', 'Loja do maior custo'];
   CC_SITES.forEach(function(s){ cab.push(s.n+' (R$)', 'Dif. vs '+s.n+' (%)', s.n+' link'); });
-  cab.push('Menor concorrente (R$)', 'Dif. vs menor preço (%)', 'Situação', 'Sugestão de preço (R$)', 'Sugestão editada?', 'Custo usado na margem (R$)', 'Margem na sugestão (%)', 'Observação');
+  cab.push('Menor concorrente (R$)', 'Dif. vs menor preço (%)', 'Situação', 'Sugestão (R$) · '+String(CC_PCT).replace('.',',')+'% abaixo do menor', 'Sugestão editada?', 'Custo usado na margem (R$)', 'Margem na sugestão (%)', 'Observação');
   var dados = L.map(function(it){
     var obs = [];
     if(it.nossoSusp) obs.push('Preço '+(CC_FONTE==='pc' ? 'da Nova no Peça Chevrolet' : 'do nosso site')+' ('+ccMoney(it.nossoBruto)+') muito diferente do preço médio vendido: conferir cadastro');
@@ -3556,22 +3559,24 @@ function ccSeta(pct){
   return '<span class="cc-d '+c+'">'+(c==='eq' ? '= ' : (c==='up' ? '▲ ' : '▼ '))+(pct>0?'+':'')+pct.toFixed(1).replace('.',',')+'%</span>';
 }
 // sugestão de preço: 2% abaixo do menor concorrente; editável (fica guardada neste navegador); embaixo, a margem nesse preço
+var CC_PCT = (function(){ try{ var v = parseFloat(localStorage.getItem('nc_cc_pct')); return isFinite(v) && v >= 0 && v < 90 ? v : 2; }catch(e){ return 2; } })();
+function ccSugBase(it){ return it.menor ? Math.round(it.menor*(1 - CC_PCT/100)*100)/100 : null; }
 var CC_SUG = (function(){ try{ return JSON.parse(localStorage.getItem('nc_cc_sug')||'{}')||{}; }catch(e){ return {}; } })();
 function ccSugChave(pn){ return CC_FONTE+'|'+pn; }
-function ccSugValor(it){ var e = CC_SUG[ccSugChave(it.pn)]; return e!=null ? e : it.sug; }
+function ccSugValor(it){ var e = CC_SUG[ccSugChave(it.pn)]; return e!=null ? e : ccSugBase(it); }
 function ccCusto(it){ if(it.cmv) return {v:it.cmv, ded:it.ded||0, de:'custo médio das vendas da loja (90 dias)'}; var e = ccEstoque(it.pn); return e && e.maior ? {v:e.maior, ded:0, de:'maior custo médio do estoque, sem impostos'} : null; }
 // margem bruta no preço v, como no painel (lucro bruto ÷ faturamento): 1 − deduções − custo ÷ preço
 function ccMargem(c, v){ return (1 - c.ded - c.v/v)*100; }
 function ccMargemHtml(it, v){
-  var c = ccCusto(it); if(!v || !c) return '<span class="cc-mg cc-vazio" title="Sem custo para calcular a margem">margem —</span>';
+  var c = ccCusto(it); if(!v || !c) return '<span class="cc-mg cc-vazio" title="Sem custo para calcular a margem">MG —</span>';
   var m = ccMargem(c, v), cor = m < 0 ? 'var(--critical)' : (m < 10 ? 'var(--warning, #d9a400)' : 'var(--good)');
-  return '<span class="cc-mg" style="color:'+cor+'" title="Margem bruta vendendo a '+ccMoney(v)+' · '+c.de+': '+ccMoney(c.v)+(c.ded ? ' · impostos e deduções: '+(c.ded*100).toFixed(1).replace('.',',')+'% do preço' : '')+'">margem '+m.toFixed(1).replace('.',',')+'%</span>';
+  return '<span class="cc-mg" style="color:'+cor+'" title="Margem bruta vendendo a '+ccMoney(v)+' · '+c.de+': '+ccMoney(c.v)+(c.ded ? ' · impostos e deduções: '+(c.ded*100).toFixed(1).replace('.',',')+'% do preço' : '')+'">MG '+m.toFixed(1).replace('.',',')+'%</span>';
 }
 function ccSugTd(it){
   var v = ccSugValor(it), ed = CC_SUG[ccSugChave(it.pn)]!=null;
   if(v==null) return '<td class="num cc-sug"><span class="cc-vazio" title="Sem preço de concorrente para sugerir">—</span></td>';
   return '<td class="num cc-sug'+(ed?' ed':'')+'" data-pn="'+escapeHtml(it.pn)+'"><div class="cc-sug-w"><input type="text" inputmode="decimal" class="cc-sug-in" value="'+v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})+'" aria-label="Preço sugerido para '+escapeHtml(it.pn)+'">' +
-    (ed ? '<button type="button" class="cc-sug-rst" title="Voltar para a sugestão de 2% abaixo ('+ccMoney(it.sug)+')">↺</button>' : '')+'</div>'+ccMargemHtml(it, v)+'</td>';
+    (ed ? '<button type="button" class="cc-sug-rst" title="Voltar para a sugestão de '+String(CC_PCT).replace('.',',')+'% abaixo ('+ccMoney(ccSugBase(it))+')">↺</button>' : '')+'</div>'+ccMargemHtml(it, v)+'</td>';
 }
 function ccNumBR(t){ t = String(t||'').replace(/[^\d,.-]/g, ''); if(t.indexOf(',')>=0) t = t.replace(/\./g, '').replace(',', '.'); var n = parseFloat(t); return isFinite(n) && n > 0 ? n : null; }
 function ccSugSalvar(){ try{ localStorage.setItem('nc_cc_sug', JSON.stringify(CC_SUG)); }catch(e){} }
@@ -3588,10 +3593,29 @@ function ccSugLigar(){
     if(!e.target.classList.contains('cc-sug-in')) return;
     var td = e.target.closest('td'), it = item(td); if(!it) return;
     var v = ccNumBR(e.target.value), k = ccSugChave(it.pn);
-    if(v==null || Math.abs(v - (it.sug||0)) < 0.005) delete CC_SUG[k]; else CC_SUG[k] = Math.round(v*100)/100;
+    if(v==null || Math.abs(v - (ccSugBase(it)||0)) < 0.005) delete CC_SUG[k]; else CC_SUG[k] = Math.round(v*100)/100;
     ccSugSalvar(); td.outerHTML = ccSugTd(it);
   });
-  tb.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.classList.contains('cc-sug-in')) e.target.blur(); });
+  // Enter grava e vai para a próxima sugestão (Shift+Enter volta)
+  tb.addEventListener('keydown', function(e){
+    if(e.key!=='Enter') return;
+    if(e.target.id==='ccPct'){ e.preventDefault(); e.target.blur(); return; }
+    if(!e.target.classList.contains('cc-sug-in')) return;
+    e.preventDefault();
+    var todos = Array.prototype.slice.call(tb.querySelectorAll('.cc-sug-in')), i = todos.indexOf(e.target);
+    e.target.blur();
+    var prox = tb.querySelectorAll('.cc-sug-in')[i + (e.shiftKey ? -1 : 1)];
+    if(prox){ prox.focus(); prox.select(); prox.scrollIntoView({block:'nearest'}); }
+  });
+  // percentual abaixo do menor concorrente (vale para todos os itens sem valor editado)
+  tb.addEventListener('change', function(e){
+    if(e.target.id!=='ccPct') return;
+    var v = parseFloat(String(e.target.value).replace(',', '.'));
+    if(!isFinite(v) || v < 0 || v >= 90){ e.target.value = String(CC_PCT).replace('.',','); return; }
+    CC_PCT = Math.round(v*100)/100; try{ localStorage.setItem('nc_cc_pct', String(CC_PCT)); }catch(er){}
+    ccTabela();
+  });
+  tb.addEventListener('focusin', function(e){ if(e.target.classList.contains('cc-sug-in') || e.target.id==='ccPct') e.target.select(); });
   tb.addEventListener('click', function(e){
     var b = e.target.closest('.cc-sug-rst'); if(!b) return;
     var td = b.closest('td'), it = item(td); if(!it) return;
@@ -3631,7 +3655,7 @@ function ccTabela(){
   });
   function th(t, k, num){ return '<th'+(num?' class="num"':'')+(k?' data-o="'+k+'"':'')+'>'+t+(k && CC.ordem===k ? (CC.desc?' ▾':' ▴') : '')+'</th>'; }
   document.getElementById('ccTbl').innerHTML = '<thead><tr>'+th('#','rank')+th('Item')+th('Fat. 90 dias','fat',1)+th('Preço MD','pmv',1)+th(CC_NOSSO_N,'nosso',1) +
-    CC_SITES.map(function(s){ return th(s.n, '', 1); }).join('') + th('vs menor preço','pct',1)+'<th class="num cc-sug-th" title="Nosso preço 2% abaixo do menor concorrente. Clique no valor para editar; embaixo, a margem vendendo nesse preço.">Sugestão −2%</th></tr></thead><tbody>' +
+    CC_SITES.map(function(s){ return th(s.n, '', 1); }).join('') + th('vs menor preço','pct',1)+'<th class="num cc-sug-th" title="Nosso preço abaixo do menor concorrente pelo percentual ao lado (editável). Clique no valor de cada item para editar; Enter vai para o próximo. Embaixo, a margem bruta (MG) vendendo nesse preço.">Sugestão <span class="cc-pct-w">−<input type="text" inputmode="decimal" class="cc-pct-in" id="ccPct" value="'+String(CC_PCT).replace('.',',')+'" aria-label="Percentual abaixo do menor concorrente">%</span></th></tr></thead><tbody>' +
     linhas.map(function(it){
       return '<tr><td class="num">'+it.rank+'</td><td class="cc-item"><b>'+escapeHtml(it.pn)+'</b><span title="'+escapeHtml(it.nome||'')+'">'+escapeHtml(String(it.nome||'').replace(/^\S+\s*-\s*/, ''))+'</span></td>' +
         '<td class="num">'+fmtCurto(it.fat)+'</td><td class="num">'+ccMoney(it.pmv)+'</td>' +
