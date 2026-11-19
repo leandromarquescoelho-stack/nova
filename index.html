@@ -1232,7 +1232,10 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .pr-ctl input{height:34px; box-sizing:border-box; padding:0 12px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font:inherit; font-size:13px;}
 .pr-ctl input:focus{outline:none; border-color:var(--accent);}
 .pr-ctl .fsel{height:34px; box-sizing:border-box; padding-top:0; padding-bottom:0;}
-.pr-prod input{width:320px;}
+.pr-prod input{width:340px; padding-right:30px;}
+.pr-prod-w{position:relative; display:flex; align-items:center;}
+#prLimpar{position:absolute; right:6px; width:22px; height:22px; border:0; border-radius:6px; background:transparent; color:var(--text-muted); font-size:18px; line-height:1; cursor:pointer;}
+#prLimpar:hover{color:var(--text); background:var(--surface);}
 #prVal{width:130px; text-align:right; font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--accent); border-color:var(--accent);}
 .pr-modo{display:flex; height:34px; border:1px solid var(--border-strong); border-radius:10px; overflow:hidden;}
 .pr-modo button{font:inherit; font-size:12px; font-weight:700; padding:0 14px; border:0; background:var(--surface-2); color:var(--text-muted); cursor:pointer;}
@@ -1248,7 +1251,7 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .pr-tbl td.pr-out{font-weight:800;}
 .pr-tbl tr.pr-tot td{font-weight:800; border-top:2px solid var(--border-strong);}
 .pr-ast{color:var(--text-muted); font-size:10px; margin-left:2px;}
-@media (max-width:900px){ .pr-prod input{width:100%;} .pr-prod{width:100%;} }
+@media (max-width:900px){ .pr-prod input{width:100%;} .pr-prod, .pr-prod-w{width:100%;} }
 .cad-form{display:flex; gap:0; margin:4px 0 16px;}
 .cad-form input{width:260px; height:38px; box-sizing:border-box; padding:0 12px; border-radius:10px 0 0 10px; border:1px solid var(--border-strong); border-right:0; background:var(--surface-2); color:var(--text); font:inherit; font-size:14px;}
 .cad-form input:focus{outline:none; border-color:var(--accent);}
@@ -2591,7 +2594,7 @@ table.data-table.vp-tbl{min-width:720px;}
             <div><h2>Simulador de preço de venda</h2><div class="psub">Escolha o produto e o custo; informe o preço final para ver a margem, ou a margem para ver o preço. A margem desconta ICMS, PIS e COFINS da classificação fiscal do item.</div></div>
           </div>
           <div class="pr-ctl">
-            <label class="pr-prod">Produto<input type="text" id="prPn" list="prLista" placeholder="Código ou nome do produto" autocomplete="off"><datalist id="prLista"></datalist></label>
+            <label class="pr-prod">Produto<span class="pr-prod-w"><input type="text" id="prPn" list="prLista" placeholder="Código ou nome do produto" autocomplete="off"><button type="button" id="prLimpar" title="Limpar e escolher outro produto" aria-label="Limpar produto" hidden>&times;</button></span><datalist id="prLista"></datalist></label>
             <label>Custo<select class="fsel" id="prCusto"><option value="maior">Maior custo</option></select></label>
             <div class="pr-modo" id="prModo" role="tablist"><button type="button" class="on" data-m="preco" role="tab" aria-selected="true">Informar preço</button><button type="button" data-m="margem" role="tab" aria-selected="false">Informar margem</button></div>
             <label id="prValLbl">Preço final (R$)<input type="text" inputmode="decimal" id="prVal" placeholder="0,00" autocomplete="off"></label>
@@ -3641,7 +3644,14 @@ function renderPrecos(){
   if(!PR.ligado){
     PR.ligado = true;
     var pn = document.getElementById('prPn');
-    pn.addEventListener('input', function(){ if(PR_SUG[pn.value.trim()]) prAbrir(PR_SUG[pn.value.trim()]); else prSugerir(); });
+    pn.addEventListener('input', function(){ document.getElementById('prLimpar').hidden = !pn.value; if(PR_SUG[pn.value.trim()]) prAbrir(PR_SUG[pn.value.trim()]); else prSugerir(); });
+    // ao clicar no campo o texto todo fica selecionado: é só digitar o próximo produto
+    var prFocou = false;
+    pn.addEventListener('focus', function(){ prFocou = true; pn.select(); });
+    pn.addEventListener('mouseup', function(e){ if(prFocou){ prFocou = false; e.preventDefault(); pn.select(); } });
+    pn.addEventListener('blur', function(){ prFocou = false; });
+    pn.addEventListener('keyup', function(e){ if(e.key==='Escape'){ prLimpar(); } });
+    document.getElementById('prLimpar').addEventListener('click', prLimpar);
     pn.addEventListener('change', prEscolher);
     pn.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); prEscolher(); } });
     document.getElementById('prCusto').addEventListener('change', function(e){ PR.custo = e.target.value; prCalcular(); });
@@ -3665,6 +3675,7 @@ function prLerValor(){
 function prEscolher(){
   var t = String(document.getElementById('prPn').value||'').trim();
   if(!t) return;
+  if(PR.info && t===prRotulo(PR.info)) return;   // já é o produto aberto
   if(PR_SUG[t]){ prAbrir(PR_SUG[t]); return; }
   // código digitado e Enter: procura o código exato
   PR.pendente = t; PR_SUG_N++;
@@ -3676,6 +3687,11 @@ function prEscolher(){
     document.getElementById('prRes').innerHTML = '<p class="note-muted">'+((r||[]).length ? 'Escolha o produto na lista que aparece ao digitar.' : 'Produto não encontrado.')+'</p>';
   }).catch(prErro);
 }
+function prLimpar(){
+  var pn = document.getElementById('prPn');
+  pn.value = ''; document.getElementById('prLista').innerHTML = ''; document.getElementById('prLimpar').hidden = true;
+  PR.pendente = null; pn.focus();
+}
 function prAbrir(pid){
   if(String(pid)===String(PR.pid) && PR.est) return;
   PR.pid = pid; PR.val = null; PR.vendas = null; PR.vchave = null; PR.est = null; PR.info = null;
@@ -3685,7 +3701,9 @@ function prAbrir(pid){
     if(String(PR.pid)!==String(pid)) return;
     if(!d){ document.getElementById('prRes').innerHTML = '<p class="note-muted">Produto não encontrado.</p>'; return; }
     PR.info = {pn:d.pn, nome:d.nome};
-    document.getElementById('prPn').value = prRotulo(PR.info);
+    document.getElementById('prPn').value = prRotulo(PR.info); PR_SUG[prRotulo(PR.info)] = pid;
+    document.getElementById('prLimpar').hidden = false; document.getElementById('prLista').innerHTML = '';
+    if(document.activeElement===document.getElementById('prPn')) document.getElementById('prPn').blur();   // próximo clique seleciona tudo para digitar outro
     var L = {}; (d.lojas||[]).forEach(function(x){ var u = +x[2]||0, e = +x[1]||0; if(u > 0 || e > 0) L[x[0]] = {u:u > 0 ? u : null, est:e}; });
     PR.est = {lojas:L, clsf:d.clsf};
     var al = d.impostos; PR.tx = al ? {pis:+al[0]||0, cofins:+al[1]||0, icms:+al[2]||0, cod:d.clsf} : null; PR.ded = 0;
