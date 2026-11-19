@@ -7,15 +7,23 @@ on:
   workflow_dispatch:
     inputs:
       modo:
-        description: 'coleta (padrão), sonda, sonda_pc, concessionarias ou ibge (só para desenvolver)'
+        description: 'coleta (padrão), item (só um produto adicionado à mão), sonda, sonda_pc, concessionarias ou ibge (só para desenvolver)'
         required: false
         default: 'coleta'
+      fonte:
+        description: 'modo item: guia (vtex ou pc)'
+        required: false
+        default: ''
+      pn:
+        description: 'modo item: código do produto'
+        required: false
+        default: ''
 
 permissions:
   contents: read
 
 concurrency:
-  group: concorrencia
+  group: concorrencia-${{ github.event.inputs.modo == 'item' && github.event.inputs.pn || 'geral' }}
   cancel-in-progress: false
 
 jobs:
@@ -65,4 +73,7 @@ jobs:
         if: ${{ github.event.inputs.modo != 'sonda' && github.event.inputs.modo != 'sonda_pc' && github.event.inputs.modo != 'concessionarias' && github.event.inputs.modo != 'ibge' }}
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          MODO: ${{ github.event.inputs.modo }}
+          FONTE: ${{ github.event.inputs.fonte }}
+          PN: ${{ github.event.inputs.pn }}
         run: python etl/concorrencia.py

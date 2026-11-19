@@ -1215,6 +1215,14 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cc-tbl tr:hover td{background:var(--surface-2);}
 .cc-tbl .num{text-align:right; font-family:'JetBrains Mono',monospace; white-space:nowrap;}
 .cc-item b{display:block; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:10.5px;}
+.cc-man{font-family:Manrope,sans-serif; font-weight:400; font-style:italic; font-size:9.5px; color:var(--text-muted); margin-left:4px;}
+.cc-man-rm{border:0; background:none; color:var(--text-muted); cursor:pointer; font-size:11px; padding:0 3px; margin-left:2px;}
+.cc-man-rm:hover{color:var(--critical);}
+.cc-add{display:flex; gap:0;}
+.cc-add input{width:140px; height:32px; padding:0 9px; border-radius:8px 0 0 8px; border:1px solid var(--border-strong); border-right:0; background:var(--surface); color:var(--text); font:inherit; font-size:12px;}
+.cc-add input:focus{outline:none; border-color:var(--accent);}
+.cc-add button{height:32px; padding:0 11px; border-radius:0 8px 8px 0; border:1px solid var(--accent); background:transparent; color:var(--accent); font:inherit; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;}
+.cc-add button:hover{background:var(--accent); color:#06121a;}
 .cc-item span{display:block; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px;}
 .cc-sug-th{color:var(--accent) !important; cursor:help !important;}
 .cc-sug{min-width:112px;}
@@ -2453,6 +2461,7 @@ table.data-table.vp-tbl{min-width:720px;}
               </select></label>
               <label title="Custo usado na margem (MG) da sugestão: o maior custo unitário entre as lojas ou o custo unitário de uma loja (custo unitário do estoque). A MG usa os impostos da classificação fiscal do item (PIS, COFINS e ICMS)">Custo da MG<select class="fsel" id="ccCustoSel"><option value="maior">Maior custo</option></select></label>
               <input type="search" class="cc-busca" id="ccBusca" placeholder="Buscar código ou nome…">
+              <form class="cc-add" id="ccAddForm" title="Adiciona um produto fixo ao monitoramento desta guia e busca os preços dele agora"><input type="text" id="ccAddPn" placeholder="Código p/ monitorar" maxlength="40" autocomplete="off" aria-label="Código do produto para monitorar"><button type="submit">+ Adicionar</button></form>
               <button type="button" class="cc-exp" id="ccExportar" title="Baixar em Excel os itens que estão na tabela (com o filtro, a busca e a ordem atuais)">&#11015; Exportar Excel</button>
             </div>
           </div>
@@ -3400,8 +3409,35 @@ function renderConcorrencia(){
     window.addEventListener('resize', ccAltura);
     document.getElementById('ccTbl').addEventListener('click', function(e){
       if(e.target.closest('.cc-retry')){ renderConcorrencia(); return; }
+      var rm = e.target.closest('.cc-man-rm');
+      if(rm){
+        if(!rm.dataset.conf){ rm.dataset.conf = '1'; rm.textContent = 'tirar?'; setTimeout(function(){ if(rm.isConnected){ delete rm.dataset.conf; rm.textContent = '×'; } }, 3000); return; }
+        rm.disabled = true;
+        window.__NC_rpc('bi_conc_manual_gravar', {p:{acao:'remover', fonte:CC_FONTE, pn:rm.getAttribute('data-pn')}})
+          .then(function(){ toast('Produto tirado do monitoramento.'); ccRecarregar(); })
+          .catch(function(er){ rm.disabled = false; toast('Não foi possível tirar: '+String(er && (er.message||er)).slice(0,100)); });
+        return;
+      }
       var th = e.target.closest('th[data-o]'); if(!th) return;
       var o = th.getAttribute('data-o'); CC.desc = CC.ordem===o ? !CC.desc : true; CC.ordem = o; ccTabela();
+    });
+  }
+  if(!CC.addLigado){
+    CC.addLigado = true;
+    document.getElementById('ccAddForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var inp = document.getElementById('ccAddPn'), pn = String(inp.value||'').trim().toUpperCase(), bt = this.querySelector('button');
+      if(!pn) return;
+      if(!/^[A-Z0-9][A-Z0-9 .\/_-]*$/.test(pn)){ toast('Código inválido.'); return; }
+      var ja = (CC.dados && CC.dados.itens || []).filter(function(it){ return String(it.pn).toUpperCase()===pn; })[0];
+      if(ja && ja.manual){ toast('Esse produto já está no monitoramento desta guia.'); return; }
+      bt.disabled = true; bt.textContent = 'Adicionando…';
+      window.__NC_rpc('bi_conc_manual_gravar', {p:{acao:'add', fonte:CC_FONTE, pn:pn}}).then(function(r){
+        inp.value = '';
+        toast(r && r.disparado ? pn+' adicionado. A busca dos preços dele começou; a tabela atualiza sozinha em alguns minutos.' : pn+' adicionado. Os preços entram na próxima coleta diária.');
+        ccRecarregar(); if(r && r.disparado){ [90, 180, 300].forEach(function(sg){ setTimeout(function(){ if(state.currentView==='concorrencia') ccRecarregar(); }, sg*1000); }); }
+      }).catch(function(er){ toast(/schema cache|does not exist/i.test(String(er && (er.message||er))) ? 'O banco ainda não tem a tabela de produtos manuais.' : 'Não foi possível adicionar: '+String(er && (er.message||er)).slice(0,100)); })
+        .then(function(){ bt.disabled = false; bt.textContent = '+ Adicionar'; });
     });
   }
   if(CC.dados){ ccTabela(); ccHistorico(); return; }
@@ -3416,13 +3452,22 @@ function renderConcorrencia(){
     carregarProdutos().catch(function(){});   // estoque para o tooltip do nosso preço
   });
 }
+// relê os dados da concorrência sem limpar a tela (depois de adicionar ou tirar um produto manual)
+function ccRecarregar(){
+  supa.rpc('bi_concorrencia_ler').then(function(r){
+    if(r.error || !r.data) return;
+    CC.raw = r.data; ccMontar(); ccTabela(); ccHistorico();
+  });
+}
 function ccMontar(){
   var d = CC.raw, cfg = CC_FONTES[CC_FONTE], pm = {}, quando = null;
   (d.precos||[]).forEach(function(x){ (pm[x[1]] = pm[x[1]] || {})[x[0]] = {preco:+x[2], lista:x[3]==null?null:+x[3], disp:x[4], titulo:x[5], url:x[6], conf:x[7]}; if((x[0]===CC_NOSSO || cfg.sites.some(function(s){ return s.k===x[0]; })) && (!quando || x[8] > quando)) quando = x[8]; });
   var hist = {};
   (d.hist||[]).forEach(function(x){ (hist[x[0]+'|'+x[1]] = hist[x[0]+'|'+x[1]] || []).push([String(x[2]).slice(0,10), +x[3]]); });
   CC.hist = hist; CC.dias = +d.dias || 0;
+  var nTop = 0;
   CC.dados = {quando:quando, itens:(d[cfg.itens]||[]).map(function(x, i){
+    var manual = !!x[8], top = x[9]!==false; if(top) nTop++;
     var p = pm[x[0]] || {}, nosso = p[CC_NOSSO] ? p[CC_NOSSO].preco : null;
     // Preço MD e custo médio: só as vendas do e-commerce na loja da guia (VTEX ou Peça Chevrolet)
     var pmv = x.length < 5 ? (x[3] ? c2(x[2])/x[3] : null) : (x[5] ? c2(x[4])/x[5] : null), cmv = x[5] && x[6]!=null ? c2(x[6])/x[5] : null;
@@ -3436,7 +3481,7 @@ function ccMontar(){
     var vals = cs.filter(function(c){ return c && !c.susp; }).map(function(c){ return c.preco; }), menor = vals.length ? Math.min.apply(null, vals) : null;
     var pctMenor = nosso && menor ? (nosso/menor - 1)*100 : null;
     var sug = menor ? Math.round(menor*0.98*100)/100 : null;
-    return {rank:i+1, pn:x[0], nome:x[1], fat:c2(x[2]), qtd:+x[3], pmv:pmv, cmv:cmv, ded:ded, sug:sug, nosso:nosso, nossoV:nosso ? ccVar(CC_NOSSO, x[0], nosso, quando) : null, nossoSusp:nossoSusp, nossoBruto:p[CC_NOSSO] ? p[CC_NOSSO].preco : null, nossoUrl:p[CC_NOSSO] && p[CC_NOSSO].url, cs:cs, menor:menor, pctMenor:pctMenor, n:vals.length};
+    return {rank: top ? nTop : null, manual:manual, top:top, pn:x[0], nome:x[1], fat:c2(x[2]), qtd:+x[3], pmv:pmv, cmv:cmv, ded:ded, sug:sug, nosso:nosso, nossoV:nosso ? ccVar(CC_NOSSO, x[0], nosso, quando) : null, nossoSusp:nossoSusp, nossoBruto:p[CC_NOSSO] ? p[CC_NOSSO].preco : null, nossoUrl:p[CC_NOSSO] && p[CC_NOSSO].url, cs:cs, menor:menor, pctMenor:pctMenor, n:vals.length};
   })};
 }
 // estoque do item somado em todas as lojas e o maior custo médio entre elas (custo do estoque ÷ peças, só lojas com saldo)
@@ -3513,7 +3558,7 @@ function ccExportarMontar(L, D, bt){
     var obs = [];
     if(it.nossoSusp) obs.push('Preço '+(CC_FONTE==='pc' ? 'da Nova no Peça Chevrolet' : 'do nosso site')+' ('+ccMoney(it.nossoBruto)+') muito diferente do preço médio vendido: conferir cadastro');
     var e = ccEstoque(it.pn) || {};
-    var r = [it.rank, it.pn, String(it.nome||'').replace(/^\S+\s*-\s*/, ''), n2(it.fat), it.qtd, n2(it.pmv), n2(it.nosso), e.est==null ? null : Math.round(e.est), n2(e.maior), e.loja || null];
+    var r = [it.rank!=null ? it.rank : 'Manual', it.pn, String(it.nome||'').replace(/^\S+\s*-\s*/, ''), n2(it.fat), it.qtd, n2(it.pmv), n2(it.nosso), e.est==null ? null : Math.round(e.est), n2(e.maior), e.loja || null];
     it.cs.forEach(function(c, k){
       if(!c){ r.push(null, null, null); return; }
       if(c.susp) obs.push(CC_SITES[k].n+': preço muito diferente, provavelmente outro produto, kit ou embalagem');
@@ -3742,16 +3787,17 @@ function ccTabela(){
   });
   var o = CC.ordem, sg = CC.desc ? -1 : 1;
   CC.linhas = linhas;
+  function rk(x){ return x.rank!=null ? x.rank : 1e6; }   // manuais fora do top 100 vão para o fim
   linhas.sort(function(a,b){
-    var va = o==='pct' ? a.pctMenor : (o==='rank' ? -a.rank : a[o]), vb = o==='pct' ? b.pctMenor : (o==='rank' ? -b.rank : b[o]);
-    if(va==null && vb==null) return a.rank-b.rank; if(va==null) return 1; if(vb==null) return -1;
-    return (va-vb)*sg || a.rank-b.rank;
+    var va = o==='pct' ? a.pctMenor : (o==='rank' ? -rk(a) : a[o]), vb = o==='pct' ? b.pctMenor : (o==='rank' ? -rk(b) : b[o]);
+    if(va==null && vb==null) return rk(a)-rk(b); if(va==null) return 1; if(vb==null) return -1;
+    return (va-vb)*sg || rk(a)-rk(b);
   });
   function th(t, k, num){ return '<th'+(num?' class="num"':'')+(k?' data-o="'+k+'"':'')+'>'+t+(k && CC.ordem===k ? (CC.desc?' ▾':' ▴') : '')+'</th>'; }
   document.getElementById('ccTbl').innerHTML = '<thead><tr>'+th('#','rank')+th('Item')+th('Fat. 90 dias','fat',1)+th('Preço MD','pmv',1)+th(CC_NOSSO_N,'nosso',1) +
     CC_SITES.map(function(s){ return th(s.n, '', 1); }).join('') + th('vs menor preço','pct',1)+'<th class="num cc-sug-th" title="Nosso preço em relação ao menor concorrente: − diminui, + aumenta (clique no sinal para trocar), pelo percentual ao lado (editável). Clique no valor de cada item para editar; Enter vai para o próximo. Embaixo, a margem bruta (MG) vendendo nesse preço.">Sugestão <span class="cc-pct-w"><button type="button" class="cc-pct-sinal" id="ccPctSinal" title="'+(CC_PCT < 0 ? 'Aumentando: clique para diminuir' : 'Diminuindo: clique para aumentar')+'">'+(CC_PCT < 0 ? '+' : '−')+'</button><input type="text" inputmode="decimal" class="cc-pct-in" id="ccPct" value="'+String(Math.abs(CC_PCT)).replace('.',',')+'" aria-label="Percentual em relação ao menor concorrente">%</span></th></tr></thead><tbody>' +
     linhas.map(function(it){
-      return '<tr><td class="num">'+it.rank+'</td><td class="cc-item"><b>'+escapeHtml(it.pn)+'</b><span title="'+escapeHtml(it.nome||'')+'">'+escapeHtml(String(it.nome||'').replace(/^\S+\s*-\s*/, ''))+'</span></td>' +
+      return '<tr'+(it.manual?' class="cc-tr-man"':'')+'><td class="num">'+(it.rank!=null ? it.rank : '<span class="cc-vazio" title="Adicionado à mão, fora do top 100">·</span>')+'</td><td class="cc-item"><b>'+escapeHtml(it.pn)+(it.manual ? ' <i class="cc-man">adicionado manualmente</i><button type="button" class="cc-man-rm" data-pn="'+escapeHtml(it.pn)+'" title="Tirar do monitoramento">×</button>' : '')+'</b><span title="'+escapeHtml(it.nome||'')+'">'+escapeHtml(String(it.nome||'').replace(/^\S+\s*-\s*/, ''))+'</span></td>' +
         '<td class="num">'+fmtCurto(it.fat)+'</td><td class="num">'+ccMoney(it.pmv)+'</td>' +
         '<td class="num cc-nosso" data-pn="'+escapeHtml(it.pn)+'">'+(it.nossoSusp ? '<a href="'+escapeHtml(it.nossoUrl||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="Preço do site muito diferente do preço médio vendido: confira o cadastro">⚠ '+ccMoney(it.nossoBruto)+'</a>' : it.nosso ? (it.nossoUrl ? '<a href="'+escapeHtml(it.nossoUrl)+'" target="_blank" rel="noopener" style="color:inherit">'+ccMoney(it.nosso)+'</a>' : ccMoney(it.nosso))+(it.nossoV && Math.abs(it.nossoV.pct)>=0.5 ? '<div class="cc-c">'+ccVarHtml(it.nossoV, CC_NOSSO_N)+'</div>' : '') : '<span class="cc-vazio" title="'+(CC_FONTE==='pc' ? 'A Nova não tem oferta desta peça no Peça Chevrolet' : 'Não encontrado no nosso site pelo código')+'">—</span>')+'</td>' +
         it.cs.map(function(c){

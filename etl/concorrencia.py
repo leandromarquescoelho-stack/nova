@@ -237,14 +237,36 @@ def main():
     url = os.environ.get('SUPABASE_DB_URL')
     if not url:
         print('SUPABASE_DB_URL não configurado; nada a fazer.'); return
+    # modo item: só o produto que acabou de ser adicionado à mão, numa guia (vtex ou pc)
+    modo = (os.environ.get('MODO') or 'coleta').strip()
+    item_pn, item_fonte = (os.environ.get('PN') or '').strip().upper(), (os.environ.get('FONTE') or '').strip()
+    if modo == 'item' and (not item_pn or item_fonte not in ('vtex', 'pc')):
+        print('modo item sem código ou guia; nada a fazer.'); return
     with psycopg.connect(url, autocommit=True) as con:
-        itens = con.execute("""
-          with c as (select id from public.bi_dim where tipo = 'canal' and valor = 'ECOMMERCE'),
-          t as (select v.produto, sum(v.fat) fat from public.bi_venda_det v, c
-                where v.canal = c.id and v.dia >= (select max(dia) from public.bi_venda_det) - 89 and v.fat > 0
-                group by 1 order by 2 desc limit 100)
-          select p.pn, p.nome from t join public.bi_produto p on p.id = t.produto order by t.fat desc""").fetchall()
-        print(f'{len(itens)} itens no top 100 do e-commerce', flush=True)
+        tem_manual = con.execute("select to_regclass('public.bi_conc_manual') is not null").fetchone()[0]
+
+        def manuais(fonte, ja):
+            if not tem_manual:
+                return []
+            rs = con.execute("""select m.pn, p.nome from public.bi_conc_manual m left join public.bi_produto p on p.pn = m.pn
+                                 where m.fonte = %s order by m.criado_em""", (fonte,)).fetchall()
+            vistos = {pn for pn, _ in ja}
+            return [(pn, nome) for pn, nome in rs if pn not in vistos]
+
+        if modo == 'item':
+            nome = con.execute('select nome from public.bi_produto where pn = %s', (item_pn,)).fetchone()
+            um = [(item_pn, nome[0] if nome else None)]
+            itens, itens_pc = (um, []) if item_fonte == 'vtex' else ([], um)
+            print(f'modo item: 1 produto na guia {item_fonte}', flush=True)
+        else:
+            itens = con.execute("""
+              with c as (select id from public.bi_dim where tipo = 'canal' and valor = 'ECOMMERCE'),
+              t as (select v.produto, sum(v.fat) fat from public.bi_venda_det v, c
+                    where v.canal = c.id and v.dia >= (select max(dia) from public.bi_venda_det) - 89 and v.fat > 0
+                    group by 1 order by 2 desc limit 100)
+              select p.pn, p.nome from t join public.bi_produto p on p.id = t.produto order by t.fat desc""").fetchall()
+            itens += manuais('vtex', itens)
+            print(f'{len(itens)} itens do e-commerce (top 100 e adicionados à mão)', flush=True)
         linhas, achou = [], {s: 0 for s, _ in SITES}
         for i, (pn, nome) in enumerate(itens, 1):
             cs = codigos(pn, nome)
@@ -261,14 +283,16 @@ def main():
                     linhas.append((site, pn, r['preco'], r['lista'], r['disp'], (r['titulo'] or '')[:200], r['url'], r['conf']))
             if i % 10 == 0:
                 print(f'{i} itens processados · encontrados: ' + ', '.join(f'{k} {v}' for k, v in achou.items()), flush=True)
-        # Peça Chevrolet: top 100 da loja PEÇA CHEVROLET (90 dias)
-        itens_pc = con.execute("""
-          with l as (select id from public.bi_dim where tipo = 'loja' and valor = 'PEÇA CHEVROLET'),
-          t as (select v.produto, sum(v.fat) fat from public.bi_venda_det v, l
-                where v.loja = l.id and v.dia >= (select max(dia) from public.bi_venda_det) - 89 and v.fat > 0
-                group by 1 order by 2 desc limit 100)
-          select p.pn, p.nome from t join public.bi_produto p on p.id = t.produto order by t.fat desc""").fetchall()
-        print(f'{len(itens_pc)} itens no top 100 da loja Peça Chevrolet', flush=True)
+        # Peça Chevrolet: top 100 da loja PEÇA CHEVROLET (90 dias) e os adicionados à mão
+        if modo != 'item':
+            itens_pc = con.execute("""
+              with l as (select id from public.bi_dim where tipo = 'loja' and valor = 'PEÇA CHEVROLET'),
+              t as (select v.produto, sum(v.fat) fat from public.bi_venda_det v, l
+                    where v.loja = l.id and v.dia >= (select max(dia) from public.bi_venda_det) - 89 and v.fat > 0
+                    group by 1 order by 2 desc limit 100)
+              select p.pn, p.nome from t join public.bi_produto p on p.id = t.produto order by t.fat desc""").fetchall()
+            itens_pc += manuais('pc', itens_pc)
+            print(f'{len(itens_pc)} itens da loja Peça Chevrolet (top 100 e adicionados à mão)', flush=True)
         if itens_pc:
             pc_redes_log()
         achou_pc, com_lista = {s: 0 for s in PC_REDES}, 0
@@ -290,7 +314,12 @@ def main():
         achou.update(achou_pc)
         sites_ok = [k for k, v in achou.items() if v]   # um site sem nenhum resultado mantém a coleta anterior
         with con.transaction():
-            con.execute('delete from public.bi_concorrencia where site = any(%s)', (sites_ok,))
+            if modo == 'item':   # só o item: troca os preços dele nos sites da guia (sem nenhum resultado, mantém os anteriores)
+                sites_guia = [s for s, _ in SITES] if item_fonte == 'vtex' else list(PC_REDES)
+                if linhas:
+                    con.execute('delete from public.bi_concorrencia where pn = %s and site = any(%s)', (item_pn, sites_guia))
+            else:
+                con.execute('delete from public.bi_concorrencia where site = any(%s)', (sites_ok,))
             with con.cursor() as cur:
                 cur.executemany("""insert into public.bi_concorrencia (site, pn, preco, preco_lista, disponivel, titulo, url, confianca)
                                    values (%s,%s,%s,%s,%s,%s,%s,%s) on conflict (site, pn) do nothing""", linhas)
@@ -298,7 +327,9 @@ def main():
             if con.execute("select to_regclass('public.bi_concorrencia_hist') is not null").fetchone()[0]:
                 con.execute("""insert into public.bi_concorrencia_hist (dia, site, pn, preco, disponivel)
                                select (now() at time zone 'America/Sao_Paulo')::date, site, pn, preco, disponivel from public.bi_concorrencia
-                               on conflict (dia, site, pn) do update set preco = excluded.preco, disponivel = excluded.disponivel""")
+                               where %s = '' or pn = %s
+                               on conflict (dia, site, pn) do update set preco = excluded.preco, disponivel = excluded.disponivel""",
+                            (item_pn if modo == 'item' else '', item_pn if modo == 'item' else ''))
         print('accioly (diagnóstico):', ACC_DBG, flush=True)
         print('gravado: ' + ', '.join(f'{k} {v}' for k, v in achou.items()), flush=True)
 
