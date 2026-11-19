@@ -451,6 +451,12 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vh-tit{font-family:'Sora',sans-serif; font-size:20px; margin:0;}
 .vh-sub{font-size:12px; color:var(--text-muted); margin-top:3px;}
 .vh-dias{display:flex; gap:8px; flex-wrap:wrap;}
+.vh-cap{padding:2px;}
+.vh-geral{position:static!important; width:auto!important; height:auto!important; display:inline-flex!important; align-items:center; gap:6px; font:inherit; font-size:12px!important; font-weight:800; padding:6px 12px!important; border-radius:999px!important; border:1px solid var(--accent)!important; background:var(--surface)!important; color:var(--accent)!important; cursor:pointer; opacity:1!important;}
+.vh-c{position:relative;}
+.vh-c .copy-img{position:absolute; top:10px; right:10px; opacity:.55;}
+.vh-c:hover .copy-img{opacity:1;}
+.vh-c .vh-ch{padding-right:30px;}
 .vh-dias span{font-size:11.5px; padding:5px 10px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-2);}
 .vh-dias b{color:var(--text); font-family:'JetBrains Mono',monospace;}
 .vh-kpis{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:16px;}
@@ -2395,10 +2401,12 @@ table.data-table.vp-tbl{min-width:720px;}
       </div>
 
       <div class="vx-tc" data-vxpainel="hoje" hidden>
-        <div class="vh-topo"><div><h2 class="vh-tit" id="vhTit">Vendas de hoje</h2><div class="vh-sub" id="vhSub"></div></div><div class="vh-dias" id="vhDias"></div></div>
+        <div class="vh-cap" id="vhCap">
+        <div class="vh-topo"><div><h2 class="vh-tit" id="vhTit">Vendas de hoje</h2><div class="vh-sub" id="vhSub"></div></div><div class="vh-dias"><span id="vhDias" style="display:contents"></span><button type="button" class="vh-geral copy-img" id="vhCopiarTudo" title="Copiar a visão geral (indicadores e quadros) como imagem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Copiar visão geral</button></div></div>
         <div class="vh-kpis" id="vhKpis"></div>
         <div class="vh-grupo-l" id="vhCardsT">Lojas &middot; atacado</div>
         <div class="vh-cards" id="vhCards"></div>
+        </div>
         <div class="vx-card"><div class="vx-ct">Canal &times; loja no mês</div><div class="vx-cs">Faturamento do mês até o dia, com a margem embaixo &middot; e-commerce pela loja que fatura (emitente) &middot; seguradoras = clientes do tipo seguradora</div><div class="vx-scroll"><table class="vh-mat" id="vhMat"></table></div></div>
         <p class="note-muted" id="vhNota" style="font-size:11px;"></p>
       </div>
@@ -5188,17 +5196,17 @@ function baixarBlob(blob, nome){
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome;
   document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
 }
-function copiarCard(btn){
-  var panel = btn.closest('.panel'); if(!panel || btn.classList.contains('busy')) return;
+function copiarCard(btn, alvo, nome){
+  var panel = alvo || btn.closest('.panel'); if(!panel || btn.classList.contains('busy')) return;
   btn.classList.add('busy');
-  var pr = imagemDoCard(panel);
-  function fim(ok){ btn.classList.remove('busy'); if(ok){ btn.classList.add('ok'); btn.innerHTML = ICO_OK; setTimeout(function(){ btn.classList.remove('ok'); btn.innerHTML = ICO_COPIA; }, 1600); } }
+  var pr = imagemDoCard(panel), orig = btn.innerHTML;
+  function fim(ok){ btn.classList.remove('busy'); if(ok){ btn.classList.add('ok'); btn.innerHTML = btn.classList.contains('vh-geral') ? ICO_OK+' Copiado' : ICO_OK; setTimeout(function(){ btn.classList.remove('ok'); btn.innerHTML = orig; }, 1600); } }
   var podeCopiar = navigator.clipboard && window.ClipboardItem && window.isSecureContext;
   (podeCopiar ? navigator.clipboard.write([new ClipboardItem({'image/png': pr})]).then(function(){
       toast('Imagem do card copiada. É só colar (Ctrl+V) no WhatsApp ou no e-mail.'); fim(true);
     }) : Promise.reject()
   ).catch(function(){
-    return pr.then(function(blob){ baixarBlob(blob, nomeArquivoCard(panel)); toast('Imagem do card baixada.'); fim(true); });
+    return pr.then(function(blob){ baixarBlob(blob, nome || nomeArquivoCard(panel)); toast('Imagem do card baixada.'); fim(true); });
   }).catch(function(){ fim(false); toast('Não foi possível gerar a imagem deste card.'); });
 }
 function iniciarCopiaCards(){
@@ -8838,7 +8846,7 @@ function vhDesenhar(){
       bar = '<div class="vh-barl"><span>Atingido <b>'+vhP(r.at)+'</b></span><span>Tendência <b style="color:'+vhCorTend(r.tp)+'">'+vhP(r.tp)+'</b></span></div>' +
         '<div class="vh-bar" title="Barra: vendido no mês ÷ objetivo · traço: tendência de fechamento ÷ objetivo"><i style="width:'+w.toFixed(1)+'%; background:'+vhCorTend(r.tp)+'"></i>'+(mk!==null ? '<em style="left:calc('+mk.toFixed(1)+'% - 1px)"></em>' : '')+'</div>';
     } else bar = '<div class="vh-barl"><span>'+(opt.semObj || 'Sem objetivo no mês')+'</span><span>Tendência <b>'+(r.tend!==null ? fmtMoney(r.tend) : '—')+'</b></span></div>';
-    return '<div class="vh-c'+(opt.cls ? ' '+opt.cls : '')+'">' +
+    return '<div class="vh-c'+(opt.cls ? ' '+opt.cls : '')+'"><button type="button" class="copy-img vh-cp" title="Copiar este quadro como imagem" aria-label="Copiar este quadro como imagem">'+ICO_COPIA+'</button>' +
       '<div class="vh-ch"><b>'+escapeHtml(nome)+'</b><span>'+escapeHtml(tag||'')+'</span></div>' +
       '<div class="vh-hoje"><span class="vv">'+fmtMoney(t.h.f)+'</span>'+vhMgB(t.h)+vhVs(r.vsH)+'</div>' +
       '<div class="vh-lin"><span class="r">Ontem</span><span class="n">'+fmtMoney(t.o.f)+'</span><span class="b">'+vhMgB(t.o)+vhVs(r.vsO)+'</span>' +
@@ -8879,7 +8887,10 @@ function vhDesenhar(){
 }
 function vhLigar(){
   var box = document.getElementById('vhCards'); if(box.dataset.lig) return; box.dataset.lig = '1';
+  document.getElementById('vhCopiarTudo').addEventListener('click', function(){ copiarCard(this, document.getElementById('vhCap'), 'vendas-hoje.png'); });
   box.addEventListener('click', function(e){
+    var cp = e.target.closest('.vh-cp');
+    if(cp){ var c = cp.closest('.vh-c'), nm = (c.querySelector('.vh-ch b')||{}).textContent || 'quadro'; copiarCard(cp, c, 'vendas-hoje-'+nm.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-').toLowerCase()+'.png'); return; }
     var sp = e.target.closest('.vh-obj.ed'); if(!sp || sp.querySelector('input')) return;
     var chave = sp.getAttribute('data-obj'), mes = String(VH.d.dia).slice(0,7)+'-01', atual = (VH.obj[mes]||{})[chave];
     sp.innerHTML = '<input type="text" inputmode="decimal" value="'+(atual ? String(Math.round(atual)) : '')+'" placeholder="R$ do mês" aria-label="Objetivo de '+escapeHtml(chave)+'">';
