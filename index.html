@@ -1255,7 +1255,10 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .pr-cab{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; margin-bottom:12px;}
 .pr-cab b{font-family:'JetBrains Mono',monospace; font-size:16px;}
 .pr-cards{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px;}
-.pr-card{border:1px solid var(--border); border-radius:12px; padding:12px 14px; background:var(--surface-2);}
+.pr-card{position:relative; border:1px solid var(--border); border-radius:12px; padding:12px 14px; background:var(--surface-2);}
+.pr-copy{position:absolute; top:8px; right:8px; width:26px; height:26px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--text-muted); cursor:pointer; opacity:.75;}
+.pr-copy:hover{opacity:1; color:var(--accent); border-color:var(--accent);}
+.pr-copy.ok{color:var(--good); border-color:var(--good); opacity:1;}
 .pr-card .l{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted);}
 .pr-card .v{font-size:22px; font-weight:800; margin-top:4px; font-family:'JetBrains Mono',monospace;}
 .pr-card .s{font-size:11px; color:var(--text-muted); margin-top:3px;}
@@ -3887,6 +3890,21 @@ function prCalcular(digitando){
       '</div>';
   }
   res.innerHTML = h;
+  // botão de copiar em cada bloco: copia o valor sem o "R$" (cola como número no Excel)
+  res.querySelectorAll('.pr-card').forEach(function(cd){
+    var v = cd.querySelector('.v'); if(!v || v.textContent.trim()==='—') return;
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'pr-copy'; b.title = 'Copiar '+cd.querySelector('.l').textContent.toLowerCase(); b.setAttribute('aria-label', b.title);
+    b.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    b.setAttribute('data-copiar', v.textContent.replace(/R\$\s*/, '').trim());
+    cd.appendChild(b);
+  });
+  if(!res.dataset.cp){ res.dataset.cp = '1';
+    res.addEventListener('click', function(e){
+      var b = e.target.closest('.pr-copy'); if(!b) return;
+      var t = b.getAttribute('data-copiar');
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function(){ toast('Copiado: '+t); b.classList.add('ok'); setTimeout(function(){ b.classList.remove('ok'); }, 1200); }, function(){ toast('Não foi possível copiar.'); });
+    });
+  }
   prTabela(c);
 }
 function prTabela(cSel){
