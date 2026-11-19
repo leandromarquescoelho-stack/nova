@@ -320,18 +320,16 @@ def escolher_fotos(cands, n=3):
     boas = [c for c in cands if c.get('w') and c.get('h') and min(c['w'], c['h']) >= 300 and max(c['w'], c['h']) / max(1, min(c['w'], c['h'])) <= 2.5]
     boas.sort(key=lambda c: (-(c['w'] * c['h']), c.get('ordem', 9)))
     out, fontes_usadas = [], Counter()
-    for c in boas:
-        chave = re.sub(r'(\?.*$)|(-\d+-\d+)|(_\d+x\d+)', '', c['url'].lower()).rsplit('/', 1)[-1]
-        tam = (c['w'], c['h'])
-        if chave in vistos:
-            continue
-        # no máximo 2 fotos da mesma fonte, para variar os ângulos
-        if fontes_usadas[c.get('dominio', '')] >= 2 and len(boas) > n:
-            continue
-        vistos.add(chave); fontes_usadas[c.get('dominio', '')] += 1
-        out.append({k: c.get(k) for k in ('url', 'w', 'h', 'fonte', 'pagina', 'dominio')})
-        if len(out) >= n:
-            break
+    # 1ª passada: no máximo 2 fotos da mesma fonte, para variar; 2ª: completa com o que sobrou
+    for limite in (2, n):
+        for c in boas:
+            if len(out) >= n:
+                break
+            chave = re.sub(r'(\?.*$)|(-\d+-\d+)|(_\d+x\d+)', '', c['url'].lower()).rsplit('/', 1)[-1]
+            if chave in vistos or fontes_usadas[c.get('dominio', '')] >= limite:
+                continue
+            vistos.add(chave); fontes_usadas[c.get('dominio', '')] += 1
+            out.append({k: c.get(k) for k in ('url', 'w', 'h', 'fonte', 'pagina', 'dominio')})
     return out
 
 
