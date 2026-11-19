@@ -1257,6 +1257,10 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cad-form input:focus{outline:none; border-color:var(--accent);}
 .cad-form button{height:38px; padding:0 18px; border-radius:0 10px 10px 0; border:1px solid transparent; background:var(--pbi-grad); color:var(--pbi-ink); font:inherit; font-size:13px; font-weight:800; cursor:pointer; white-space:nowrap;}
 .cad-form button:disabled{opacity:.6; cursor:wait;}
+.cad-pn-w{position:relative; display:flex; align-items:center;}
+.cad-form .cad-pn-w input{padding-right:32px;}
+.cad-form #cadLimpar{position:absolute; right:6px; width:22px; height:22px; padding:0; border:0; border-radius:6px; background:transparent; color:var(--text-muted); font-size:18px; font-weight:400; line-height:1; cursor:pointer;}
+.cad-form #cadLimpar:hover{color:var(--text); background:var(--surface);}
 .cad-wait{display:flex; gap:12px; align-items:flex-start; padding:14px; border:1px dashed var(--border-strong); border-radius:12px;}
 .cad-spin{width:18px; height:18px; flex:0 0 18px; border-radius:50%; border:2px solid var(--border-strong); border-top-color:var(--accent); animation:cadGira 1s linear infinite;}
 @keyframes cadGira{to{transform:rotate(360deg);}}
@@ -1311,7 +1315,7 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cad-rec button{display:flex; flex-direction:column; align-items:flex-start; gap:2px; max-width:280px; padding:8px 12px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); font:inherit; cursor:pointer; text-align:left;}
 .cad-rec button span{font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:256px;}
 .cad-rec button:hover{border-color:var(--accent);}
-@media (max-width:900px){ .cad-grid{grid-template-columns:1fr;} .cad-form input{width:100%;} .cad-form{width:100%;} }
+@media (max-width:900px){ .cad-grid{grid-template-columns:1fr;} .cad-form input{width:100%;} .cad-form{width:100%;} .cad-pn-w{flex:1;} }
 .cc-ctl .fsel, .cc-busca, .cc-exp, .cc-add input, .cc-add button{height:34px; box-sizing:border-box; padding-top:0; padding-bottom:0;}
 .cc-item span{display:block; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px;}
 .cc-sug-th{color:var(--accent) !important; cursor:help !important;}
@@ -2608,7 +2612,7 @@ table.data-table.vp-tbl{min-width:720px;}
             <div class="panel-head">
               <div><h2>Sugestão de cadastro</h2><div class="psub">Digite o código e pesquise: o painel procura no Mercado Livre, na busca da web, no site do fabricante e nos catálogos públicos, e monta a sugestão de anúncio com as fontes</div></div>
             </div>
-            <form class="cad-form" id="cadForm"><input type="text" id="cadPn" placeholder="Código do produto" maxlength="40" autocomplete="off" aria-label="Código do produto"><button type="submit" id="cadBtn">Pesquisar informações</button></form>
+            <form class="cad-form" id="cadForm"><span class="cad-pn-w"><input type="text" id="cadPn" placeholder="Código do produto" maxlength="40" autocomplete="off" aria-label="Código do produto"><button type="button" id="cadLimpar" title="Limpar para uma nova consulta" aria-label="Limpar código" hidden>&times;</button></span><button type="submit" id="cadBtn">Pesquisar informações</button></form>
             <div id="cadRes"></div>
           </div>
         </div>
@@ -3846,7 +3850,17 @@ function cadLigar(){
     if(!pn) return;
     if(!/^[A-Z0-9][A-Z0-9 .\/_-]*$/.test(pn) || pn.length > 40){ toast('Código inválido.'); return; }
     cadPedir(pn);
+    document.getElementById('cadPn').blur();   // o próximo clique seleciona o código todo para digitar o novo
   });
+  // nova consulta igual ao simulador de preço: clique seleciona o texto, botão × ou Esc limpam
+  var cp = document.getElementById('cadPn'), cl = document.getElementById('cadLimpar'), cadFocou = false;
+  function cadLimpar(){ cp.value = ''; cl.hidden = true; cp.focus(); }
+  cp.addEventListener('input', function(){ cl.hidden = !cp.value; });
+  cp.addEventListener('focus', function(){ cadFocou = true; cp.select(); });
+  cp.addEventListener('mouseup', function(e){ if(cadFocou){ cadFocou = false; e.preventDefault(); cp.select(); } });
+  cp.addEventListener('blur', function(){ cadFocou = false; });
+  cp.addEventListener('keyup', function(e){ if(e.key==='Escape') cadLimpar(); });
+  cl.addEventListener('click', cadLimpar);
   document.getElementById('cadRes').addEventListener('click', function(e){
     var c = e.target.closest('[data-copiar]');
     if(c){
@@ -3856,7 +3870,7 @@ function cadLigar(){
     }
     var bx = e.target.closest('.cad-baixar'); if(bx){ cadBaixar(+bx.getAttribute('data-foto'), bx); return; }
     var fa = e.target.closest('.cad-foto-ab'); if(fa){ cadAmpliar(+fa.getAttribute('data-foto')); return; }
-    var r = e.target.closest('[data-cad-pn]'); if(r){ document.getElementById('cadPn').value = r.getAttribute('data-cad-pn'); cadAbrir(r.getAttribute('data-cad-pn')); return; }
+    var r = e.target.closest('[data-cad-pn]'); if(r){ document.getElementById('cadPn').value = r.getAttribute('data-cad-pn'); document.getElementById('cadLimpar').hidden = false; cadAbrir(r.getAttribute('data-cad-pn')); return; }
     if(e.target.closest('.cad-refazer') && CAD.pn) cadPedir(CAD.pn);
   });
 }
