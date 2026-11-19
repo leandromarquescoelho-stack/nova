@@ -3735,8 +3735,8 @@ function prAbrir(pid){
     document.getElementById('prPn').value = prRotulo(PR.info); PR_SUG[prRotulo(PR.info)] = pid;
     document.getElementById('prLimpar').hidden = false; document.getElementById('prLista').innerHTML = '';
     if(document.activeElement===document.getElementById('prPn')) document.getElementById('prPn').blur();   // próximo clique seleciona tudo para digitar outro
-    var L = {}; (d.lojas||[]).forEach(function(x){ var u = +x[2]||0, e = +x[1]||0; if(u > 0 || e > 0) L[x[0]] = {u:u > 0 ? u : null, est:e}; });
-    PR.est = {lojas:L, clsf:d.clsf};
+    var L = {}, tab = null; (d.lojas||[]).forEach(function(x){ var u = +x[2]||0, e = +x[1]||0, t = +x[3]||0; if(t > 0 && (tab===null || t > tab)) tab = t; if(u > 0 || e > 0 || t > 0) L[x[0]] = {u:u > 0 ? u : null, est:e, t:t > 0 ? t : null}; });
+    PR.est = {lojas:L, clsf:d.clsf, tab:tab};
     var al = d.impostos; PR.tx = al ? {pis:+al[0]||0, cofins:+al[1]||0, icms:+al[2]||0, cod:d.clsf} : null; PR.ded = 0;
     prOpcoesCusto(); prCalcular(); prVendas();
   }).catch(prErro);
@@ -3791,6 +3791,7 @@ function prCalcular(digitando){
     var inviavel = PR.modo==='margem' && mg!=null && preco==null;
     h += '<div class="pr-cards">'+
       '<div class="pr-card"><div class="l">Custo usado</div><div class="v">'+ccMoney(c.v)+'</div><div class="s">'+escapeHtml(c.de)+'</div></div>'+
+      (PR.est.tab ? '<div class="pr-card"><div class="l">Preço de tabela</div><div class="v">'+ccMoney(PR.est.tab)+'</div><div class="s">margem na tabela '+prPct(prMargem(c.v, PR.est.tab))+(preco ? ' · simulado '+(preco >= PR.est.tab ? '+' : '')+prPct((preco/PR.est.tab-1)*100)+' vs. tabela' : '')+'</div></div>' : '')+
       '<div class="pr-card"><div class="l">Impostos no preço</div><div class="v">'+prPct(carga*100)+'</div><div class="s">'+(preco ? ccMoney(preco*carga)+' · ' : '')+impTxt+'</div></div>'+
       '<div class="pr-card'+(PR.modo==='margem'?' dest':'')+'"><div class="l">Preço de venda</div><div class="v">'+(inviavel ? '—' : ccMoney(preco))+'</div><div class="s">'+(inviavel ? 'Margem impossível com esses impostos' : (preco && c.v ? 'markup '+prFmt(preco/c.v, 2)+'x sobre o custo' : ''))+'</div></div>'+
       '<div class="pr-card'+(PR.modo==='preco'?' dest':'')+'"><div class="l">Margem bruta</div><div class="v" style="'+corM+'">'+prPct(mg)+'</div><div class="s">(preço − impostos − custo) ÷ preço</div></div>'+
@@ -3801,12 +3802,12 @@ function prCalcular(digitando){
   prTabela(c);
 }
 function prTabela(cSel){
-  var tbl = document.getElementById('prTbl'), L = PR.est.lojas, V = PR.vendas ? PR.vendas.por : {}, nomes = {};
+  var temTab = !!PR.est.tab, tbl = document.getElementById('prTbl'), L = PR.est.lojas, V = PR.vendas ? PR.vendas.por : {}, nomes = {};
   Object.keys(L).forEach(function(n){ nomes[n] = 1; }); Object.keys(V).forEach(function(n){ nomes[n] = 1; });
   // com filtro de emitente ou loja no painel, só as lojas filtradas
   var filt = [].concat(state.emitente||[], state.regiao||[]);
   var lista = Object.keys(nomes).filter(function(n){ return !filt.length || filt.indexOf(n)!==-1; }).sort(function(a, b){ return ((V[b]||{}).f||0) - ((V[a]||{}).f||0) || a.localeCompare(b, 'pt-BR'); });
-  var th = '<thead><tr><th>Loja / emitente</th><th class="num">Saldo</th><th class="num">Custo unit.</th><th class="num">'+(PR.modo==='preco'?'Preço informado':'Preço calculado')+'</th><th class="num">'+(PR.modo==='preco'?'Margem':'Margem desejada')+'</th><th class="num">Lucro por peça</th><th class="num">Média mensal (un)</th><th class="num">Média mensal (R$)</th><th class="num">Preço médio praticado</th><th class="num">Margem praticada</th></tr></thead>';
+  var th = '<thead><tr><th>Loja / emitente</th><th class="num">Saldo</th><th class="num">Custo unit.</th>'+(temTab ? '<th class="num">Preço tabela</th><th class="num">Margem tabela</th>' : '')+'<th class="num">'+(PR.modo==='preco'?'Preço informado':'Preço calculado')+'</th><th class="num">'+(PR.modo==='preco'?'Margem':'Margem desejada')+'</th><th class="num">Lucro por peça</th><th class="num">Média mensal (un)</th><th class="num">Média mensal (R$)</th><th class="num">Preço médio praticado</th><th class="num">Margem praticada</th></tr></thead>';
   var algumFallback = false, tot = {q:0, f:0, lb:0, est:0}, mx = {q:0, f:0};
   lista.forEach(function(n){ var v = V[n]; if(v){ mx.q = Math.max(mx.q, v.q); mx.f = Math.max(mx.f, v.f); } });
   // barrinha de volume atrás do número (relativa à maior loja da coluna)
@@ -3820,13 +3821,14 @@ function prTabela(cSel){
     var corM = mg==null ? '' : (mg < 0 ? 'color:var(--critical)' : (mg < 10 ? 'color:var(--warning, #d9a400)' : 'color:var(--good)'));
     if(v){ tot.q += v.q; tot.f += v.f; tot.lb += v.lb; } tot.est += l.est || 0;
     return '<tr><td>'+escapeHtml(n)+'</td><td class="num">'+(l.est!=null ? prFmt(l.est, 0) : '—')+'</td><td class="num">'+(cu ? ccMoney(cu)+(fb ? '<span class="pr-ast" title="Sem custo nesta loja: usa o custo escolhido">*</span>' : '') : '—')+'</td>'+
+      (temTab ? '<td class="num">'+ccMoney(l.t || PR.est.tab)+'</td><td class="num">'+(cu ? prPct(prMargem(cu, l.t || PR.est.tab)) : '—')+'</td>' : '')+
       '<td class="num pr-out">'+ccMoney(preco)+'</td><td class="num pr-out" style="'+corM+'">'+prPct(mg)+'</td><td class="num"'+(lucro!=null && lucro < 0 ? ' style="color:var(--critical)"' : '')+'>'+ccMoney(lucro)+'</td>'+
       (v ? barra(v.q, mx.q, prFmt(Math.round(v.q/6), 0)) : '<td class="num">—</td>')+(v ? barra(v.f, mx.f, ccMoney(v.f/6)) : '<td class="num">—</td>')+'<td class="num">'+(v && v.q > 0 ? ccMoney(v.f/v.q) : '—')+'</td><td class="num">'+(v && v.f > 0 ? prPct(v.lb/v.f*100) : '—')+'</td></tr>';
   }).join('');
-  var totRow = lista.length > 1 ? '<tr class="pr-tot"><td>Total</td><td class="num">'+prFmt(tot.est, 0)+'</td><td></td><td></td><td></td><td></td><td class="num">'+prFmt(Math.round(tot.q/6), 0)+'</td><td class="num">'+ccMoney(tot.f/6)+'</td><td class="num">'+(tot.q > 0 ? ccMoney(tot.f/tot.q) : '—')+'</td><td class="num">'+(tot.f > 0 ? prPct(tot.lb/tot.f*100) : '—')+'</td></tr>' : '';
+  var totRow = lista.length > 1 ? '<tr class="pr-tot"><td>Total</td><td class="num">'+prFmt(tot.est, 0)+'</td><td></td>'+(temTab ? '<td></td><td></td>' : '')+'<td></td><td></td><td></td><td class="num">'+prFmt(Math.round(tot.q/6), 0)+'</td><td class="num">'+ccMoney(tot.f/6)+'</td><td class="num">'+(tot.q > 0 ? ccMoney(tot.f/tot.q) : '—')+'</td><td class="num">'+(tot.f > 0 ? prPct(tot.lb/tot.f*100) : '—')+'</td></tr>' : '';
   tbl.innerHTML = lista.length ? th+'<tbody>'+rows+totRow+'</tbody>' : '<tr><td class="status-txt" style="padding:16px;">Sem estoque e sem vendas deste produto nas lojas do recorte.</td></tr>';
   var vd = PR.vendas || {}, per = vd.de && vd.ate ? new Date(vd.de+'T12:00:00').toLocaleDateString('pt-BR')+' a '+new Date(vd.ate+'T12:00:00').toLocaleDateString('pt-BR') : 'últimos 6 meses';
-  if(PR.vendas) document.getElementById('prNota').innerHTML = 'Médias mensais = vendas de '+per+' ÷ 6, por emitente, com os filtros do painel. Margem praticada = lucro bruto ÷ faturamento das vendas.'+(algumFallback ? ' * Loja sem custo unitário no estoque: usa o custo escolhido acima.' : '')+' Saldo e custo unitário vêm da última carga do estoque.';
+  if(PR.vendas) document.getElementById('prNota').innerHTML = 'Médias mensais = vendas de '+per+' ÷ 6, por emitente, com os filtros do painel. Margem praticada = lucro bruto ÷ faturamento das vendas.'+(algumFallback ? ' * Loja sem custo unitário no estoque: usa o custo escolhido acima.' : '')+''+(temTab ? ' Margem tabela = margem com o custo da loja vendendo pelo preço de tabela.' : '')+' Saldo, custo unitário e preço de tabela vêm da última carga do estoque.';
 }
 // ===== E-commerce: guias Concorrência / Sugestão Cadastro =====
 var EC_ABA = 'conc';
