@@ -246,6 +246,95 @@ def limpar_titulo(t):
     return t
 
 
+# ---------------- fotos ----------------
+def img_tamanho(url):
+    """(largura, altura, bytes lidos) lendo só o começo do arquivo; None se não for imagem."""
+    time.sleep(0.3)
+    req = urllib.request.Request(url, headers={'User-Agent': UA, 'Accept': 'image/*', 'Range': 'bytes=0-65535'})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            ct = r.headers.get('Content-Type', '')
+            b = r.read(65536)
+    except Exception:
+        return None
+    try:
+        if b[:8] == b'\x89PNG\r\n\x1a\n':
+            return int.from_bytes(b[16:20], 'big'), int.from_bytes(b[20:24], 'big')
+        if b[:3] == b'GIF':
+            return int.from_bytes(b[6:8], 'little'), int.from_bytes(b[8:10], 'little')
+        if b[:4] == b'RIFF' and b[8:12] == b'WEBP':
+            k = b[12:16]
+            if k == b'VP8X':
+                return 1 + int.from_bytes(b[24:27], 'little'), 1 + int.from_bytes(b[27:30], 'little')
+            if k == b'VP8 ':
+                return int.from_bytes(b[26:28], 'little') & 0x3fff, int.from_bytes(b[28:30], 'little') & 0x3fff
+            if k == b'VP8L':
+                v = int.from_bytes(b[21:25], 'little')
+                return (v & 0x3fff) + 1, ((v >> 14) & 0x3fff) + 1
+        if b[:2] == b'\xff\xd8':
+            i = 2
+            while i + 9 < len(b):
+                if b[i] != 0xFF:
+                    i += 1; continue
+                m = b[i + 1]
+                if m in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+                    return int.from_bytes(b[i + 7:i + 9], 'big'), int.from_bytes(b[i + 5:i + 7], 'big')
+                if m in (0xD8, 0x01) or 0xD0 <= m <= 0xD7:
+                    i += 2; continue
+                i += 2 + int.from_bytes(b[i + 2:i + 4], 'big')
+    except Exception:
+        return None
+    return None
+
+
+def ddg_imagens(pn):
+    """Busca de imagens do DuckDuckGo: [{url, w, h, pagina, titulo}] cujo título ou página citam o código."""
+    st, b, _ = get('https://duckduckgo.com/?q=' + urllib.parse.quote(f'"{pn}"') + '&iax=images&ia=images')
+    m = re.search(r'vqd=["\']?([\d-]+)', b)
+    if not m:
+        return []
+    time.sleep(0.5)
+    req = urllib.request.Request('https://duckduckgo.com/i.js?l=br-pt&o=json&f=,,,,,&p=1&q=' + urllib.parse.quote(f'"{pn}"') + '&vqd=' + m.group(1),
+                                 headers={'User-Agent': UA, 'Referer': 'https://duckduckgo.com/', 'Accept': 'application/json'})
+    try:
+        with urllib.request.urlopen(req, timeout=25) as r:
+            d = json.loads(r.read(3_000_000).decode('utf-8', 'ignore'))
+    except Exception:
+        return []
+    out = []
+    for x in d.get('results') or []:
+        if norm(pn) not in norm(str(x.get('title', '')) + ' ' + str(x.get('url', ''))):
+            continue
+        out.append({'url': x.get('image'), 'w': int(x.get('width') or 0), 'h': int(x.get('height') or 0), 'pagina': x.get('url') or '', 'titulo': x.get('title') or ''})
+    return out
+
+
+def escolher_fotos(cands, n=3):
+    """As n melhores fotos: maior resolução (lado menor de pelo menos 300 px), sem repetir a mesma imagem."""
+    vistos, medidas = set(), 0
+    for c in cands:
+        if (not c.get('w') or not c.get('h')) and medidas < 14:
+            t = img_tamanho(c['url']); medidas += 1
+            if t:
+                c['w'], c['h'] = t
+    boas = [c for c in cands if c.get('w') and c.get('h') and min(c['w'], c['h']) >= 300 and max(c['w'], c['h']) / max(1, min(c['w'], c['h'])) <= 2.5]
+    boas.sort(key=lambda c: (-(c['w'] * c['h']), c.get('ordem', 9)))
+    out, fontes_usadas = [], Counter()
+    for c in boas:
+        chave = re.sub(r'(\?.*$)|(-\d+-\d+)|(_\d+x\d+)', '', c['url'].lower()).rsplit('/', 1)[-1]
+        tam = (c['w'], c['h'])
+        if chave in vistos:
+            continue
+        # no máximo 2 fotos da mesma fonte, para variar os ângulos
+        if fontes_usadas[c.get('dominio', '')] >= 2 and len(boas) > n:
+            continue
+        vistos.add(chave); fontes_usadas[c.get('dominio', '')] += 1
+        out.append({k: c.get(k) for k in ('url', 'w', 'h', 'fonte', 'pagina', 'dominio')})
+        if len(out) >= n:
+            break
+    return out
+
+
 # ---------------- fontes próprias ----------------
 def catalogo(cur, pn):
     cur.execute("""select p.nome, dm.valor, dc.valor, da.valor, dmo.valor
@@ -271,7 +360,8 @@ def vtex(pn):
             specs = {k: p.get(k) for k in (p.get('allSpecifications') or []) if p.get(k)}
             return {'titulo': p.get('productName') or '', 'marca': p.get('brand') or '', 'url': p.get('link') or '',
                     'descricao': texto_html(p.get('description') or ''), 'specs': specs,
-                    'categorias': p.get('categories') or []}
+                    'categorias': p.get('categories') or [],
+                    'imagens': [im.get('imageUrl') for it in (p.get('items') or [])[:1] for im in (it.get('images') or []) if im.get('imageUrl')]}
     return None
 
 
@@ -295,6 +385,7 @@ def pesquisar(pn, cat):
     veic = defaultdict(lambda: {'anos': set(), 'fontes': set()})
     descricoes = []      # (texto, indice)
     pesos = []           # (kg, indice)
+    fotos = []           # {url, w, h, fonte, pagina, dominio, ordem}
 
     def fonte(titulo, url, tipo):
         fontes.append({'titulo': titulo[:160], 'url': url, 'dominio': dominio(url) if url else '', 'tipo': tipo, 'usado': set()})
@@ -319,6 +410,8 @@ def pesquisar(pn, cat):
         if not marca and v.get('marca'):
             marca = v['marca'].upper()
         sp = v['specs']
+        for k, u in enumerate(v.get('imagens') or []):
+            fotos.append({'url': u, 'fonte': i, 'pagina': v['url'], 'dominio': dominio(v['url']), 'ordem': 0})
         if sp.get('Aplicação do Produto'):
             aplics.append((texto_html('; '.join(sp['Aplicação do Produto'])).replace('\n', ' '), i)); fontes[i]['usado'].add('aplicacao')
         if sp.get('Modelo do Veículo'):
@@ -406,8 +499,24 @@ def pesquisar(pn, cat):
         if pnn not in norm(txt) and pnn not in norm(final):
             continue
         prods = jsonld(page)
+        imgs = []
+        for p in prods:
+            im = p.get('image')
+            for x in (im if isinstance(im, list) else [im]):
+                if isinstance(x, dict):
+                    x = x.get('url') or x.get('contentUrl')
+                if isinstance(x, str) and x.startswith('http'):
+                    imgs.append(x)
+        og = meta(page, 'og:image')
+        if og.startswith('//'):
+            og = 'https:' + og
+        if og.startswith('http'):
+            imgs.append(og)
         titulo = limpar_titulo((prods[0].get('name') if prods else '') or meta(page, 'og:title') or r['titulo'])
         i = fonte(('Fabricante: ' if r['tipo'] == 'fabricante' else '') + (titulo or r['titulo']), final, r['tipo'])
+        for u in list(dict.fromkeys(imgs))[:4]:
+            if not re.search(r'(?i)logo|banner|sprite|placeholder|sem-foto|no-image', u):
+                fotos.append({'url': u, 'fonte': i, 'pagina': final, 'dominio': dominio(final), 'ordem': 1 if r['tipo'] == 'fabricante' else 2})
         if titulo:
             titulos.append((titulo, 1.2 if r['tipo'] == 'fabricante' else 1.0, i)); fontes[i]['usado'].add('descricao')
         for p in prods:
@@ -437,9 +546,26 @@ def pesquisar(pn, cat):
             somar_veic(txt[max(0, m.start() - 300): m.end() + 600], i)
         if any(i in x['fontes'] for x in veic.values()):
             fontes[i]['usado'].add('aplicacao')
+    # busca de imagens (resolução já vem no resultado)
+    for x in ddg_imagens(pn)[:12]:
+        if not x.get('url'):
+            continue
+        i = None
+        for k, f in enumerate(fontes):
+            if f['url'] and f['url'] == x['pagina']:
+                i = k
+        if i is None:
+            i = fonte('Imagem: ' + limpar_titulo(x['titulo'] or dominio(x['pagina'])), x['pagina'], 'mercadolivre' if 'mercadoli' in dominio(x['pagina']) else 'web')
+        fotos.append({'url': x['url'], 'w': x['w'], 'h': x['h'], 'fonte': i, 'pagina': x['pagina'], 'dominio': dominio(x['pagina']), 'ordem': 3})
+    escolhidas = escolher_fotos(fotos)
+    for ft in escolhidas:
+        fontes[ft['fonte']]['usado'].add('fotos')
+    log(f'fotos candidatas: {len(fotos)}, escolhidas: {len(escolhidas)}')
     log(f'páginas lidas: {lidas}, fontes usadas: {len(fontes)}, títulos: {len(titulos)}, medidas: {len(medidas)}, aplicações: {len(aplics)}')
 
-    return montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes, resultados, pesos)
+    res = montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes, resultados, pesos)
+    res['fotos'] = escolhidas
+    return res
 
 
 # ---------------- montagem da sugestão ----------------
