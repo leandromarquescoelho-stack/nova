@@ -1561,6 +1561,22 @@ table.data-table.vp-tbl{min-width:720px;}
 .vp-acao:hover{border-color:var(--accent); color:var(--accent);}
 .vp-acao.vp-del:hover{border-color:var(--critical); color:var(--critical);}
 .vp-enc td{opacity:.6;}
+.pr-barc{position:relative; min-width:120px;}
+.pr-barc i{position:absolute; right:8px; top:22%; height:56%; max-width:calc(100% - 16px); border-radius:4px; background:var(--accent); opacity:.22; pointer-events:none;}
+.pr-barc span{position:relative;}
+.vp-plano{border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:10px; background:var(--surface);}
+.vp-plano.vp-fin{opacity:.85;}
+.vp-pcab{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:6px;}
+.vp-ptit{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:13px;}
+.vp-ptit .vp-sub{margin:0;}
+.vp-pst{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.vp-pst .vp-sub{margin:0;}
+.vp-stpill{font-size:11px; padding:2px 9px;}
+.vp-vend{font:inherit; font-size:13.5px; font-weight:800; padding:0; border:0; background:none; color:var(--accent); cursor:pointer;}
+.vp-vend:hover{text-decoration:underline;}
+.vp-plano .vp-obs{max-width:none; margin:0 0 6px;}
+.vp-aviso{font-size:12px; color:var(--warn,#d99a22); margin:6px 0 0;}
+.vdp-ctl{display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:12px;}
 /* ---- barra de canais ---- */
 .canal-bar{ display:flex; height:34px; border-radius:9px; overflow:hidden; background:var(--surface-3); }
 .canal-bar .seg{ height:100%; min-width:3px; display:flex; align-items:center; justify-content:center; padding:0 4px; box-sizing:border-box; text-overflow:ellipsis; font-size:11px; font-weight:800; color:#04141a; overflow:hidden; white-space:nowrap; cursor:default; transition:filter .12s; }
@@ -2417,6 +2433,16 @@ table.data-table.vp-tbl{min-width:720px;}
       <!-- ============ VENDEDORES ============ -->
       <section class="view-panel" data-view-panel="vendedores" style="display:none;">
       <div class="vend-status" id="vendStatus" hidden role="status" aria-live="polite"><div class="vs-card"><span class="vs-spin"></span>Preparando o relatório. Aguarde<span class="vs-dots"><i>.</i><i>.</i><i>.</i></span></div></div>
+      <div class="pl-guias ec-guias" id="vdGuias" role="tablist"><button type="button" class="on" data-vd="consult" role="tab" aria-selected="true">Consultoria</button><button type="button" data-vd="planos" role="tab" aria-selected="false">Planos em andamento</button></div>
+      <div id="vdPlanos" hidden>
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Planos de melhoria dos vendedores</h2><div class="psub">Todos os planos dos vendedores do seu acesso &middot; status Em andamento ou Finalizado &middot; o resultado usa as vendas desde o início de cada plano</div></div>
+        </div>
+        <div id="vdPlanosBody"></div>
+      </div>
+      </div>
+      <div id="vdConsult">
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
           <div><h2>Consultoria de Vendedor</h2><div class="psub">Compare um vendedor com os demais, dentro dos filtros aplicados acima</div></div>
@@ -2466,6 +2492,7 @@ table.data-table.vp-tbl{min-width:720px;}
           <div><h2>Análises não óbvias</h2><div class="psub">Leituras do vendedor selecionado que não aparecem à primeira vista</div></div>
         </div>
         <div id="vendInsBody"></div>
+      </div>
       </div>
       </section>
 
@@ -3776,7 +3803,10 @@ function prTabela(cSel){
   var filt = [].concat(state.emitente||[], state.regiao||[]);
   var lista = Object.keys(nomes).filter(function(n){ return !filt.length || filt.indexOf(n)!==-1; }).sort(function(a, b){ return ((V[b]||{}).f||0) - ((V[a]||{}).f||0) || a.localeCompare(b, 'pt-BR'); });
   var th = '<thead><tr><th>Loja / emitente</th><th class="num">Saldo</th><th class="num">Custo unit.</th><th class="num">'+(PR.modo==='preco'?'Preço informado':'Preço calculado')+'</th><th class="num">'+(PR.modo==='preco'?'Margem':'Margem desejada')+'</th><th class="num">Lucro por peça</th><th class="num">Média mensal (un)</th><th class="num">Média mensal (R$)</th><th class="num">Preço médio praticado</th><th class="num">Margem praticada</th></tr></thead>';
-  var algumFallback = false, tot = {q:0, f:0, lb:0, est:0};
+  var algumFallback = false, tot = {q:0, f:0, lb:0, est:0}, mx = {q:0, f:0};
+  lista.forEach(function(n){ var v = V[n]; if(v){ mx.q = Math.max(mx.q, v.q); mx.f = Math.max(mx.f, v.f); } });
+  // barrinha de volume atrás do número (relativa à maior loja da coluna)
+  function barra(val, max, txt){ var w = max > 0 && val > 0 ? Math.max(2, val/max*100) : 0; return '<td class="num pr-barc"><i style="width:'+w.toFixed(1)+'%"></i><span>'+txt+'</span></td>'; }
   var rows = lista.map(function(n){
     var l = L[n] || {}, v = V[n], cu = l.u || null, fb = false;
     if(!cu && cSel){ cu = cSel.v; fb = true; algumFallback = true; }
@@ -3787,9 +3817,9 @@ function prTabela(cSel){
     if(v){ tot.q += v.q; tot.f += v.f; tot.lb += v.lb; } tot.est += l.est || 0;
     return '<tr><td>'+escapeHtml(n)+'</td><td class="num">'+(l.est!=null ? prFmt(l.est, 0) : '—')+'</td><td class="num">'+(cu ? ccMoney(cu)+(fb ? '<span class="pr-ast" title="Sem custo nesta loja: usa o custo escolhido">*</span>' : '') : '—')+'</td>'+
       '<td class="num pr-out">'+ccMoney(preco)+'</td><td class="num pr-out" style="'+corM+'">'+prPct(mg)+'</td><td class="num"'+(lucro!=null && lucro < 0 ? ' style="color:var(--critical)"' : '')+'>'+ccMoney(lucro)+'</td>'+
-      '<td class="num">'+(v ? prFmt(v.q/6, 1) : '—')+'</td><td class="num">'+(v ? ccMoney(v.f/6) : '—')+'</td><td class="num">'+(v && v.q > 0 ? ccMoney(v.f/v.q) : '—')+'</td><td class="num">'+(v && v.f > 0 ? prPct(v.lb/v.f*100) : '—')+'</td></tr>';
+      (v ? barra(v.q, mx.q, prFmt(Math.round(v.q/6), 0)) : '<td class="num">—</td>')+(v ? barra(v.f, mx.f, ccMoney(v.f/6)) : '<td class="num">—</td>')+'<td class="num">'+(v && v.q > 0 ? ccMoney(v.f/v.q) : '—')+'</td><td class="num">'+(v && v.f > 0 ? prPct(v.lb/v.f*100) : '—')+'</td></tr>';
   }).join('');
-  var totRow = lista.length > 1 ? '<tr class="pr-tot"><td>Total</td><td class="num">'+prFmt(tot.est, 0)+'</td><td></td><td></td><td></td><td></td><td class="num">'+prFmt(tot.q/6, 1)+'</td><td class="num">'+ccMoney(tot.f/6)+'</td><td class="num">'+(tot.q > 0 ? ccMoney(tot.f/tot.q) : '—')+'</td><td class="num">'+(tot.f > 0 ? prPct(tot.lb/tot.f*100) : '—')+'</td></tr>' : '';
+  var totRow = lista.length > 1 ? '<tr class="pr-tot"><td>Total</td><td class="num">'+prFmt(tot.est, 0)+'</td><td></td><td></td><td></td><td></td><td class="num">'+prFmt(Math.round(tot.q/6), 0)+'</td><td class="num">'+ccMoney(tot.f/6)+'</td><td class="num">'+(tot.q > 0 ? ccMoney(tot.f/tot.q) : '—')+'</td><td class="num">'+(tot.f > 0 ? prPct(tot.lb/tot.f*100) : '—')+'</td></tr>' : '';
   tbl.innerHTML = lista.length ? th+'<tbody>'+rows+totRow+'</tbody>' : '<tr><td class="status-txt" style="padding:16px;">Sem estoque e sem vendas deste produto nas lojas do recorte.</td></tr>';
   var vd = PR.vendas || {}, per = vd.de && vd.ate ? new Date(vd.de+'T12:00:00').toLocaleDateString('pt-BR')+' a '+new Date(vd.ate+'T12:00:00').toLocaleDateString('pt-BR') : 'últimos 6 meses';
   if(PR.vendas) document.getElementById('prNota').innerHTML = 'Médias mensais = vendas de '+per+' ÷ 6, por emitente, com os filtros do painel. Margem praticada = lucro bruto ÷ faturamento das vendas.'+(algumFallback ? ' * Loja sem custo unitário no estoque: usa o custo escolhido acima.' : '')+' Saldo e custo unitário vêm da última carga do estoque.';
@@ -5561,7 +5591,7 @@ function vpRender(ctx){
       (pode ? '<input type="text" inputmode="decimal" class="vp-alvo" data-k="'+m.k+'" value="'+vpNum(m, s.alvo)+'" aria-label="Meta de '+m.l+'">' : m.fmt(s.alvo));
     var prazo = s.sit==='ok' ? '' : (pode ? '<select class="vp-dias" data-k="'+m.k+'">'+[30,60,90,120].map(function(d){ return '<option value="'+d+'"'+(d===s.dias?' selected':'')+'>'+d+' dias</option>'; }).join('')+'</select>' : s.dias+' dias');
     return '<tr'+(s.sit==='melhorar'?' class="vp-melhorar"':'')+'>' +
-      (pode ? '<td>'+(s.sit==='ok' ? '' : '<input type="checkbox" class="vp-ck" data-k="'+m.k+'"'+(s.sit==='melhorar'?' checked':'')+' aria-label="Incluir '+m.l+' no plano">')+'</td>' : '') +
+      (pode ? '<td class="vp-ckc">'+(s.sit==='ok' ? '' : '<input type="checkbox" class="vp-ck" data-k="'+m.k+'"'+(s.sit==='melhorar'?' checked':'')+' aria-label="Incluir '+m.l+' no plano">')+'</td>' : '') +
       '<td title="'+escapeHtml(m.d)+'">'+m.l+'</td><td class="mono">'+m.fmt(me)+'</td><td class="mono">'+m.fmt(peer)+'</td>' +
       '<td class="mono" style="color:'+(s.g>=0?'var(--good)':'var(--critical)')+'">'+vpDifTxt(m, s.g)+'</td><td>'+sit+'</td><td class="mono">'+meta+'</td><td>'+prazo+'</td></tr>';
   }).join('');
@@ -5569,10 +5599,11 @@ function vpRender(ctx){
   el.innerHTML =
     '<p class="vp-resumo">'+escapeHtml(ctx.nome)+(nMelh ? ' tem <b>'+nMelh+' indicador'+(nMelh>1?'es':'')+' para melhorar</b>' : ' não tem indicador bem abaixo')+' em relação à média dos '+nP+' pares, no período e filtros aplicados.' +
       (nP < 3 ? ' <b>Poucos pares neste recorte: compare com cautela.</b>' : '')+'</p>' +
-    '<div class="vp-scroll"><table class="data-table vp-tbl"><thead><tr>'+(pode?'<th></th>':'')+'<th>Indicador</th><th>'+escapeHtml(nomeCurtoVend(ctx.nome))+'</th><th>Média dos pares</th><th>Diferença</th><th>Situação</th><th>Meta</th><th>Prazo</th></tr></thead><tbody>'+linhas+'</tbody></table></div>' +
+    '<div class="vp-scroll"><table class="data-table vp-tbl"><thead><tr>'+(pode?'<th class="vp-ckc"></th>':'')+'<th>Indicador</th><th>'+escapeHtml(nomeCurtoVend(ctx.nome))+'</th><th>Média dos pares</th><th>Diferença</th><th>Situação</th><th>Meta</th><th>Prazo</th></tr></thead><tbody>'+linhas+'</tbody></table></div>' +
     (pode ? '<div class="vp-criar"><textarea id="vpObs" rows="2" maxlength="1000" placeholder="Ações combinadas com o vendedor (opcional): ex.: visitar 10 clientes inativos por semana, oferecer a linha de freios..."></textarea>' +
       '<button type="button" class="vp-criar-bt" id="vpCriar">Criar plano com os marcados</button></div>' +
-      '<p class="note-muted" style="font-size:11px; margin-top:4px;">A meta e o prazo podem ser ajustados antes de criar. O acompanhamento compara as vendas desde a criação do plano com a meta, usando os mesmos filtros de agora.</p>' : '') +
+      '<p class="vp-aviso" id="vpCriarAviso" hidden></p>' +
+      '<p class="note-muted vp-criar-nota" style="font-size:11px; margin-top:4px;">A meta e o prazo podem ser ajustados antes de criar. O acompanhamento compara as vendas desde a criação do plano com a meta, usando os mesmos filtros de agora.</p>' : '') +
     '<h3 class="dh" style="margin-top:16px;">Acompanhamento dos planos</h3><div id="vpAcomp"><p class="note-muted status-txt">Carregando os planos…</p></div>';
   vpLigar(el);
   vpCarregar(ctx.nome);
@@ -5596,11 +5627,21 @@ function vpAtual(D, nome, ini, fim){
   o.diasCom = Object.keys(dd).length;
   return vpMetricas(o);
 }
-function vpAcomp(nome){
-  var box = document.getElementById('vpAcomp'); if(!box) return;
-  var P = VP.planos[nome];
-  if(P && P.erro){ box.innerHTML = '<p class="note-muted">'+(P.erro==='falta' ? 'O banco ainda não tem a tabela de planos (rode o SQL plano_vendedor.sql).' : 'Não foi possível carregar os planos agora.')+'</p>'; return; }
-  if(!P.length){ box.innerHTML = '<p class="note-muted">Nenhum plano para '+escapeHtml(nome)+' ainda.'+(vpPode() ? ' Marque os indicadores acima e clique em "Criar plano".' : '')+'</p>'; return; }
+// indicadores de um vendedor -> planos (cada plano agrupa os indicadores criados juntos)
+function vpPlanos(P){
+  var hoje = isoDia(new Date()), m = {}, ordem = [];
+  (P||[]).forEach(function(p){
+    var id = p[15]!=null ? +p[15] : +p[0];
+    if(!m[id]){ m[id] = {id:id, vend:p[16]||'', ini:String(p[5]).slice(0,10), prazo:String(p[6]).slice(0,10), obs:p[10]||'', criador:p[14]||'—', criado:p[12], enc:false, rows:[]}; ordem.push(id); }
+    var pl = m[id]; pl.rows.push(p);
+    if(String(p[6]).slice(0,10) > pl.prazo) pl.prazo = String(p[6]).slice(0,10);
+    if(String(p[5]).slice(0,10) < pl.ini) pl.ini = String(p[5]).slice(0,10);
+    if(p[11]==='encerrado') pl.enc = true;
+  });
+  return ordem.map(function(id){ var pl = m[id]; pl.st = (pl.enc || pl.prazo < hoje) ? 'fin' : 'and'; return pl; });
+}
+// valor atual de cada indicador desde o início do plano (até o último dia com dados ou o prazo), com os filtros de quando foi criado
+function vpAtuais(P, nomeDe){
   var dataFim = isoDia(DAYS[N_DAYS-1]), grupos = {};
   P.forEach(function(p){
     var fim = String(p[6]).slice(0,10) < dataFim ? String(p[6]).slice(0,10) : dataFim, ini = String(p[5]).slice(0,10);
@@ -5609,43 +5650,122 @@ function vpAcomp(nome){
     var k = JSON.stringify([p[9]||{}, ini, fim]); (grupos[k] = grupos[k] || []).push(p);
   });
   var ks = Object.keys(grupos);
-  Promise.all(ks.map(function(k){ var a = JSON.parse(k); return rpcMemo('bi_vendedores', {f:a[0], per:{ini:a[1], fim:a[2]}}).catch(function(){ return null; }); })).then(function(res){
+  return Promise.all(ks.map(function(k){ var a = JSON.parse(k); return rpcMemo('bi_vendedores', {f:a[0], per:{ini:a[1], fim:a[2]}}).catch(function(){ return null; }); })).then(function(res){
     var atual = {};
-    ks.forEach(function(k, i){ var a = JSON.parse(k); if(res[i]) grupos[k].forEach(function(p){ atual[p[0]] = vpAtual(res[i], nome, a[1], a[2])[p[1]]; }); });
-    if(!VP.ctx || VP.ctx.nome!==nome) return;
-    vpAcompDesenhar(box, P, atual, dataFim);
+    ks.forEach(function(k, i){ var a = JSON.parse(k); if(res[i]) grupos[k].forEach(function(p){ atual[p[0]] = vpAtual(res[i], nomeDe(p), a[1], a[2])[p[1]]; }); });
+    return atual;
   });
 }
-function vpAcompDesenhar(box, P, atual, dataFim){
-  var pode = vpPode(), hoje = isoDia(new Date());
-  var linhas = P.map(function(p){
+function vpAcomp(nome){
+  var box = document.getElementById('vpAcomp'); if(!box) return;
+  var P = VP.planos[nome];
+  if(P && P.erro){ box.innerHTML = '<p class="note-muted">'+(P.erro==='falta' ? 'O banco ainda não tem a tabela de planos (rode o SQL plano_vendedor.sql).' : 'Não foi possível carregar os planos agora.')+'</p>'; return; }
+  var pls = vpPlanos(P), and = pls.filter(function(pl){ return pl.st==='and'; })[0];
+  var bt = document.getElementById('vpCriar'), av = document.getElementById('vpCriarAviso');
+  if(bt){ bt.disabled = !!and; bt.title = and ? 'Já existe um plano em andamento para este vendedor' : ''; }
+  if(av){ av.hidden = !and; if(and) av.innerHTML = 'Já existe um plano em andamento para '+escapeHtml(nome)+' até <b>'+fmtDiaBR(vpDia(and.prazo))+'</b>. Cada vendedor tem um plano por período: finalize o atual para criar outro.'; }
+  if(!pls.length){ box.innerHTML = '<p class="note-muted">Nenhum plano para '+escapeHtml(nome)+' ainda.'+(vpPode() ? ' Marque os indicadores acima e clique em "Criar plano".' : '')+'</p>'; return; }
+  vpAtuais(P, function(){ return nome; }).then(function(atual){
+    if(!VP.ctx || VP.ctx.nome!==nome) return;
+    box.innerHTML = pls.map(function(pl){ return vpPlanoHtml(pl, atual, false); }).join('') +
+      '<p class="note-muted" style="font-size:11px; margin-top:6px;">Atual: vendas de '+escapeHtml(nome)+' do início do plano até o último dia com dados ('+fmtDiaBR(vpDia(isoDia(DAYS[N_DAYS-1])))+') ou até o prazo, com os filtros de quando o plano foi criado. Passe o mouse numa linha para ver a base usada.</p>';
+  });
+}
+// um plano: cabeçalho (vendedor, período, status, resultado, ações) e a tabela dos indicadores
+function vpPlanoHtml(pl, atual, comVend){
+  var pode = vpPode(), hoje = isoDia(new Date()), dataFim = isoDia(DAYS[N_DAYS-1]), fin = pl.st==='fin', nOk = 0, nAt = 0;
+  var linhas = pl.rows.map(function(p){
     var m = VP_MET_K[p[1]] || {l:p[1], fmt:function(v){ return String(v); }, pp:false};
-    var base = +p[2], alvo = +p[4], ini = String(p[5]).slice(0,10), prazo = String(p[6]).slice(0,10), at = atual[p[0]], enc = p[11]==='encerrado';
+    var base = +p[2], alvo = +p[4], ini = String(p[5]).slice(0,10), prazo = String(p[6]).slice(0,10), at = atual[p[0]];
     var falta = vpDiasEntre(hoje, prazo)-1, dadosDias = ini <= dataFim ? vpDiasEntre(ini, p._fim) : 0, venceu = dataFim >= prazo;
     var st, tom, prog = null;
     if(at===undefined || at===null){ st = ini > dataFim ? 'Aguardando vendas' : 'Sem dados'; tom = 'flat'; }
     else {
       prog = alvo!==base ? Math.max(0, Math.min(1, (at-base)/(alvo-base))) : (at>=alvo ? 1 : 0);
-      if(venceu || enc){ st = at>=alvo ? 'Meta atingida' : 'Não atingida'; tom = at>=alvo ? 'up' : 'down'; }
+      if(venceu || fin){ st = at>=alvo ? 'Meta atingida' : 'Não atingida'; tom = at>=alvo ? 'up' : 'down'; }
       else if(dadosDias < 7){ st = 'Início (poucos dias)'; tom = 'flat'; }
       else if(at>=alvo){ st = 'Na meta'; tom = 'up'; }
       else if(at>base){ st = 'Melhorando'; tom = 'flat'; }
       else { st = 'Sem melhora'; tom = 'down'; }
+      if(venceu || fin || dadosDias >= 7){ nAt++; if(at>=alvo) nOk++; }
     }
-    var prazoTxt = enc ? 'encerrado' : (falta > 0 ? 'faltam '+falta+' dia'+(falta>1?'s':'') : (falta===0 ? 'vence hoje' : 'venceu'));
+    var prazoTxt = fin ? 'finalizado' : (falta > 0 ? 'faltam '+falta+' dia'+(falta>1?'s':'') : (falta===0 ? 'vence hoje' : 'venceu'));
     var bar = prog===null ? '' : '<span class="vp-bar" title="'+Math.round(prog*100)+'% do caminho entre a base e a meta"><i style="width:'+(prog*100).toFixed(0)+'%; background:'+(tom==='up'?'var(--good)':(tom==='down'?'var(--critical)':'var(--accent)'))+'"></i></span>';
-    var acoes = !pode ? '' : (enc ? '<button type="button" class="vp-acao" data-a="reabrir" data-id="'+p[0]+'">Reabrir</button>' :
-      '<button type="button" class="vp-acao" data-a="encerrar" data-id="'+p[0]+'" title="Encerra o acompanhamento com o resultado atual">Encerrar</button>') +
-      '<button type="button" class="vp-acao vp-del" data-a="excluir" data-id="'+p[0]+'" title="Excluir este plano">✕</button>';
-    return '<tr'+(enc?' class="vp-enc"':'')+' title="Criado por '+escapeHtml(p[14]||'—')+' em '+fmtDiaBR(vpDia(p[12]))+'. Base calculada de '+(p[7]?fmtDiaBR(vpDia(p[7])):'?')+' a '+(p[8]?fmtDiaBR(vpDia(p[8])):'?')+'; média dos pares: '+(p[3]!==null?m.fmt(+p[3]):'—')+'.">' +
-      '<td>'+m.l+(p[10] ? '<div class="vp-obs">'+escapeHtml(p[10])+'</div>' : '')+'</td>' +
-      '<td class="mono">'+fmtDiaBR(vpDia(ini))+'<div class="vp-sub">até '+fmtDiaBR(vpDia(prazo))+' · '+prazoTxt+'</div></td>' +
+    return '<tr title="Base calculada de '+(p[7]?fmtDiaBR(vpDia(p[7])):'?')+' a '+(p[8]?fmtDiaBR(vpDia(p[8])):'?')+'; média dos pares: '+(p[3]!==null?m.fmt(+p[3]):'—')+'.">' +
+      '<td>'+m.l+'</td><td class="mono">até '+fmtDiaBR(vpDia(prazo))+'<div class="vp-sub">'+prazoTxt+'</div></td>' +
       '<td class="mono">'+m.fmt(base)+'</td><td class="mono">'+m.fmt(alvo)+'</td>' +
       '<td class="mono">'+(at===undefined||at===null ? '—' : m.fmt(at))+bar+'</td>' +
-      '<td><span class="pill '+tom+'">'+st+'</span></td>'+(pode?'<td class="vp-acoes">'+acoes+'</td>':'')+'</tr>';
+      '<td><span class="pill '+tom+'">'+st+'</span></td></tr>';
   }).join('');
-  box.innerHTML = '<div class="vp-scroll"><table class="data-table vp-tbl vp-acomp"><thead><tr><th>Indicador e ações</th><th>Início · prazo</th><th>Base</th><th>Meta</th><th>Atual (desde o início)</th><th>Situação</th>'+(pode?'<th></th>':'')+'</tr></thead><tbody>'+linhas+'</tbody></table></div>' +
-    '<p class="note-muted" style="font-size:11px; margin-top:6px;">Atual: vendas de '+escapeHtml(VP.ctx.nome)+' do início do plano até o último dia com dados ('+fmtDiaBR(vpDia(dataFim))+') ou até o prazo, com os filtros de quando o plano foi criado. Passe o mouse numa linha para ver quem criou e a base usada.</p>';
+  var falta = vpDiasEntre(hoje, pl.prazo)-1;
+  var acoes = !pode ? '' : (fin ? (pl.prazo >= hoje ? '<button type="button" class="vp-acao" data-a="reabrir" data-plano="'+pl.id+'">Reabrir</button>' : '') :
+      '<button type="button" class="vp-acao" data-a="encerrar" data-plano="'+pl.id+'" title="Finaliza o plano com o resultado atual">Finalizar</button>') +
+    '<button type="button" class="vp-acao vp-del" data-a="excluir" data-plano="'+pl.id+'" title="Excluir este plano">✕</button>';
+  return '<div class="vp-plano'+(fin?' vp-fin':'')+'">' +
+    '<div class="vp-pcab"><div class="vp-ptit">'+(comVend ? '<button type="button" class="vp-vend" data-vend="'+escapeHtml(pl.vend)+'" title="Abrir a consultoria deste vendedor">'+escapeHtml(pl.vend)+'</button>' : '<b>Plano</b>') +
+      '<span class="vp-sub">'+fmtDiaBR(vpDia(pl.ini))+' a '+fmtDiaBR(vpDia(pl.prazo))+(fin ? '' : ' · '+(falta>0 ? 'faltam '+falta+' dia'+(falta>1?'s':'') : 'vence hoje'))+' · criado por '+escapeHtml(pl.criador)+'</span></div>' +
+      '<div class="vp-pst"><span class="pill '+(fin?'flat':'up')+' vp-stpill">'+(fin?'Finalizado':'Em andamento')+'</span>' +
+      (nAt ? '<span class="vp-sub">'+nOk+' de '+pl.rows.length+' meta'+(pl.rows.length>1?'s':'')+' atingida'+(nOk===1?'':'s')+'</span>' : '') +
+      (acoes ? '<span class="vp-acoes">'+acoes+'</span>' : '')+'</div></div>' +
+    (pl.obs ? '<div class="vp-obs">Ações combinadas: '+escapeHtml(pl.obs)+'</div>' : '') +
+    '<div class="vp-scroll"><table class="data-table vp-tbl vp-acomp"><thead><tr><th>Indicador</th><th>Prazo</th><th>Base</th><th>Meta</th><th>Atual (desde o início)</th><th>Situação</th></tr></thead><tbody>'+linhas+'</tbody></table></div></div>';
+}
+// ação num plano (finalizar, reabrir, excluir); recarrega a consultoria e a lista de planos
+function vpAcao(b){
+  var a = b.getAttribute('data-a');
+  if(a==='excluir' && !b.dataset.conf){ b.dataset.conf = '1'; b.textContent = 'Excluir?'; setTimeout(function(){ if(b.isConnected){ delete b.dataset.conf; b.textContent = '✕'; } }, 3000); return; }
+  b.disabled = true;
+  window.__NC_rpc('bi_vend_plano_gravar', {p:{acao:a, plano:+b.getAttribute('data-plano')}})
+    .then(function(){ toast(a==='encerrar' ? 'Plano finalizado.' : (a==='reabrir' ? 'Plano reaberto.' : 'Plano excluído.')); VP.planos = {}; VP.todos = null;
+      if(VP.ctx) vpCarregar(VP.ctx.nome, true); if(VD_ABA==='planos') vdPlanosCarregar(); })
+    .catch(function(er){ b.disabled = false; toast('Não foi possível alterar o plano: '+String(er && (er.message||er)).replace(/^.*?:\s*/, '').slice(0,160)); });
+}
+// ===== Vendedores: guias Consultoria / Planos em andamento =====
+var VD_ABA = 'consult', VD_FILTRO = 'and';
+function vdAba(a){
+  VD_ABA = a;
+  document.querySelectorAll('#vdGuias button').forEach(function(b){ var on = b.getAttribute('data-vd')===a; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  document.getElementById('vdConsult').hidden = a!=='consult';
+  document.getElementById('vdPlanos').hidden = a!=='planos';
+  document.getElementById('topVendSel').hidden = !(state.currentView==='vendedores' && a==='consult');
+  if(a==='planos') vdPlanosCarregar(); else renderVendConsult();
+}
+function vdPlanosCarregar(){
+  var box = document.getElementById('vdPlanosBody'); if(!box) return;
+  if(!VP.todos) box.innerHTML = '<p class="note-muted status-txt">Carregando os planos…</p>';
+  window.__NC_rpc('bi_vend_planos_todos', {}).then(function(r){ VP.todos = r||[]; })
+    .catch(function(e){ VP.todos = {erro: /bi_vend_planos_todos|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'}; })
+    .then(vdPlanosDesenhar);
+}
+function vdPlanosDesenhar(){
+  var box = document.getElementById('vdPlanosBody'); if(!box) return;
+  var T = VP.todos;
+  if(!T){ return; }
+  if(T.erro){ box.innerHTML = '<p class="note-muted">'+(T.erro==='falta' ? 'O banco ainda não tem a lista de planos (rode o SQL planos_vendedor.sql).' : 'Não foi possível carregar os planos agora.')+'</p>'; return; }
+  var pls = vpPlanos(T), n = {and:0, fin:0};
+  pls.forEach(function(pl){ n[pl.st]++; });
+  var vis = pls.filter(function(pl){ return VD_FILTRO==='todos' || pl.st===VD_FILTRO; });
+  var seg = '<div class="vdp-ctl"><div class="seg">' + [['and','Em andamento'],['fin','Finalizados'],['todos','Todos']].map(function(o){
+      return '<button type="button" data-vdf="'+o[0]+'" aria-pressed="'+(VD_FILTRO===o[0])+'">'+o[1]+' ('+(o[0]==='todos' ? pls.length : n[o[0]])+')</button>'; }).join('') + '</div>' +
+    '<span class="note-muted" style="font-size:11.5px;">Um plano por vendedor por período: para criar outro, finalize o que está em andamento. O plano passa a Finalizado quando é encerrado ou quando o prazo acaba.</span></div>';
+  if(!vis.length){ box.innerHTML = seg + '<p class="note-muted">'+(pls.length ? 'Nenhum plano nesta situação.' : 'Nenhum plano criado ainda. Crie na guia Consultoria, no quadro "Plano de melhoria".')+'</p>'; return; }
+  box.innerHTML = seg + '<p class="note-muted status-txt">Calculando o resultado de '+vis.length+' plano'+(vis.length>1?'s':'')+'…</p>';
+  var rows = []; vis.forEach(function(pl){ rows = rows.concat(pl.rows); });
+  vpAtuais(rows, function(p){ return p[16]; }).then(function(atual){
+    if(VP.todos!==T) return;
+    box.innerHTML = seg + vis.map(function(pl){ return vpPlanoHtml(pl, atual, true); }).join('') +
+      '<p class="note-muted" style="font-size:11px; margin-top:6px;">Atual: vendas de cada vendedor do início do plano até o último dia com dados ('+fmtDiaBR(vpDia(isoDia(DAYS[N_DAYS-1])))+') ou até o prazo, com os filtros de quando o plano foi criado. Clique no nome para abrir a consultoria do vendedor.</p>';
+  });
+}
+function vdPlanosLigar(){
+  var box = document.getElementById('vdPlanosBody');
+  box.addEventListener('click', function(e){
+    var f = e.target.closest('[data-vdf]');
+    if(f){ VD_FILTRO = f.getAttribute('data-vdf'); vdPlanosDesenhar(); return; }
+    var v = e.target.closest('.vp-vend');
+    if(v){ var nome = v.getAttribute('data-vend'); if(VEND_PESSOAS.indexOf(nome)!==-1){ state.vendConsultSel = nome; document.getElementById('vendConsultSelect').value = nome; } vdAba('consult'); window.scrollTo(0, 0); return; }
+    var b = e.target.closest('.vp-acao'); if(b) vpAcao(b);
+  });
 }
 function vpLigar(el){
   if(el.dataset.lig) return; el.dataset.lig = '1';
@@ -5663,18 +5783,12 @@ function vpLigar(el){
       if(!itens.length){ toast('Marque ao menos um indicador para o plano.'); return; }
       var bt = e.target; bt.disabled = true; bt.textContent = 'Criando…';
       window.__NC_rpc('bi_vend_plano_gravar', {p:{acao:'criar', vendedor:ctx.nome, itens:itens, f:ctx.f, base_ini:ctx.ini, base_fim:ctx.fim, obs:(document.getElementById('vpObs')||{}).value||''}})
-        .then(function(){ toast('Plano criado para '+ctx.nome+' com '+itens.length+' indicador'+(itens.length>1?'es':'')+'.'); var o = document.getElementById('vpObs'); if(o) o.value = ''; vpCarregar(ctx.nome, true); })
-        .catch(function(er){ toast(/schema cache|does not exist/i.test(String(er && (er.message||er))) ? 'O banco ainda não tem a tabela de planos.' : 'Não foi possível criar o plano: '+String(er && (er.message||er)).slice(0,120)); })
-        .then(function(){ bt.disabled = false; bt.textContent = 'Criar plano com os marcados'; });
+        .then(function(){ toast('Plano criado para '+ctx.nome+' com '+itens.length+' indicador'+(itens.length>1?'es':'')+'.'); var o = document.getElementById('vpObs'); if(o) o.value = ''; VP.todos = null; })
+        .catch(function(er){ toast(/schema cache|does not exist/i.test(String(er && (er.message||er))) ? 'O banco ainda não tem a tabela de planos.' : 'Não foi possível criar o plano: '+String(er && (er.message||er)).replace(/^.*?:\s*/, '').slice(0,160)); })
+        .then(function(){ bt.disabled = false; bt.textContent = 'Criar plano com os marcados'; vpCarregar(ctx.nome, true); });
       return;
     }
-    var b = e.target.closest('.vp-acao'); if(!b) return;
-    var a = b.getAttribute('data-a');
-    if(a==='excluir' && !b.dataset.conf){ b.dataset.conf = '1'; b.textContent = 'Excluir?'; setTimeout(function(){ if(b.isConnected){ delete b.dataset.conf; b.textContent = '✕'; } }, 3000); return; }
-    b.disabled = true;
-    window.__NC_rpc('bi_vend_plano_gravar', {p:{acao:a, id:+b.getAttribute('data-id')}})
-      .then(function(){ vpCarregar(ctx.nome, true); })
-      .catch(function(er){ b.disabled = false; toast('Não foi possível alterar o plano: '+String(er && (er.message||er)).slice(0,120)); });
+    var b = e.target.closest('.vp-acao'); if(b) vpAcao(b);
   });
 }
 function renderVendConsult(){
@@ -6450,6 +6564,7 @@ function salvarConsultoriaPdf(){
     '.pdf-radar svg{max-height:250px;width:auto;margin:0 auto;display:block;}' +
     '.pdf-radar{display:grid;grid-template-columns:1.1fr 1fr;column-gap:24px;align-items:center;} .pdf-radar>h3,.pdf-radar>.radar-legend{grid-column:1/-1;}' +
     '.pdf-sec{break-before:page;}' +
+    '.pdf-plano .vp-plano{break-inside:avoid;} .pdf-plano table.data-table.vp-tbl{min-width:0;} .pdf-plano .vp-melhorar td{background:rgba(224,72,63,.06)!important;} .pdf-plano .vp-vend{color:var(--text);cursor:default;}' +
     // dispersão: os dois gráficos lado a lado e com altura limitada, para caber numa folha (sem página com uma linha só)
     '.pdf-disp .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:22px!important;} .pdf-disp .chart-wrap svg{max-height:300px;width:100%;} .pdf-disp .grid-2>div{break-inside:avoid;page-break-inside:avoid;} .pdf-disp p{font-size:10px!important;line-height:1.45!important;}' +
     '#rdInfo,.vend-pdf{display:none!important;} tr.vend-row,.vend-pt,.rd-lbl{cursor:default;}' +
@@ -6485,6 +6600,14 @@ function salvarConsultoriaPdf(){
   }
   function painel(titulo, d, cls){ return d.innerHTML.trim() ? '<div class="panel'+(cls?' '+cls:'')+'">'+(titulo ? '<div class="panel-head"><div><h2>'+titulo+'</h2></div></div>' : '')+d.innerHTML+'</div>' : ''; }
   var cKpi = limpa(copia('vendConsultBody'));
+  // plano de melhoria: metas e prazos como estão na tela (sem caixas de marcar, botões e campo de criar)
+  var cPlano = copia('vendPlanoBody'), vivo = document.getElementById('vendPlanoBody');
+  Array.prototype.forEach.call(cPlano.querySelectorAll('.vp-alvo, .vp-dias'), function(x){
+    var orig = vivo && vivo.querySelector((x.classList.contains('vp-alvo') ? '.vp-alvo' : '.vp-dias')+'[data-k="'+x.getAttribute('data-k')+'"]'), sp = document.createElement('span');
+    sp.textContent = !orig ? '' : (orig.tagName==='SELECT' ? (orig.options[orig.selectedIndex]||{}).text||'' : orig.value);
+    x.replaceWith(sp);
+  });
+  Array.prototype.forEach.call(cPlano.querySelectorAll('.vp-ckc, .vp-criar, .vp-criar-nota, .vp-aviso, .vp-acoes, .status-txt'), function(x){ x.remove(); });
   var cFun = limpa(copia('vendFunilBody'));
   var cRank = top10(limpa(copia('vendRankBody')));
   var cCli = top10(limpa(copia('vendCliBody')));
@@ -6498,6 +6621,7 @@ function salvarConsultoriaPdf(){
     '<img class="pdf-logo-pg" alt="Nova" src="'+LOGO_PDF+'">' +
     '<div class="pdf-dica">Na janela de impressão, escolha "Salvar como PDF" e marque "Gráficos de fundo".</div>' + cab +
     painel('', cKpi) +
+    painel('Plano de melhoria vs. média dos pares', cPlano, 'pdf-sec pdf-plano') +
     painel('Funil do vendedor: clientes, marcas, categorias e produtos', cFun) +
     painel('Ranking e comparação com o grupo', cRank, 'pdf-sec') +
     painel('Dispersão de Faturamento', cCli, 'pdf-sec pdf-disp') +
@@ -9462,7 +9586,8 @@ function bindEvents(){
     var meta = VIEW_META[view] || VIEW_META.dashboard;
     document.getElementById('viewTitle').textContent = meta.title;
     document.getElementById('viewSub').textContent = meta.sub;
-    document.getElementById('topVendSel').hidden = (view!=='vendedores');
+    document.getElementById('topVendSel').hidden = (view!=='vendedores' || VD_ABA!=='consult');
+    if(view==='vendedores' && VD_ABA==='planos') vdPlanosCarregar();
     document.getElementById('cliAbas').hidden = (view!=='clientes');
     if(VIEWS_COM_PRODUTOS.indexOf(view)!==-1 && !PRODUTOS_NO_PAINEL){ state.page = 1; renderAll(false); }
     if(view==='clientes'){ renderClientes(); }
@@ -9655,6 +9780,8 @@ function bindEvents(){
 
   // consultoria de vendedor
   document.getElementById('vendPdfBtn').addEventListener('click', salvarConsultoriaPdf);
+  document.getElementById('vdGuias').addEventListener('click', function(e){ var b = e.target.closest('button[data-vd]'); if(b) vdAba(b.getAttribute('data-vd')); });
+  vdPlanosLigar();
   document.getElementById('vendConsultSelect').addEventListener('change', function(){
     state.vendConsultSel = this.value;
     renderVendSemRolar();
