@@ -1,6 +1,7 @@
 -- Giro de estoque = (valor do estoque a custo ÷ CMV do mês) × 30.
 -- O painel passa a receber o custo das vendas por dia (antes o site estimava o CMV por faturamento − lucro bruto,
--- que inclui os impostos). Só muda a série diária: [dia, fat, qtd, lb, custo]. A chave do cache muda (painel3).
+-- que inclui os impostos). Muda a série diária: [dia, fat, qtd, lb, custo], e cada produto ganha o custo das vendas
+-- dos últimos 30 dias (giro por produto e por categoria). A chave do cache muda (painel3).
 create or replace function public.bi_painel(f jsonb, per jsonb, parte text)
  returns json
  language plpgsql
@@ -8,7 +9,7 @@ create or replace function public.bi_painel(f jsonb, per jsonb, parte text)
  set search_path to ''
  set work_mem to '48MB'
 as $function$
-declare w text; res json; ck text;
+declare w text; res json; ck text; m30 date := (select max(v.dia) from public.bi_venda v) - 29;
   i1 date := (per->>'ini')::date; i2 date := (per->>'fim')::date; q1 date := (per->>'pini')::date; q2 date := (per->>'pfim')::date;
   s1 date := (per->>'s7i')::date; s2 date := (per->>'s7f')::date; t1 date := (per->>'p7i')::date; t2 date := (per->>'p7f')::date;
 begin
@@ -50,14 +51,15 @@ begin
                sum(fat) ft, sum(qtd) qt, sum(lb) lt,
                sum(fat) filter (where dia between $1 and $2) fp, sum(qtd) filter (where dia between $1 and $2) qp, sum(lb) filter (where dia between $1 and $2) lp,
                sum(fat) filter (where dia between $3 and $4) fq, sum(qtd) filter (where dia between $3 and $4) qq, sum(lb) filter (where dia between $3 and $4) lq,
-               sum(fat) filter (where dia between $5 and $6) f7, sum(fat) filter (where dia between $7 and $8) g7
+               sum(fat) filter (where dia between $5 and $6) f7, sum(fat) filter (where dia between $7 and $8) g7,
+               sum(custo) filter (where dia >= $9) c30
         from public.bi_venda where %s
         group by grouping sets ((produto), (produto, mes))),
       top as (select produto from g where gm = 1 order by ft desc limit 2000)
       select json_build_object(
-        'p', (select coalesce(json_agg(json_build_array(produto, fp, qp, lp, fq, qq, lq, f7, g7, ft, qt, lt)), '[]') from g where gm = 1),
+        'p', (select coalesce(json_agg(json_build_array(produto, fp, qp, lp, fq, qq, lq, f7, g7, ft, qt, lt, c30)), '[]') from g where gm = 1),
         'pm', (select coalesce(json_agg(json_build_array(g.produto, mes, ft, qt, lt)), '[]') from g join top t on t.produto = g.produto where gm = 0))$q$, w)
-    into res using i1, i2, q1, q2, s1, s2, t1, t2;
+    into res using i1, i2, q1, q2, s1, s2, t1, t2, m30;
   end if;
   -- sem filtro sempre; com filtro enquanto o cache estiver pequeno (zerado a cada carga)
   if coalesce(f, '{}'::jsonb) = '{}'::jsonb or (select count(*) from public.bi_cache) < 1500 then

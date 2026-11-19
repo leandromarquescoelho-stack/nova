@@ -2231,7 +2231,7 @@ table.data-table.vp-tbl{min-width:720px;}
 
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
-          <div><h2>Giro de Estoque por Categoria</h2><div class="psub">Vezes por período &middot; estimado a partir da venda média mensal</div></div>
+          <div><h2>Giro de Estoque por Categoria</h2><div class="psub">Dias de estoque: (estoque a custo ÷ CMV do mês) &times; 30 &middot; menos dias = gira mais rápido</div></div>
           <button class="tbtn" id="giroSortBtn">Ordenar &#8595;</button>
         </div>
         <div class="barlist scroll-limit" id="giroList"></div>
@@ -2302,7 +2302,7 @@ table.data-table.vp-tbl{min-width:720px;}
                 <th data-k="estoqueMin">Mínimo <span class="sort-ico">&#9650;</span></th>
                 <th data-k="qtdPeriodo">Vendas <span class="sort-ico">&#9650;</span></th>
                 <th data-k="fatPeriodo">Faturamento <span class="sort-ico">&#9650;</span></th>
-                <th data-k="giro">Giro <span class="sort-ico">&#9650;</span></th>
+                <th data-k="giro" title="Giro em dias: (estoque a custo ÷ CMV do mês) × 30">Giro (dias) <span class="sort-ico">&#9650;</span></th>
                 <th data-k="status">Status <span class="sort-ico">&#9650;</span></th>
               </tr>
             </thead>
@@ -2822,14 +2822,17 @@ function passaAtributos(inf){
   }
   return true;
 }
+var GIRO_SEM = 1e9;   // tem estoque e não vendeu no mês
+function giroTxt(g){ return g>=GIRO_SEM ? 'sem venda' : fmtUn(g)+' d'; }
 function novoProduto(id, r, lset){
   var inf = PRODINFO[id] || {pn:String(id), nome:String(id)};
   var s = estoqueDe(id, lset);
   var ft = r ? c2(r[9]) : 0, qt = r ? n0(r[10]) : 0, lt = r ? c2(r[11]) : 0;
-  var est = s ? s.est : 0;
-  // giro anualizado = (peças vendidas por mês x 12) / estoque atual
-  var giro = est>0 ? ((qt/MESES_EFETIVOS)*12)/est : (qt>0 ? 24 : 0);
-  giro = Math.max(0, Math.min(30, Math.round(giro*10)/10));
+  var est = s ? s.est : 0, estC = s ? s.custo : 0;
+  // giro em dias = (estoque a custo ÷ CMV do mês) × 30; CMV do mês = custo das vendas dos últimos 30 dias
+  // (banco sem esse custo: venda média mensal em peças × custo unitário do estoque)
+  var cmvMes = r && r.length > 12 ? c2(r[12]) : (est>0 ? (qt/MESES_EFETIVOS)*(estC/est) : 0);
+  var giro = estC<=0 ? 0 : (cmvMes>0 ? Math.round(estC/cmvMes*30) : GIRO_SEM);
   return {
     id: String(id), pid: id, codigo: inf.pn, nome: inf.nome,
     marca: dimNome('marca', inf.marca), categoria: dimNome('categoria', inf.cat), modelo: dimNome('montadora', inf.mont), modelo2: null,
@@ -2837,7 +2840,7 @@ function novoProduto(id, r, lset){
     regiao: (s && s.loja) || '', vendedor: '', canal: '', origem: '',
     precoUnit: qt>0 ? Math.round(ft/qt*100)/100 : 0,
     estoqueAtual: Math.round(est), estoqueMin: Math.max(1, Math.round(qt/MESES_EFETIVOS*1.5)),
-    giro: giro, diasSemGiro: s ? s.dias : null, parado: !!(s && s.parado), isBucket: false, soEstoque: !r,
+    giro: giro, cmvMes: cmvMes, diasSemGiro: s ? s.dias : null, parado: !!(s && s.parado), isBucket: false, soEstoque: !r,
     estCusto: s ? s.custo : 0,
     fat: ft, qtd: qt, custo: ft-lt, lb: lt, margemPct: ft>0 ? lt/ft*100 : 0,
     fatP: r ? c2(r[1]) : 0, qtdP: r ? n0(r[2]) : 0, lbP: r ? c2(r[3]) : 0,
@@ -4308,17 +4311,18 @@ function renderCategoryList(){
   renderBarList('catList', rows, {fk:'categoria'});
 }
 
+// giro por categoria em dias: (estoque a custo da categoria ÷ CMV do mês da categoria) × 30
 function renderGiroList(){
   var prods = estoqueProducts();
   var map = {};
   prods.forEach(function(p){
-    if(!map[p.categoria]) map[p.categoria]={sum:0,w:0};
-    var w = Math.max(1,p.estoqueAtual);
-    map[p.categoria].sum += p.giro*w; map[p.categoria].w += w;
+    if(!map[p.categoria]) map[p.categoria]={est:0,cmv:0};
+    map[p.categoria].est += p.estCusto||0; map[p.categoria].cmv += p.cmvMes||0;
   });
-  var rows = Object.keys(map).map(function(k){ return {label:k, value: map[k].sum/map[k].w}; });
+  var rows = Object.keys(map).filter(function(k){ return map[k].est>0 && map[k].cmv>0; })
+    .map(function(k){ return {label:k, value: map[k].est/map[k].cmv*30}; });
   rows.sort(function(a,b){ return state.giroSortDesc ? b.value-a.value : a.value-b.value; });
-  renderBarList('giroList', rows, {fk:'categoria', fmt:function(v){ return v.toFixed(1)+'x'; }});
+  renderBarList('giroList', rows, {fk:'categoria', fmt:function(v){ return fmtUn(v)+' dias'; }});
 }
 
 function renderLojaList(){
@@ -6348,7 +6352,7 @@ function renderTable(){
         '<td class="mono">'+r.estoqueMin+'</td>' +
         '<td class="mono">'+fmtUn(r.qtdPeriodo)+'</td>' +
         '<td class="mono">'+fmtMoney(r.fatPeriodo)+'</td>' +
-        '<td class="mono">'+r.giro.toFixed(1)+'x</td>' +
+        '<td class="mono">'+giroTxt(r.giro)+'</td>' +
         '<td><span class="status-pill"><i style="background:'+STATUS_COLOR[r.status]+'"></i>'+STATUS_LABEL[r.status]+'</span></td>' +
       '</tr>';
     }).join('');
@@ -9192,9 +9196,9 @@ function bindEvents(){
   // export
   document.getElementById('exportXlsx').addEventListener('click', function(){
     var rows = tableRows();
-    var header = ['Código','Produto','Marca','Categoria','Aplicação','Estoque Atual','Estoque Mínimo','Vendas','Faturamento','Giro','Status'];
+    var header = ['Código','Produto','Marca','Categoria','Aplicação','Estoque Atual','Estoque Mínimo','Vendas','Faturamento','Giro (dias)','Status'];
     var lines = [header.join(';')].concat(rows.map(function(r){
-      return [r.codigo,r.nome,r.marca,r.categoria,r.modelo,r.estoqueAtual,r.estoqueMin,Math.round(r.qtdPeriodo),Math.round(r.fatPeriodo),r.giro.toFixed(1),STATUS_LABEL[r.status]].join(';');
+      return [r.codigo,r.nome,r.marca,r.categoria,r.modelo,r.estoqueAtual,r.estoqueMin,Math.round(r.qtdPeriodo),Math.round(r.fatPeriodo),giroTxt(r.giro),STATUS_LABEL[r.status]].join(';');
     }));
     var csv = lines.join('\n');
     function done(){ toast('CSV copiado (' + rows.length + ' linhas) — cole em uma planilha do Excel.'); }
