@@ -1227,6 +1227,28 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cc-guias{display:flex; gap:6px; margin-bottom:12px;}
 .cc-guias button{font:inherit; font-size:12px; font-weight:700; padding:6px 14px; border-radius:999px; border:1px solid var(--border-strong); background:transparent; color:var(--text-muted); cursor:pointer;}
 .cc-guias button.on{background:var(--surface-2); color:var(--text); border-color:var(--accent);}
+.pr-ctl{display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin:4px 0 16px;}
+.pr-ctl label{display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--text-muted); font-weight:600;}
+.pr-ctl input{height:34px; box-sizing:border-box; padding:0 12px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); font:inherit; font-size:13px;}
+.pr-ctl input:focus{outline:none; border-color:var(--accent);}
+.pr-ctl .fsel{height:34px; box-sizing:border-box; padding-top:0; padding-bottom:0;}
+.pr-prod input{width:320px;}
+#prVal{width:130px; text-align:right; font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--accent); border-color:var(--accent);}
+.pr-modo{display:flex; height:34px; border:1px solid var(--border-strong); border-radius:10px; overflow:hidden;}
+.pr-modo button{font:inherit; font-size:12px; font-weight:700; padding:0 14px; border:0; background:var(--surface-2); color:var(--text-muted); cursor:pointer;}
+.pr-modo button.on{background:var(--pbi-grad); color:var(--pbi-ink);}
+.pr-cab{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; margin-bottom:12px;}
+.pr-cab b{font-family:'JetBrains Mono',monospace; font-size:16px;}
+.pr-cards{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px;}
+.pr-card{border:1px solid var(--border); border-radius:12px; padding:12px 14px; background:var(--surface-2);}
+.pr-card .l{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted);}
+.pr-card .v{font-size:22px; font-weight:800; margin-top:4px; font-family:'JetBrains Mono',monospace;}
+.pr-card .s{font-size:11px; color:var(--text-muted); margin-top:3px;}
+.pr-card.dest{border-color:var(--accent);}
+.pr-tbl td.pr-out{font-weight:800;}
+.pr-tbl tr.pr-tot td{font-weight:800; border-top:2px solid var(--border-strong);}
+.pr-ast{color:var(--text-muted); font-size:10px; margin-left:2px;}
+@media (max-width:900px){ .pr-prod input{width:100%;} .pr-prod{width:100%;} }
 .cad-form{display:flex; gap:0; margin:4px 0 16px;}
 .cad-form input{width:260px; height:38px; box-sizing:border-box; padding:0 12px; border-radius:10px 0 0 10px; border:1px solid var(--border-strong); border-right:0; background:var(--surface-2); color:var(--text); font:inherit; font-size:14px;}
 .cad-form input:focus{outline:none; border-color:var(--accent);}
@@ -1785,6 +1807,9 @@ table.data-table.vp-tbl{min-width:720px;}
       </div>
       <div class="nav-item" data-view="concorrencia">
         <span class="ico">&#127991;&#65039;</span><span class="label">E-commerce</span><span class="tip">E-commerce</span>
+      </div>
+      <div class="nav-item" data-view="precos">
+        <span class="ico">&#128178;</span><span class="label">Preços</span><span class="tip">Preços</span>
       </div>
       <div class="nav-item" data-view="planejamento">
         <span class="ico">&#127919;</span><span class="label">Planejamento</span><span class="tip">Planejamento</span>
@@ -2538,6 +2563,29 @@ table.data-table.vp-tbl{min-width:720px;}
             <form class="cad-form" id="cadForm"><input type="text" id="cadPn" placeholder="Código do produto" maxlength="40" autocomplete="off" aria-label="Código do produto"><button type="submit" id="cadBtn">Pesquisar informações</button></form>
             <div id="cadRes"></div>
           </div>
+        </div>
+      </section>
+
+      <!-- ============ PREÇOS ============ -->
+      <section class="view-panel" data-view-panel="precos" style="display:none;">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Simulador de preço de venda</h2><div class="psub">Escolha o produto e o custo; informe o preço final para ver a margem, ou a margem para ver o preço. A margem desconta ICMS, PIS e COFINS da classificação fiscal do item.</div></div>
+          </div>
+          <div class="pr-ctl">
+            <label class="pr-prod">Produto<input type="text" id="prPn" list="prLista" placeholder="Código ou nome do produto" autocomplete="off"><datalist id="prLista"></datalist></label>
+            <label>Custo<select class="fsel" id="prCusto"><option value="maior">Maior custo</option></select></label>
+            <div class="pr-modo" id="prModo" role="tablist"><button type="button" class="on" data-m="preco" role="tab" aria-selected="true">Informar preço</button><button type="button" data-m="margem" role="tab" aria-selected="false">Informar margem</button></div>
+            <label id="prValLbl">Preço final (R$)<input type="text" inputmode="decimal" id="prVal" placeholder="0,00" autocomplete="off"></label>
+          </div>
+          <div id="prRes"><p class="note-muted">Digite o código ou o nome de um produto para começar.</p></div>
+        </div>
+        <div class="panel" style="margin-top:16px;">
+          <div class="panel-head">
+            <div><h2>Por loja</h2><div class="psub" id="prLojaSub">Preço e margem com o custo de cada loja, e a média de vendas dos últimos 6 meses por emitente (com os filtros do painel)</div></div>
+          </div>
+          <div class="cc-scroll"><table class="cc-tbl pr-tbl" id="prTbl"></table></div>
+          <p class="note-muted" id="prNota"></p>
         </div>
       </section>
 
@@ -3512,6 +3560,198 @@ function renderConcorrencia(){
     ccTabela(); ccHistorico();
     carregarProdutos().catch(function(){});   // estoque para o tooltip do nosso preço
   });
+}
+// ===== Preços: simulador de preço de venda =====
+var PR = {pid:null, modo:'preco', val:null, custo:'maior', vendas:null, vchave:null, ligado:false, busy:0};
+function prFmt(v, d){ return v==null || !isFinite(v) ? '—' : v.toLocaleString('pt-BR', {minimumFractionDigits:d==null?2:d, maximumFractionDigits:d==null?2:d}); }
+function prPct(v){ return v==null || !isFinite(v) ? '—' : v.toFixed(1).replace('.', ',')+'%'; }
+// custo unitário e saldo de cada loja; classificação fiscal do item
+function prEstoque(pid){
+  var o = {lojas:{}, clsf:null};
+  (EST_POR_PROD[pid]||[]).forEach(function(i){
+    var e = n0(EST.est[i]), c = n0(EST.custo[i]), cu = n0((EST.custo_u||[])[i]), nm = dimNome('loja', EST.loja[i]);
+    var u = cu > 0 ? cu : (e > 0 && c > 0 ? c/e : 0);
+    if(!o.clsf && (EST.clsf||[])[i]) o.clsf = EST.clsf[i];
+    if(u > 0 || e > 0) o.lojas[nm] = {u:u > 0 ? u : null, est:e};
+  });
+  return o;
+}
+function prImp(clsf){ var al = clsf && EST.impostos ? EST.impostos[clsf] : null; return al ? {pis:+al[0]||0, cofins:+al[1]||0, icms:+al[2]||0, cod:clsf} : null; }
+// fração do preço que sai em impostos: pela classificação fiscal; sem ela, as deduções médias das vendas do produto
+function prCarga(){
+  if(PR.tx) return ccImpostos(PR.tx);
+  return PR.ded || 0;
+}
+function prMargem(c, p){ if(!(c > 0) || !(p > 0)) return null; var m = (p - p*prCarga() - c)/p; return Math.trunc(m*10000)/100; }
+function prPreco(c, m){ if(!(c > 0) || m==null) return null; var d = 1 - prCarga() - m/100; if(d <= 0.0001) return null; return Math.ceil(c/d*100 - 1e-6)/100; }
+function prCustoEscolhido(){
+  var L = PR.est.lojas, nomes = Object.keys(L).filter(function(n){ return L[n].u; });
+  if(!nomes.length) return null;
+  if(PR.custo==='maior' || PR.custo==='menor'){
+    var pick = nomes.filter(function(n){ return L[n].est > 0; }); if(!pick.length) pick = nomes;
+    pick.sort(function(a, b){ return PR.custo==='maior' ? L[b].u - L[a].u : L[a].u - L[b].u; });
+    return {v:L[pick[0]].u, de:(PR.custo==='maior' ? 'maior' : 'menor')+' custo unitário ('+pick[0]+(L[pick[0]].est > 0 ? '' : ', sem saldo')+')'};
+  }
+  if(PR.custo==='medio'){
+    var q = 0, t = 0; nomes.forEach(function(n){ if(L[n].est > 0){ q += L[n].est; t += L[n].est*L[n].u; } });
+    if(q > 0) return {v:t/q, de:'custo médio ponderado pelo saldo das lojas'};
+    var s = 0; nomes.forEach(function(n){ s += L[n].u; }); return {v:s/nomes.length, de:'custo médio das lojas (sem saldo)'};
+  }
+  if(L[PR.custo] && L[PR.custo].u) return {v:L[PR.custo].u, de:'custo unitário em '+PR.custo};
+  return null;
+}
+function prOpcoesCusto(){
+  var sel = document.getElementById('prCusto'), L = PR.est ? PR.est.lojas : {};
+  var nomes = Object.keys(L).filter(function(n){ return L[n].u; }).sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
+  sel.innerHTML = '<option value="maior">Maior custo</option><option value="medio">Custo médio</option><option value="menor">Menor custo</option>'+
+    nomes.map(function(n){ return '<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+' · '+ccMoney(L[n].u)+'</option>'; }).join('');
+  if(['maior','medio','menor'].indexOf(PR.custo)===-1 && !(L[PR.custo] && L[PR.custo].u)) PR.custo = 'maior';
+  sel.value = PR.custo;
+}
+function prNome(x){ var n = String(x.nome||''), p = String(x.pn); return n.indexOf(p)===0 ? n.slice(p.length).replace(/^\s*[-–—]\s*/, '') : n; }
+function prAchar(txt){
+  txt = String(txt||'').trim(); if(!txt) return null;
+  var cod = txt.split(' — ')[0].trim().toUpperCase(), achou = null, parcial = [];
+  Object.keys(PRODINFO).forEach(function(pid){
+    var x = PRODINFO[pid]; if(!x) return;
+    if(String(x.pn).toUpperCase()===cod) achou = pid;
+  });
+  if(achou) return achou;
+  var t = txt.toUpperCase();
+  Object.keys(PRODINFO).forEach(function(pid){ var x = PRODINFO[pid]; if(x && String(x.nome||'').toUpperCase().indexOf(t)!==-1) parcial.push(pid); });
+  return parcial.length===1 ? parcial[0] : null;
+}
+function prSugerir(){
+  var t = String(document.getElementById('prPn').value||'').trim().toUpperCase(), dl = document.getElementById('prLista');
+  if(t.length < 2 || t.indexOf(' — ')!==-1){ dl.innerHTML = ''; return; }
+  var out = [];
+  for(var pid in PRODINFO){
+    var x = PRODINFO[pid]; if(!x) continue;
+    if(String(x.pn).toUpperCase().indexOf(t)===0 || String(x.nome||'').toUpperCase().indexOf(t)!==-1){ out.push(x); if(out.length >= 30) break; }
+  }
+  dl.innerHTML = out.map(function(x){ return '<option value="'+escapeHtml(x.pn+' — '+prNome(x).slice(0, 70))+'"></option>'; }).join('');
+}
+function renderPrecos(){
+  if(!PR.ligado){
+    PR.ligado = true;
+    var pn = document.getElementById('prPn');
+    pn.addEventListener('input', function(){ prSugerir(); if(pn.value.indexOf(' — ')!==-1) prEscolher(); });
+    pn.addEventListener('change', prEscolher);
+    pn.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); prEscolher(); } });
+    document.getElementById('prCusto').addEventListener('change', function(e){ PR.custo = e.target.value; prCalcular(); });
+    document.getElementById('prModo').addEventListener('click', function(e){
+      var b = e.target.closest('button[data-m]'); if(!b || b.getAttribute('data-m')===PR.modo) return;
+      PR.modo = b.getAttribute('data-m'); PR.val = null;
+      document.querySelectorAll('#prModo button').forEach(function(x){ var on = x===b; x.classList.toggle('on', on); x.setAttribute('aria-selected', on ? 'true' : 'false'); });
+      prPadrao(); prCalcular();
+    });
+    var val = document.getElementById('prVal');
+    val.addEventListener('input', function(){ PR.val = prLerValor(); prCalcular(true); });
+    val.addEventListener('change', function(){ if(PR.val!=null) val.value = prFmt(PR.val, PR.modo==='margem' ? 1 : 2); });
+  }
+  if(!PROD_OK){
+    document.getElementById('prRes').innerHTML = '<p class="note-muted status-txt">Carregando produtos e estoque…</p>';
+    carregarProdutos().then(function(){ if(state.currentView==='precos') renderPrecos(); }).catch(function(){ document.getElementById('prRes').innerHTML = '<p class="note-muted">Não foi possível carregar os produtos agora.</p>'; });
+    return;
+  }
+  if(PR.pid){ prVendas(); } else if(!document.getElementById('prPn').value) document.getElementById('prPn').focus();
+}
+function prLerValor(){
+  var t = String(document.getElementById('prVal').value||'').replace(/[^\d,.-]/g, '');
+  if(t.indexOf(',')>=0) t = t.replace(/\./g, '').replace(',', '.');
+  var n = parseFloat(t); return isFinite(n) ? n : null;
+}
+function prEscolher(){
+  var pid = prAchar(document.getElementById('prPn').value);
+  if(!pid){ if(String(document.getElementById('prPn').value).trim().length >= 3) document.getElementById('prRes').innerHTML = '<p class="note-muted">Produto não encontrado. Digite o código completo ou escolha na lista.</p>'; return; }
+  if(pid===PR.pid) return;
+  var x = PRODINFO[pid]; document.getElementById('prPn').value = x.pn+' — '+prNome(x).slice(0, 70);
+  PR.pid = pid; PR.val = null; PR.vendas = null; PR.vchave = null;
+  PR.est = prEstoque(pid); PR.tx = prImp(PR.est.clsf); PR.ded = 0;
+  prOpcoesCusto(); prCalcular(); prVendas();
+}
+// valor inicial do campo: preço médio praticado (ou o que dá 30% de margem) / margem praticada (ou 30%)
+function prPadrao(){
+  var t = PR.vendas ? PR.vendas.tot : null, c = PR.est ? prCustoEscolhido() : null, v = null;
+  if(PR.modo==='preco') v = t && t.q > 0 ? Math.round(t.f/t.q*100)/100 : (c ? prPreco(c.v, 30) : null);
+  else v = t && t.f > 0 && t.lb != null ? Math.round(t.lb/t.f*1000)/10 : 30;
+  PR.val = v; document.getElementById('prVal').value = v==null ? '' : prFmt(v, PR.modo==='margem' ? 1 : 2);
+}
+function prVendas(){
+  if(!PR.pid) return;
+  var f = painelFiltros(null), ch = PR.pid+'|'+JSON.stringify(f);
+  if(ch===PR.vchave) return;
+  PR.vchave = ch; var meu = ++PR.busy;
+  document.getElementById('prNota').textContent = 'Carregando as vendas…';
+  window.__NC_rpc('bi_preco_vendas', {f:f, p_produto:+PR.pid}).then(function(r){
+    if(meu!==PR.busy) return;
+    var por = {}, tot = {q:0, f:0, c:0, lb:0};
+    ((r && r.linhas) || []).forEach(function(x){ var o = {q:+x[1]||0, f:c2(x[2]), c:c2(x[3]), lb:c2(x[4]), m:+x[5]||0}; por[x[0]] = o; tot.q += o.q; tot.f += o.f; tot.c += o.c; tot.lb += o.lb; });   // valores em centavos no banco
+    PR.vendas = {por:por, tot:tot, de:r && r.de, ate:r && r.ate};
+    PR.ded = !PR.tx && tot.f > 0 ? Math.max(0, (tot.f - tot.c - tot.lb)/tot.f) : 0;
+    if(PR.val==null) prPadrao();
+    prCalcular();
+  }).catch(function(er){
+    if(meu!==PR.busy) return;
+    PR.vchave = null; PR.vendas = {por:{}, tot:{q:0, f:0, c:0, lb:0}};
+    var m = String(er && (er.message||er));
+    document.getElementById('prNota').textContent = /schema cache|does not exist|Could not find/i.test(m) ? 'O banco ainda não tem a função das vendas por emitente (falta rodar o SQL).' : 'Não foi possível carregar as vendas: '+m.slice(0, 120);
+    if(PR.val==null) prPadrao(); prCalcular();
+  });
+}
+function prCalcular(digitando){
+  var res = document.getElementById('prRes'), tbl = document.getElementById('prTbl');
+  document.getElementById('prValLbl').firstChild.nodeValue = PR.modo==='preco' ? 'Preço final (R$)' : 'Margem desejada (%)';
+  document.getElementById('prVal').placeholder = PR.modo==='preco' ? '0,00' : '0,0';
+  if(!PR.pid){ tbl.innerHTML = ''; return; }
+  var x = PRODINFO[PR.pid] || {}, c = prCustoEscolhido(), carga = prCarga();
+  var impTxt = PR.tx ? 'ICMS '+prPct(PR.tx.icms*100)+' · PIS '+prPct(PR.tx.pis*100)+' · COFINS '+prPct(PR.tx.cofins*100)+' (classificação '+escapeHtml(PR.tx.cod)+')' :
+    (PR.ded ? 'sem classificação fiscal: deduções médias das vendas do produto' : 'sem classificação fiscal e sem vendas para estimar as deduções');
+  var h = '<div class="pr-cab"><b>'+escapeHtml(x.pn||'')+'</b><span>'+escapeHtml(prNome(x))+'</span></div>';
+  if(!c){
+    h += '<p class="note-muted">Este produto não tem custo unitário em nenhuma loja na última carga do estoque, então não dá para simular a margem.</p>';
+  } else {
+    var preco, mg;
+    if(PR.modo==='preco'){ preco = PR.val; mg = prMargem(c.v, preco); }
+    else { mg = PR.val; preco = prPreco(c.v, mg); }
+    var lucro = preco ? preco - preco*carga - c.v : null;
+    var corM = mg==null ? '' : (mg < 0 ? 'color:var(--critical)' : (mg < 10 ? 'color:var(--warning, #d9a400)' : 'color:var(--good)'));
+    var inviavel = PR.modo==='margem' && mg!=null && preco==null;
+    h += '<div class="pr-cards">'+
+      '<div class="pr-card"><div class="l">Custo usado</div><div class="v">'+ccMoney(c.v)+'</div><div class="s">'+escapeHtml(c.de)+'</div></div>'+
+      '<div class="pr-card"><div class="l">Impostos no preço</div><div class="v">'+prPct(carga*100)+'</div><div class="s">'+(preco ? ccMoney(preco*carga)+' · ' : '')+impTxt+'</div></div>'+
+      '<div class="pr-card'+(PR.modo==='margem'?' dest':'')+'"><div class="l">Preço de venda</div><div class="v">'+(inviavel ? '—' : ccMoney(preco))+'</div><div class="s">'+(inviavel ? 'Margem impossível com esses impostos' : (preco && c.v ? 'markup '+prFmt(preco/c.v, 2)+'x sobre o custo' : ''))+'</div></div>'+
+      '<div class="pr-card'+(PR.modo==='preco'?' dest':'')+'"><div class="l">Margem bruta</div><div class="v" style="'+corM+'">'+prPct(mg)+'</div><div class="s">(preço − impostos − custo) ÷ preço</div></div>'+
+      '<div class="pr-card"><div class="l">Lucro bruto por peça</div><div class="v"'+(lucro!=null && lucro < 0 ? ' style="color:var(--critical)"' : '')+'>'+ccMoney(lucro)+'</div><div class="s">depois de impostos e custo</div></div>'+
+      '</div>';
+  }
+  res.innerHTML = h;
+  prTabela(c);
+}
+function prTabela(cSel){
+  var tbl = document.getElementById('prTbl'), L = PR.est.lojas, V = PR.vendas ? PR.vendas.por : {}, nomes = {};
+  Object.keys(L).forEach(function(n){ nomes[n] = 1; }); Object.keys(V).forEach(function(n){ nomes[n] = 1; });
+  // com filtro de emitente ou loja no painel, só as lojas filtradas
+  var filt = [].concat(state.emitente||[], state.regiao||[]);
+  var lista = Object.keys(nomes).filter(function(n){ return !filt.length || filt.indexOf(n)!==-1; }).sort(function(a, b){ return ((V[b]||{}).f||0) - ((V[a]||{}).f||0) || a.localeCompare(b, 'pt-BR'); });
+  var th = '<thead><tr><th>Loja / emitente</th><th class="num">Saldo</th><th class="num">Custo unit.</th><th class="num">'+(PR.modo==='preco'?'Preço informado':'Preço calculado')+'</th><th class="num">'+(PR.modo==='preco'?'Margem':'Margem desejada')+'</th><th class="num">Lucro por peça</th><th class="num">Média mensal (un)</th><th class="num">Média mensal (R$)</th><th class="num">Preço médio praticado</th><th class="num">Margem praticada</th></tr></thead>';
+  var algumFallback = false, tot = {q:0, f:0, lb:0, est:0};
+  var rows = lista.map(function(n){
+    var l = L[n] || {}, v = V[n], cu = l.u || null, fb = false;
+    if(!cu && cSel){ cu = cSel.v; fb = true; algumFallback = true; }
+    var preco, mg;
+    if(PR.modo==='preco'){ preco = PR.val; mg = prMargem(cu, preco); } else { mg = PR.val; preco = prPreco(cu, mg); }
+    var lucro = preco && cu ? preco - preco*prCarga() - cu : null;
+    var corM = mg==null ? '' : (mg < 0 ? 'color:var(--critical)' : (mg < 10 ? 'color:var(--warning, #d9a400)' : 'color:var(--good)'));
+    if(v){ tot.q += v.q; tot.f += v.f; tot.lb += v.lb; } tot.est += l.est || 0;
+    return '<tr><td>'+escapeHtml(n)+'</td><td class="num">'+(l.est!=null ? prFmt(l.est, 0) : '—')+'</td><td class="num">'+(cu ? ccMoney(cu)+(fb ? '<span class="pr-ast" title="Sem custo nesta loja: usa o custo escolhido">*</span>' : '') : '—')+'</td>'+
+      '<td class="num pr-out">'+ccMoney(preco)+'</td><td class="num pr-out" style="'+corM+'">'+prPct(mg)+'</td><td class="num"'+(lucro!=null && lucro < 0 ? ' style="color:var(--critical)"' : '')+'>'+ccMoney(lucro)+'</td>'+
+      '<td class="num">'+(v ? prFmt(v.q/6, 1) : '—')+'</td><td class="num">'+(v ? ccMoney(v.f/6) : '—')+'</td><td class="num">'+(v && v.q > 0 ? ccMoney(v.f/v.q) : '—')+'</td><td class="num">'+(v && v.f > 0 ? prPct(v.lb/v.f*100) : '—')+'</td></tr>';
+  }).join('');
+  var totRow = lista.length > 1 ? '<tr class="pr-tot"><td>Total</td><td class="num">'+prFmt(tot.est, 0)+'</td><td></td><td></td><td></td><td></td><td class="num">'+prFmt(tot.q/6, 1)+'</td><td class="num">'+ccMoney(tot.f/6)+'</td><td class="num">'+(tot.q > 0 ? ccMoney(tot.f/tot.q) : '—')+'</td><td class="num">'+(tot.f > 0 ? prPct(tot.lb/tot.f*100) : '—')+'</td></tr>' : '';
+  tbl.innerHTML = lista.length ? th+'<tbody>'+rows+totRow+'</tbody>' : '<tr><td class="status-txt" style="padding:16px;">Sem estoque e sem vendas deste produto nas lojas do recorte.</td></tr>';
+  var vd = PR.vendas || {}, per = vd.de && vd.ate ? new Date(vd.de+'T12:00:00').toLocaleDateString('pt-BR')+' a '+new Date(vd.ate+'T12:00:00').toLocaleDateString('pt-BR') : 'últimos 6 meses';
+  if(PR.vendas) document.getElementById('prNota').innerHTML = 'Médias mensais = vendas de '+per+' ÷ 6, por emitente, com os filtros do painel. Margem praticada = lucro bruto ÷ faturamento das vendas.'+(algumFallback ? ' * Loja sem custo unitário no estoque: usa o custo escolhido acima.' : '')+' Saldo e custo unitário vêm da última carga do estoque.';
 }
 // ===== E-commerce: guias Concorrência / Sugestão Cadastro =====
 var EC_ABA = 'conc';
@@ -9078,6 +9318,7 @@ function renderTudo(refreshing){
   renderActiveTags();
   if(state.currentView==='clientes') renderClientes();
   if(state.currentView==='vendedores') renderVendConsult();
+  if(state.currentView==='precos') prVendas();
   if(state.currentView==='insights') renderInsights();
   if(state.currentView==='diasuteis') renderDiasUteis();
 }
@@ -9112,6 +9353,7 @@ function bindEvents(){
     clientes:{title:'Clientes', sub:'Carteira, termômetro de compras, clientes disponíveis (60 dias sem compra) e cidades'},
     diasuteis:{title:'Dias úteis', sub:'Calendário de dias úteis por loja, feriados e venda por tipo de dia'},
     insights:{title:'Insights', sub:'Oportunidades para aumentar faturamento e margem'},
+    precos:{title:'Preços', sub:'Simulador de preço de venda: margem pelo preço ou preço pela margem, por loja'},
     concorrencia:{title:'E-commerce', sub:'Concorrência de preços (VTEX e Peça Chevrolet) e sugestão de cadastro de produtos'},
     planejamento:{title:'Planejamento', sub:'Projeções e objetivos de vendas por ano, em formato de apresentação'},
     usuarios:{title:'Usuários', sub:'Gestão de acessos ao painel (somente BI)'},
@@ -9144,6 +9386,7 @@ function bindEvents(){
     if(view==='insights'){ renderInsights(); }
     if(view==='planejamento'){ renderPlanejamento(); }
     if(view==='concorrencia'){ renderConcorrencia(); }
+    if(view==='precos'){ renderPrecos(); }
     if(view==='diasuteis'){ renderDiasUteis(); }
     if(view==='usuarios'){ renderUsersAdmin(); renderIAAdmin(); }
     if(view==='fontes'){ renderFontesAdmin(); }
@@ -9713,7 +9956,7 @@ var ABAS = [
   {k:'dashboard', t:'Dashboard'}, {k:'vendas', t:'Vendas'}, {k:'estoque', t:'Estoque'},
   {k:'vendedores', t:'Vendedores'}, {k:'clientes', t:'Clientes'}, {k:'diasuteis', t:'Dias úteis'}, {k:'insights', t:'Insights'},
   // restritas: só aparecem para quem as tiver marcadas no cadastro (o "todas as guias" antigo não as inclui)
-  {k:'concorrencia', t:'E-commerce', restrita:true}, {k:'planejamento', t:'Planejamento', restrita:true}
+  {k:'concorrencia', t:'E-commerce', restrita:true}, {k:'precos', t:'Preços', restrita:true}, {k:'planejamento', t:'Planejamento', restrita:true}
 ];
 var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
 var ABAS_PADRAO = ABAS.filter(function(a){ return !a.restrita; }).map(function(a){ return a.k; });
