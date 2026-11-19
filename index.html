@@ -3434,8 +3434,8 @@ function renderConcorrencia(){
       bt.disabled = true; bt.textContent = 'Adicionando…';
       window.__NC_rpc('bi_conc_manual_gravar', {p:{acao:'add', fonte:CC_FONTE, pn:pn}}).then(function(r){
         inp.value = '';
-        toast(r && r.disparado ? pn+' adicionado. A busca dos preços dele começou; a tabela atualiza sozinha em alguns minutos.' : pn+' adicionado. Os preços entram na próxima coleta diária.');
-        ccRecarregar(); if(r && r.disparado){ [90, 180, 300].forEach(function(sg){ setTimeout(function(){ if(state.currentView==='concorrencia') ccRecarregar(); }, sg*1000); }); }
+        toast(r && r.disparado ? pn+' adicionado. A busca dos preços dele começou; a tabela atualiza sozinha em cerca de 1 minuto.' : pn+' adicionado. Os preços entram na próxima coleta diária.');
+        ccRecarregar(); if(r && r.disparado){ [30, 60, 120, 240].forEach(function(sg){ setTimeout(function(){ if(state.currentView==='concorrencia') ccRecarregar(); }, sg*1000); }); }
       }).catch(function(er){ toast(/schema cache|does not exist/i.test(String(er && (er.message||er))) ? 'O banco ainda não tem a tabela de produtos manuais.' : 'Não foi possível adicionar: '+String(er && (er.message||er)).slice(0,100)); })
         .then(function(){ bt.disabled = false; bt.textContent = '+ Adicionar'; });
     });
