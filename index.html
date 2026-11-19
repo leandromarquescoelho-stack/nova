@@ -3605,7 +3605,7 @@ function ccSugLigar(){
     var todos = Array.prototype.slice.call(tb.querySelectorAll('.cc-sug-in')), i = todos.indexOf(e.target);
     e.target.blur();
     var prox = tb.querySelectorAll('.cc-sug-in')[i + (e.shiftKey ? -1 : 1)];
-    if(prox){ prox.focus(); prox.select(); prox.scrollIntoView({block:'nearest'}); }
+    if(prox){ prox.focus({preventScroll:true}); prox.select(); }
   });
   // percentual abaixo do menor concorrente (vale para todos os itens sem valor editado)
   tb.addEventListener('change', function(e){
@@ -3615,7 +3615,11 @@ function ccSugLigar(){
     CC_PCT = Math.round(v*100)/100; try{ localStorage.setItem('nc_cc_pct', String(CC_PCT)); }catch(er){}
     ccTabela();
   });
-  tb.addEventListener('focusin', function(e){ if(e.target.classList.contains('cc-sug-in') || e.target.id==='ccPct') e.target.select(); });
+  tb.addEventListener('focusin', function(e){
+    if(e.target.classList.contains('cc-sug-in') || e.target.id==='ccPct') e.target.select();
+    // a linha em edição fica sempre no meio da tela
+    if(e.target.classList.contains('cc-sug-in')){ var tr = e.target.closest('tr') || e.target; tr.scrollIntoView({block:'center', behavior:'smooth'}); }
+  });
   tb.addEventListener('click', function(e){
     var b = e.target.closest('.cc-sug-rst'); if(!b) return;
     var td = b.closest('td'), it = item(td); if(!it) return;
