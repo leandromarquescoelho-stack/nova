@@ -439,13 +439,69 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vx-kl{font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.14em; margin-bottom:4px;}
 .vx-kv{font-family:'Sora',sans-serif; font-size:21px; font-weight:700; letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .vx-ks{font-size:11px; color:var(--text-muted); margin-top:2px;}
-.vx-abas{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:8px; margin-bottom:16px; width:100%;}
+.vx-abas{display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:8px; margin-bottom:16px; width:100%;}
 .vx-abas button{font:inherit; font-size:14px; font-weight:700; padding:12px 10px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); border-radius:10px; cursor:pointer; white-space:nowrap; display:flex; align-items:center; justify-content:center; gap:7px; transition:background .15s, color .15s, border-color .15s, box-shadow .15s, transform .15s;}
 .vx-abas button:hover{border-color:var(--vx-cy-t); color:var(--vx-cy-t); transform:translateY(-1px);}
 .vx-abas button[aria-pressed="true"]{background:var(--pbi-grad); border-color:transparent; color:var(--pbi-ink); box-shadow:0 0 0 2px rgba(242,200,17,.35), 0 6px 18px rgba(242,200,17,.4);}
 @media(max-width:1100px){ .vx-abas{grid-template-columns:repeat(4,minmax(0,1fr));} }
 @media(max-width:640px){ .vx-abas{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;} .vx-abas button{font-size:13px; padding:10px 8px;} }
 .vx-tc[hidden]{display:none;}
+/* ---- Vendas Hoje ---- */
+.vh-topo{display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin:2px 0 12px;}
+.vh-tit{font-family:'Sora',sans-serif; font-size:20px; margin:0;}
+.vh-sub{font-size:12px; color:var(--text-muted); margin-top:3px;}
+.vh-dias{display:flex; gap:8px; flex-wrap:wrap;}
+.vh-dias span{font-size:11.5px; padding:5px 10px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-2);}
+.vh-dias b{color:var(--text); font-family:'JetBrains Mono',monospace;}
+.vh-kpis{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:16px;}
+.vh-k{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; position:relative; overflow:hidden; min-width:0;}
+.vh-k::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--vh-c, var(--vx-cy));}
+.vh-k .l{font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted);}
+.vh-k .v{font-family:'Sora',sans-serif; font-size:22px; font-weight:800; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.vh-k .s{font-size:11.5px; color:var(--text-2); margin-top:3px; line-height:1.45;}
+.vh-k.dest{border-color:var(--vx-cy-t, var(--accent)); box-shadow:0 0 0 1px rgba(0,229,255,.15) inset;}
+.vh-up{color:var(--good); font-weight:700;} .vh-dn{color:var(--critical); font-weight:700;}
+.vh-mg{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; background:rgba(var(--ink),.06);}
+.vh-grupo-l{font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); margin:4px 0 8px;}
+.vh-cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:12px; margin-bottom:16px;}
+.vh-c{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:13px 14px 12px; display:flex; flex-direction:column; gap:8px; min-width:0; transition:transform .15s, border-color .15s;}
+.vh-c:hover{transform:translateY(-2px); border-color:var(--border-strong);}
+.vh-c.ecm{border-color:rgba(124,58,237,.45);}
+.vh-c.tot{border-color:rgba(242,200,17,.55); background:linear-gradient(180deg, rgba(242,200,17,.06), transparent 60%), var(--surface);}
+.vh-ch{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+.vh-ch b{font-family:'Sora',sans-serif; font-size:14.5px;}
+.vh-ch span{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted);}
+.vh-hoje{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;}
+.vh-hoje .vv{font-family:'Sora',sans-serif; font-size:24px; font-weight:800; letter-spacing:-.02em;}
+.vh-lin{display:grid; grid-template-columns:64px auto minmax(0,1fr); gap:4px 8px; font-size:12px; align-items:center;}
+.vh-lin .b{display:flex; gap:5px; justify-content:flex-end; align-items:center; white-space:nowrap; font-size:11px;}
+.vh-lin .b .vh-mg{font-size:10px; padding:0 5px;}
+.vh-lin .r{color:var(--text-muted); white-space:nowrap;} .vh-lin .n{font-family:'JetBrains Mono',monospace; white-space:nowrap;}
+.vh-bar{position:relative; height:10px; border-radius:6px; background:var(--surface-3); overflow:visible; margin-top:2px;}
+.vh-bar i{position:absolute; left:0; top:0; bottom:0; border-radius:6px; transition:width .8s cubic-bezier(.2,.8,.2,1);}
+.vh-bar em{position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--text); border-radius:2px; opacity:.85;}
+.vh-barl{display:flex; justify-content:space-between; font-size:11px; color:var(--text-2); gap:8px;}
+.vh-barl b{font-family:'JetBrains Mono',monospace;}
+.vh-pe{display:flex; justify-content:space-between; gap:6px; font-size:11px; color:var(--text-muted); border-top:1px dashed var(--border); padding-top:7px; flex-wrap:wrap;}
+.vh-pe b{color:var(--text-2); font-family:'JetBrains Mono',monospace; font-weight:600;}
+.vh-obj{cursor:default;} .vh-obj.ed{cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px;}
+.vh-obj input{width:110px; font:inherit; font-family:'JetBrains Mono',monospace; font-size:11.5px; padding:2px 6px; border-radius:6px; border:1px solid var(--accent); background:var(--surface-2); color:var(--text);}
+.vh-seg{font-size:11.5px; display:flex; gap:6px; align-items:baseline; flex-wrap:wrap; color:var(--text-2);}
+.vh-seg .tag{font-size:9.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:5px; background:rgba(124,58,237,.16); color:#a78bfa;}
+.vh-chips{display:flex; gap:6px; flex-wrap:wrap;}
+.vh-chips span{font-size:10.5px; padding:2px 7px; border-radius:6px; background:var(--surface-2); border:1px solid var(--border); color:var(--text-2);}
+table.vh-mat{width:100%; border-collapse:collapse; font-size:12px; min-width:880px;}
+.vh-mat th{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); padding:7px 8px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap;}
+.vh-mat th:first-child, .vh-mat td:first-child{text-align:left;}
+.vh-mat td{padding:6px 8px; text-align:right; border-bottom:1px solid var(--border); font-family:'JetBrains Mono',monospace; white-space:nowrap;}
+.vh-mat td:first-child{font-family:inherit; font-weight:700;}
+.vh-mat td small{display:block; font-size:10px; color:var(--text-muted);}
+.vh-mat tr.sub td:first-child{padding-left:22px; font-weight:600; color:#a78bfa;}
+.vh-mat tr.tot td{font-weight:800; border-top:2px solid var(--border-strong);}
+.vh-mat td.gt{background:rgba(242,200,17,.07); font-weight:800;}
+@media(max-width:1200px){ .vh-kpis{grid-template-columns:repeat(3,minmax(0,1fr));} }
+@media(max-width:640px){ .vh-kpis{grid-template-columns:repeat(2,minmax(0,1fr));} .vh-k .v{font-size:18px;} .vh-cards{grid-template-columns:1fr;} }
+
 .vx-g2{display:grid; grid-template-columns:1fr 1fr; gap:13px; margin-bottom:13px;}
 .vx-card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:15px; margin-bottom:13px; min-width:0;}
 .vx-g2 .vx-card{margin-bottom:0;}
@@ -2246,6 +2302,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <button type="button" data-vxaba="insights" aria-pressed="false">&#128161; Insights</button>
         <button type="button" data-vxaba="regioes" aria-pressed="false">&#128506;&#65039; Regiões</button>
         <button type="button" data-vxaba="lojames" aria-pressed="false">&#128197; Loja &times; Mês</button>
+        <button type="button" data-vxaba="hoje" aria-pressed="false">&#9889; Vendas Hoje</button>
       </div>
 
       <div class="vx-tc" data-vxpainel="lojas">
@@ -2335,6 +2392,15 @@ table.data-table.vp-tbl{min-width:720px;}
         <div class="table-scroll"><div id="heatLoja"></div></div>
         <p class="note-muted" id="heatNota"></p>
       </div>
+      </div>
+
+      <div class="vx-tc" data-vxpainel="hoje" hidden>
+        <div class="vh-topo"><div><h2 class="vh-tit" id="vhTit">Vendas de hoje</h2><div class="vh-sub" id="vhSub"></div></div><div class="vh-dias" id="vhDias"></div></div>
+        <div class="vh-kpis" id="vhKpis"></div>
+        <div class="vh-grupo-l" id="vhCardsT">Lojas &middot; atacado</div>
+        <div class="vh-cards" id="vhCards"></div>
+        <div class="vx-card"><div class="vx-ct">Canal &times; loja no mês</div><div class="vx-cs">Faturamento do mês até o dia, com a margem embaixo &middot; e-commerce pela loja que fatura (emitente) &middot; seguradoras = clientes do tipo seguradora</div><div class="vx-scroll"><table class="vh-mat" id="vhMat"></table></div></div>
+        <p class="note-muted" id="vhNota" style="font-size:11px;"></p>
       </div>
       </section>
 
@@ -8639,6 +8705,7 @@ function renderVendasAbas(){
   else if(a==='insights') vxInsights();
   else if(a==='regioes') vxRegioes();
   else if(a==='lojames') renderHeatLoja();
+  else if(a==='hoje') vxHoje();
 }
 function vxTrocarAba(aba){
   VX.aba = aba;
@@ -8646,6 +8713,190 @@ function vxTrocarAba(aba){
   Array.prototype.forEach.call(document.querySelectorAll('[data-vxpainel]'), function(p){ p.hidden = p.getAttribute('data-vxpainel')!==aba; });
   if(aba==='produtos' && !PRODUTOS_NO_PAINEL){ document.getElementById('vxTP').innerHTML = '<tbody><tr><td class="status-txt" style="padding:20px;">Carregando produtos…</td></tr></tbody>'; renderAll(false); return; }
   renderVendasAbas();
+}
+
+/* ---------- Vendas Hoje: dia, mês e tendência por loja, inspirado no relatório de faturamento diário ----------
+   Loja: atacado, oficina e acessórios pela loja; e-commerce pelo emitente. Média diária = vendas do mês até ontem ÷ dias
+   úteis concluídos (e-commerce: dias corridos); tendência = média diária × dias úteis do mês. */
+var VH = {key:null, d:null, pend:null, obj:{}, objPend:{}};
+var VH_ORDEM = ['TATUAPE','IPIRANGA','JOAO DIAS','SBC','CAMPINAS','RIO PRETO','RIBEIRAO'];
+var VH_CANAIS = ['ATACADO','ECOMMERCE','OFICINA','ACESSORIOS'];
+function vhRegiao(l){ var m = LOJA_MUNICIPIO[l]; return !m ? '' : (m==='São Paulo' || m==='São Bernardo do Campo' ? 'Capital e ABC' : 'Interior'); }
+function vhDt(s){ return new Date(String(s).slice(0,10)+'T12:00:00'); }
+function vhMg(o){ return o && o.f>0 ? o.l/o.f*100 : null; }
+function vhP(v){ return v===null || v===undefined || !isFinite(v) ? '—' : v.toFixed(1).replace('.',',')+'%'; }
+function vhVs(v){ if(v===null || !isFinite(v)) return '<span class="note-muted">—</span>'; return '<span class="'+(v>=0?'vh-up':'vh-dn')+'">'+(v>=0?'▲ +':'▼ ')+v.toFixed(1).replace('.',',')+'%</span>'; }
+function vhMgB(o){ var m = vhMg(o); return m===null ? '' : '<span class="vh-mg" style="color:'+vxMc(m)+'">mg '+vhP(m)+'</span>'; }
+function vhPodeObj(){ return !!(CURRENT_PROFILE && ['bi','diretoria'].indexOf(CURRENT_PROFILE.role)>=0); }
+function vhCorTend(p){ return p===null ? 'var(--vx-cy)' : (p>=100 ? 'var(--good)' : (p>=85 ? '#22d3ee' : (p>=70 ? '#f59e0b' : 'var(--critical)'))); }
+function vxHoje(){
+  var f = painelFiltros(null), dia = isoDia(DAYS[N_DAYS-1]), key = JSON.stringify([f, dia]);
+  if(VH.key!==key){
+    if(VH.pend===key) return;
+    VH.pend = key;
+    document.getElementById('vhKpis').innerHTML = '<p class="note-muted status-txt">Carregando as vendas do dia…</p>';
+    document.getElementById('vhCards').innerHTML = ''; document.getElementById('vhMat').innerHTML = '';
+    window.__NC_rpc('bi_vendas_hoje', {f:f, dia:dia}).then(function(d){
+      if(VH.pend!==key) return; VH.key = key; VH.d = d || {}; VH.pend = null;
+      if(VX.aba==='hoje' && state.currentView==='vendas') vxHoje();
+    }).catch(function(e){
+      if(VH.pend!==key) return; VH.pend = null;
+      document.getElementById('vhKpis').innerHTML = '<p class="note-muted">'+(/bi_vendas_hoje|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'O banco ainda não tem a consulta de Vendas Hoje (rode o SQL vendas_hoje.sql).' : 'Não foi possível carregar as vendas do dia.')+'</p>';
+    });
+    return;
+  }
+  var mes = String(VH.d.dia || dia).slice(0,7)+'-01';
+  if(VH.obj[mes]===undefined && !VH.objPend[mes]){
+    VH.objPend[mes] = 1;
+    window.__NC_rpc('bi_objetivos', {p_mes:mes}).then(function(o){ VH.obj[mes] = o || {}; }).catch(function(){ VH.obj[mes] = {}; })
+      .then(function(){ delete VH.objPend[mes]; if(VX.aba==='hoje' && state.currentView==='vendas') vhDesenhar(); });
+  }
+  vhDesenhar();
+}
+function vhDesenhar(){
+  var d = VH.d; if(!d || !d.dia) return;
+  var dia = String(d.dia).slice(0,10), dD = vhDt(dia), mes = dia.slice(0,7)+'-01', ini = vhDt(mes);
+  var fimMes = new Date(dD.getFullYear(), dD.getMonth()+1, 0, 12), ontemCal = new Date(dD.getFullYear(), dD.getMonth(), dD.getDate()-1, 12);
+  var obj = VH.obj[mes] || {}, ontem = null;
+  (d.linhas||[]).forEach(function(r){ var ds = String(r[0]).slice(0,10); if(ds < dia && (!ontem || ds > ontem)) ontem = ds; });
+  // A[coluna][canal] = {h, o, m, sh, sm}: hoje, ontem, mês, seguradoras hoje e no mês
+  var A = {}, cols = {};
+  function z(){ return {f:0, l:0}; }
+  function cel(c, k){ var a = A[c] = A[c] || {}; return a[k] = a[k] || {h:z(), o:z(), m:z(), sh:z(), sm:z()}; }
+  function soma(o, f, l){ o.f += f; o.l += l; }
+  (d.linhas||[]).forEach(function(r){
+    var ds = String(r[0]).slice(0,10), canal = String(dimNome('canal', r[3])||'').toUpperCase();
+    var col = canal==='ECOMMERCE' ? dimNome('emitente', r[2]) : dimNome('loja', r[1]);
+    col = col || 'N/D'; cols[col] = 1;
+    var seg = /SEGURAD/.test(String(dimNome('tipo_cliente', r[4])||'').toUpperCase()), f = c2(r[5]), l = c2(r[6]), x = cel(col, canal);
+    if(ds===dia){ soma(x.h, f, l); if(seg) soma(x.sh, f, l); }
+    if(ds===ontem) soma(x.o, f, l);
+    if(ds >= mes){ soma(x.m, f, l); if(seg) soma(x.sm, f, l); }
+  });
+  function junta(lista, canais){ var t = {h:z(), o:z(), m:z(), sh:z(), sm:z()};
+    lista.forEach(function(c){ canais.forEach(function(k){ var x = A[c] && A[c][k]; if(x) ['h','o','m','sh','sm'].forEach(function(p){ soma(t[p], x[p].f, x[p].l); }); }); }); return t; }
+  var lojas = Object.keys(cols).filter(function(c){ return A[c].ATACADO && A[c].ATACADO.m.f > 0.5; })
+    .sort(function(a, b){ var ia = VH_ORDEM.indexOf(a), ib = VH_ORDEM.indexOf(b); return (ia<0?99:ia) - (ib<0?99:ib) || a.localeCompare(b, 'pt-BR'); });
+  var todas = Object.keys(cols).sort(function(a, b){ var ia = VH_ORDEM.indexOf(a), ib = VH_ORDEM.indexOf(b); return (ia<0?99:ia) - (ib<0?99:ib) || a.localeCompare(b, 'pt-BR'); });
+  var conc = dD.getDate() > 1, du = {mes: contarDias(ini, fimMes, null).uteis, conc: conc ? contarDias(ini, ontemCal, null).uteis : 0};
+  var dc = {mes: fimMes.getDate(), conc: dD.getDate()-1};
+  function duLoja(l){ return {mes: diasUteisLoja(l, ini, fimMes), conc: conc ? diasUteisLoja(l, ini, ontemCal) : 0}; }
+  // indicadores de um conjunto: média diária, tendência, objetivo
+  function calc(t, dd, ob){
+    var md = dd.conc > 0 ? (t.m.f - t.h.f)/dd.conc : null, tend = md!==null ? md*dd.mes : null;
+    var r = {t:t, dd:dd, md:md, tend:tend, ob:ob||null};
+    r.vsH = md>0 ? (t.h.f/md-1)*100 : null; r.vsO = md>0 && ontem ? (t.o.f/md-1)*100 : null;
+    r.at = ob>0 ? t.m.f/ob*100 : null; r.tp = ob>0 && tend!==null ? tend/ob*100 : null;
+    r.falta = ob>0 ? Math.max(0, ob - t.m.f) : null;
+    var rest = dd.mes - dd.conc; r.porDia = ob>0 && rest>0 ? r.falta/rest : null; r.rest = rest;
+    return r;
+  }
+  var ehHoje = dia===isoDia(new Date());
+  var semana = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][dD.getDay()];
+  document.getElementById('vhTit').textContent = (ehHoje ? 'Vendas de hoje' : 'Vendas do dia')+' · '+semana+', '+fmtDateFull(dD).slice(0,5);
+  document.getElementById('vhSub').innerHTML = 'Mês de '+fmtDateFull(ini).slice(0,5)+' a '+fmtDateFull(dD).slice(0,5)+(ontem ? ' · "ontem" = '+fmtDateFull(vhDt(ontem)).slice(0,5) : '')+' · '+escapeHtml(cargaLabel(REAL.carga))+' · filtros do painel aplicados, exceto o período';
+  document.getElementById('vhDias').innerHTML = '<span>Dias úteis <b>'+du.mes+'</b></span><span>Concluídos <b>'+du.conc+'</b></span><span>Faltam <b>'+(du.mes-du.conc)+'</b></span><span>E-commerce <b>'+dc.conc+'</b> de <b>'+dc.mes+'</b> dias</span>';
+
+  // objetivos: loja (atacado) e ECOMMERCE; atacado total = soma das lojas
+  var obAtc = 0, nObj = 0; lojas.forEach(function(l){ if(obj[l]>0){ obAtc += +obj[l]; nObj++; } });
+  var temObAtc = nObj > 0 && nObj===lojas.length;   // total só com o objetivo de todas as lojas
+  var obEcm = +obj.ECOMMERCE || 0;
+  var rAtc = calc(junta(lojas, ['ATACADO']), du, temObAtc ? obAtc : null);
+  var rEcm = calc(junta(todas, ['ECOMMERCE']), dc, obEcm || null);
+  var tAE = junta(todas, ['ECOMMERCE']); var tA = junta(lojas, ['ATACADO']);
+  var rAE = (function(){ // atacado + e-commerce: média diária somando as duas médias (dias diferentes)
+    var t = {h:z(), o:z(), m:z(), sh:z(), sm:z()}; ['h','o','m','sh','sm'].forEach(function(p){ soma(t[p], tA[p].f+tAE[p].f, tA[p].l+tAE[p].l); });
+    var md = rAtc.md!==null && rEcm.md!==null ? rAtc.md + rEcm.md : null, tend = rAtc.tend!==null && rEcm.tend!==null ? rAtc.tend + rEcm.tend : null;
+    var ob = temObAtc && obEcm ? obAtc + obEcm : null;
+    var r = {t:t, md:md, tend:tend, ob:ob, vsH: md>0 ? (t.h.f/md-1)*100 : null, vsO: md>0 && ontem ? (t.o.f/md-1)*100 : null,
+      at: ob ? t.m.f/ob*100 : null, tp: ob && tend!==null ? tend/ob*100 : null, falta: ob ? Math.max(0, ob - t.m.f) : null};
+    r.porDia = ob && (du.mes-du.conc)>0 ? r.falta/(du.mes-du.conc) : null; return r;
+  })();
+  var gTot = junta(todas, VH_CANAIS), rG = calc(gTot, du, null);
+
+  // KPIs
+  function k(c, l, v, s, dest){ return '<div class="vh-k'+(dest?' dest':'')+'" style="--vh-c:'+c+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>'; }
+  var sgH = junta(lojas, ['ATACADO']).sh, sgM = junta(lojas, ['ATACADO']).sm;
+  document.getElementById('vhKpis').innerHTML =
+    k('var(--vx-cy)', ehHoje ? 'Vendas hoje · grupo' : 'Vendas do dia · grupo', fmtMoney(gTot.h.f), vhMgB(gTot.h)+' '+vhVs(rG.vsH)+' vs. média diária', true) +
+    k('#64748b', 'Vendas ontem', fmtMoney(gTot.o.f), vhMgB(gTot.o)+' '+vhVs(rG.vsO)+' vs. média diária') +
+    k('var(--vx-pu)', 'Mês até agora', fmtMoney(gTot.m.f), vhMgB(gTot.m)+' · média diária '+(rG.md!==null ? fmtMoney(rG.md) : '—')) +
+    k(vhCorTend(rAE.tp), 'Tendência atacado + e-com', rAE.tend!==null ? fmtMoney(rAE.tend) : '—', rAE.tp!==null ? '<b style="color:'+vhCorTend(rAE.tp)+'">'+vhP(rAE.tp)+'</b> do objetivo' : (nObj && !temObAtc ? 'objetivo em '+nObj+' de '+lojas.length+' lojas: cadastre todas' : 'cadastre os objetivos nos quadros das lojas')) +
+    k('var(--vx-am)', 'Objetivo atacado + e-com', rAE.ob ? fmtMoney(rAE.ob) : '—', rAE.ob ? 'atingido <b>'+vhP(rAE.at)+'</b> · faltam '+fmtMoney(rAE.falta)+(rAE.porDia ? '<br>precisa de '+fmtMoney(rAE.porDia)+' por dia útil' : '') : 'sem objetivo no mês') +
+    k('#a78bfa', 'Seguradoras · atacado', fmtMoney(sgH.f)+' <span style="font-size:12px; font-weight:600; color:var(--text-muted)">hoje</span>', vhMgB(sgH)+'<br>mês '+fmtMoney(sgM.f)+' '+vhMgB(sgM)+' · '+vhP(rAtc.t.m.f>0 ? sgM.f/rAtc.t.m.f*100 : null)+' do atacado');
+
+  // quadros
+  var pode = vhPodeObj();
+  function objHtml(chave, ob, editavel){
+    var txt = ob ? fmtMoney(ob) : (editavel ? 'definir' : '—');
+    return '<span class="vh-obj'+(editavel ? ' ed' : '')+'"'+(editavel ? ' data-obj="'+escapeHtml(chave)+'" title="Clique para alterar o objetivo do mês"' : '')+'>'+txt+'</span>';
+  }
+  function card(nome, tag, r, opt){
+    var t = r.t, bar = '';
+    if(r.ob){
+      var w = Math.min(100, r.at||0), mk = r.tp!==null ? Math.min(100, r.tp) : null;
+      bar = '<div class="vh-barl"><span>Atingido <b>'+vhP(r.at)+'</b></span><span>Tendência <b style="color:'+vhCorTend(r.tp)+'">'+vhP(r.tp)+'</b></span></div>' +
+        '<div class="vh-bar" title="Barra: vendido no mês ÷ objetivo · traço: tendência de fechamento ÷ objetivo"><i style="width:'+w.toFixed(1)+'%; background:'+vhCorTend(r.tp)+'"></i>'+(mk!==null ? '<em style="left:calc('+mk.toFixed(1)+'% - 1px)"></em>' : '')+'</div>';
+    } else bar = '<div class="vh-barl"><span>'+(opt.semObj || 'Sem objetivo no mês')+'</span><span>Tendência <b>'+(r.tend!==null ? fmtMoney(r.tend) : '—')+'</b></span></div>';
+    return '<div class="vh-c'+(opt.cls ? ' '+opt.cls : '')+'">' +
+      '<div class="vh-ch"><b>'+escapeHtml(nome)+'</b><span>'+escapeHtml(tag||'')+'</span></div>' +
+      '<div class="vh-hoje"><span class="vv">'+fmtMoney(t.h.f)+'</span>'+vhMgB(t.h)+vhVs(r.vsH)+'</div>' +
+      '<div class="vh-lin"><span class="r">Ontem</span><span class="n">'+fmtMoney(t.o.f)+'</span><span class="b">'+vhMgB(t.o)+vhVs(r.vsO)+'</span>' +
+        '<span class="r">Mês</span><span class="n">'+fmtMoney(t.m.f)+'</span><span class="b">'+vhMgB(t.m)+'</span>' +
+        '<span class="r">Média diária</span><span class="n">'+(r.md!==null ? fmtMoney(r.md) : '—')+'</span><span class="b"></span></div>' + bar +
+      (opt.seg && (t.sm.f > 0.5 || t.sh.f > 0.5) ? '<div class="vh-seg"><span class="tag">Seguradoras</span>hoje '+fmtMoney(t.sh.f)+' '+vhMgB(t.sh)+' · mês '+fmtMoney(t.sm.f)+' '+vhMgB(t.sm)+'</div>' : '') +
+      (opt.chips ? '<div class="vh-chips">'+opt.chips+'</div>' : '') +
+      '<div class="vh-pe"><span>Objetivo <b>'+objHtml(opt.chave, r.ob, pode && opt.chave)+'</b></span><span>Faltam <b>'+(r.falta!==null ? fmtMoney(r.falta) : '—')+'</b></span>'+(r.porDia ? '<span>Por dia útil <b>'+fmtMoney(r.porDia)+'</b></span>' : '')+'</div></div>';
+  }
+  var html = lojas.map(function(l){
+    var r = calc(junta([l], ['ATACADO']), duLoja(l), +obj[l] || null);
+    var chips = ['OFICINA','ACESSORIOS'].map(function(c){ var x = A[l][c]; return x && x.m.f > 0.5 ? '<span>'+(c==='OFICINA'?'Oficina':'Acessórios')+' no mês '+fmtMoney(x.m.f)+'</span>' : ''; }).join('');
+    return card(l, vhRegiao(l), r, {chave:l, seg:true, chips:chips});
+  }).join('');
+  html += card('E-commerce', 'dias corridos', rEcm, {chave:'ECOMMERCE', cls:'ecm'});
+  var parcial = nObj && !temObAtc ? 'Objetivo em '+nObj+' de '+lojas.length+' lojas' : null;
+  html += card('Atacado', 'todas as lojas', rAtc, {cls:'tot', seg:true, semObj:parcial});
+  html += card('Atacado + e-commerce', 'grupo', rAE, {cls:'tot', semObj:parcial || (temObAtc && !obEcm ? 'Falta o objetivo do e-commerce' : null)});
+  document.getElementById('vhCards').innerHTML = html;
+
+  // matriz canal x loja
+  var colsM = todas.filter(function(c){ return VH_CANAIS.some(function(k){ return A[c][k] && A[c][k].m.f > 0.5; }); });
+  function td(o, gt){ return '<td'+(gt?' class="gt"':'')+'>'+(o && o.f > 0.5 ? fmtMoney(o.f).replace('R$ ','')+'<small>'+vhP(vhMg(o))+'</small>' : '—')+'</td>'; }
+  function linha(rot, cls, get){ var tot = z(); var tds = colsM.map(function(c){ var o = get(c); if(o) soma(tot, o.f, o.l); return td(o); }).join('');
+    return '<tr'+(cls?' class="'+cls+'"':'')+'><td>'+rot+'</td>'+tds+td(tot, true)+'</tr>'; }
+  var ano = {}; (d.ano||[]).forEach(function(r){ var canal = String(dimNome('canal', r[2])||'').toUpperCase(), c = canal==='ECOMMERCE' ? dimNome('emitente', r[1]) : dimNome('loja', r[0]); var o = ano[c] = ano[c] || z(); soma(o, c2(r[3]), c2(r[4])); });
+  var body = linha('Atacado', '', function(c){ return A[c].ATACADO && A[c].ATACADO.m; }) +
+    linha('Seguradoras', 'sub', function(c){ return A[c].ATACADO && A[c].ATACADO.sm; }) +
+    linha('E-commerce', '', function(c){ return A[c].ECOMMERCE && A[c].ECOMMERCE.m; }) +
+    linha('Oficina', '', function(c){ return A[c].OFICINA && A[c].OFICINA.m; }) +
+    linha('Acessórios', '', function(c){ return A[c].ACESSORIOS && A[c].ACESSORIOS.m; }) +
+    linha('Vendas totais', 'tot', function(c){ var t = z(); VH_CANAIS.forEach(function(k){ var x = A[c][k]; if(x) soma(t, x.m.f, x.m.l); }); return t; }) +
+    linha('Acumulado '+dD.getFullYear(), '', function(c){ return ano[c]; });
+  document.getElementById('vhMat').innerHTML = '<thead><tr><th>Canal</th>'+colsM.map(function(c){ return '<th title="'+escapeHtml(vhRegiao(c))+'">'+escapeHtml(c)+'</th>'; }).join('')+'<th>Grupo</th></tr></thead><tbody>'+body+'</tbody>';
+  document.getElementById('vhNota').innerHTML = 'Média diária = vendas do mês até ontem ÷ dias úteis concluídos (feriados do município de cada loja; e-commerce por dias corridos). Tendência = média diária × dias úteis do mês. ▲▼ = venda do dia comparada com a média diária.' +
+    (pode ? ' Clique no objetivo de um quadro para alterar (vale para o mês todo).' : '');
+  vhLigar();
+}
+function vhLigar(){
+  var box = document.getElementById('vhCards'); if(box.dataset.lig) return; box.dataset.lig = '1';
+  box.addEventListener('click', function(e){
+    var sp = e.target.closest('.vh-obj.ed'); if(!sp || sp.querySelector('input')) return;
+    var chave = sp.getAttribute('data-obj'), mes = String(VH.d.dia).slice(0,7)+'-01', atual = (VH.obj[mes]||{})[chave];
+    sp.innerHTML = '<input type="text" inputmode="decimal" value="'+(atual ? String(Math.round(atual)) : '')+'" placeholder="R$ do mês" aria-label="Objetivo de '+escapeHtml(chave)+'">';
+    var inp = sp.querySelector('input'), feito = false; inp.focus(); inp.select();
+    function salvar(ok){
+      if(feito) return; feito = true;
+      if(!ok){ vhDesenhar(); return; }
+      var t = inp.value.trim(), v = t==='' ? null : prNumBR(t);
+      if(t!=='' && (v===null || v < 0)){ toast('Valor inválido.'); vhDesenhar(); return; }
+      window.__NC_rpc('bi_objetivo_gravar', {p_mes:mes, p_chave:chave, p_valor:v}).then(function(){
+        var o = VH.obj[mes] = VH.obj[mes] || {}; if(v===null) delete o[chave]; else o[chave] = v;
+        toast('Objetivo de '+chave+' '+(v===null ? 'removido.' : 'gravado: '+fmtMoney(v)+'.'));
+      }).catch(function(er){ toast('Não foi possível gravar: '+String(er && (er.message||er)).replace(/^.*?:\s*/, '').slice(0,120)); }).then(vhDesenhar);
+    }
+    inp.addEventListener('keydown', function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); salvar(true); } else if(ev.key==='Escape') salvar(false); });
+    inp.addEventListener('blur', function(){ salvar(true); });
+  });
 }
 
 function vxLojas(){
