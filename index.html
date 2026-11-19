@@ -3611,20 +3611,26 @@ function ccSugLigar(){
     if(prox){ prox.focus({preventScroll:true}); prox.select(); }
   });
   // percentual abaixo do menor concorrente (vale para todos os itens sem valor editado)
-  tb.addEventListener('change', function(e){
-    if(e.target.id!=='ccPct') return;
-    var v = parseFloat(String(e.target.value).replace(',', '.'));
-    if(!isFinite(v) || v < 0 || v >= 90){ e.target.value = String(Math.abs(CC_PCT)).replace('.',','); return; }
-    CC_PCT = (CC_PCT < 0 ? -1 : 1)*Math.round(v*100)/100; try{ localStorage.setItem('nc_cc_pct', String(CC_PCT)); }catch(er){}
+  // percentual e sinal valem para todos os itens: ao mudar, as sugestões editadas à mão voltam para a regra
+  function ccPctAplicar(trocaSinal){
+    var inp = document.getElementById('ccPct'), v = parseFloat(String(inp ? inp.value : '').replace(',', '.'));
+    if(!isFinite(v) || v < 0 || v >= 90) v = Math.abs(CC_PCT);
+    var novo = (CC_PCT < 0 ? -1 : 1)*(trocaSinal ? -1 : 1)*Math.round(v*100)/100;
+    if(novo===CC_PCT && !trocaSinal){ if(inp) inp.value = String(Math.abs(CC_PCT)).replace('.',','); return; }
+    CC_PCT = novo; try{ localStorage.setItem('nc_cc_pct', String(CC_PCT)); }catch(er){}
+    Object.keys(CC_SUG).forEach(function(k){ if(k.indexOf(CC_FONTE+'|')===0) delete CC_SUG[k]; }); ccSugSalvar();
     ccTabela();
-  });
+  }
+  tb.addEventListener('change', function(e){ if(e.target.id==='ccPct') ccPctAplicar(false); });
+  // o sinal age no pressionar (antes de o campo do percentual perder o foco e redesenhar a tabela)
+  tb.addEventListener('mousedown', function(e){ if(e.target.id==='ccPctSinal'){ e.preventDefault(); ccPctAplicar(true); } });
   tb.addEventListener('focusin', function(e){
     if(e.target.classList.contains('cc-sug-in') || e.target.id==='ccPct') e.target.select();
     // a linha em edição fica sempre no meio da tela
     if(e.target.classList.contains('cc-sug-in')){ var tr = e.target.closest('tr') || e.target; tr.scrollIntoView({block:'center', behavior:'smooth'}); }
   });
   tb.addEventListener('click', function(e){
-    if(e.target.id==='ccPctSinal'){ CC_PCT = -CC_PCT; try{ localStorage.setItem('nc_cc_pct', String(CC_PCT)); }catch(er){} ccTabela(); return; }
+    if(e.target.id==='ccPctSinal'){ if(e.detail===0) ccPctAplicar(true); return; }   // teclado (o mouse já tratou no mousedown)
     var b = e.target.closest('.cc-sug-rst'); if(!b) return;
     var td = b.closest('td'), it = item(td); if(!it) return;
     delete CC_SUG[ccSugChave(it.pn)]; ccSugSalvar(); td.outerHTML = ccSugTd(it);
