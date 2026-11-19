@@ -2451,6 +2451,7 @@ table.data-table.vp-tbl{min-width:720px;}
                 <option value="comp">Só itens comparados</option>
                 <option value="sem">Sem comparação</option>
               </select></label>
+              <label title="Custo usado na margem (MG) da sugestão: o maior custo unitário entre as lojas ou o custo unitário de uma loja (estoque: custo ÷ quantidade)">Custo da MG<select class="fsel" id="ccCustoSel"><option value="maior">Maior custo</option></select></label>
               <input type="search" class="cc-busca" id="ccBusca" placeholder="Buscar código ou nome…">
               <button type="button" class="cc-exp" id="ccExportar" title="Baixar em Excel os itens que estão na tabela (com o filtro, a busca e a ordem atuais)">&#11015; Exportar Excel</button>
             </div>
@@ -3382,6 +3383,7 @@ function renderConcorrencia(){
   if(!CC.ligado){
     CC.ligado = true;
     document.getElementById('ccFiltro').addEventListener('change', ccTabela);
+    document.getElementById('ccCustoSel').addEventListener('change', function(e){ CC_CUSTO = e.target.value; try{ localStorage.setItem('nc_cc_custo', CC_CUSTO); }catch(er){} ccTabela(); });
     document.getElementById('ccBusca').addEventListener('input', ccTabela);
     document.getElementById('ccExportar').addEventListener('click', ccExportar);
     document.getElementById('ccGuias').addEventListener('click', function(e){ var b = e.target.closest('button[data-f]'); if(b && b.getAttribute('data-f')!==CC_FONTE) ccFonte(b.getAttribute('data-f')); });
@@ -3437,10 +3439,11 @@ function ccEstoque(pn){
   if(!PROD_OK) return null;
   if(!CC_PN2PID){ CC_PN2PID = {}; Object.keys(PRODINFO).forEach(function(pid){ var x = PRODINFO[pid]; if(x && x.pn!=null) CC_PN2PID[String(x.pn)] = pid; }); }
   var pid = CC_PN2PID[String(pn)], ix = pid!=null ? EST_POR_PROD[pid] : null;
-  var o = {est:0, maior:null, loja:null};
+  var o = {est:0, maior:null, loja:null, lojas:{}};
   (ix||[]).forEach(function(i){
     var e = n0(EST.est[i]), c = n0(EST.custo[i]);
     o.est += e;
+    if(e > 0 && c > 0) o.lojas[dimNome('loja', EST.loja[i])] = c/e;
     if(e > 0 && c > 0 && (o.maior==null || c/e > o.maior)){ o.maior = c/e; o.loja = dimNome('loja', EST.loja[i]); }
   });
   return o;
@@ -3595,7 +3598,30 @@ function ccSugBase(it){ return it.menor ? Math.round(it.menor*(1 - CC_PCT/100)*1
 var CC_SUG = (function(){ try{ return JSON.parse(localStorage.getItem('nc_cc_sug')||'{}')||{}; }catch(e){ return {}; } })();
 function ccSugChave(pn){ return CC_FONTE+'|'+pn; }
 function ccSugValor(it){ var e = CC_SUG[ccSugChave(it.pn)]; return e!=null ? e : ccSugBase(it); }
-function ccCusto(it){ if(it.cmv) return {v:it.cmv, ded:it.ded||0, de:'custo médio das vendas da loja (90 dias)'}; var e = ccEstoque(it.pn); return e && e.maior ? {v:e.maior, ded:0, de:'maior custo médio do estoque, sem impostos'} : null; }
+// custo da margem: maior custo unitário do estoque entre as lojas, ou o de uma loja escolhida (sem saldo nela: o maior)
+var CC_EST_PEDIU = false;
+var CC_CUSTO = (function(){ try{ return localStorage.getItem('nc_cc_custo') || 'maior'; }catch(e){ return 'maior'; } })();
+function ccCustoOpcoes(){
+  var sel = document.getElementById('ccCustoSel'); if(!sel || !PROD_OK || sel.dataset.ok) return;
+  var lj = {}; (EST.loja||[]).forEach(function(l, i){ if(n0(EST.est[i]) > 0 && n0(EST.custo[i]) > 0) lj[dimNome('loja', l)] = 1; });
+  var nomes = Object.keys(lj).sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
+  if(!nomes.length) return;
+  sel.dataset.ok = '1';
+  sel.innerHTML = '<option value="maior">Maior custo</option>'+nomes.map(function(n){ return '<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>'; }).join('');
+  if(CC_CUSTO!=='maior' && !lj[CC_CUSTO]) CC_CUSTO = 'maior';
+  sel.value = CC_CUSTO;
+}
+function ccCusto(it){
+  var e = ccEstoque(it.pn); if(!e) return null;
+  var ded = it.ded||0, dd = ded ? '' : ', sem impostos';
+  if(CC_CUSTO!=='maior'){
+    var c = e.lojas[CC_CUSTO];
+    if(c) return {v:c, ded:ded, de:'custo unitário em '+CC_CUSTO+dd};
+    if(e.maior) return {v:e.maior, ded:ded, de:'maior custo unitário ('+e.loja+'; sem saldo em '+CC_CUSTO+')'+dd};
+    return null;
+  }
+  return e.maior ? {v:e.maior, ded:ded, de:'maior custo unitário do estoque ('+e.loja+')'+dd} : null;
+}
 // margem bruta no preço v, como no painel (lucro bruto ÷ faturamento): 1 − deduções − custo ÷ preço
 function ccMargem(c, v){ return (1 - c.ded - c.v/v)*100; }
 function ccMargemHtml(it, v){
@@ -3666,6 +3692,9 @@ function ccSugLigar(){
 }
 function ccMoney(v){ return v==null ? '—' : 'R$ '+v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function ccTabela(){
+  // custo da MG vem do estoque item a item: carrega uma vez e redesenha
+  if(!PROD_OK && !CC_EST_PEDIU){ CC_EST_PEDIU = true; carregarProdutos().then(function(){ if(state.currentView==='concorrencia') ccTabela(); }).catch(function(){ CC_EST_PEDIU = false; }); }
+  ccCustoOpcoes();
   var D = CC.dados; if(!D) return;
   var f = document.getElementById('ccFiltro').value, q = vxSemAcento(document.getElementById('ccBusca').value||'');
   var comp = D.itens.filter(function(it){ return it.nosso && it.n; });
