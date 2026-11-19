@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       modo:
-        description: 'pesquisa (padrão) ou sonda (só para desenvolver)'
+        description: 'pesquisa (padrão), teste (sem gravar) ou sonda (só para desenvolver)'
         required: false
         default: 'pesquisa'
       pn:
@@ -41,8 +41,15 @@ jobs:
           PN: ${{ github.event.inputs.pn }}
           NAV: '1'
         run: python etl/cadastro_sonda.py
+      - name: Testar a pesquisa (sem gravar)
+        if: ${{ github.event.inputs.modo == 'teste' }}
+        env:
+          PN: ${{ github.event.inputs.pn }}
+          SEM_BANCO: '1'
+          MOSTRAR: '1'
+        run: python etl/cadastro.py
       - name: Pesquisar o produto
-        if: ${{ github.event.inputs.modo != 'sonda' }}
+        if: ${{ github.event.inputs.modo != 'sonda' && github.event.inputs.modo != 'teste' }}
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           PN: ${{ github.event.inputs.pn }}
