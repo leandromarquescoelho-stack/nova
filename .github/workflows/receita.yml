@@ -1,6 +1,6 @@
 name: Prospecção (Receita) -> mapa
 
-# Empresas ativas do ramo (autopeças, oficinas, funilarias...) dos dados abertos de CNPJ da Receita Federal (tabela bi_prospect).
+# Empresas ativas do ramo (autopeças, oficinas, funilarias...) dos dados abertos de CNPJ da Receita Federal (tabela bi_prospect_mun, compactada).
 # Só lê os arquivos públicos da Receita; nada da base de clientes sai daqui. O log mostra apenas contagens.
 on:
   schedule:
@@ -24,7 +24,7 @@ concurrency:
 jobs:
   receita:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -4,12 +4,15 @@ Lê só os arquivos públicos da Receita Federal (Estabelecimentos, Empresas e M
   1. Estabelecimentos: fica com os ativos das UFs pedidas cujo CNAE principal (ou secundário) é do ramo.
   2. Empresas: razão social e porte desses CNPJs.
   3. Município da Receita -> código IBGE pelo nome (contornos em geo/UF.json).
-  4. Troca de uma vez as linhas dessas UFs no banco. O log é público: mostra só contagens.
+  4. Grava um JSON compactado (gzip) por município (tabela bi_prospect_mun), trocando de uma vez as linhas dessas UFs.
+     O log é público: mostra só contagens.
 
 Variáveis: SUPABASE_DB_URL. Uso: python etl/receita_prospeccao.py [--ufs SP,MG] [--ref 2026-11]
 """
 import csv
+import gzip
 import io
+import json
 import os
 import re
 import sys
@@ -77,17 +80,40 @@ def _existe(url, auth=None):
         return type(ex).__name__
 
 
+def _nextcloud(ref, tokens):
+    """compartilhamento Nextcloud (WebDAV público), o endereço atual"""
+    dav = f'{HOST}/public.php/webdav/'
+    for t in tokens:
+        meses = []
+        try:
+            r = requests.request('PROPFIND', dav, headers={**UA, 'Depth': '1'}, auth=(t, ''), timeout=60)
+            meses = sorted(set(re.findall(r'(\d{4}-\d{2})/?</d:href>', r.text)), reverse=True)
+            log(f'compartilhamento {t[:4]}…: {r.status_code}; meses {",".join(meses[:3]) or "nenhum"}')
+        except Exception as ex:  # noqa: BLE001
+            log(f'compartilhamento {t[:4]}…: {type(ex).__name__}')
+        for m in ([ref] if ref else meses[:4]):
+            st = _existe(f'{dav}{m}/Estabelecimentos0.zip', (t, ''))
+            log(f'  {m}: {st}')
+            if st == 200:
+                AUTH[0] = (t, '')
+                return f'{dav}{m}/', m
+    return None
+
+
 def achar_pasta(ref):
     """URL da pasta do mês mais recente (ou do mês pedido) que tem os arquivos. O log mostra o que foi tentado."""
-    # 1) endereço antigo (pastas AAAA-MM com listagem)
+    tentados = [] if os.environ.get('RECEITA_BASE') else list(TOKENS)
+    achou = _nextcloud(ref, tentados)
+    if achou:
+        return achou
+    # endereço antigo (pastas AAAA-MM com listagem), que pode redirecionar para outro compartilhamento
     for base in BASES:
         meses = []
         try:
             r = requests.get(base, headers=UA, timeout=60)
             log(f'{base} -> {r.status_code} ({r.url})')
             meses = sorted(set(re.findall(r'(\d{4}-\d{2})/', r.text)), reverse=True)
-            achados = re.findall(r'/s/([A-Za-z0-9]{10,20})', r.url + ' ' + r.text)   # redireciona para um compartilhamento
-            for t in achados:
+            for t in re.findall(r'/s/([A-Za-z0-9]{10,20})', r.url + ' ' + r.text):
                 if t not in TOKENS:
                     TOKENS.insert(0, t)
         except Exception as ex:  # noqa: BLE001
@@ -97,22 +123,9 @@ def achar_pasta(ref):
             log(f'  {m}: {st}')
             if st == 200:
                 return f'{base}{m}/', m
-    # 2) compartilhamento Nextcloud (WebDAV público)
-    for t in TOKENS:
-        dav = f'{HOST}/public.php/webdav/'
-        meses = []
-        try:
-            r = requests.request('PROPFIND', dav, headers={**UA, 'Depth': '1'}, auth=(t, ''), timeout=60)
-            meses = sorted(set(re.findall(r'(\d{4}-\d{2})/?</d:href>', r.text)), reverse=True)
-            log(f'compartilhamento {t[:4]}…: {r.status_code}; meses {",".join(meses[:3]) or "nenhum"}')
-        except Exception as ex:  # noqa: BLE001
-            log(f'compartilhamento {t[:4]}…: {type(ex).__name__}')
-        for m in ([ref] if ref else meses[:4] or _meses(None)):
-            st = _existe(f'{dav}{m}/Estabelecimentos0.zip', (t, ''))
-            log(f'  {m}: {st}')
-            if st == 200:
-                AUTH[0] = (t, '')
-                return f'{dav}{m}/', m
+    achou = _nextcloud(ref, [t for t in TOKENS if t not in tentados])
+    if achou:
+        return achou
     raise SystemExit('pasta dos dados abertos de CNPJ não encontrada')
 
 
@@ -145,9 +158,9 @@ def main():
         raise SystemExit('SUPABASE_DB_URL não definida')
     with psycopg.connect(url_db) as conn:
         cur = conn.cursor()
-        cur.execute("select to_regclass('public.bi_prospect') is not null")
+        cur.execute("select to_regclass('public.bi_prospect_mun') is not null")
         if not cur.fetchone()[0]:
-            log('o banco ainda não tem a tabela de prospecção (rode prospeccao_receita.sql); nada a fazer')
+            log('o banco ainda não tem a tabela de prospecção (rode prospeccao_compacta.sql); nada a fazer')
             return
     pasta, mes = achar_pasta(ref)
     log(f'dados da Receita de {mes}; UFs: {",".join(ufs)}')
@@ -204,7 +217,7 @@ def main():
         os.remove(p)
     log(f'razão social de {len(emp)} empresas')
 
-    sem_ibge, linhas = 0, []
+    sem_ibge, grupos = 0, {}
     for cnpj, v in est.items():
         nome_mun = mun_rf.get(v[8], '')
         m = municipios(v[9]).get(chave(norm(nome_mun))) if nome_mun else None
@@ -212,26 +225,34 @@ def main():
             sem_ibge += 1
         rz, porte = emp.get(v[0], (None, None))
         nm = ' '.join(norm(nome_mun)) or None
-        linhas.append((cnpj, rz, v[1], v[2], v[3], v[4], v[5], v[6], v[7], int(m[2]) if m else None, nm, v[9], v[10], v[11], porte, v[12]))
+        ibge = int(m[2]) if m else None
+        k = str(ibge) if ibge else f'{v[9]}|{nm or ""}'
+        g = grupos.setdefault(k, [v[9], ibge, nm, []])
+        g[3].append([cnpj, rz, v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[10], v[11], porte, v[12]])
     log(f'{sem_ibge} sem município IBGE pelo nome (ficam pelo nome da Receita)')
+
+    linhas, bruto, comp = [], 0, 0
+    for k, (uf, ibge, nm, emps) in grupos.items():
+        emps.sort(key=lambda e: (e[4], e[1] is None, e[1] or ''))
+        js = json.dumps(emps, ensure_ascii=False, separators=(',', ':')).encode()
+        gz = gzip.compress(js, 9, mtime=0)
+        bruto, comp = bruto + len(js), comp + len(gz)
+        linhas.append((k, uf, ibge, nm, len(emps), gz))
+    log(f'{len(linhas)} municípios; JSON {bruto / 1e6:.1f} MB, compactado {comp / 1e6:.1f} MB')
 
     with psycopg.connect(url_db) as conn:
         cur = conn.cursor()
-        cur.execute('create temp table _p (like public.bi_prospect) on commit drop')
-        with cur.copy('copy _p (cnpj, razao, fantasia, cnae, sec, inicio, endereco, bairro, cep, ibge, municipio, uf, tel, email, porte, matriz) from stdin') as cp:
-            for ln in linhas:
-                cp.write_row(ln)
-        cur.execute('delete from public.bi_prospect where uf = any(%s)', (ufs,))
-        cur.execute('insert into public.bi_prospect select * from _p on conflict (cnpj) do nothing')
-        cur.execute('select count(*) from public.bi_prospect')
+        cur.execute('delete from public.bi_prospect_mun where uf = any(%s)', (ufs,))
+        cur.executemany('insert into public.bi_prospect_mun (chave, uf, ibge, municipio, n, dados) values (%s, %s, %s, %s, %s, %s) '
+                        'on conflict (chave) do nothing', linhas)
+        cur.execute('select coalesce(sum(n), 0) from public.bi_prospect_mun')
         total = cur.fetchone()[0]
         cur.execute("""insert into public.bi_prospect_info (id, ref, linhas, em) values (1, %s, %s, now())
                        on conflict (id) do update set ref = excluded.ref, linhas = excluded.linhas, em = excluded.em""", (mes, total))
         conn.commit()
-        cur.execute("select pg_size_pretty(pg_total_relation_size('public.bi_prospect')), pg_size_pretty(pg_database_size(current_database()))")
+        cur.execute("select pg_size_pretty(pg_total_relation_size('public.bi_prospect_mun')), pg_size_pretty(pg_database_size(current_database()))")
         t, db = cur.fetchone()
-    log(f'gravadas {len(linhas)} empresas ({total} no total); tabela {t}, banco {db}')
-
+    log(f'gravadas {len(est)} empresas ({total} no total); tabela {t}, banco {db}')
 
 if __name__ == '__main__':
     try:
