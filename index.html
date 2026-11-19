@@ -3649,7 +3649,7 @@ function ccSeta(pct){
   return '<span class="cc-d '+c+'">'+(c==='eq' ? '= ' : (c==='up' ? '▲ ' : '▼ '))+(pct>0?'+':'')+pct.toFixed(1).replace('.',',')+'%</span>';
 }
 // sugestão de preço: 2% abaixo do menor concorrente; editável (fica guardada neste navegador); embaixo, a margem nesse preço
-var CC_PCT = (function(){ try{ var v = parseFloat(localStorage.getItem('nc_cc_pct')); return isFinite(v) && v > -90 && v < 90 ? v : 2; }catch(e){ return 2; } })();
+var CC_PCT = 2;   // padrão: 2% abaixo do menor concorrente (o campo mostra −2); sempre volta ao padrão ao abrir o painel
 function ccPctCampo(){ return String(-CC_PCT || 0).replace('.',','); }
 function ccPctTxt(){ return String(Math.abs(CC_PCT)).replace('.',',')+'% '+(CC_PCT < 0 ? 'acima' : 'abaixo'); }
 function ccSugBase(it){ return it.menor ? Math.round(it.menor*(1 - CC_PCT/100)*100)/100 : null; }
@@ -3743,7 +3743,7 @@ function ccSugLigar(){
     v = Math.max(-89, Math.min(89, v));
     var novo = -Math.round(v*100)/100 || 0;
     if(novo===CC_PCT){ if(inp) inp.value = ccPctCampo(); return; }
-    CC_PCT = novo; try{ localStorage.setItem('nc_cc_pct', String(CC_PCT)); }catch(er){}
+    CC_PCT = novo;
     Object.keys(CC_SUG).forEach(function(k){ if(k.indexOf(CC_FONTE+'|')===0) delete CC_SUG[k]; }); ccSugSalvar();
     ccTabela();
   }
