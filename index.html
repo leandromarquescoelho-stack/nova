@@ -1236,6 +1236,13 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .pr-prod-w{position:relative; display:flex; align-items:center;}
 #prLimpar{position:absolute; right:6px; width:22px; height:22px; border:0; border-radius:6px; background:transparent; color:var(--text-muted); font-size:18px; line-height:1; cursor:pointer;}
 #prLimpar:hover{color:var(--text); background:var(--surface);}
+.pr-panel{position:relative;}
+.pr-foto{float:right; margin:0 0 8px 18px; width:240px; height:120px; display:flex; align-items:center; justify-content:center; gap:10px; border:1px solid var(--border); border-radius:10px; background:#fff; overflow:hidden; text-decoration:none;}
+.pr-foto img{max-width:100%; max-height:100%; object-fit:contain;}
+.pr-foto.vazio{background:var(--surface-2); color:var(--text-muted); font-size:11.5px; padding:0 12px; text-align:center;}
+.pr-foto:not(.vazio):hover{border-color:var(--accent);}
+#prRes{clear:both;}
+@media (max-width:700px){ .pr-foto{float:none; margin:0 0 12px; width:100%;} }
 #prVal{width:130px; text-align:right; font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--accent); border-color:var(--accent);}
 .pr-modo{display:flex; height:34px; border:1px solid var(--border-strong); border-radius:10px; overflow:hidden;}
 .pr-modo button{font:inherit; font-size:12px; font-weight:700; padding:0 14px; border:0; background:var(--surface-2); color:var(--text-muted); cursor:pointer;}
@@ -2620,7 +2627,8 @@ table.data-table.vp-tbl{min-width:720px;}
 
       <!-- ============ PREÇOS ============ -->
       <section class="view-panel" data-view-panel="precos" style="display:none;">
-        <div class="panel">
+        <div class="panel pr-panel">
+          <a class="pr-foto" id="prFoto" target="_blank" rel="noopener" hidden></a>
           <div class="panel-head">
             <div><h2>Simulador de preço de venda</h2><div class="psub">Escolha o produto e o custo; informe o preço final para ver a margem, ou a margem para ver o preço. A margem desconta ICMS, PIS e COFINS da classificação fiscal do item.</div></div>
           </div>
@@ -3732,6 +3740,7 @@ function prAbrir(pid){
     if(String(PR.pid)!==String(pid)) return;
     if(!d){ document.getElementById('prRes').innerHTML = '<p class="note-muted">Produto não encontrado.</p>'; return; }
     PR.info = {pn:d.pn, nome:d.nome};
+    prFoto(d.pn);
     document.getElementById('prPn').value = prRotulo(PR.info); PR_SUG[prRotulo(PR.info)] = pid;
     document.getElementById('prLimpar').hidden = false; document.getElementById('prLista').innerHTML = '';
     if(document.activeElement===document.getElementById('prPn')) document.getElementById('prPn').blur();   // próximo clique seleciona tudo para digitar outro
@@ -3740,6 +3749,32 @@ function prAbrir(pid){
     var al = d.impostos; PR.tx = al ? {pis:+al[0]||0, cofins:+al[1]||0, icms:+al[2]||0, cod:d.clsf} : null; PR.ded = 0;
     prOpcoesCusto(); prCalcular(); prVendas();
   }).catch(prErro);
+}
+// foto do produto na nossa loja virtual (o banco consulta a loja; aqui só pergunta até a resposta chegar)
+var PR_FOTO = {pn:null, t:null};
+function prFoto(pn){
+  var el = document.getElementById('prFoto'); clearTimeout(PR_FOTO.t); PR_FOTO.pn = pn;
+  if(!pn){ el.hidden = true; return; }
+  el.hidden = false; el.className = 'pr-foto vazio'; el.removeAttribute('href'); el.innerHTML = 'Buscando a foto na loja virtual…';
+  var tent = 0;
+  (function perguntar(){
+    window.__NC_rpc('bi_foto_loja', {p_pn:pn}).then(function(r){
+      if(PR_FOTO.pn!==pn) return;
+      r = r || {};
+      if(r.status==='pendente' && ++tent < 15){ PR_FOTO.t = setTimeout(perguntar, 700); return; }
+      if(r.status==='ok' && r.foto){
+        el.className = 'pr-foto'; el.href = r.link || 'https://loja.chevroletnova.com.br/'; el.title = (r.titulo ? r.titulo+' · ' : '')+'abrir na loja virtual';
+        el.innerHTML = '<img alt="Foto do produto na loja virtual" src="'+escapeHtml(r.foto)+'">';
+        el.querySelector('img').onerror = function(){ el.className = 'pr-foto vazio'; el.innerHTML = 'Foto indisponível na loja virtual'; };
+      } else {
+        el.className = 'pr-foto vazio'; el.removeAttribute('href');
+        el.innerHTML = r.status==='sem' ? 'Produto sem foto na loja virtual' : (r.status==='pendente' ? 'A loja virtual não respondeu' : 'Não foi possível buscar a foto');
+      }
+    }).catch(function(e){
+      if(PR_FOTO.pn!==pn) return;
+      el.className = 'pr-foto vazio'; el.innerHTML = /bi_foto_loja|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'Foto da loja: falta rodar o SQL foto_loja.sql' : 'Não foi possível buscar a foto';
+    });
+  })();
 }
 // valor inicial do campo: preço médio praticado (ou o que dá 30% de margem) / margem praticada (ou 30%)
 function prPadrao(){
