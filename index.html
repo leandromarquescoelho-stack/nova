@@ -8322,6 +8322,12 @@ var CNAE_PROSP = {4530701:['Autopeças','Comércio atacadista de peças e acess�
   4520003:['Auto elétrica','Manutenção elétrica de veículos'], 4520004:['Alinhamento e balanceamento','Alinhamento e balanceamento'],
   4520007:['Instalação de acessórios','Instalação de acessórios em veículos']};
 var PORTE_RF = {1:'Microempresa', 3:'Pequeno porte', 5:'Demais'};
+// a prospecção vem compactada (gzip, em base64) do banco: um pacote por município
+function prospDescompactar(b64){
+  var bin = atob(String(b64).replace(/\s+/g, '')), u = new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++) u[i] = bin.charCodeAt(i);
+  return new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text().then(JSON.parse);
+}
 function vxProspectar(bt){
   var q = VX.quadro; if(!q) return;
   var pr = q.props, f = VX.geo[pr.uf].lista.filter(function(x){ return x[2]===pr.id; })[0], nomeMun = f ? f[1] : 'municipio';
@@ -8332,8 +8338,9 @@ function vxProspectar(bt){
     var nomes = q.o ? q.o.nomes : vxNomesDoMun(pr.uf, pr.id);
     var ids = nomes.map(function(n){ return (DIMI.cidade||{})[n]; }).filter(function(x){ return x!==undefined; });
     var cliP = ids.length ? window.__NC_rpc('bi_clientes', {f:{}, per:{ini:painelPeriodo().ini, fim:painelPeriodo().fim}, o:{cidade:ids, ordem:'f12', limite:50000}}).catch(function(){ return null; }) : Promise.resolve(null);
-    return Promise.all([cliP, carregarXlsx().catch(function(){ return null; })]).then(function(r){
-      var cli = ((r[0]||{}).linhas||[]).map(cliLinhaObj), X = r[1], emp = res.linhas||[];
+    var empP = res.gz ? Promise.all(res.gz.map(prospDescompactar)).then(function(a){ return [].concat.apply([], a); }) : Promise.resolve(res.linhas||[]);
+    return Promise.all([cliP, carregarXlsx().catch(function(){ return null; }), empP]).then(function(r){
+      var cli = ((r[0]||{}).linhas||[]).map(cliLinhaObj), X = r[1], emp = r[2]||[];
       if(!emp.length){ toast('A Receita não tem empresas ativas do ramo em '+nomeMun+'.'); return; }
       var idx = {}; cli.forEach(function(c){ var n = prospNorm(c.razao); if(n.length>=4 && !idx[n]) idx[n] = c; });
       var chaves = Object.keys(idx), cont = {}, nCli = 0, hoje = new Date();
