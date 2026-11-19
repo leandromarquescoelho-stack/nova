@@ -1442,6 +1442,27 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
 .pill.up{ background:rgba(31,196,106,.14); color:var(--good); }
 .pill.down{ background:rgba(224,72,63,.14); color:var(--critical); }
 .pill.flat{ background:var(--surface-3); color:var(--text-muted); }
+.vp-resumo{font-size:12.5px; color:var(--text-2); margin:0 0 10px; line-height:1.6;}
+.vp-scroll{overflow-x:auto;}
+table.data-table.vp-tbl{min-width:720px;}
+.vp-tbl td{vertical-align:middle;}
+.vp-tbl tr.vp-melhorar td{background:rgba(224,72,63,.04);}
+.vp-alvo{width:110px; text-align:right; font:inherit; font-family:'JetBrains Mono',monospace; font-size:11.5px; padding:3px 6px; border-radius:6px; border:1px dashed var(--accent); background:var(--surface); color:var(--text);}
+.vp-alvo:focus{outline:none; border-style:solid;}
+.vp-dias{font:inherit; font-size:11.5px; padding:3px 4px; border-radius:6px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text);}
+.vp-criar{display:flex; gap:10px; align-items:stretch; margin-top:10px; flex-wrap:wrap;}
+.vp-criar textarea{flex:1 1 320px; font:inherit; font-size:12px; padding:7px 9px; border-radius:8px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); resize:vertical;}
+.vp-criar-bt{padding:0 16px; min-height:36px; border-radius:8px; border:1px solid var(--accent); background:var(--accent); color:#06121a; font:inherit; font-size:12px; font-weight:800; cursor:pointer;}
+.vp-criar-bt:disabled{opacity:.6; cursor:wait;}
+.vp-obs{font-size:11px; color:var(--text-muted); margin-top:3px; white-space:normal; max-width:320px;}
+.vp-sub{font-size:10.5px; color:var(--text-muted); margin-top:2px;}
+.vp-bar{display:block; width:90px; height:5px; border-radius:3px; background:var(--surface-3); margin-top:4px; overflow:hidden;}
+.vp-bar i{display:block; height:100%;}
+.vp-acoes{white-space:nowrap; text-align:right;}
+.vp-acao{font:inherit; font-size:11px; padding:3px 8px; margin-left:4px; border-radius:6px; border:1px solid var(--border-strong); background:transparent; color:var(--text-2); cursor:pointer;}
+.vp-acao:hover{border-color:var(--accent); color:var(--accent);}
+.vp-acao.vp-del:hover{border-color:var(--critical); color:var(--critical);}
+.vp-enc td{opacity:.6;}
 /* ---- barra de canais ---- */
 .canal-bar{ display:flex; height:34px; border-radius:9px; overflow:hidden; background:var(--surface-3); }
 .canal-bar .seg{ height:100%; min-width:3px; display:flex; align-items:center; justify-content:center; padding:0 4px; box-sizing:border-box; text-overflow:ellipsis; font-size:11px; font-weight:800; color:#04141a; overflow:hidden; white-space:nowrap; cursor:default; transition:filter .12s; }
@@ -2301,6 +2322,13 @@ table.ins-table tr[data-id]:hover td{ background:var(--surface-2); }
         </div>
         <div class="pares-ctl" id="paresCtl"></div>
         <div id="vendConsultBody"></div>
+      </div>
+
+      <div class="panel" style="margin-bottom:14px;" id="vendPlanoPanel">
+        <div class="panel-head">
+          <div><h2>Plano de melhoria vs. média dos pares</h2><div class="psub">Onde o vendedor está abaixo dos pares, com meta e prazo &middot; o acompanhamento mostra a evolução desde a criação do plano</div></div>
+        </div>
+        <div id="vendPlanoBody"></div>
       </div>
 
       <div class="panel" style="margin-bottom:14px;" id="vendFunilPanel">
@@ -4879,6 +4907,166 @@ function vcKpi(label, value, sub, dica){
   return '<div class="kpi-card"'+(dica ? ' title="'+String(dica).replace(/"/g,'&quot;')+'" style="cursor:help;"' : '')+'><div class="klabel">'+label+(dica ? ' <span style="opacity:.6">ⓘ</span>' : '')+'</div><div class="kvalue">'+value+'</div>' +
     '<div class="kdelta flat" style="margin-top:4px; white-space:normal;">'+sub+'</div></div>';
 }
+/* ---------- plano de melhoria: indicadores vs. média dos pares, com meta, prazo e acompanhamento ---------- */
+function vpPct1(v){ return v.toFixed(1).replace('.',',')+'%'; }
+var VP_MET = [
+  {k:'fat_mes', l:'Faturamento por mês', pp:false, fmt:fmtMoney, d:'Faturamento do período ÷ dias corridos × 30.'},
+  {k:'margem', l:'Margem bruta', pp:true, lim:[1,2,5], fmt:vpPct1, d:'Lucro bruto ÷ faturamento.'},
+  {k:'cli_mes', l:'Clientes atendidos por mês', pp:false, fmt:function(v){ return fmtUn(v); }, d:'Clientes diferentes que compraram, por mês (período menor que um mês: o total do período).'},
+  {k:'fat_nota', l:'Faturamento por nota', pp:false, fmt:fmtMoney2, d:'Faturamento ÷ notas emitidas.'},
+  {k:'sku_mes', l:'Produtos diferentes por mês', pp:false, fmt:function(v){ return fmtUn(v); }, d:'Média de produtos diferentes vendidos por mês (variedade do mix).'},
+  {k:'dias_venda', l:'Dias com venda', pp:true, lim:[5,10,20], fmt:vpPct1, d:'Dias com ao menos uma venda ÷ dias corridos do período.'}
+];
+var VP_MET_K = {}; VP_MET.forEach(function(m){ VP_MET_K[m.k] = m; });
+var VP = {planos:{}, pend:{}};
+function vpPode(){ return !!(CURRENT_PROFILE && ['bi','diretoria','gerencia'].indexOf(CURRENT_PROFILE.role)>=0); }
+function vpMetricas(o){
+  var dias = Math.max(1, o.dias), meses = Math.max(1, dias/30.4);
+  return {fat_mes: o.fat/dias*30.4, margem: o.fat>0 ? o.lb/o.fat*100 : 0, cli_mes: (o.cli||0)/meses,
+    fat_nota: o.nfs>0 ? o.fat/o.nfs : 0, sku_mes: o.sku||0, dias_venda: o.diasCom/dias*100};
+}
+function vpDif(m, me, peer){ return m.pp ? me-peer : (peer>0 ? (me-peer)/peer*100 : 0); }
+function vpDifTxt(m, g){ return m.pp ? (g>=0?'+':'')+g.toFixed(1).replace('.',',')+' p.p.' : fmtPct(g).replace('.',','); }
+function vpArred(m, v){ return m.k==='fat_mes' || m.k==='fat_nota' ? Math.round(v*100)/100 : Math.round(v*10)/10; }
+// situação e meta sugerida: abaixo dos pares a meta é chegar à média (ou à metade do caminho, se a distância é grande); prazo pela distância
+function vpSugestao(m, me, peer){
+  var g = vpDif(m, me, peer), lim = m.pp ? m.lim : [10, 15, 30], a = Math.abs(g);
+  if(g >= 0) return {sit:'ok', g:g};
+  var longe = m.pp ? a > lim[2] : a > 25;
+  return {sit: a >= lim[0] ? 'melhorar' : 'atencao', g:g, alvo: vpArred(m, longe ? me+(peer-me)/2 : peer),
+    dias: a <= lim[1] ? 30 : (a <= lim[2] ? 60 : 90)};
+}
+function vpDia(s){ return new Date(String(s).slice(0,10)+'T12:00:00'); }
+function vpDiasEntre(a, b){ return Math.round((vpDia(b)-vpDia(a))/864e5)+1; }
+function vpNum(m, v){ return m.k==='fat_mes' || m.k==='fat_nota' ? v.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2}) : String(v).replace('.',','); }
+
+function vpRender(ctx){
+  var el = document.getElementById('vendPlanoBody'); if(!el) return;
+  VP.ctx = ctx;
+  var pode = vpPode(), nP = ctx.nPares;
+  var linhas = VP_MET.map(function(m){
+    var me = ctx.me[m.k], peer = ctx.peer[m.k], s = vpSugestao(m, me, peer);
+    var sit = s.sit==='ok' ? '<span class="pill up">Acima dos pares</span>' : (s.sit==='atencao' ? '<span class="pill flat" style="color:var(--warn,#d99a22)">Atenção</span>' : '<span class="pill down">Melhorar</span>');
+    var meta = s.sit==='ok' ? '<span class="note-muted">manter</span>' :
+      (pode ? '<input type="text" inputmode="decimal" class="vp-alvo" data-k="'+m.k+'" value="'+vpNum(m, s.alvo)+'" aria-label="Meta de '+m.l+'">' : m.fmt(s.alvo));
+    var prazo = s.sit==='ok' ? '' : (pode ? '<select class="vp-dias" data-k="'+m.k+'">'+[30,60,90,120].map(function(d){ return '<option value="'+d+'"'+(d===s.dias?' selected':'')+'>'+d+' dias</option>'; }).join('')+'</select>' : s.dias+' dias');
+    return '<tr'+(s.sit==='melhorar'?' class="vp-melhorar"':'')+'>' +
+      (pode ? '<td>'+(s.sit==='ok' ? '' : '<input type="checkbox" class="vp-ck" data-k="'+m.k+'"'+(s.sit==='melhorar'?' checked':'')+' aria-label="Incluir '+m.l+' no plano">')+'</td>' : '') +
+      '<td title="'+escapeHtml(m.d)+'">'+m.l+'</td><td class="mono">'+m.fmt(me)+'</td><td class="mono">'+m.fmt(peer)+'</td>' +
+      '<td class="mono" style="color:'+(s.g>=0?'var(--good)':'var(--critical)')+'">'+vpDifTxt(m, s.g)+'</td><td>'+sit+'</td><td class="mono">'+meta+'</td><td>'+prazo+'</td></tr>';
+  }).join('');
+  var nMelh = VP_MET.filter(function(m){ return vpSugestao(m, ctx.me[m.k], ctx.peer[m.k]).sit==='melhorar'; }).length;
+  el.innerHTML =
+    '<p class="vp-resumo">'+escapeHtml(ctx.nome)+(nMelh ? ' tem <b>'+nMelh+' indicador'+(nMelh>1?'es':'')+' para melhorar</b>' : ' não tem indicador bem abaixo')+' em relação à média dos '+nP+' pares, no período e filtros aplicados.' +
+      (nP < 3 ? ' <b>Poucos pares neste recorte: compare com cautela.</b>' : '')+'</p>' +
+    '<div class="vp-scroll"><table class="data-table vp-tbl"><thead><tr>'+(pode?'<th></th>':'')+'<th>Indicador</th><th>'+escapeHtml(nomeCurtoVend(ctx.nome))+'</th><th>Média dos pares</th><th>Diferença</th><th>Situação</th><th>Meta</th><th>Prazo</th></tr></thead><tbody>'+linhas+'</tbody></table></div>' +
+    (pode ? '<div class="vp-criar"><textarea id="vpObs" rows="2" maxlength="1000" placeholder="Ações combinadas com o vendedor (opcional): ex.: visitar 10 clientes inativos por semana, oferecer a linha de freios..."></textarea>' +
+      '<button type="button" class="vp-criar-bt" id="vpCriar">Criar plano com os marcados</button></div>' +
+      '<p class="note-muted" style="font-size:11px; margin-top:4px;">A meta e o prazo podem ser ajustados antes de criar. O acompanhamento compara as vendas desde a criação do plano com a meta, usando os mesmos filtros de agora.</p>' : '') +
+    '<h3 class="dh" style="margin-top:16px;">Acompanhamento dos planos</h3><div id="vpAcomp"><p class="note-muted status-txt">Carregando os planos…</p></div>';
+  vpLigar(el);
+  vpCarregar(ctx.nome);
+}
+function vpCarregar(nome, forcar){
+  if(forcar) delete VP.planos[nome];
+  if(VP.planos[nome]) return vpAcomp(nome);
+  if(VP.pend[nome]) return;
+  VP.pend[nome] = 1;
+  window.__NC_rpc('bi_vend_planos', {p_vendedor: nome}).then(function(r){ VP.planos[nome] = r||[]; })
+    .catch(function(e){ VP.planos[nome] = {erro: /bi_vend_planos|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'}; })
+    .then(function(){ delete VP.pend[nome]; if(VP.ctx && VP.ctx.nome===nome) vpAcomp(nome); });
+}
+// valor atual do vendedor desde o início do plano (até hoje ou até o prazo)
+function vpAtual(D, nome, ini, fim){
+  var o = {fat:0, lb:0, cli:0, nfs:0, sku:0, diasCom:0, dias:vpDiasEntre(ini, fim)}, ids = {};
+  (D.v||[]).forEach(function(r){ if(r[0]!==null && r[0]>0 && dimNome('vendedor', r[0])===nome){ ids[r[0]] = 1; o.fat += c2(r[1]); o.lb += c2(r[3]); } });
+  (D.vcli||[]).forEach(function(r){ if(ids[r[0]]){ o.cli += n0(r[1]); o.nfs += n0(r[2]); } });
+  (D.vs||[]).forEach(function(r){ if(ids[r[0]]) o.sku += +r[1]||0; });
+  var dd = {}; (D.vd||[]).forEach(function(r){ if(ids[r[0]] && c2(r[2])>0) dd[r[1]] = 1; });
+  o.diasCom = Object.keys(dd).length;
+  return vpMetricas(o);
+}
+function vpAcomp(nome){
+  var box = document.getElementById('vpAcomp'); if(!box) return;
+  var P = VP.planos[nome];
+  if(P && P.erro){ box.innerHTML = '<p class="note-muted">'+(P.erro==='falta' ? 'O banco ainda não tem a tabela de planos (rode o SQL plano_vendedor.sql).' : 'Não foi possível carregar os planos agora.')+'</p>'; return; }
+  if(!P.length){ box.innerHTML = '<p class="note-muted">Nenhum plano para '+escapeHtml(nome)+' ainda.'+(vpPode() ? ' Marque os indicadores acima e clique em "Criar plano".' : '')+'</p>'; return; }
+  var dataFim = isoDia(DAYS[N_DAYS-1]), grupos = {};
+  P.forEach(function(p){
+    var fim = String(p[6]).slice(0,10) < dataFim ? String(p[6]).slice(0,10) : dataFim, ini = String(p[5]).slice(0,10);
+    p._fim = fim;
+    if(ini > dataFim) return;
+    var k = JSON.stringify([p[9]||{}, ini, fim]); (grupos[k] = grupos[k] || []).push(p);
+  });
+  var ks = Object.keys(grupos);
+  Promise.all(ks.map(function(k){ var a = JSON.parse(k); return rpcMemo('bi_vendedores', {f:a[0], per:{ini:a[1], fim:a[2]}}).catch(function(){ return null; }); })).then(function(res){
+    var atual = {};
+    ks.forEach(function(k, i){ var a = JSON.parse(k); if(res[i]) grupos[k].forEach(function(p){ atual[p[0]] = vpAtual(res[i], nome, a[1], a[2])[p[1]]; }); });
+    if(!VP.ctx || VP.ctx.nome!==nome) return;
+    vpAcompDesenhar(box, P, atual, dataFim);
+  });
+}
+function vpAcompDesenhar(box, P, atual, dataFim){
+  var pode = vpPode(), hoje = isoDia(new Date());
+  var linhas = P.map(function(p){
+    var m = VP_MET_K[p[1]] || {l:p[1], fmt:function(v){ return String(v); }, pp:false};
+    var base = +p[2], alvo = +p[4], ini = String(p[5]).slice(0,10), prazo = String(p[6]).slice(0,10), at = atual[p[0]], enc = p[11]==='encerrado';
+    var falta = vpDiasEntre(hoje, prazo)-1, dadosDias = ini <= dataFim ? vpDiasEntre(ini, p._fim) : 0, venceu = dataFim >= prazo;
+    var st, tom, prog = null;
+    if(at===undefined || at===null){ st = ini > dataFim ? 'Aguardando vendas' : 'Sem dados'; tom = 'flat'; }
+    else {
+      prog = alvo!==base ? Math.max(0, Math.min(1, (at-base)/(alvo-base))) : (at>=alvo ? 1 : 0);
+      if(venceu || enc){ st = at>=alvo ? 'Meta atingida' : 'Não atingida'; tom = at>=alvo ? 'up' : 'down'; }
+      else if(dadosDias < 7){ st = 'Início (poucos dias)'; tom = 'flat'; }
+      else if(at>=alvo){ st = 'Na meta'; tom = 'up'; }
+      else if(at>base){ st = 'Melhorando'; tom = 'flat'; }
+      else { st = 'Sem melhora'; tom = 'down'; }
+    }
+    var prazoTxt = enc ? 'encerrado' : (falta > 0 ? 'faltam '+falta+' dia'+(falta>1?'s':'') : (falta===0 ? 'vence hoje' : 'venceu'));
+    var bar = prog===null ? '' : '<span class="vp-bar" title="'+Math.round(prog*100)+'% do caminho entre a base e a meta"><i style="width:'+(prog*100).toFixed(0)+'%; background:'+(tom==='up'?'var(--good)':(tom==='down'?'var(--critical)':'var(--accent)'))+'"></i></span>';
+    var acoes = !pode ? '' : (enc ? '<button type="button" class="vp-acao" data-a="reabrir" data-id="'+p[0]+'">Reabrir</button>' :
+      '<button type="button" class="vp-acao" data-a="encerrar" data-id="'+p[0]+'" title="Encerra o acompanhamento com o resultado atual">Encerrar</button>') +
+      '<button type="button" class="vp-acao vp-del" data-a="excluir" data-id="'+p[0]+'" title="Excluir este plano">✕</button>';
+    return '<tr'+(enc?' class="vp-enc"':'')+' title="Criado por '+escapeHtml(p[14]||'—')+' em '+fmtDiaBR(vpDia(p[12]))+'. Base calculada de '+(p[7]?fmtDiaBR(vpDia(p[7])):'?')+' a '+(p[8]?fmtDiaBR(vpDia(p[8])):'?')+'; média dos pares: '+(p[3]!==null?m.fmt(+p[3]):'—')+'.">' +
+      '<td>'+m.l+(p[10] ? '<div class="vp-obs">'+escapeHtml(p[10])+'</div>' : '')+'</td>' +
+      '<td class="mono">'+fmtDiaBR(vpDia(ini))+'<div class="vp-sub">até '+fmtDiaBR(vpDia(prazo))+' · '+prazoTxt+'</div></td>' +
+      '<td class="mono">'+m.fmt(base)+'</td><td class="mono">'+m.fmt(alvo)+'</td>' +
+      '<td class="mono">'+(at===undefined||at===null ? '—' : m.fmt(at))+bar+'</td>' +
+      '<td><span class="pill '+tom+'">'+st+'</span></td>'+(pode?'<td class="vp-acoes">'+acoes+'</td>':'')+'</tr>';
+  }).join('');
+  box.innerHTML = '<div class="vp-scroll"><table class="data-table vp-tbl vp-acomp"><thead><tr><th>Indicador e ações</th><th>Início · prazo</th><th>Base</th><th>Meta</th><th>Atual (desde o início)</th><th>Situação</th>'+(pode?'<th></th>':'')+'</tr></thead><tbody>'+linhas+'</tbody></table></div>' +
+    '<p class="note-muted" style="font-size:11px; margin-top:6px;">Atual: vendas de '+escapeHtml(VP.ctx.nome)+' do início do plano até o último dia com dados ('+fmtDiaBR(vpDia(dataFim))+') ou até o prazo, com os filtros de quando o plano foi criado. Passe o mouse numa linha para ver quem criou e a base usada.</p>';
+}
+function vpLigar(el){
+  if(el.dataset.lig) return; el.dataset.lig = '1';
+  el.addEventListener('click', function(e){
+    var ctx = VP.ctx; if(!ctx) return;
+    if(e.target.id==='vpCriar'){
+      var itens = [];
+      el.querySelectorAll('.vp-ck:checked').forEach(function(ck){
+        var k = ck.getAttribute('data-k'), m = VP_MET_K[k], inp = el.querySelector('.vp-alvo[data-k="'+k+'"]'), sd = el.querySelector('.vp-dias[data-k="'+k+'"]');
+        var alvo = ccNumBR(inp && inp.value);
+        if(alvo===null){ itens = null; toast('Meta inválida em '+m.l+'.'); return; }
+        if(itens) itens.push({metrica:k, base:vpArred(m, ctx.me[k]), pares:vpArred(m, ctx.peer[k]), alvo:alvo, dias:+(sd ? sd.value : 60)});
+      });
+      if(!itens) return;
+      if(!itens.length){ toast('Marque ao menos um indicador para o plano.'); return; }
+      var bt = e.target; bt.disabled = true; bt.textContent = 'Criando…';
+      window.__NC_rpc('bi_vend_plano_gravar', {p:{acao:'criar', vendedor:ctx.nome, itens:itens, f:ctx.f, base_ini:ctx.ini, base_fim:ctx.fim, obs:(document.getElementById('vpObs')||{}).value||''}})
+        .then(function(){ toast('Plano criado para '+ctx.nome+' com '+itens.length+' indicador'+(itens.length>1?'es':'')+'.'); var o = document.getElementById('vpObs'); if(o) o.value = ''; vpCarregar(ctx.nome, true); })
+        .catch(function(er){ toast(/schema cache|does not exist/i.test(String(er && (er.message||er))) ? 'O banco ainda não tem a tabela de planos.' : 'Não foi possível criar o plano: '+String(er && (er.message||er)).slice(0,120)); })
+        .then(function(){ bt.disabled = false; bt.textContent = 'Criar plano com os marcados'; });
+      return;
+    }
+    var b = e.target.closest('.vp-acao'); if(!b) return;
+    var a = b.getAttribute('data-a');
+    if(a==='excluir' && !b.dataset.conf){ b.dataset.conf = '1'; b.textContent = 'Excluir?'; setTimeout(function(){ if(b.isConnected){ delete b.dataset.conf; b.textContent = '✕'; } }, 3000); return; }
+    b.disabled = true;
+    window.__NC_rpc('bi_vend_plano_gravar', {p:{acao:a, id:+b.getAttribute('data-id')}})
+      .then(function(){ vpCarregar(ctx.nome, true); })
+      .catch(function(er){ b.disabled = false; toast('Não foi possível alterar o plano: '+String(er && (er.message||er)).slice(0,120)); });
+  });
+}
 function renderVendConsult(){
   var box = document.getElementById('vendConsultBody'), rankBox = document.getElementById('vendRankBody');
   rankBox.innerHTML = '';
@@ -5240,6 +5428,20 @@ function renderVendConsult(){
         '<p style="font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.6;">Cada ponto é um vendedor; as linhas tracejadas marcam a média do grupo. Clique num ponto para analisar o vendedor.</p>' +
     '</div>';
   box.innerHTML = kpisHtml;
+  // plano de melhoria: os mesmos indicadores para o vendedor e para cada par (média simples; margem ponderada)
+  (function(){
+    var dPer = Math.max(1, pr.end-Math.max(0,pr.start)+1);
+    function mDe(r){ var dc = 0, df = map[r.name].dailyFat; for(var j=Math.max(0,pr.start); j<=pr.end; j++){ if(df[j]>0) dc++; }
+      return vpMetricas({fat:r.fat, lb:r.lb, cli:r.cli, nfs:r.nfs, sku:r.skuCount, diasCom:dc, dias:dPer}); }
+    var meM = mDe(me), peerM = {};
+    VP_MET.forEach(function(m){ peerM[m.k] = 0; });
+    if(others.length){
+      var oms = others.map(mDe);
+      VP_MET.forEach(function(m){ peerM[m.k] = oms.reduce(function(s, o){ return s+o[m.k]; }, 0)/oms.length; });
+      peerM.margem = margemPeers;
+    }
+    vpRender({nome:selName, me:meM, peer:peerM, nPares:others.length, f:fv, ini:painelPeriodo().ini, fim:painelPeriodo().fim});
+  })();
   rankBox.innerHTML =
     '<div class="grid-2">' +
       '<div><div class="vr-head"><h3 class="dh">Ranking do grupo</h3><label class="vr-sw-l" title="Mostra o faturamento de cada vendedor em % do total do grupo"><span>Faturamento em %</span><button type="button" class="ia-sw vr-sw" id="vrPctSw" role="switch" aria-checked="'+(state.vendRankPct?'true':'false')+'" aria-label="Mostrar faturamento em %"></button></label></div><div class="rank-vend-box">'+rankHtml+'</div>' +
