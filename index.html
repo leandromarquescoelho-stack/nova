@@ -2451,7 +2451,7 @@ table.data-table.vp-tbl{min-width:720px;}
                 <option value="comp">Só itens comparados</option>
                 <option value="sem">Sem comparação</option>
               </select></label>
-              <label title="Custo usado na margem (MG) da sugestão: o maior custo unitário entre as lojas ou o custo unitário de uma loja (estoque: custo ÷ quantidade)">Custo da MG<select class="fsel" id="ccCustoSel"><option value="maior">Maior custo</option></select></label>
+              <label title="Custo usado na margem (MG) da sugestão: o maior custo unitário entre as lojas ou o custo unitário de uma loja (custo unitário do estoque). A MG usa os impostos da classificação fiscal do item (PIS, COFINS e ICMS)">Custo da MG<select class="fsel" id="ccCustoSel"><option value="maior">Maior custo</option></select></label>
               <input type="search" class="cc-busca" id="ccBusca" placeholder="Buscar código ou nome…">
               <button type="button" class="cc-exp" id="ccExportar" title="Baixar em Excel os itens que estão na tabela (com o filtro, a busca e a ordem atuais)">&#11015; Exportar Excel</button>
             </div>
@@ -2726,7 +2726,8 @@ function carregarProdutos(){
     window.__NC_rpc('bi_estoque_itens')
   ]).then(function(r){
     var e = r[1] || {};
-    ['loja','produto','est','custo','vend','comp','parado'].forEach(function(k){ EST[k] = Array.isArray(e[k]) ? e[k] : []; });
+    ['loja','produto','est','custo','vend','comp','parado','custo_u','clsf'].forEach(function(k){ EST[k] = Array.isArray(e[k]) ? e[k] : []; });
+    EST.impostos = e.impostos || {};
     Object.keys(EST_POR_PROD).forEach(function(k){ delete EST_POR_PROD[k]; });
     EST.produto.forEach(function(pid, i){ (EST_POR_PROD[pid] = EST_POR_PROD[pid] || []).push(i); });
     PRODBUSCA = null; PROD_OK = true;
@@ -3439,20 +3440,26 @@ function ccEstoque(pn){
   if(!PROD_OK) return null;
   if(!CC_PN2PID){ CC_PN2PID = {}; Object.keys(PRODINFO).forEach(function(pid){ var x = PRODINFO[pid]; if(x && x.pn!=null) CC_PN2PID[String(x.pn)] = pid; }); }
   var pid = CC_PN2PID[String(pn)], ix = pid!=null ? EST_POR_PROD[pid] : null;
-  var o = {est:0, maior:null, loja:null, lojas:{}};
+  var o = {est:0, maior:null, loja:null, lojas:{}, clsf:null}, semSaldo = {maior:null, loja:null};
   (ix||[]).forEach(function(i){
-    var e = n0(EST.est[i]), c = n0(EST.custo[i]);
+    var e = n0(EST.est[i]), c = n0(EST.custo[i]), cu = n0((EST.custo_u||[])[i]), nm = dimNome('loja', EST.loja[i]);
+    // custo unitário da carga (vale mesmo sem saldo); arquivo antigo: custo total ÷ quantidade
+    var u = cu > 0 ? cu : (e > 0 && c > 0 ? c/e : 0);
     o.est += e;
-    if(e > 0 && c > 0) o.lojas[dimNome('loja', EST.loja[i])] = c/e;
-    if(e > 0 && c > 0 && (o.maior==null || c/e > o.maior)){ o.maior = c/e; o.loja = dimNome('loja', EST.loja[i]); }
+    if(!o.clsf && (EST.clsf||[])[i]) o.clsf = EST.clsf[i];
+    if(!(u > 0)) return;
+    o.lojas[nm] = u;
+    if(e > 0){ if(o.maior==null || u > o.maior){ o.maior = u; o.loja = nm; } }
+    else if(semSaldo.maior==null || u > semSaldo.maior){ semSaldo.maior = u; semSaldo.loja = nm; }
   });
+  if(o.maior==null && semSaldo.maior!=null){ o.maior = semSaldo.maior; o.loja = semSaldo.loja+', sem saldo'; }
   return o;
 }
 function ccTipHtml(it){
   if(!PROD_OK) return '<div class="t">Estoque</div>Carregando o estoque…';
   var e = ccEstoque(it.pn), h = '<div class="t">Estoque · todas as lojas</div>';
   h += '<div class="r"><span>Saldo total</span><b>'+e.est.toLocaleString('pt-BR', {maximumFractionDigits:0})+' peça'+(Math.round(e.est)===1?'':'s')+'</b></div>';
-  h += '<div class="r"><span>Maior custo médio</span><b>'+(e.maior==null ? '—' : ccMoney(e.maior))+'</b></div>';
+  h += '<div class="r"><span>Maior custo unitário</span><b>'+(e.maior==null ? '—' : ccMoney(e.maior))+'</b></div>';
   if(e.loja) h += '<div class="n">na loja '+escapeHtml(e.loja)+'</div>';
   var preco = it.nosso || it.nossoBruto;
   if(e.maior && preco){
@@ -3494,9 +3501,9 @@ function ccExportar(){
 function ccExportarMontar(L, D, bt){
   function n2(v){ return v==null ? null : Math.round(v*100)/100; }
   function p1(v){ return v==null ? null : Math.round(v*10)/10; }
-  var cab = ['Posição', 'Código', 'Item', 'Fat. 90 dias (R$)', 'Qtd 90 dias', 'Preço MD (R$)', CC_NOSSO_N+' (R$)', 'Estoque total (peças)', 'Maior custo médio (R$)', 'Loja do maior custo'];
+  var cab = ['Posição', 'Código', 'Item', 'Fat. 90 dias (R$)', 'Qtd 90 dias', 'Preço MD (R$)', CC_NOSSO_N+' (R$)', 'Estoque total (peças)', 'Maior custo unitário (R$)', 'Loja do maior custo'];
   CC_SITES.forEach(function(s){ cab.push(s.n+' (R$)', 'Dif. vs '+s.n+' (%)', s.n+' link'); });
-  cab.push('Menor concorrente (R$)', 'Dif. vs menor preço (%)', 'Situação', 'Sugestão (R$) · '+ccPctTxt()+' do menor', 'Sugestão editada?', 'Custo usado na margem (R$)', 'Margem na sugestão (%)', 'Observação');
+  cab.push('Menor concorrente (R$)', 'Dif. vs menor preço (%)', 'Situação', 'Sugestão (R$) · '+ccPctTxt()+' do menor', 'Sugestão editada?', 'Custo usado na margem (R$)', 'Custo de', 'Classificação fiscal', 'Impostos no preço (%)', 'Margem na sugestão (%)', 'Observação');
   var dados = L.map(function(it){
     var obs = [];
     if(it.nossoSusp) obs.push('Preço '+(CC_FONTE==='pc' ? 'da Nova no Peça Chevrolet' : 'do nosso site')+' ('+ccMoney(it.nossoBruto)+') muito diferente do preço médio vendido: conferir cadastro');
@@ -3510,12 +3517,12 @@ function ccExportarMontar(L, D, bt){
     });
     var sit = it.pctMenor==null ? 'Sem comparação' : (it.pctMenor >= 0.5 ? 'Mais caro' : (it.pctMenor <= -0.5 ? 'Mais barato' : 'Igual'));
     var sv = ccSugValor(it), cu = ccCusto(it);
-    r.push(n2(it.menor), p1(it.pctMenor), sit, n2(sv), CC_SUG[ccSugChave(it.pn)]!=null ? 'Sim' : (sv!=null ? 'Não' : null), cu ? n2(cu.v) : null, sv && cu ? p1(ccMargem(cu, sv)) : null, obs.join(' · '));
+    r.push(n2(it.menor), p1(it.pctMenor), sit, n2(sv), CC_SUG[ccSugChave(it.pn)]!=null ? 'Sim' : (sv!=null ? 'Não' : null), cu ? n2(cu.v) : null, cu ? cu.de : null, cu && cu.tx ? cu.tx.cod : null, cu && cu.tx ? Math.round(ccImpostos(cu.tx)*10000)/100 : null, sv && cu ? p1(ccMargem(cu, sv)) : null, obs.join(' · '));
     return r;
   });
   var dia = D.quando ? isoDia(new Date(D.quando)) : isoDia(new Date());
   carregarXlsx().catch(function(){ return null; }).then(function(X){
-    var larg = [8, 14, 44, 16, 11, 18, 14, 14, 16, 16]; CC_SITES.forEach(function(){ larg.push(14, 14, 30); }); larg.push(18, 18, 14, 16, 12, 16, 14, 60);
+    var larg = [8, 14, 44, 16, 11, 18, 14, 14, 16, 16]; CC_SITES.forEach(function(){ larg.push(14, 14, 30); }); larg.push(18, 18, 14, 16, 12, 16, 30, 14, 14, 14, 60);
     baixarPlanilha(X, CC_FONTES[CC_FONTE].arq+dia, 'Concorrência', cab, dados, larg);
     toast(L.length+' itens exportados.');
   }).finally(function(){ bt.disabled = false; });
@@ -3613,21 +3620,32 @@ function ccCustoOpcoes(){
 }
 function ccCusto(it){
   var e = ccEstoque(it.pn); if(!e) return null;
-  var ded = it.ded||0, dd = ded ? '' : ', sem impostos';
+  // impostos pela classificação fiscal do item (aba clsf); sem ela, as deduções médias das vendas da loja
+  var al = e.clsf && EST.impostos ? EST.impostos[e.clsf] : null;
+  var tx = al ? {pis:+al[0]||0, cofins:+al[1]||0, icms:+al[2]||0, cod:e.clsf} : null, ded = tx ? 0 : (it.ded||0);
+  var r = null;
   if(CC_CUSTO!=='maior'){
     var c = e.lojas[CC_CUSTO];
-    if(c) return {v:c, ded:ded, de:'custo unitário em '+CC_CUSTO+dd};
-    if(e.maior) return {v:e.maior, ded:ded, de:'maior custo unitário ('+e.loja+'; sem saldo em '+CC_CUSTO+')'+dd};
-    return null;
-  }
-  return e.maior ? {v:e.maior, ded:ded, de:'maior custo unitário do estoque ('+e.loja+')'+dd} : null;
+    if(c) r = {v:c, de:'custo unitário em '+CC_CUSTO};
+    else if(e.maior) r = {v:e.maior, de:'maior custo unitário ('+e.loja+'; sem custo em '+CC_CUSTO+')'};
+  } else if(e.maior) r = {v:e.maior, de:'maior custo unitário ('+e.loja+')'};
+  if(!r) return null;
+  r.tx = tx; r.ded = ded;
+  return r;
 }
+// carga de impostos no preço: ICMS + PIS × (1 − ICMS) + COFINS × (1 − ICMS)
+function ccImpostos(tx){ return tx.icms + tx.pis*(1-tx.icms) + tx.cofins*(1-tx.icms); }
 // margem bruta no preço v, como no painel (lucro bruto ÷ faturamento): 1 − deduções − custo ÷ preço
-function ccMargem(c, v){ return (1 - c.ded - c.v/v)*100; }
+// margem como na planilha: (preço − impostos − custo) ÷ preço, truncada em 4 casas; sem classificação fiscal: deduções médias
+function ccMargem(c, v){
+  if(!v) return 0;
+  if(c.tx){ var m = (v - v*ccImpostos(c.tx) - c.v)/v; return Math.trunc(m*10000)/100; }
+  return (1 - c.ded - c.v/v)*100;
+}
 function ccMargemHtml(it, v){
   var c = ccCusto(it); if(!v || !c) return '<span class="cc-mg cc-vazio" title="Sem custo para calcular a margem">MG —</span>';
   var m = ccMargem(c, v), cor = m < 0 ? 'var(--critical)' : (m < 10 ? 'var(--warning, #d9a400)' : 'var(--good)');
-  return '<span class="cc-mg" style="color:'+cor+'" title="Margem bruta vendendo a '+ccMoney(v)+' · '+c.de+': '+ccMoney(c.v)+(c.ded ? ' · impostos e deduções: '+(c.ded*100).toFixed(1).replace('.',',')+'% do preço' : '')+'">MG '+m.toFixed(1).replace('.',',')+'%</span>';
+  return '<span class="cc-mg" style="color:'+cor+'" title="Margem bruta vendendo a '+ccMoney(v)+' · '+c.de+': '+ccMoney(c.v)+(c.tx ? ' · impostos ('+c.tx.cod+'): ICMS '+(c.tx.icms*100).toFixed(2).replace('.',',')+'%, PIS '+(c.tx.pis*100).toFixed(2).replace('.',',')+'%, COFINS '+(c.tx.cofins*100).toFixed(2).replace('.',',')+'% = '+(ccImpostos(c.tx)*100).toFixed(2).replace('.',',')+'% do preço' : (c.ded ? ' · sem classificação fiscal: deduções médias das vendas, '+(c.ded*100).toFixed(1).replace('.',',')+'% do preço' : ' · sem impostos'))+'">MG '+m.toFixed(1).replace('.',',')+'%</span>';
 }
 function ccSugTd(it){
   var v = ccSugValor(it), ed = CC_SUG[ccSugChave(it.pn)]!=null;

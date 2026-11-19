@@ -39,7 +39,8 @@ ABAS_OBRIG = ('vendas', 'estoque', 'catalogo', 'marcas', 'vendedores')
 # colunas que podem faltar conforme a versão do arquivo (no formato com a aba transacionadores, os dados do
 # cliente e o nome do vendedor saíram da aba vendas)
 COLS_OPCIONAIS = {'razao', 'cidade', 'tipo_cliente', 'nome_vendedor', 'equipe', 'codigo_loja', 'subcategoria',
-                  'prazo', 'grupo_cliente', 'pessoa', 'funcao', 'grupo_peca', 'aplicacao', 'curva_gm', 'cep'}
+                  'prazo', 'grupo_cliente', 'pessoa', 'funcao', 'grupo_peca', 'aplicacao', 'curva_gm', 'cep',
+                  'custo_u', 'clsf', 'origem', 'mva', 'ipi'}
 # CEP do cliente (zonas da capital): entra pela aba vendas ou transacionadores mesmo sem estar no mapa do banco
 CIDADE_CAPITAL = {'SP - SAO PAULO', 'SP - SÃO PAULO', 'SP - SP', 'SAO PAULO', 'SÃO PAULO'}
 CEP_NOMES = ('CEP', 'CEP_CLIENTE', 'CEP CLIENTE', 'CEP_CLI', 'NUM_CEP')
@@ -213,6 +214,9 @@ def preparar(dfs, regras):
     e['descricao'] = texto(e['descricao']).str.replace(r'\s+', ' ', regex=True) if 'descricao' in e else None
     e['est_fis'] = numero(e['est_fis'])
     e['est_custo'] = numero(e['est_custo']) if 'est_custo' in e else 0.0
+    # custo unitário (vale mesmo sem saldo) e classificação fiscal (liga o item às alíquotas da aba clsf)
+    e['custo_u'] = numero(e['custo_u']).where(lambda x: x > 0) if 'custo_u' in e else None
+    e['clsf'] = texto(e['clsf']).str.strip() if 'clsf' in e else None
     for c in ('dt_ult_vend', 'dt_ult_comp'):
         d = datas(e[c]) if c in e else pd.Series(pd.NaT, index=e.index)
         e[c] = d.where(d >= pd.Timestamp('2000-01-01'))
@@ -223,7 +227,8 @@ def preparar(dfs, regras):
     e['parado'] = (e['est_fis'] > 0) & (dias.isna() | (dias > int(regras.get('dias_parado', 270))))
     e = e.groupby(['loja', 'sku'], as_index=False).agg(
         est_fis=('est_fis', 'sum'), est_custo=('est_custo', 'sum'), dt_ult_vend=('dt_ult_vend', 'max'),
-        dt_ult_comp=('dt_ult_comp', 'max'), parado=('parado', 'any'), linha=('linha', 'first'), descricao=('descricao', 'first'))
+        dt_ult_comp=('dt_ult_comp', 'max'), parado=('parado', 'any'), linha=('linha', 'first'), descricao=('descricao', 'first'),
+        custo_u=('custo_u', 'max'), clsf=('clsf', 'first'))
 
     # produtos (vendas + estoque): catálogo; linha da venda de maior faturamento, senão a do estoque
     skus = pd.Index(sorted(set(v['sku']) | set(e['sku'])))
@@ -418,8 +423,32 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
                             'est_fis': e['est_fis'].round(3), 'custo': e['est_custo'].round(2),
                             'dt_ult_vend': e['dt_ult_vend'].dt.strftime('%Y-%m-%d'),
                             'dt_ult_comp': e['dt_ult_comp'].dt.strftime('%Y-%m-%d'), 'parado': e['parado'].astype(bool)})
+        # colunas novas (custo unitário e classificação fiscal): só quando o banco já tem
+        cur.execute("""select array_agg(column_name::text) from information_schema.columns
+                       where table_schema = 'public' and table_name = 'bi_estoque' and column_name in ('custo_u', 'clsf')""")
+        novas = cur.fetchone()[0] or []
+        if 'custo_u' in novas:
+            est['custo_u'] = pd.to_numeric(e['custo_u'], errors='coerce').round(4)
+        if 'clsf' in novas:
+            est['clsf'] = e['clsf']
         if trocar_estoque:
             copiar(cur, 'bi_estoque', est)
+            if novas:
+                log(f'estoque: custo unitário em {int(est["custo_u"].notna().sum()) if "custo_u" in est else 0} itens, '
+                    f'classificação fiscal em {int(est["clsf"].notna().sum()) if "clsf" in est else 0}')
+        # alíquotas por classificação fiscal (aba clsf), quando o arquivo e o banco têm
+        cur.execute("select to_regclass('public.bi_clsf') is not null")
+        if trocar_estoque and 'clsf' in dfs and cur.fetchone()[0]:
+            t = dfs['clsf'].copy()
+            t['codigo'] = texto(t['codigo']).str.strip()
+            t = t.dropna(subset=['codigo']).drop_duplicates('codigo')
+            tab = pd.DataFrame({'codigo': t['codigo']})
+            for c in ('pis', 'cofins', 'icms', 'ipi', 'mva'):
+                tab[c] = numero(t[c]).round(6) if c in t else 0.0
+            tab['origem'] = texto(t['origem']) if 'origem' in t else None
+            cur.execute('delete from public.bi_clsf')
+            copiar(cur, 'bi_clsf', tab)
+            log(f'classificações fiscais: {len(tab)}')
 
         # limpeza: o que nenhuma linha usa mais
         cur.execute("""delete from public.bi_produto p where not exists (select 1 from public.bi_venda v where v.produto = p.id)
