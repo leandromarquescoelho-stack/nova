@@ -1286,6 +1286,12 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cad-tipo{display:inline-block; padding:1px 7px; border-radius:6px; font-size:10px; font-weight:800; text-transform:uppercase; background:var(--surface); border:1px solid var(--border-strong); color:var(--text-muted);}
 .cad-t-mercadolivre{border-color:#f5d000; color:#d4b400;}
 .cad-t-fabricante{border-color:var(--accent); color:var(--accent);}
+.cad-fotos{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px;}
+.cad-foto{margin:0; border:1px solid var(--border-strong); border-radius:12px; overflow:hidden; background:#fff;}
+.cad-foto img{display:block; width:100%; aspect-ratio:1/1; object-fit:contain; background:#fff;}
+.cad-foto figcaption{display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding:8px 10px; background:var(--surface); font-size:12px;}
+.cad-foto figcaption .cad-cp{margin-left:auto; text-decoration:none;}
+@media (max-width:700px){ .cad-fotos{grid-template-columns:1fr;} }
 .cad-rec{display:flex; flex-wrap:wrap; gap:8px;}
 .cad-rec button{display:flex; flex-direction:column; align-items:flex-start; gap:2px; max-width:280px; padding:8px 12px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); font:inherit; cursor:pointer; text-align:left;}
 .cad-rec button span{font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:256px;}
@@ -3767,7 +3773,7 @@ var CAD = {pn:null, timer:null, ini:0};
 function cadEsc(t){ return String(t==null ? '' : t).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function cadNum(x){ return String(Math.round(x*10)/10).replace('.', ','); }
 var CAD_TIPOS = {mercadolivre:'Mercado Livre', web:'Busca web', fabricante:'Fabricante', loja:'Nossa loja', interno:'Cadastro interno'};
-var CAD_USOS = {descricao:'descrição', medidas:'medidas', aplicacao:'aplicação'};
+var CAD_USOS = {descricao:'descrição', medidas:'medidas', aplicacao:'aplicação', fotos:'fotos'};
 function cadLigar(){
   document.getElementById('cadForm').addEventListener('submit', function(e){
     e.preventDefault();
@@ -3844,6 +3850,12 @@ function cadMostrar(row){
     (tit ? '<div class="cad-tit"><span id="cadTit">'+cadEsc(tit)+'</span><span class="cad-n'+(tit.length>60?' cad-n-x':'')+'">'+tit.length+'/60</span><button type="button" class="cad-cp" data-copiar="cadTit">Copiar</button></div>' : '<p class="note-muted">Nenhum título encontrado nas fontes.</p>')+
     ((d.alternativas||[]).length ? '<div class="cad-alts"><div class="cad-lbl">Outras opções vistas nas fontes</div>'+d.alternativas.map(function(a, k){ return '<div class="cad-alt"><span id="cadAlt'+k+'">'+cadEsc(a.texto)+'</span>'+ref([a.fonte])+'<button type="button" class="cad-cp" data-copiar="cadAlt'+k+'">Copiar</button></div>'; }).join('')+'</div>' : '')+
     '<div class="cad-lbl" style="margin-top:12px;">Texto do anúncio <button type="button" class="cad-cp" data-copiar="cadDesc">Copiar</button></div><textarea id="cadDesc" class="cad-desc" rows="10">'+cadEsc(d.descricao||'')+'</textarea></div>';
+  // fotos
+  var FT = d.fotos || [];
+  h += '<div class="cad-sec cad-wide"><h3>Fotos com melhor qualidade</h3>'+(FT.length ? '<div class="cad-fotos">'+FT.map(function(ft){
+    return '<figure class="cad-foto"><a href="'+cadEsc(ft.url)+'" target="_blank" rel="noopener noreferrer" title="Abrir a foto em tamanho original"><img src="'+cadEsc(ft.url)+'" alt="" loading="lazy" referrerpolicy="no-referrer"></a>'+
+      '<figcaption><b>'+(ft.w && ft.h ? ft.w+' × '+ft.h+' px' : '')+'</b> '+ref([ft.fonte])+' <span class="note-muted">'+cadEsc(ft.dominio||'')+'</span><a class="cad-cp" href="'+cadEsc(ft.url)+'" target="_blank" rel="noopener noreferrer">Abrir original</a></figcaption></figure>';
+  }).join('')+'</div><div class="note-muted" style="margin-top:6px;">As 3 de maior resolução entre a nossa loja, o fabricante, as páginas encontradas e a busca de imagens. Confira se a foto é da mesma peça e se pode ser usada no anúncio.</div>' : '<p class="note-muted">Nenhuma foto com boa resolução (pelo menos 300 px) foi encontrada para este código.</p>')+'</div>';
   // medidas
   var m = d.medidas, pz = d.peso;
   h += '<div class="cad-sec"><h3>Medidas do produto (C × L × A)</h3>'+
