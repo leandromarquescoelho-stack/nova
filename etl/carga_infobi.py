@@ -40,7 +40,7 @@ ABAS_OBRIG = ('vendas', 'estoque', 'catalogo', 'marcas', 'vendedores')
 # cliente e o nome do vendedor saíram da aba vendas)
 COLS_OPCIONAIS = {'razao', 'cidade', 'tipo_cliente', 'nome_vendedor', 'equipe', 'codigo_loja', 'subcategoria',
                   'prazo', 'grupo_cliente', 'pessoa', 'funcao', 'grupo_peca', 'aplicacao', 'curva_gm', 'cep',
-                  'custo_u', 'clsf', 'origem', 'mva', 'ipi'}
+                  'custo_u', 'clsf', 'origem', 'mva', 'ipi', 'preco_tab'}
 # CEP do cliente (zonas da capital): entra pela aba vendas ou transacionadores mesmo sem estar no mapa do banco
 CIDADE_CAPITAL = {'SP - SAO PAULO', 'SP - SÃO PAULO', 'SP - SP', 'SAO PAULO', 'SÃO PAULO'}
 CEP_NOMES = ('CEP', 'CEP_CLIENTE', 'CEP CLIENTE', 'CEP_CLI', 'NUM_CEP')
@@ -217,6 +217,8 @@ def preparar(dfs, regras):
     # custo unitário (vale mesmo sem saldo) e classificação fiscal (liga o item às alíquotas da aba clsf)
     e['custo_u'] = numero(e['custo_u']).where(lambda x: x > 0) if 'custo_u' in e else None
     e['clsf'] = texto(e['clsf']).str.strip() if 'clsf' in e else None
+    # preço de tabela (coluna TABELA da aba estoque), quando o arquivo traz
+    e['preco_tab'] = numero(e['preco_tab']).where(lambda x: x > 0) if 'preco_tab' in e else None
     for c in ('dt_ult_vend', 'dt_ult_comp'):
         d = datas(e[c]) if c in e else pd.Series(pd.NaT, index=e.index)
         e[c] = d.where(d >= pd.Timestamp('2000-01-01'))
@@ -228,7 +230,7 @@ def preparar(dfs, regras):
     e = e.groupby(['loja', 'sku'], as_index=False).agg(
         est_fis=('est_fis', 'sum'), est_custo=('est_custo', 'sum'), dt_ult_vend=('dt_ult_vend', 'max'),
         dt_ult_comp=('dt_ult_comp', 'max'), parado=('parado', 'any'), linha=('linha', 'first'), descricao=('descricao', 'first'),
-        custo_u=('custo_u', 'max'), clsf=('clsf', 'first'))
+        custo_u=('custo_u', 'max'), clsf=('clsf', 'first'), preco_tab=('preco_tab', 'max'))
 
     # produtos (vendas + estoque): catálogo; linha da venda de maior faturamento, senão a do estoque
     skus = pd.Index(sorted(set(v['sku']) | set(e['sku'])))
@@ -425,17 +427,20 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
                             'dt_ult_comp': e['dt_ult_comp'].dt.strftime('%Y-%m-%d'), 'parado': e['parado'].astype(bool)})
         # colunas novas (custo unitário e classificação fiscal): só quando o banco já tem
         cur.execute("""select array_agg(column_name::text) from information_schema.columns
-                       where table_schema = 'public' and table_name = 'bi_estoque' and column_name in ('custo_u', 'clsf')""")
+                       where table_schema = 'public' and table_name = 'bi_estoque' and column_name in ('custo_u', 'clsf', 'preco_tab')""")
         novas = cur.fetchone()[0] or []
         if 'custo_u' in novas:
             est['custo_u'] = pd.to_numeric(e['custo_u'], errors='coerce').round(4)
         if 'clsf' in novas:
             est['clsf'] = e['clsf']
+        if 'preco_tab' in novas:
+            est['preco_tab'] = pd.to_numeric(e['preco_tab'], errors='coerce').round(4)
         if trocar_estoque:
             copiar(cur, 'bi_estoque', est)
             if novas:
                 log(f'estoque: custo unitário em {int(est["custo_u"].notna().sum()) if "custo_u" in est else 0} itens, '
-                    f'classificação fiscal em {int(est["clsf"].notna().sum()) if "clsf" in est else 0}')
+                    f'classificação fiscal em {int(est["clsf"].notna().sum()) if "clsf" in est else 0}, '
+                    f'preço de tabela em {int(est["preco_tab"].notna().sum()) if "preco_tab" in est else 0}')
         # alíquotas por classificação fiscal (aba clsf), quando o arquivo e o banco têm
         cur.execute("select to_regclass('public.bi_clsf') is not null")
         if trocar_estoque and 'clsf' in dfs and cur.fetchone()[0]:
