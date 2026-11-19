@@ -1208,14 +1208,22 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cc-exp:hover{border-color:#F2C811;}
 .cc-exp:disabled{opacity:.5; cursor:wait;}
 .cc-scroll{overflow:auto; max-height:calc(100vh - 330px); border:1px solid var(--border); border-radius:12px;}
-.cc-tbl{width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px;}
-.cc-tbl th{position:sticky; top:0; z-index:2; background:var(--surface-2); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); font-weight:800; padding:10px 12px; border-bottom:1px solid var(--border-strong); white-space:nowrap; cursor:pointer;}
+.cc-tbl{width:100%; border-collapse:separate; border-spacing:0; font-size:12px;}
+.cc-tbl th{position:sticky; top:0; z-index:2; background:var(--surface-2); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); font-weight:800; padding:9px 9px; border-bottom:1px solid var(--border-strong); white-space:nowrap; cursor:pointer;}
 .cc-tbl th.num{text-align:right;}
-.cc-tbl td{padding:9px 12px; border-bottom:1px solid var(--border); color:var(--text-2); vertical-align:middle;}
+.cc-tbl td{padding:8px 9px; border-bottom:1px solid var(--border); color:var(--text-2); vertical-align:middle;}
 .cc-tbl tr:hover td{background:var(--surface-2);}
 .cc-tbl .num{text-align:right; font-family:'JetBrains Mono',monospace; white-space:nowrap;}
-.cc-item b{display:block; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:12px;}
-.cc-item span{display:block; max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px;}
+.cc-item b{display:block; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:11px;}
+.cc-item span{display:block; max-width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10.5px;}
+.cc-sug-th{color:var(--accent) !important; cursor:help !important;}
+.cc-sug{min-width:112px;}
+.cc-sug-w{display:flex; align-items:center; justify-content:flex-end; gap:4px;}
+.cc-sug-in{width:92px; text-align:right; font:inherit; font-family:'JetBrains Mono',monospace; font-size:12px; padding:4px 6px; border-radius:7px; border:1px dashed var(--border-strong); background:var(--surface-2); color:var(--text);}
+.cc-sug-in:focus{outline:none; border-style:solid; border-color:var(--accent);}
+.cc-sug.ed .cc-sug-in{border-style:solid; border-color:rgba(242,200,17,.6);}
+.cc-sug-rst{border:0; background:none; color:var(--text-muted); cursor:pointer; font-size:13px; padding:0 2px;}
+.cc-mg{display:block; font-size:10.5px; margin-top:3px; font-family:'Manrope',sans-serif;}
 .cc-nosso{color:var(--text); font-weight:800; cursor:help;}
 .cc-tip{position:fixed; z-index:3000; pointer-events:none; min-width:220px; max-width:300px; padding:10px 12px; border-radius:10px; background:var(--surface); border:1px solid var(--border-strong); box-shadow:0 10px 30px rgba(0,0,0,.35); font-size:12.5px; color:var(--text-2); line-height:1.5; display:none;}
 .cc-tip b{color:var(--text); font-family:'JetBrains Mono',monospace;}
@@ -3374,7 +3382,11 @@ function ccMontar(){
   (d.hist||[]).forEach(function(x){ (hist[x[0]+'|'+x[1]] = hist[x[0]+'|'+x[1]] || []).push([String(x[2]).slice(0,10), +x[3]]); });
   CC.hist = hist; CC.dias = +d.dias || 0;
   CC.dados = {quando:quando, itens:(d[cfg.itens]||[]).map(function(x, i){
-    var p = pm[x[0]] || {}, nosso = p[CC_NOSSO] ? p[CC_NOSSO].preco : null, pmv = x[3] ? c2(x[2])/x[3] : null;
+    var p = pm[x[0]] || {}, nosso = p[CC_NOSSO] ? p[CC_NOSSO].preco : null;
+    // Preço MD e custo médio: só as vendas do e-commerce na loja da guia (VTEX ou Peça Chevrolet)
+    var pmv = x.length < 5 ? (x[3] ? c2(x[2])/x[3] : null) : (x[5] ? c2(x[4])/x[5] : null), cmv = x[5] && x[6]!=null ? c2(x[6])/x[5] : null;
+    // impostos e demais deduções em % do faturamento (faturamento − custo − lucro bruto): a margem da sugestão usa a mesma regra do painel
+    var ded = x[4] && x[6]!=null && x[7]!=null ? (c2(x[4]) - c2(x[6]) - c2(x[7]))/c2(x[4]) : null;
     // preço muito longe do que vendemos (ou do nosso site) costuma ser outro produto, kit ou embalagem: fica marcado e fora do resumo
     function longe(a, b){ return a && b ? (a/b > 2.5 || a/b < 0.4) : false; }
     var nossoSusp = longe(nosso, pmv), ref = nosso && !nossoSusp ? nosso : pmv;
@@ -3382,7 +3394,8 @@ function ccMontar(){
     if(nossoSusp) nosso = null;
     var vals = cs.filter(function(c){ return c && !c.susp; }).map(function(c){ return c.preco; }), menor = vals.length ? Math.min.apply(null, vals) : null;
     var pctMenor = nosso && menor ? (nosso/menor - 1)*100 : null;
-    return {rank:i+1, pn:x[0], nome:x[1], fat:c2(x[2]), qtd:+x[3], pmv:pmv, nosso:nosso, nossoV:nosso ? ccVar(CC_NOSSO, x[0], nosso, quando) : null, nossoSusp:nossoSusp, nossoBruto:p[CC_NOSSO] ? p[CC_NOSSO].preco : null, nossoUrl:p[CC_NOSSO] && p[CC_NOSSO].url, cs:cs, menor:menor, pctMenor:pctMenor, n:vals.length};
+    var sug = menor ? Math.round(menor*0.98*100)/100 : null;
+    return {rank:i+1, pn:x[0], nome:x[1], fat:c2(x[2]), qtd:+x[3], pmv:pmv, cmv:cmv, ded:ded, sug:sug, nosso:nosso, nossoV:nosso ? ccVar(CC_NOSSO, x[0], nosso, quando) : null, nossoSusp:nossoSusp, nossoBruto:p[CC_NOSSO] ? p[CC_NOSSO].preco : null, nossoUrl:p[CC_NOSSO] && p[CC_NOSSO].url, cs:cs, menor:menor, pctMenor:pctMenor, n:vals.length};
   })};
 }
 // estoque do item somado em todas as lojas e o maior custo médio entre elas (custo do estoque ÷ peças, só lojas com saldo)
@@ -3445,9 +3458,9 @@ function ccExportar(){
 function ccExportarMontar(L, D, bt){
   function n2(v){ return v==null ? null : Math.round(v*100)/100; }
   function p1(v){ return v==null ? null : Math.round(v*10)/10; }
-  var cab = ['Posição', 'Código', 'Item', 'Fat. 90 dias (R$)', 'Qtd 90 dias', 'Preço médio vendido (R$)', CC_NOSSO_N+' (R$)', 'Estoque total (peças)', 'Maior custo médio (R$)', 'Loja do maior custo'];
+  var cab = ['Posição', 'Código', 'Item', 'Fat. 90 dias (R$)', 'Qtd 90 dias', 'Preço MD (R$)', CC_NOSSO_N+' (R$)', 'Estoque total (peças)', 'Maior custo médio (R$)', 'Loja do maior custo'];
   CC_SITES.forEach(function(s){ cab.push(s.n+' (R$)', 'Dif. vs '+s.n+' (%)', s.n+' link'); });
-  cab.push('Menor concorrente (R$)', 'Dif. vs menor preço (%)', 'Situação', 'Observação');
+  cab.push('Menor concorrente (R$)', 'Dif. vs menor preço (%)', 'Situação', 'Sugestão de preço (R$)', 'Sugestão editada?', 'Custo usado na margem (R$)', 'Margem na sugestão (%)', 'Observação');
   var dados = L.map(function(it){
     var obs = [];
     if(it.nossoSusp) obs.push('Preço '+(CC_FONTE==='pc' ? 'da Nova no Peça Chevrolet' : 'do nosso site')+' ('+ccMoney(it.nossoBruto)+') muito diferente do preço médio vendido: conferir cadastro');
@@ -3460,12 +3473,13 @@ function ccExportarMontar(L, D, bt){
       r.push(n2(c.preco), c.susp ? null : p1(c.pct), c.url || null);
     });
     var sit = it.pctMenor==null ? 'Sem comparação' : (it.pctMenor >= 0.5 ? 'Mais caro' : (it.pctMenor <= -0.5 ? 'Mais barato' : 'Igual'));
-    r.push(n2(it.menor), p1(it.pctMenor), sit, obs.join(' · '));
+    var sv = ccSugValor(it), cu = ccCusto(it);
+    r.push(n2(it.menor), p1(it.pctMenor), sit, n2(sv), CC_SUG[ccSugChave(it.pn)]!=null ? 'Sim' : (sv!=null ? 'Não' : null), cu ? n2(cu.v) : null, sv && cu ? p1(ccMargem(cu, sv)) : null, obs.join(' · '));
     return r;
   });
   var dia = D.quando ? isoDia(new Date(D.quando)) : isoDia(new Date());
   carregarXlsx().catch(function(){ return null; }).then(function(X){
-    var larg = [8, 14, 44, 16, 11, 18, 14, 14, 16, 16]; CC_SITES.forEach(function(){ larg.push(14, 14, 30); }); larg.push(18, 18, 14, 60);
+    var larg = [8, 14, 44, 16, 11, 18, 14, 14, 16, 16]; CC_SITES.forEach(function(){ larg.push(14, 14, 30); }); larg.push(18, 18, 14, 16, 12, 16, 14, 60);
     baixarPlanilha(X, CC_FONTES[CC_FONTE].arq+dia, 'Concorrência', cab, dados, larg);
     toast(L.length+' itens exportados.');
   }).finally(function(){ bt.disabled = false; });
@@ -3541,6 +3555,49 @@ function ccSeta(pct){
   var c = Math.abs(pct) < 0.5 ? 'eq' : (pct > 0 ? 'up' : 'dn');
   return '<span class="cc-d '+c+'">'+(c==='eq' ? '= ' : (c==='up' ? '▲ ' : '▼ '))+(pct>0?'+':'')+pct.toFixed(1).replace('.',',')+'%</span>';
 }
+// sugestão de preço: 2% abaixo do menor concorrente; editável (fica guardada neste navegador); embaixo, a margem nesse preço
+var CC_SUG = (function(){ try{ return JSON.parse(localStorage.getItem('nc_cc_sug')||'{}')||{}; }catch(e){ return {}; } })();
+function ccSugChave(pn){ return CC_FONTE+'|'+pn; }
+function ccSugValor(it){ var e = CC_SUG[ccSugChave(it.pn)]; return e!=null ? e : it.sug; }
+function ccCusto(it){ if(it.cmv) return {v:it.cmv, ded:it.ded||0, de:'custo médio das vendas da loja (90 dias)'}; var e = ccEstoque(it.pn); return e && e.maior ? {v:e.maior, ded:0, de:'maior custo médio do estoque, sem impostos'} : null; }
+// margem bruta no preço v, como no painel (lucro bruto ÷ faturamento): 1 − deduções − custo ÷ preço
+function ccMargem(c, v){ return (1 - c.ded - c.v/v)*100; }
+function ccMargemHtml(it, v){
+  var c = ccCusto(it); if(!v || !c) return '<span class="cc-mg cc-vazio" title="Sem custo para calcular a margem">margem —</span>';
+  var m = ccMargem(c, v), cor = m < 0 ? 'var(--critical)' : (m < 10 ? 'var(--warning, #d9a400)' : 'var(--good)');
+  return '<span class="cc-mg" style="color:'+cor+'" title="Margem bruta vendendo a '+ccMoney(v)+' · '+c.de+': '+ccMoney(c.v)+(c.ded ? ' · impostos e deduções: '+(c.ded*100).toFixed(1).replace('.',',')+'% do preço' : '')+'">margem '+m.toFixed(1).replace('.',',')+'%</span>';
+}
+function ccSugTd(it){
+  var v = ccSugValor(it), ed = CC_SUG[ccSugChave(it.pn)]!=null;
+  if(v==null) return '<td class="num cc-sug"><span class="cc-vazio" title="Sem preço de concorrente para sugerir">—</span></td>';
+  return '<td class="num cc-sug'+(ed?' ed':'')+'" data-pn="'+escapeHtml(it.pn)+'"><div class="cc-sug-w"><input type="text" inputmode="decimal" class="cc-sug-in" value="'+v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})+'" aria-label="Preço sugerido para '+escapeHtml(it.pn)+'">' +
+    (ed ? '<button type="button" class="cc-sug-rst" title="Voltar para a sugestão de 2% abaixo ('+ccMoney(it.sug)+')">↺</button>' : '')+'</div>'+ccMargemHtml(it, v)+'</td>';
+}
+function ccNumBR(t){ t = String(t||'').replace(/[^\d,.-]/g, ''); if(t.indexOf(',')>=0) t = t.replace(/\./g, '').replace(',', '.'); var n = parseFloat(t); return isFinite(n) && n > 0 ? n : null; }
+function ccSugSalvar(){ try{ localStorage.setItem('nc_cc_sug', JSON.stringify(CC_SUG)); }catch(e){} }
+function ccSugLigar(){
+  var tb = document.getElementById('ccTbl'); if(tb.dataset.sug) return; tb.dataset.sug = '1';
+  function item(td){ var pn = td && td.getAttribute('data-pn'); return (CC.linhas||[]).filter(function(x){ return String(x.pn)===pn; })[0]; }
+  tb.addEventListener('input', function(e){
+    if(!e.target.classList.contains('cc-sug-in')) return;
+    var td = e.target.closest('td'), it = item(td); if(!it) return;
+    var mg = td.querySelector('.cc-mg'), v = ccNumBR(e.target.value);
+    if(mg) mg.outerHTML = ccMargemHtml(it, v);
+  });
+  tb.addEventListener('change', function(e){
+    if(!e.target.classList.contains('cc-sug-in')) return;
+    var td = e.target.closest('td'), it = item(td); if(!it) return;
+    var v = ccNumBR(e.target.value), k = ccSugChave(it.pn);
+    if(v==null || Math.abs(v - (it.sug||0)) < 0.005) delete CC_SUG[k]; else CC_SUG[k] = Math.round(v*100)/100;
+    ccSugSalvar(); td.outerHTML = ccSugTd(it);
+  });
+  tb.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.classList.contains('cc-sug-in')) e.target.blur(); });
+  tb.addEventListener('click', function(e){
+    var b = e.target.closest('.cc-sug-rst'); if(!b) return;
+    var td = b.closest('td'), it = item(td); if(!it) return;
+    delete CC_SUG[ccSugChave(it.pn)]; ccSugSalvar(); td.outerHTML = ccSugTd(it);
+  });
+}
 function ccMoney(v){ return v==null ? '—' : 'R$ '+v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function ccTabela(){
   var D = CC.dados; if(!D) return;
@@ -3573,8 +3630,8 @@ function ccTabela(){
     return (va-vb)*sg || a.rank-b.rank;
   });
   function th(t, k, num){ return '<th'+(num?' class="num"':'')+(k?' data-o="'+k+'"':'')+'>'+t+(k && CC.ordem===k ? (CC.desc?' ▾':' ▴') : '')+'</th>'; }
-  document.getElementById('ccTbl').innerHTML = '<thead><tr>'+th('#','rank')+th('Item')+th('Fat. 90 dias','fat',1)+th('Preço médio vendido','pmv',1)+th(CC_NOSSO_N,'nosso',1) +
-    CC_SITES.map(function(s){ return th(s.n, '', 1); }).join('') + th('vs menor preço','pct',1)+'</tr></thead><tbody>' +
+  document.getElementById('ccTbl').innerHTML = '<thead><tr>'+th('#','rank')+th('Item')+th('Fat. 90 dias','fat',1)+th('Preço MD','pmv',1)+th(CC_NOSSO_N,'nosso',1) +
+    CC_SITES.map(function(s){ return th(s.n, '', 1); }).join('') + th('vs menor preço','pct',1)+'<th class="num cc-sug-th" title="Nosso preço 2% abaixo do menor concorrente. Clique no valor para editar; embaixo, a margem vendendo nesse preço.">Sugestão −2%</th></tr></thead><tbody>' +
     linhas.map(function(it){
       return '<tr><td class="num">'+it.rank+'</td><td class="cc-item"><b>'+escapeHtml(it.pn)+'</b><span title="'+escapeHtml(it.nome||'')+'">'+escapeHtml(String(it.nome||'').replace(/^\S+\s*-\s*/, ''))+'</span></td>' +
         '<td class="num">'+fmtCurto(it.fat)+'</td><td class="num">'+ccMoney(it.pmv)+'</td>' +
@@ -3584,9 +3641,9 @@ function ccTabela(){
           if(c.susp) return '<td class="num"><div class="cc-c"><a href="'+escapeHtml(c.url||'#')+'" target="_blank" rel="noopener" class="cc-vazio" title="'+escapeHtml((c.titulo||'')+' · diferença grande demais: pode ser outro produto, kit ou embalagem. Confira no link.')+'">⚠ '+ccMoney(c.preco)+'</a></div></td>';
           return '<td class="num"><div class="cc-c"><a href="'+escapeHtml(c.url||'#')+'" target="_blank" rel="noopener" title="'+escapeHtml((c.titulo||'')+(c.conf==='nome'?' (pareado pelo nome)':''))+'">'+ccMoney(c.preco)+(c.conf==='nome'?'*':'')+'</a>'+ccSeta(c.pct)+ccVarHtml(c.v, (CC_SITES.filter(function(s){ return s.k===c.site; })[0]||{}).n || c.site)+'</div></td>';
         }).join('') +
-        '<td class="num">'+(it.pctMenor==null ? '<span class="cc-vazio">—</span>' : ccSeta(it.pctMenor))+'</td></tr>';
+        '<td class="num">'+(it.pctMenor==null ? '<span class="cc-vazio">—</span>' : ccSeta(it.pctMenor))+'</td>' + ccSugTd(it) + '</tr>';
     }).join('') + '</tbody>';
-  ccAltura();
+  ccAltura(); ccSugLigar();
   document.getElementById('ccSub').textContent = CC_FONTES[CC_FONTE].sub + (D.quando ? ' · preços coletados em '+new Date(D.quando).toLocaleDateString('pt-BR') : ' · aguardando a primeira coleta');
   document.getElementById('ccNota').textContent = CC_FONTE==='pc' ? 'Preço ao consumidor de cada concessionária no site Peça Chevrolet (sem frete), coletado todo dia às 7h pelo código da peça. Quando a rede tem mais de uma loja no site, vale a menor oferta com estoque. "7d" mostra quanto o preço mudou em 7 dias. ⚠ preço muito diferente do que vendemos (mais de 2,5 vezes ou menos de 40%): provavelmente outro produto; fica fora do resumo. A seta compara o preço da Nova com o de cada concorrente: vermelho ▲ = estamos mais caros; verde ▼ = estamos mais baratos.' : 'Preços de venda exibidos nos sites (sem desconto de Pix ou boleto e sem frete), coletados todo dia às 7h pelo código da peça. "7d" mostra quanto o preço mudou em 7 dias (passe o mouse para ver as últimas mudanças). * pareado pelo nome, confira no link. ⚠ preço muito diferente (mais de 2,5 vezes ou menos de 40%): provavelmente outro produto, kit ou embalagem; fica fora do resumo. Vigorito não entra: o site bloqueia leitura automática. A seta compara o nosso preço com o de cada concorrente: vermelho ▲ = estamos mais caros; verde ▼ = estamos mais baratos.';
 }
