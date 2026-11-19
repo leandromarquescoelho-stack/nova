@@ -30,6 +30,18 @@ def forma(x, n=0):
 def p(*a):
     print(*a, flush=True)
 
+# CORS da busca VTEX para o navegador (o site no GitHub Pages pede direto à loja)
+for u in ('https://loja.chevroletnova.com.br/api/catalog_system/pub/products/search?ft=94767674',
+          'https://loja.chevroletnova.com.br/api/io/_v/api/intelligent-search/product_search/?query=94767674'):
+    try:
+        req = urllib.request.Request(u, headers={'User-Agent': UA, 'Origin': 'https://leandromarquescoelho-stack.github.io'})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            print('CORS', u.split('/api/')[1][:30], r.status, 'ACAO=', r.headers.get('Access-Control-Allow-Origin'), flush=True)
+    except Exception as e:
+        print('CORS erro', getattr(e, 'code', 0), flush=True)
+if os.environ.get('SO_CORS', '1') == '1':
+    sys.exit(0)
+
 
 for pn in PNS:
     p('=' * 30, 'PN', pn[:3] + '…')
