@@ -1223,6 +1223,52 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cc-add input:focus{outline:none; border-color:var(--accent);}
 .cc-add button{height:32px; padding:0 11px; border-radius:0 8px 8px 0; border:1px solid var(--accent); background:transparent; color:var(--accent); font:inherit; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;}
 .cc-add button:hover{background:var(--accent); color:#06121a;}
+.ec-guias{margin-bottom:12px;}
+.cc-guias{display:flex; gap:6px; margin-bottom:12px;}
+.cc-guias button{font:inherit; font-size:12px; font-weight:700; padding:6px 14px; border-radius:999px; border:1px solid var(--border-strong); background:transparent; color:var(--text-muted); cursor:pointer;}
+.cc-guias button.on{background:var(--surface-2); color:var(--text); border-color:var(--accent);}
+.cad-form{display:flex; gap:0; margin:4px 0 16px;}
+.cad-form input{width:260px; height:38px; box-sizing:border-box; padding:0 12px; border-radius:10px 0 0 10px; border:1px solid var(--border-strong); border-right:0; background:var(--surface-2); color:var(--text); font:inherit; font-size:14px;}
+.cad-form input:focus{outline:none; border-color:var(--accent);}
+.cad-form button{height:38px; padding:0 18px; border-radius:0 10px 10px 0; border:1px solid transparent; background:var(--pbi-grad); color:var(--pbi-ink); font:inherit; font-size:13px; font-weight:800; cursor:pointer; white-space:nowrap;}
+.cad-form button:disabled{opacity:.6; cursor:wait;}
+.cad-wait{display:flex; gap:12px; align-items:flex-start; padding:14px; border:1px dashed var(--border-strong); border-radius:12px;}
+.cad-spin{width:18px; height:18px; flex:0 0 18px; border-radius:50%; border:2px solid var(--border-strong); border-top-color:var(--accent); animation:cadGira 1s linear infinite;}
+@keyframes cadGira{to{transform:rotate(360deg);}}
+.cad-top{display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:12px;}
+.cad-top-r{display:flex; gap:10px; align-items:center;}
+.cad-top-r .cc-exp{height:34px; padding:0 14px;}
+.cad-pn{font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:800;}
+.cad-grid{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; margin-bottom:14px;}
+.cad-wide{grid-column:1 / -1;}
+.cad-sec{border:1px solid var(--border); border-radius:12px; padding:14px; background:var(--surface-2); min-width:0;}
+.cad-sec h3{margin:0 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted);}
+.cad-tit{display:flex; align-items:center; gap:10px; font-size:17px; font-weight:800; flex-wrap:wrap;}
+.cad-n{font-size:11px; font-weight:700; color:var(--text-muted); font-family:'JetBrains Mono',monospace;}
+.cad-n-x{color:#ef4444;}
+.cad-cp{font:inherit; font-size:11px; font-weight:700; padding:3px 9px; border-radius:7px; border:1px solid var(--border-strong); background:transparent; color:var(--text-muted); cursor:pointer;}
+.cad-cp:hover{color:var(--accent); border-color:var(--accent);}
+.cad-lbl{font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin:12px 0 6px; display:flex; gap:8px; align-items:center;}
+.cad-alt{display:flex; gap:8px; align-items:center; padding:4px 0; font-size:13px; flex-wrap:wrap;}
+.cad-ref{display:inline-block; min-width:16px; padding:0 4px; margin-left:2px; border-radius:5px; font-size:10px; font-weight:800; text-align:center; text-decoration:none; color:var(--accent); border:1px solid var(--accent); line-height:15px;}
+.cad-desc{width:100%; box-sizing:border-box; resize:vertical; font:inherit; font-size:13px; line-height:1.5; padding:10px 12px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text);}
+.cad-med{font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace;}
+.cad-med small{font-size:14px; color:var(--text-muted);}
+.cad-veics{display:flex; flex-wrap:wrap; gap:6px;}
+.cad-veic{display:inline-flex; gap:6px; align-items:center; padding:4px 8px; border-radius:8px; border:1px solid var(--border-strong); font-size:12px;}
+.cad-veic-f{border-color:var(--accent);}
+.cad-veic i{font-style:normal; font-size:10px; font-weight:800; color:var(--text-muted);}
+.cad-apt{font-size:13px; padding:3px 0;}
+.cad-fontes{margin:0; padding-left:22px; display:flex; flex-direction:column; gap:6px; font-size:13px;}
+.cad-fontes a{color:var(--text);}
+.cad-tipo{display:inline-block; padding:1px 7px; border-radius:6px; font-size:10px; font-weight:800; text-transform:uppercase; background:var(--surface); border:1px solid var(--border-strong); color:var(--text-muted);}
+.cad-t-mercadolivre{border-color:#f5d000; color:#d4b400;}
+.cad-t-fabricante{border-color:var(--accent); color:var(--accent);}
+.cad-rec{display:flex; flex-wrap:wrap; gap:8px;}
+.cad-rec button{display:flex; flex-direction:column; align-items:flex-start; gap:2px; max-width:280px; padding:8px 12px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); font:inherit; cursor:pointer; text-align:left;}
+.cad-rec button span{font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:256px;}
+.cad-rec button:hover{border-color:var(--accent);}
+@media (max-width:900px){ .cad-grid{grid-template-columns:1fr;} .cad-form input{width:100%;} .cad-form{width:100%;} }
 .cc-ctl .fsel, .cc-busca, .cc-exp, .cc-add input, .cc-add button{height:34px; box-sizing:border-box; padding-top:0; padding-bottom:0;}
 .cc-item span{display:block; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px;}
 .cc-sug-th{color:var(--accent) !important; cursor:help !important;}
@@ -1738,7 +1784,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <span class="ico">&#128161;</span><span class="label">Insights</span><span class="tip">Insights</span>
       </div>
       <div class="nav-item" data-view="concorrencia">
-        <span class="ico">&#127991;&#65039;</span><span class="label">Concorrência</span><span class="tip">Concorrência</span>
+        <span class="ico">&#127991;&#65039;</span><span class="label">E-commerce</span><span class="tip">E-commerce</span>
       </div>
       <div class="nav-item" data-view="planejamento">
         <span class="ico">&#127919;</span><span class="label">Planejamento</span><span class="tip">Planejamento</span>
@@ -2447,7 +2493,9 @@ table.data-table.vp-tbl{min-width:720px;}
 
       <!-- ============ CONCORRÊNCIA ============ -->
       <section class="view-panel" data-view-panel="concorrencia" style="display:none;">
-        <div class="pl-guias cc-guias" id="ccGuias" role="tablist"><button type="button" class="on" data-f="vtex" role="tab" aria-selected="true">VTEX</button><button type="button" data-f="pc" role="tab" aria-selected="false">Peça Chevrolet</button></div>
+        <div class="pl-guias ec-guias" id="ecGuias" role="tablist"><button type="button" class="on" data-ec="conc" role="tab" aria-selected="true">Concorrência</button><button type="button" data-ec="cad" role="tab" aria-selected="false">Sugestão Cadastro</button></div>
+        <div id="ecConc">
+        <div class="cc-guias" id="ccGuias" role="tablist"><button type="button" class="on" data-f="vtex" role="tab" aria-selected="true">VTEX</button><button type="button" data-f="pc" role="tab" aria-selected="false">Peça Chevrolet</button></div>
         <div class="cc-kpis" id="ccKpis"></div>
         <div class="panel">
           <div class="panel-head">
@@ -2480,6 +2528,16 @@ table.data-table.vp-tbl{min-width:720px;}
             </div>
           </div>
           <div class="cc-scroll" id="ccHistScroll" style="max-height:340px;"><table class="cc-tbl" id="ccHistTbl"></table></div>
+        </div>
+        </div>
+        <div id="ecCad" hidden>
+          <div class="panel">
+            <div class="panel-head">
+              <div><h2>Sugestão de cadastro</h2><div class="psub">Digite o código e pesquise: o painel procura no Mercado Livre, na busca da web, no site do fabricante e nos catálogos públicos, e monta a sugestão de anúncio com as fontes</div></div>
+            </div>
+            <form class="cad-form" id="cadForm"><input type="text" id="cadPn" placeholder="Código do produto" maxlength="40" autocomplete="off" aria-label="Código do produto"><button type="submit" id="cadBtn">Pesquisar informações</button></form>
+            <div id="cadRes"></div>
+          </div>
         </div>
       </section>
 
@@ -3402,6 +3460,8 @@ function renderConcorrencia(){
     document.getElementById('ccCustoSel').addEventListener('change', function(e){ CC_CUSTO = e.target.value; try{ localStorage.setItem('nc_cc_custo', CC_CUSTO); }catch(er){} ccTabela(); });
     document.getElementById('ccBusca').addEventListener('input', ccTabela);
     document.getElementById('ccExportar').addEventListener('click', ccExportar);
+    document.getElementById('ecGuias').addEventListener('click', function(e){ var b = e.target.closest('button[data-ec]'); if(b) ecAba(b.getAttribute('data-ec')); });
+    cadLigar();
     document.getElementById('ccGuias').addEventListener('click', function(e){ var b = e.target.closest('button[data-f]'); if(b && b.getAttribute('data-f')!==CC_FONTE) ccFonte(b.getAttribute('data-f')); });
     var tbl = document.getElementById('ccTbl');
     tbl.addEventListener('mouseover', function(e){ var td = e.target.closest('td.cc-nosso'); if(td) ccTipMostrar(td); });
@@ -3452,6 +3512,121 @@ function renderConcorrencia(){
     ccTabela(); ccHistorico();
     carregarProdutos().catch(function(){});   // estoque para o tooltip do nosso preço
   });
+}
+// ===== E-commerce: guias Concorrência / Sugestão Cadastro =====
+var EC_ABA = 'conc';
+function ecAba(a){
+  EC_ABA = a;
+  document.querySelectorAll('#ecGuias button').forEach(function(b){ var on = b.getAttribute('data-ec')===a; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  document.getElementById('ecConc').hidden = a!=='conc';
+  document.getElementById('ecCad').hidden = a!=='cad';
+  if(a==='conc'){ ccAltura(); } else { cadRecentes(); var i = document.getElementById('cadPn'); if(i && !i.value) i.focus(); }
+}
+// ===== Sugestão de cadastro: pesquisa em fontes públicas (workflow no GitHub, sem IA) =====
+var CAD = {pn:null, timer:null, ini:0};
+function cadEsc(t){ return String(t==null ? '' : t).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function cadNum(x){ return String(Math.round(x*10)/10).replace('.', ','); }
+var CAD_TIPOS = {mercadolivre:'Mercado Livre', web:'Busca web', fabricante:'Fabricante', loja:'Nossa loja', interno:'Cadastro interno'};
+var CAD_USOS = {descricao:'descrição', medidas:'medidas', aplicacao:'aplicação'};
+function cadLigar(){
+  document.getElementById('cadForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var pn = String(document.getElementById('cadPn').value||'').trim().toUpperCase().replace(/\s+/g, ' ');
+    if(!pn) return;
+    if(!/^[A-Z0-9][A-Z0-9 .\/_-]*$/.test(pn) || pn.length > 40){ toast('Código inválido.'); return; }
+    cadPedir(pn);
+  });
+  document.getElementById('cadRes').addEventListener('click', function(e){
+    var c = e.target.closest('[data-copiar]');
+    if(c){
+      var alvo = document.getElementById(c.getAttribute('data-copiar')), txt = alvo ? (alvo.value!=null && alvo.tagName==='TEXTAREA' ? alvo.value : alvo.textContent) : '';
+      (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function(){ toast('Copiado.'); }, function(){ toast('Não foi possível copiar.'); });
+      return;
+    }
+    var r = e.target.closest('[data-cad-pn]'); if(r){ document.getElementById('cadPn').value = r.getAttribute('data-cad-pn'); cadAbrir(r.getAttribute('data-cad-pn')); return; }
+    if(e.target.closest('.cad-refazer') && CAD.pn) cadPedir(CAD.pn);
+  });
+}
+function cadBtn(ocupado){ var b = document.getElementById('cadBtn'); b.disabled = ocupado; b.textContent = ocupado ? 'Pesquisando…' : 'Pesquisar informações'; }
+function cadAguardando(pn, txt){
+  document.getElementById('cadRes').innerHTML = '<div class="cad-wait"><span class="cad-spin"></span><div><b>'+cadEsc(pn)+'</b>: '+cadEsc(txt)+'<div class="note-muted">A pesquisa consulta o Mercado Livre, a busca na web, o site do fabricante e os catálogos, e costuma levar de 1 a 2 minutos. Pode trocar de tela: o resultado fica salvo.</div></div></div>';
+}
+function cadPedir(pn){
+  CAD.pn = pn; clearTimeout(CAD.timer); cadBtn(true); cadAguardando(pn, 'iniciando a pesquisa…');
+  window.__NC_rpc('bi_cadastro_pedir', {p_pn:pn}).then(function(r){
+    if(r && r.disparado===false && !r.andamento){ cadBtn(false); document.getElementById('cadRes').innerHTML = '<p class="note-muted">A pesquisa não pôde ser iniciada (o disparo automático não está configurado). Avise o perfil BI.</p>'; return; }
+    CAD.ini = Date.now(); cadAguardando(pn, 'pesquisando nas fontes…'); CAD.timer = setTimeout(function(){ cadVerificar(pn); }, 20000);
+  }).catch(function(er){
+    cadBtn(false);
+    var m = String(er && (er.message||er));
+    document.getElementById('cadRes').innerHTML = '<p class="note-muted">'+cadEsc(/schema cache|does not exist|Could not find/i.test(m) ? 'O banco ainda não tem a função da sugestão de cadastro (falta rodar o SQL).' : 'Não foi possível pesquisar: '+m.slice(0,140))+'</p>';
+  });
+}
+function cadVerificar(pn){
+  if(CAD.pn!==pn) return;
+  supa.rpc('bi_cadastro_ler', {p_pn:pn}).then(function(r){
+    if(CAD.pn!==pn) return;
+    var d = r && r.data;
+    if(d && d.status==='ok'){ cadBtn(false); cadMostrar(d); cadRecentes(); return; }
+    if(d && d.status==='erro'){ cadBtn(false); document.getElementById('cadRes').innerHTML = '<p class="note-muted">A pesquisa de '+cadEsc(pn)+' falhou. <button type="button" class="pl-editar cad-refazer">Tentar de novo</button></p>'; return; }
+    if(Date.now() - CAD.ini > 6*60000){ cadBtn(false); document.getElementById('cadRes').innerHTML = '<p class="note-muted">A pesquisa de '+cadEsc(pn)+' está demorando mais que o normal. <button type="button" class="pl-editar cad-refazer">Pesquisar de novo</button></p>'; return; }
+    cadAguardando(pn, d && d.status==='pesquisando' ? 'lendo as páginas encontradas…' : 'na fila para pesquisar…');
+    CAD.timer = setTimeout(function(){ cadVerificar(pn); }, 8000);
+  });
+}
+function cadAbrir(pn){
+  CAD.pn = pn; clearTimeout(CAD.timer);
+  supa.rpc('bi_cadastro_ler', {p_pn:pn}).then(function(r){
+    var d = r && r.data;
+    if(d && d.status==='ok') cadMostrar(d);
+    else if(d && (d.status==='pendente' || d.status==='pesquisando')){ cadBtn(true); CAD.ini = Date.parse(d.pedido_em) || Date.now(); cadVerificar(pn); }
+    else cadPedir(pn);
+  });
+}
+function cadRecentes(){
+  if(CAD.pn) return;
+  supa.rpc('bi_cadastro_recentes').then(function(r){
+    if(CAD.pn || r.error || !r.data || !r.data.length) return;
+    document.getElementById('cadRes').innerHTML = '<div class="cad-sec"><h3>Pesquisas recentes</h3><div class="cad-rec">'+r.data.map(function(x){
+      return '<button type="button" data-cad-pn="'+cadEsc(x.pn)+'"><b>'+cadEsc(x.pn)+'</b><span>'+cadEsc(x.titulo || (x.status==='ok' ? '' : 'pesquisando…'))+'</span></button>';
+    }).join('')+'</div></div>';
+  });
+}
+function cadMostrar(row){
+  var d = row.dados || {}, F = d.fontes || [], cat = d.catalogo || {};
+  function ref(ix){ return (ix||[]).filter(function(i){ return F[i]; }).map(function(i){ return '<a href="#cadF'+i+'" class="cad-ref" title="'+cadEsc(F[i].titulo)+'">'+(i+1)+'</a>'; }).join(''); }
+  var quando = row.atualizado_em ? new Date(row.atualizado_em).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'}) : '';
+  var h = '<div class="cad-top"><div><div class="cad-pn">'+cadEsc(d.pn||row.pn)+'</div><div class="note-muted">'+cadEsc([cat.nome, d.marca, cat.categoria].filter(Boolean).join(' · '))+'</div></div>'+
+    '<div class="cad-top-r"><span class="note-muted">Pesquisado em '+cadEsc(quando)+'</span><button type="button" class="cc-exp cad-refazer">&#8635; Pesquisar de novo</button></div></div>';
+  // título e descrição
+  var tit = d.titulo || '';
+  h += '<div class="cad-grid"><div class="cad-sec cad-wide"><h3>Melhor descrição para anúncio</h3>'+
+    (tit ? '<div class="cad-tit"><span id="cadTit">'+cadEsc(tit)+'</span><span class="cad-n'+(tit.length>60?' cad-n-x':'')+'">'+tit.length+'/60</span><button type="button" class="cad-cp" data-copiar="cadTit">Copiar</button></div>' : '<p class="note-muted">Nenhum título encontrado nas fontes.</p>')+
+    ((d.alternativas||[]).length ? '<div class="cad-alts"><div class="cad-lbl">Outras opções vistas nas fontes</div>'+d.alternativas.map(function(a, k){ return '<div class="cad-alt"><span id="cadAlt'+k+'">'+cadEsc(a.texto)+'</span>'+ref([a.fonte])+'<button type="button" class="cad-cp" data-copiar="cadAlt'+k+'">Copiar</button></div>'; }).join('')+'</div>' : '')+
+    '<div class="cad-lbl" style="margin-top:12px;">Texto do anúncio <button type="button" class="cad-cp" data-copiar="cadDesc">Copiar</button></div><textarea id="cadDesc" class="cad-desc" rows="10">'+cadEsc(d.descricao||'')+'</textarea></div>';
+  // medidas
+  var m = d.medidas, pz = d.peso;
+  h += '<div class="cad-sec"><h3>Medidas do produto (C × L × A)</h3>'+
+    (m ? '<div class="cad-med">'+cadNum(m.c)+' × '+cadNum(m.l)+' × '+cadNum(m.a)+' <small>cm</small></div><div class="note-muted">'+(m.tipo==='embalagem' ? 'Medidas da embalagem' : 'Comprimento × Largura × Altura')+' · fonte '+ref(m.fontes)+'</div>'+
+      ((m.outras||[]).length ? '<div class="cad-lbl" style="margin-top:10px;">Outras medidas encontradas</div>'+m.outras.map(function(o){ return '<div class="note-muted">'+cadNum(o.c)+' × '+cadNum(o.l)+' × '+cadNum(o.a)+' cm'+(o.tipo==='embalagem'?' (embalagem)':'')+'</div>'; }).join('') : '')
+      : '<p class="note-muted">Nenhuma fonte publicou as medidas deste código. Confira na embalagem ou no site do fabricante.</p>')+
+    (pz ? '<div class="cad-lbl" style="margin-top:12px;">Peso</div><div><b>'+cadNum(pz.kg)+' kg</b> '+ref(pz.fontes)+'</div>' : '')+'</div>';
+  // aplicação
+  var ap = d.aplicacao || {}, vs = ap.veiculos || [];
+  h += '<div class="cad-sec"><h3>Aplicação do produto</h3>'+
+    (vs.length ? '<div class="cad-veics">'+vs.map(function(v){ return '<span class="cad-veic'+(v.fontes>1?' cad-veic-f':'')+'" title="Citado em '+v.fontes+' fonte(s)"><b>'+cadEsc(v.modelo)+'</b>'+(v.anos.length?' '+cadEsc(v.anos.join(', ')):'')+'<i>'+v.fontes+'</i></span>'; }).join('')+'</div><div class="note-muted" style="margin-top:6px;">O número em cada veículo é quantas fontes o citam; os mais citados vêm primeiro.</div>' : '')+
+    ((ap.textos||[]).length ? '<div class="cad-lbl" style="margin-top:10px;">Como as fontes descrevem</div>'+ap.textos.map(function(t){ return '<div class="cad-apt">'+cadEsc(t.texto)+' '+ref([t.fonte])+'</div>'; }).join('') : '')+
+    (!vs.length && !(ap.textos||[]).length ? '<p class="note-muted">Nenhuma fonte informou a aplicação deste código.</p>' : '')+'</div></div>';
+  // fontes
+  var L = d.links || {};
+  h += '<div class="cad-sec"><h3>Fontes das informações</h3><ol class="cad-fontes">'+F.map(function(f, i){
+    return '<li id="cadF'+i+'"><span class="cad-tipo cad-t-'+cadEsc(f.tipo)+'">'+cadEsc(CAD_TIPOS[f.tipo]||f.tipo)+'</span> '+
+      (f.url ? '<a href="'+cadEsc(f.url)+'" target="_blank" rel="noopener noreferrer">'+cadEsc(f.titulo)+'</a>' : cadEsc(f.titulo))+
+      (f.usado && f.usado.length ? ' <span class="note-muted">· usado em '+f.usado.map(function(u){ return CAD_USOS[u]||u; }).join(', ')+'</span>' : '')+'</li>';
+  }).join('')+'</ol>'+
+    '<p class="note-muted">Busca na web feita pelo DuckDuckGo, porque o Google não responde a pesquisas automáticas. Os anúncios do Mercado Livre entram pelo título, porque o site pede login para robôs. '+
+    (L.google ? '<a href="'+cadEsc(L.google)+'" target="_blank" rel="noopener noreferrer">Abrir no Google</a> · ' : '')+(L.mercadolivre ? '<a href="'+cadEsc(L.mercadolivre)+'" target="_blank" rel="noopener noreferrer">Abrir no Mercado Livre</a>' : '')+'</p></div>';
+  document.getElementById('cadRes').innerHTML = h;
 }
 // relê os dados da concorrência sem limpar a tela (depois de adicionar ou tirar um produto manual)
 function ccRecarregar(){
@@ -8937,7 +9112,7 @@ function bindEvents(){
     clientes:{title:'Clientes', sub:'Carteira, termômetro de compras, clientes disponíveis (60 dias sem compra) e cidades'},
     diasuteis:{title:'Dias úteis', sub:'Calendário de dias úteis por loja, feriados e venda por tipo de dia'},
     insights:{title:'Insights', sub:'Oportunidades para aumentar faturamento e margem'},
-    concorrencia:{title:'Concorrência', sub:'Comparativo de preços do top 100 do e-commerce com os sites concorrentes'},
+    concorrencia:{title:'E-commerce', sub:'Concorrência de preços (VTEX e Peça Chevrolet) e sugestão de cadastro de produtos'},
     planejamento:{title:'Planejamento', sub:'Projeções e objetivos de vendas por ano, em formato de apresentação'},
     usuarios:{title:'Usuários', sub:'Gestão de acessos ao painel (somente BI)'},
     fontes:{title:'Configurações', sub:'Links das planilhas e origem dos dados da carga (somente BI)'}
@@ -9538,7 +9713,7 @@ var ABAS = [
   {k:'dashboard', t:'Dashboard'}, {k:'vendas', t:'Vendas'}, {k:'estoque', t:'Estoque'},
   {k:'vendedores', t:'Vendedores'}, {k:'clientes', t:'Clientes'}, {k:'diasuteis', t:'Dias úteis'}, {k:'insights', t:'Insights'},
   // restritas: só aparecem para quem as tiver marcadas no cadastro (o "todas as guias" antigo não as inclui)
-  {k:'concorrencia', t:'Concorrência', restrita:true}, {k:'planejamento', t:'Planejamento', restrita:true}
+  {k:'concorrencia', t:'E-commerce', restrita:true}, {k:'planejamento', t:'Planejamento', restrita:true}
 ];
 var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
 var ABAS_PADRAO = ABAS.filter(function(a){ return !a.restrita; }).map(function(a){ return a.k; });
