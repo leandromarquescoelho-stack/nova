@@ -1231,8 +1231,8 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .cc-sug-in:focus{outline:none; border-style:solid; border-color:var(--accent);}
 .cc-sug.ed .cc-sug-in{border-style:solid; border-color:rgba(242,200,17,.6);}
 .cc-sug-rst{border:0; background:none; color:var(--text-muted); cursor:pointer; font-size:13px; padding:0 2px;}
-.cc-pct-w{display:inline-flex; align-items:center; gap:1px; margin-left:4px; text-transform:none;}
-.cc-pct-in{width:34px; text-align:center; font:inherit; font-family:'JetBrains Mono',monospace; font-size:11px; padding:2px 3px; border-radius:6px; border:1px dashed var(--accent); background:var(--surface); color:var(--accent);}
+.cc-pct-w{display:inline-flex; align-items:center; gap:2px; margin-left:4px; text-transform:none;}
+.cc-pct-in{width:40px; text-align:center; font:inherit; font-family:'JetBrains Mono',monospace; font-size:11px; padding:2px 3px; border-radius:6px; border:1px dashed var(--accent); background:var(--surface); color:var(--accent);}
 .cc-pct-in:focus{outline:none; border-style:solid;}
 .cc-pct-sinal{min-width:16px; padding:0 3px; font:inherit; font-weight:700; font-size:12px; line-height:16px; border-radius:5px; border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer;}
 .cc-pct-sinal:hover{background:var(--accent); color:var(--surface);}
@@ -3650,6 +3650,7 @@ function ccSeta(pct){
 }
 // sugestão de preço: 2% abaixo do menor concorrente; editável (fica guardada neste navegador); embaixo, a margem nesse preço
 var CC_PCT = (function(){ try{ var v = parseFloat(localStorage.getItem('nc_cc_pct')); return isFinite(v) && v > -90 && v < 90 ? v : 2; }catch(e){ return 2; } })();
+function ccPctCampo(){ return String(-CC_PCT || 0).replace('.',','); }
 function ccPctTxt(){ return String(Math.abs(CC_PCT)).replace('.',',')+'% '+(CC_PCT < 0 ? 'acima' : 'abaixo'); }
 function ccSugBase(it){ return it.menor ? Math.round(it.menor*(1 - CC_PCT/100)*100)/100 : null; }
 var CC_SUG = (function(){ try{ return JSON.parse(localStorage.getItem('nc_cc_sug')||'{}')||{}; }catch(e){ return {}; } })();
@@ -3734,25 +3735,28 @@ function ccSugLigar(){
   });
   // percentual abaixo do menor concorrente (vale para todos os itens sem valor editado)
   // percentual e sinal valem para todos os itens: ao mudar, as sugestões editadas à mão voltam para a regra
-  function ccPctAplicar(trocaSinal){
-    var inp = document.getElementById('ccPct'), v = parseFloat(String(inp ? inp.value : '').replace(',', '.'));
-    if(!isFinite(v) || v < 0 || v >= 90) v = Math.abs(CC_PCT);
-    var novo = (CC_PCT < 0 ? -1 : 1)*(trocaSinal ? -1 : 1)*Math.round(v*100)/100;
-    if(novo===CC_PCT && !trocaSinal){ if(inp) inp.value = String(Math.abs(CC_PCT)).replace('.',','); return; }
+  // o campo mostra o preço em relação ao menor concorrente (positivo = acima, negativo = abaixo); − e + mudam 1 ponto
+  function ccPctAplicar(passo){
+    var inp = document.getElementById('ccPct'), v = parseFloat(String(inp ? inp.value : '').replace(',', '.').replace('−','-'));
+    if(!isFinite(v) || v <= -90 || v >= 90) v = -CC_PCT;
+    if(passo) v = Math.round((v + passo)*100)/100;
+    v = Math.max(-89, Math.min(89, v));
+    var novo = -Math.round(v*100)/100 || 0;
+    if(novo===CC_PCT){ if(inp) inp.value = ccPctCampo(); return; }
     CC_PCT = novo; try{ localStorage.setItem('nc_cc_pct', String(CC_PCT)); }catch(er){}
     Object.keys(CC_SUG).forEach(function(k){ if(k.indexOf(CC_FONTE+'|')===0) delete CC_SUG[k]; }); ccSugSalvar();
     ccTabela();
   }
-  tb.addEventListener('change', function(e){ if(e.target.id==='ccPct') ccPctAplicar(false); });
+  tb.addEventListener('change', function(e){ if(e.target.id==='ccPct') ccPctAplicar(0); });
   // o sinal age no pressionar (antes de o campo do percentual perder o foco e redesenhar a tabela)
-  tb.addEventListener('mousedown', function(e){ if(e.target.id==='ccPctSinal'){ e.preventDefault(); ccPctAplicar(true); } });
+  tb.addEventListener('mousedown', function(e){ var b = e.target.closest('.cc-pct-sinal'); if(b){ e.preventDefault(); ccPctAplicar(+b.dataset.passo); } });
   tb.addEventListener('focusin', function(e){
     if(e.target.classList.contains('cc-sug-in') || e.target.id==='ccPct') e.target.select();
     // a linha em edição fica sempre no meio da tela
     if(e.target.classList.contains('cc-sug-in')){ var tr = e.target.closest('tr') || e.target; tr.scrollIntoView({block:'center', behavior:'smooth'}); }
   });
   tb.addEventListener('click', function(e){
-    if(e.target.id==='ccPctSinal'){ if(e.detail===0) ccPctAplicar(true); return; }   // teclado (o mouse já tratou no mousedown)
+    var bs = e.target.closest('.cc-pct-sinal'); if(bs){ if(e.detail===0) ccPctAplicar(+bs.dataset.passo); return; }   // teclado (o mouse já tratou no mousedown)
     var b = e.target.closest('.cc-sug-rst'); if(!b) return;
     var td = b.closest('td'), it = item(td); if(!it) return;
     delete CC_SUG[ccSugChave(it.pn)]; ccSugSalvar(); td.outerHTML = ccSugTd(it);
@@ -3795,7 +3799,7 @@ function ccTabela(){
   });
   function th(t, k, num){ return '<th'+(num?' class="num"':'')+(k?' data-o="'+k+'"':'')+'>'+t+(k && CC.ordem===k ? (CC.desc?' ▾':' ▴') : '')+'</th>'; }
   document.getElementById('ccTbl').innerHTML = '<thead><tr>'+th('#','rank')+th('Item')+th('Fat. 90 dias','fat',1)+th('Preço MD','pmv',1)+th(CC_NOSSO_N,'nosso',1) +
-    CC_SITES.map(function(s){ return th(s.n, '', 1); }).join('') + th('vs menor preço','pct',1)+'<th class="num cc-sug-th" title="Nosso preço em relação ao menor concorrente: − diminui, + aumenta (clique no sinal para trocar), pelo percentual ao lado (editável). Clique no valor de cada item para editar; Enter vai para o próximo. Embaixo, a margem bruta (MG) vendendo nesse preço.">Sugestão <span class="cc-pct-w"><button type="button" class="cc-pct-sinal" id="ccPctSinal" title="'+(CC_PCT < 0 ? 'Aumentando: clique para diminuir' : 'Diminuindo: clique para aumentar')+'">'+(CC_PCT < 0 ? '+' : '−')+'</button><input type="text" inputmode="decimal" class="cc-pct-in" id="ccPct" value="'+String(Math.abs(CC_PCT)).replace('.',',')+'" aria-label="Percentual em relação ao menor concorrente">%</span></th></tr></thead><tbody>' +
+    CC_SITES.map(function(s){ return th(s.n, '', 1); }).join('') + th('vs menor preço','pct',1)+'<th class="num cc-sug-th" title="Nosso preço em relação ao menor concorrente, em %: positivo fica acima, negativo fica abaixo. − e + mudam 1 ponto (o valor também pode ser digitado). Clique no valor de cada item para editar; Enter vai para o próximo. Embaixo, a margem bruta (MG) vendendo nesse preço.">Sugestão <span class="cc-pct-w"><button type="button" class="cc-pct-sinal" data-passo="-1" title="Diminuir 1 ponto">−</button><input type="text" inputmode="decimal" class="cc-pct-in" id="ccPct" value="'+ccPctCampo()+'" aria-label="Percentual em relação ao menor concorrente">%<button type="button" class="cc-pct-sinal" data-passo="1" title="Aumentar 1 ponto">+</button></span></th></tr></thead><tbody>' +
     linhas.map(function(it){
       return '<tr'+(it.manual?' class="cc-tr-man"':'')+'><td class="num">'+(it.rank!=null ? it.rank : '<span class="cc-vazio" title="Adicionado à mão, fora do top 100">·</span>')+'</td><td class="cc-item"><b>'+escapeHtml(it.pn)+(it.manual ? ' <i class="cc-man">adicionado manualmente</i><button type="button" class="cc-man-rm" data-pn="'+escapeHtml(it.pn)+'" title="Tirar do monitoramento">×</button>' : '')+'</b><span title="'+escapeHtml(it.nome||'')+'">'+escapeHtml(String(it.nome||'').replace(/^\S+\s*-\s*/, ''))+'</span></td>' +
         '<td class="num">'+fmtCurto(it.fat)+'</td><td class="num">'+ccMoney(it.pmv)+'</td>' +
