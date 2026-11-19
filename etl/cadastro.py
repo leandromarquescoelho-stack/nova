@@ -158,7 +158,30 @@ def medidas_texto(t):
         if all(vs):
             tipo = 'embalagem' if re.search(r'embalag|caixa|pacote', ctx) else 'produto'
             achados.append((round(vs[0] * f, 1), round(vs[1] * f, 1), round(vs[2] * f, 1), tipo))
-    return [a for a in achados if all(0.1 <= x <= 300 for x in a[:3])]
+    for m in re.finditer(r'(dimens\w*|medidas?|tamanho)\s*(?:\(([clap])\s*x\s*([clap])\s*x\s*([clap])\)|([clap])\s*x\s*([clap])\s*x\s*([clap]))?\s*[:\-]?\s*'
+                         r'(\d+(?:[.,]\d+)?)\s*x\s*(\d+(?:[.,]\d+)?)\s*x\s*(\d+(?:[.,]\d+)?)\s*(mm|cm|m)?(?![\dx])', tl):
+        ordem = [m.group(i) for i in (2, 3, 4)] if m.group(2) else ([m.group(i) for i in (5, 6, 7)] if m.group(5) else ['c', 'l', 'a'])
+        ordem = ['c' if o == 'p' else o for o in ordem]
+        vs = [num(m.group(i)) for i in (8, 9, 10)]
+        if sorted(ordem) != ['a', 'c', 'l'] or not all(vs):
+            continue
+        f = UN_CM[m.group(11)] if m.group(11) else 1.0
+        d = dict(zip(ordem, vs))
+        ctx = tl[max(0, m.start() - 60): m.end() + 20]
+        tipo = 'embalagem' if re.search(r'embalag|caixa|pacote', ctx) else 'produto'
+        achados.append((round(d['c'] * f, 1), round(d['l'] * f, 1), round(d['a'] * f, 1), tipo))
+    return [a for a in dict.fromkeys(achados) if all(0.1 <= x <= 300 for x in a[:3])]
+
+
+def peso_texto(t):
+    tl = sem_acento(t.lower())
+    for m in re.finditer(r'peso(?: liquido| bruto| aproximado)?\s*(?:\(kg\)|\(g\))?[^0-9\n]{0,15}(\d+(?:[.,]\d+)?)\s*(kg|g|gramas|quilos)\b', tl):
+        v = num(m.group(1))
+        if v:
+            kg = v / 1000 if m.group(2) in ('g', 'gramas') else v
+            if 0.001 <= kg <= 500:
+                return round(kg, 3)
+    return None
 
 
 def medida_ld(p):
@@ -209,6 +232,12 @@ def veiculos(t):
                     anos.add(r.group(1))
             achou.setdefault(v, set()).update(anos)
     return achou
+
+
+def limpar_desc(d):
+    linhas = [l.strip() for l in d.split('\n')]
+    linhas = [l for l in linhas if l and not re.search(r'(?i)nova chevrolet|loja oficial|chevroletnova', l)]
+    return '\n'.join(linhas)
 
 
 def limpar_titulo(t):
@@ -265,6 +294,7 @@ def pesquisar(pn, cat):
     aplics = []          # (texto, indice)
     veic = defaultdict(lambda: {'anos': set(), 'fontes': set()})
     descricoes = []      # (texto, indice)
+    pesos = []           # (kg, indice)
 
     def fonte(titulo, url, tipo):
         fontes.append({'titulo': titulo[:160], 'url': url, 'dominio': dominio(url) if url else '', 'tipo': tipo, 'usado': set()})
@@ -290,7 +320,7 @@ def pesquisar(pn, cat):
             marca = v['marca'].upper()
         sp = v['specs']
         if sp.get('Aplicação do Produto'):
-            aplics.append(('; '.join(sp['Aplicação do Produto']), i)); fontes[i]['usado'].add('aplicacao')
+            aplics.append((texto_html('; '.join(sp['Aplicação do Produto'])).replace('\n', ' '), i)); fontes[i]['usado'].add('aplicacao')
         if sp.get('Modelo do Veículo'):
             anos = sp.get('Ano do Veículo') or []
             for mo in sp['Modelo do Veículo']:
@@ -302,6 +332,9 @@ def pesquisar(pn, cat):
             fontes[i]['usado'].add('aplicacao')
         if v['descricao']:
             descricoes.append((v['descricao'], i))
+            pk = peso_texto(v['descricao'])
+            if pk:
+                pesos.append((pk, i))
             for m in medidas_texto(v['descricao']):
                 medidas.append((*m, i)); fontes[i]['usado'].add('medidas')
             for a in aplicacao_texto(v['descricao']):
@@ -394,6 +427,9 @@ def pesquisar(pn, cat):
             descricoes.append((desc_meta, i))
         for m in medidas_texto(txt):
             medidas.append((*m, i)); fontes[i]['usado'].add('medidas')
+        pk = peso_texto(txt)
+        if pk:
+            pesos.append((pk, i))
         for a in aplicacao_texto(txt):
             aplics.append((a, i)); fontes[i]['usado'].add('aplicacao')
         # veículos só do trecho perto do código (o resto da página costuma ter menus com todos os modelos)
@@ -403,7 +439,7 @@ def pesquisar(pn, cat):
             fontes[i]['usado'].add('aplicacao')
     log(f'páginas lidas: {lidas}, fontes usadas: {len(fontes)}, títulos: {len(titulos)}, medidas: {len(medidas)}, aplicações: {len(aplics)}')
 
-    return montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes, resultados)
+    return montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes, resultados, pesos)
 
 
 # ---------------- montagem da sugestão ----------------
@@ -411,10 +447,16 @@ def tokens(t):
     return [w for w in re.findall(r'[A-Za-zÀ-ÿ0-9][A-Za-zÀ-ÿ0-9/\-\.]*', t) if sem_acento(w.lower()) not in PARADAS and len(w) > 1]
 
 
+SIGLAS = {'GM': 'GM', 'ACDELCO': 'ACDelco', 'AC-DELCO': 'ACDelco', 'NGK': 'NGK', 'SKF': 'SKF', 'TRW': 'TRW', 'KYB': 'KYB', 'MTE': 'MTE',
+          'ABS': 'ABS', 'LED': 'LED', 'SUV': 'SUV', 'DOHC': 'DOHC', 'SOHC': 'SOHC', 'MPFI': 'MPFI', 'LT': 'LT', 'LTZ': 'LTZ', 'LS': 'LS', 'ZF': 'ZF'}
+
+
 def titulo_bonito(t):
     pal = []
     for w in t.split():
-        if re.search(r'\d', w) or (w.isupper() and len(w) <= 4 and w not in ('PARA', 'COM', 'KIT')) or w.upper() in VEICULOS:
+        if w.upper() in SIGLAS:
+            pal.append(SIGLAS[w.upper()])
+        elif re.search(r'\d', w) or (w.isupper() and len(w) <= 4 and w not in ('PARA', 'COM', 'KIT')) or w.upper() in VEICULOS:
             pal.append(w.upper() if w.upper() in VEICULOS or re.search(r'\d', w) else w)
         elif sem_acento(w.lower()) in PARADAS:
             pal.append(w.lower())
@@ -430,7 +472,15 @@ def cortar(t, n=LIMITE_TITULO):
     return t[:n].rsplit(' ', 1)[0].rstrip(' -,/')
 
 
-def montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes, resultados):
+def marca_curta(marca):
+    m = re.sub(r'(?i)pe[çc]as|genu[ií]nas?|originais|original|\bdo brasil\b', ' ', marca or '').split()
+    if not m:
+        return ''
+    w = m[-1] if m[-1].upper() == 'GM' else m[0]
+    return SIGLAS.get(w.upper(), w.title() if len(w) > 4 else w.upper())
+
+
+def montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes, resultados, pesos):
     # termos que mais se repetem entre fontes diferentes
     df = Counter()
     for t, peso, i in titulos:
@@ -458,7 +508,7 @@ def montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes
         lista_v.append({'modelo': k.title() if not re.search(r'\d', k) else k, 'anos': anos[:3], 'fontes': len(x['fontes'])})
     aplic_txt = []
     for a, i in aplics:
-        a = re.sub(r'\s+', ' ', a).strip()
+        a = re.sub(r'\s+', ' ', texto_html(a)).strip(' •;-')
         if a and all(sem_acento(a.lower()) != sem_acento(b.lower()) for b, _ in aplic_txt):
             aplic_txt.append((a, i))
 
@@ -469,8 +519,9 @@ def montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes
         base = re.sub(r'(?i)\b' + re.escape(pn) + r'\b', '', base).strip(' -')
         extra = []
         bu = sem_acento(base.upper())
-        if marca and sem_acento(marca.split()[0]) not in bu:
-            extra.append(marca.split()[0].title() if len(marca.split()[0]) > 4 else marca.split()[0])
+        mc = marca_curta(marca)
+        if mc and sem_acento(mc.upper()) not in bu.replace('-', ''):
+            extra.append(mc)
         top_v = [x['modelo'] for x in lista_v[:2] if sem_acento(x['modelo'].upper()) not in bu]
         if top_v and not any(sem_acento(x['modelo'].upper()) in bu for x in lista_v[:3]):
             extra.append(' '.join(top_v))
@@ -500,6 +551,7 @@ def montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes
 
     # descrição longa para o anúncio
     desc_base = ''
+    descricoes = [(limpar_desc(d), i) for d, i in descricoes]
     for d, i in sorted(descricoes, key=lambda x: (fontes[x[1]]['tipo'] != 'fabricante', fontes[x[1]]['tipo'] != 'loja', -min(len(x[0]), 1500))):
         d = re.sub(r'\s+\n', '\n', d).strip()
         if len(d) > 40:
@@ -511,7 +563,7 @@ def montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes
         linhas += [desc_base, '']
     linhas.append(f'Código: {pn}')
     if marca:
-        linhas.append(f'Marca: {marca.title() if len(marca) > 4 else marca}')
+        linhas.append(f'Marca: {marca_curta(marca) or marca.title()}')
     if lista_v:
         linhas.append('Aplicação: ' + '; '.join(x['modelo'] + (' ' + ', '.join(x['anos']) if x['anos'] else '') for x in lista_v[:8]))
     elif aplic_txt:
@@ -519,6 +571,9 @@ def montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes
     if med:
         linhas.append(f"Medidas{' da embalagem' if med['tipo'] == 'embalagem' else ''} (C x L x A): "
                       f"{fmt(med['c'])} x {fmt(med['l'])} x {fmt(med['a'])} cm")
+    peso = Counter(p for p, i in pesos).most_common(1)[0][0] if pesos else None
+    if peso:
+        linhas.append(f'Peso: {fmt(peso)} kg')
     linhas.append('Confira a compatibilidade pelo chassi do veículo antes da compra.')
 
     fontes_out = []
@@ -528,7 +583,7 @@ def montar(pn, marca, cat, v, fontes, titulos, medidas, aplics, veic, descricoes
     return {
         'pn': pn, 'marca': marca, 'catalogo': cat,
         'titulo': melhor, 'alternativas': alternativas, 'descricao': '\n'.join(linhas).strip(),
-        'medidas': med, 'aplicacao': {'veiculos': lista_v[:15], 'textos': [{'texto': a, 'fonte': i} for a, i in aplic_txt[:6]]},
+        'medidas': med, 'peso': {'kg': peso, 'fontes': sorted({i for p, i in pesos if p == peso})} if peso else None, 'aplicacao': {'veiculos': lista_v[:15], 'textos': [{'texto': a, 'fonte': i} for a, i in aplic_txt[:6]]},
         'fontes': fontes_out,
         'buscas': {'resultados': len(resultados), 'com_codigo': sum(1 for r in resultados if r.get('bate'))},
         'links': {'google': 'https://www.google.com/search?q=' + urllib.parse.quote(f'"{pn}"'),
