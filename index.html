@@ -222,7 +222,11 @@ svg text{font-family:'Manrope', sans-serif;}
 .brand .name span{display:block; font-size:10.5px; color:var(--text-muted); letter-spacing:.06em; text-transform:uppercase; margin-top:1px;}
 .app[data-sidebar="collapsed"] .brand .name{ display:none; }
 
-.nav{display:flex; flex-direction:column; gap:2px; flex:1; margin-top:4px;}
+.nav{display:flex; flex-direction:column; gap:2px; flex:1 1 auto; margin:4px 0 0 -14px; padding-left:14px; min-height:0; overflow-y:auto; overflow-x:hidden; scrollbar-width:thin;}
+/* o logo e o rodapé ficam sempre visíveis; em telas baixas só a lista de guias rola (e os itens ficam mais compactos) */
+.sidebar{ overflow:hidden; }
+.brand, .sidebar-foot{ flex:none; }
+@media (max-height:760px){ .brand{ padding-bottom:12px; } .nav-item{ padding-top:7px; padding-bottom:7px; } .nav-sair{ padding-top:10px; } }
 .nav-sair{margin-top:6px; border-top:1px solid var(--border); border-radius:0 0 var(--radius-sm) var(--radius-sm); padding-top:14px;}
 .nav-sair:hover{color:var(--critical) !important;}
 .nav-item{
