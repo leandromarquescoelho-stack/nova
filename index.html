@@ -9090,7 +9090,9 @@ function vhDesenhar(){
     function lin(rot, o, ext, forte){ return '<div class="vd-l'+(forte?' f':'')+'"><span class="vd-v">'+(o.f > 0.5 || o.f < -0.5 ? fmtMoney(o.f).replace('R$ ','') : '—')+'</span><span class="vd-m">'+(vhMg(o)===null ? '' : 'mg '+vhMg(o).toFixed(1).replace('.',','))+'</span><span class="vd-r">'+rot+'</span><span class="vd-x">'+ext+'</span></div>'; }
     function vs(v, md){ return md > 0 ? vhVs((v/md-1)*100) : ''; }
     var SG = true;   // linha de seguradoras: só no atacado (e nos totais do grupo)
-    function linS(o, ext){ return SG ? lin('Seguradoras', o, ext) : ''; }
+    function linS(o, ext){ return SG && SG2 ? lin('Seguradoras', o, ext) : ''; }
+    var SG2 = true;  // a linha (loja ou total) tem algum valor de seguradoras? sem nenhum, a linha some
+    function temSeg(t){ SG2 = ['sh','so','sm'].some(function(k){ return Math.abs(t[k].f) > 0.5; }); return ''; }
     function linC(o, ext){ return SG ? lin('Clientes', o, ext) : ''; }   // sem seguradoras, clientes = total: fica só o total
     function celHO(t, k, dd){   // hoje ou ontem: valor, margem e comparação com a média diária de cada parte
       var s0 = t[k==='h' ? 'sh' : 'so'], c0 = sub(t[k], s0);
@@ -9114,8 +9116,8 @@ function vhDesenhar(){
       var ls = cs.filter(function(c){ var x = A[c][canal]; return x && (x.m.f > 0.5 || x.h.f > 0.5); });
       if(!ls.length) return '';
       SG = canal==='ATACADO';
-      var linhas = ls.map(function(c){ var t = junta([c], [canal]), dd = ddDe(c); var ob = canal==='ATACADO' ? +obj[c] : (canal==='ECOMMERCE' ? +obj.ECOMMERCE : 0); return '<tr'+(ls.length > 1 ? ' class="vd-det"' : '')+'><td class="vd-loja">'+escapeHtml(c)+'</td>'+celHO(t, 'h', dd)+celHO(t, 'o', dd)+celM(t, dd)+celP(proj(t, dd), ob)+'</tr>'; });
-      if(ls.length > 1){ var tt = junta(ls, [canal]), dt = canal==='ECOMMERCE' ? dc : du; linhas.push('<tr class="vd-tot"><td class="vd-loja">Total</td>'+celHO(tt, 'h', dt)+celHO(tt, 'o', dt)+celM(tt, dt)+celP(proj(tt, dt), canal==='ATACADO' && temObAtc ? rAtc.ob : 0)+'</tr>'); }
+      var linhas = ls.map(function(c){ var t = junta([c], [canal]), dd = ddDe(c); var ob = canal==='ATACADO' ? +obj[c] : (canal==='ECOMMERCE' ? +obj.ECOMMERCE : 0); temSeg(t); return '<tr'+(ls.length > 1 ? ' class="vd-det"' : '')+'><td class="vd-loja">'+escapeHtml(c)+'</td>'+celHO(t, 'h', dd)+celHO(t, 'o', dd)+celM(t, dd)+celP(proj(t, dd), ob)+'</tr>'; });
+      if(ls.length > 1){ var tt = junta(ls, [canal]), dt = canal==='ECOMMERCE' ? dc : du; temSeg(tt); linhas.push('<tr class="vd-tot"><td class="vd-loja">Total</td>'+celHO(tt, 'h', dt)+celHO(tt, 'o', dt)+celM(tt, dt)+celP(proj(tt, dt), canal==='ATACADO' && temObAtc ? rAtc.ob : 0)+'</tr>'); }
       var ab = (VH.aberto = VH.aberto || {})[canal], sf = ls.length > 1;
       return '<tbody class="vd-g'+(sf ? ' vd-sf'+(ab ? '' : ' vd-fech') : '')+'" data-vdc="'+canal+'"><tr class="vd-cab"><td colspan="5">'+(sf ? '<span class="vd-chev">▸</span>' : '')+rot+(sf ? '<span class="vd-n">'+ls.length+' lojas · '+(ab ? 'clique para recolher' : 'clique para abrir')+'</span>' : '')+'</td></tr>'+linhas.join('')+'</tbody>';
     }
@@ -9128,15 +9130,15 @@ function vhDesenhar(){
     var pAll = pSoma(pAE, proj(junta(todas, ['OFICINA','ACESSORIOS']), du));
     var pa = '<tbody class="vd-g"><tr class="vd-cab"><td colspan="5">P&amp;A · grupo</td></tr>' +
       '<tr class="vd-tot"><td class="vd-loja">Atacado + e-com</td>'+celHO(rAE.t, 'h', {conc:1, mes:1, md:rAE.md})+celHO(rAE.t, 'o', {conc:1})+celM(rAE.t, {conc:0})+'</tr>' +
-      '<tr class="vd-tot"><td class="vd-loja">Todos os canais</td>'+celHO(tAll, 'h', du)+celHO(tAll, 'o', du)+celM(tAll, du)+celP(pAll, 0)+'</tr></tbody>';
+      '<tr class="vd-tot"><td class="vd-loja">Todos os canais</td>'+temSeg(tAll)+celHO(tAll, 'h', du)+celHO(tAll, 'o', du)+celM(tAll, du)+celP(pAll, 0)+'</tr></tbody>';
     // atacado + e-com tem dias diferentes por canal: a média é a soma das médias de cada canal
     pa = pa.replace(/<tr class="vd-tot"><td class="vd-loja">Atacado \+ e-com<\/td>.*?<\/tr>/, (function(){
       var tA2 = junta(lojas, ['ATACADO']), tE2 = junta(todas, ['ECOMMERCE']);
       function md2(campoM, campoH){ var a = du.conc > 0 ? (tA2[campoM].f - tA2[campoH].f)/du.conc : 0, b = dc.conc > 0 ? (tE2[campoM].f - tE2[campoH].f)/dc.conc : 0; return du.conc > 0 || dc.conc > 0 ? a + b : null; }
-      var mdT = md2('m','h'), mdS = md2('sm','sh'), mdC = mdT!==null ? mdT - mdS : null, t = rAE.t;
-      function ho(k){ var s0 = t[k==='h'?'sh':'so'], c0 = sub(t[k], s0); return '<td class="vd-c'+k+'">'+lin('Total', t[k], vs(t[k].f, mdT), true)+lin('Clientes', c0, vs(c0.f, mdC))+lin('Seguradoras', s0, vs(s0.f, mdS))+'</td>'; }
+      var mdT = md2('m','h'), mdS = md2('sm','sh'), mdC = mdT!==null ? mdT - mdS : null, t = rAE.t; temSeg(t);
+      function ho(k){ var s0 = t[k==='h'?'sh':'so'], c0 = sub(t[k], s0); return '<td class="vd-c'+k+'">'+lin('Total', t[k], vs(t[k].f, mdT), true)+lin('Clientes', c0, vs(c0.f, mdC))+linS(s0, vs(s0.f, mdS))+'</td>'; }
       var cm = sub(t.m, t.sm), e = function(v){ return v===null ? '' : '<em>md '+fmtMoney(v).replace('R$ ','')+'</em>'; };
-      return '<tr class="vd-tot"><td class="vd-loja">Atacado + e-com</td>'+ho('h')+ho('o')+'<td class="vd-cm">'+lin('Total', t.m, e(mdT), true)+lin('Clientes', cm, e(mdC))+lin('Seguradoras', t.sm, e(mdS))+'</td>'+celP(pAE, rAE.ob)+'</tr>';
+      return '<tr class="vd-tot"><td class="vd-loja">Atacado + e-com</td>'+ho('h')+ho('o')+'<td class="vd-cm">'+lin('Total', t.m, e(mdT), true)+lin('Clientes', cm, e(mdC))+linS(t.sm, e(mdS))+'</td>'+celP(pAE, rAE.ob)+'</tr>';
     })());
     var tb = document.getElementById('vhDet');
     tb.setAttribute('data-ver', vhDetVer());
