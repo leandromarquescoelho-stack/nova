@@ -462,11 +462,13 @@ table.vd-tbl{width:100%; border-collapse:collapse; min-width:1120px; font-size:1
 .vd-n{margin-left:10px; font-family:inherit; font-size:10px; font-weight:500; letter-spacing:.04em; text-transform:none; color:var(--text-muted);}
 tbody.vd-fech tr.vd-det{display:none;}
 .vd-ver{margin-left:auto; margin-right:8px; align-self:flex-start;} .vd-ver button{font-size:11.5px; white-space:nowrap;}
-#vhDetCard .vh-res-h{flex-wrap:wrap;} #vhDetCard .vh-res-h > div:first-child{flex:1 1 220px; min-width:0;}
+#vhDetCard .vh-res-h, #vhResCard .vh-res-h{flex-wrap:wrap;} #vhDetCard .vh-res-h > div:first-child, #vhResCard .vh-res-h > div:first-child{flex:1 1 220px; min-width:0;}
+.vh-res-dia{font-family:'Sora',sans-serif; font-size:12px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--vx-cy); margin:14px 0 6px; padding-bottom:4px; border-bottom:1px solid var(--border);}
+.vh-res-dia:first-child{margin-top:2px;}
 @media (max-width:700px){
-  #vhDetCard .vh-res-h > div:first-child{flex-basis:calc(100% - 44px);}
-  #vhDetCard .vh-res-h .copy-img{order:1;}
-  .vd-ver{order:2; flex:1 1 100%; margin:4px 0 0; display:grid; grid-template-columns:repeat(4,1fr);}
+  #vhDetCard .vh-res-h > div:first-child, #vhResCard .vh-res-h > div:first-child{flex-basis:calc(100% - 44px);}
+  #vhDetCard .vh-res-h .copy-img, #vhResCard .vh-res-h .copy-img{order:1;}
+  .vd-ver{order:2; flex:1 1 100%; margin:4px 0 0; display:grid; grid-auto-flow:column; grid-auto-columns:1fr;}
   .vd-ver button{padding:6px 2px; font-size:11px; white-space:normal; line-height:1.2;}
 }
 #vhDet[data-ver="hoje"] .vd-co, #vhDet[data-ver="hoje"] .vd-cm, #vhDet[data-ver="hoje"] .vd-cp,
@@ -2499,7 +2501,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <div class="vx-card" id="vhDetCard" data-encolher="#vhDet"><div class="vh-res-h"><div><div class="vx-ct">Hoje, Ontem e Mês</div><div class="vx-cs">(▲▼) Comparação com a média diária no mês</div></div><div class="seg copy-img-no vd-ver" id="vhDetVer" role="group" aria-label="Colunas do quadro"></div><button type="button" class="copy-img" id="vhDetCopiar" title="Copiar este quadro como imagem" aria-label="Copiar este quadro como imagem"></button></div><div class="mr-scroll"><table class="vd-tbl" id="vhDet"></table></div></div>
         <div class="vx-card"><div class="vx-ct">Canal &times; loja no mês</div><div class="vx-cs">Faturamento do mês até o dia, com a margem embaixo &middot; e-commerce pela loja que fatura (emitente) &middot; seguradoras = clientes do tipo seguradora</div><div class="vx-scroll"><table class="vh-mat" id="vhMat"></table></div></div>
         <p class="note-muted" id="vhNota" style="font-size:11px;"></p>
-        <div class="vx-card vh-res" id="vhResCard"><div class="vh-res-h"><div><div class="vx-ct">Resumo do dia</div><div class="vx-cs">O que foi destaque: faturamento, quantidades, clientes e vendedores bem acima da média</div></div><button type="button" class="copy-img vh-cp2" id="vhResCopiar" title="Copiar o resumo do dia como imagem" aria-label="Copiar o resumo do dia como imagem"></button></div><div id="vhRes"></div></div>
+        <div class="vx-card vh-res" id="vhResCard"><div class="vh-res-h"><div><div class="vx-ct">Resumo do dia</div><div class="vx-cs">O que foi destaque: faturamento, quantidades, clientes e vendedores bem acima da média</div></div><div class="seg copy-img-no vd-ver" id="vhResVer" role="group" aria-label="Dia do resumo"></div><button type="button" class="copy-img vh-cp2" id="vhResCopiar" title="Copiar o resumo do dia como imagem" aria-label="Copiar o resumo do dia como imagem"></button></div><div id="vhRes"></div></div>
       </div>
       </section>
 
@@ -9001,6 +9003,7 @@ function vhDesenhar(){
   var fimMes = new Date(dD.getFullYear(), dD.getMonth()+1, 0, 12), ontemCal = new Date(dD.getFullYear(), dD.getMonth(), dD.getDate()-1, 12);
   var obj = VH.obj[mes] || {}, ontem = null;
   (d.linhas||[]).forEach(function(r){ var ds = String(r[0]).slice(0,10); if(ds < dia && (!ontem || ds > ontem)) ontem = ds; });
+  VH.ontem = ontem;
   // A[coluna][canal] = {h, o, m, sh, sm}: hoje, ontem, mês, seguradoras hoje e no mês
   var A = {}, cols = {};
   function z(){ return {f:0, l:0}; }
@@ -9186,20 +9189,31 @@ function vhDesenhar(){
 VH.res = {}; VH.resPend = {};
 function vhResumo(){
   var box = document.getElementById('vhRes'); if(!box || !VH.d) return;
-  var f = painelFiltros(null), dia = String(VH.d.dia).slice(0,10), key = JSON.stringify([f, dia]);
-  var R = VH.res[key];
-  if(!R){
-    if(VH.resPend[key]) return;
-    VH.resPend[key] = 1;
-    box.innerHTML = '<p class="note-muted status-txt">Comparando o dia com a média dos dias anteriores…</p>';
-    window.__NC_rpc('bi_vendas_destaques', {f:f, dia:dia}).then(function(r){ VH.res[key] = r || {}; })
-      .catch(function(e){ VH.res[key] = {erro: /bi_vendas_destaques|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'}; })
-      .then(function(){ delete VH.resPend[key]; if(VX.aba==='hoje' && state.currentView==='vendas') vhResumo(); });
+  var f = painelFiltros(null), dia = String(VH.d.dia).slice(0,10), ver = vhResVer();
+  var dias = (ver==='hoje' ? [dia] : (ver==='ontem' ? [VH.ontem] : [VH.ontem, dia])).filter(Boolean);
+  vhResSeg();
+  if(!dias.length){ box.innerHTML = '<p class="note-muted">Não há um dia anterior com vendas neste mês para comparar.</p>'; return; }
+  var chave = function(d){ return JSON.stringify([f, d]); }, falta = dias.filter(function(d){ return !VH.res[chave(d)]; });
+  if(falta.length){
+    box.innerHTML = '<p class="note-muted status-txt">Comparando '+(dias.length > 1 ? 'os dias' : 'o dia')+' com a média dos dias anteriores…</p>';
+    falta.forEach(function(d){
+      var key = chave(d); if(VH.resPend[key]) return; VH.resPend[key] = 1;
+      window.__NC_rpc('bi_vendas_destaques', {f:f, dia:d}).then(function(r){ VH.res[key] = r || {}; })
+        .catch(function(e){ VH.res[key] = {erro: /bi_vendas_destaques|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'}; })
+        .then(function(){ delete VH.resPend[key]; if(VX.aba==='hoje' && state.currentView==='vendas') vhResumo(); });
+    });
     return;
   }
-  if(R.erro){ box.innerHTML = '<p class="note-muted">'+(R.erro==='falta' ? 'O banco ainda não tem o resumo do dia (rode o SQL vendas_destaques.sql).' : 'Não foi possível montar o resumo do dia agora.')+'</p>'; return; }
+  box.innerHTML = dias.map(function(d){
+    var rot = (d===dia ? 'Hoje' : 'Ontem')+' · '+fmtDateFull(vhDt(d));
+    return (dias.length > 1 ? '<div class="vh-res-dia">'+rot+'</div>' : '') + vhResumoDia(VH.res[chave(d)], d===dia ? 'h' : 'o');
+  }).join('');
+}
+// resumo de um dia (resultado de bi_vendas_destaques) em html
+function vhResumoDia(R, qual){
+  if(R.erro){ return '<p class="note-muted">'+(R.erro==='falta' ? 'O banco ainda não tem o resumo do dia (rode o SQL vendas_destaques.sql).' : 'Não foi possível montar o resumo do dia agora.')+'</p>'; }
   var nd = R.nd || 1, t = R.tot || {}, fh = c2(t.fh), lh = c2(t.lh), qh = +t.qh||0, mdF = c2(t.fb)/nd, mdL = c2(t.lb)/nd, mdQ = (+t.qb||0)/nd;
-  if(!(fh > 0.5)){ box.innerHTML = '<p class="note-muted">Ainda não há vendas registradas neste dia.</p>'; return; }
+  if(!(fh > 0.5)){ return '<p class="note-muted">Ainda não há vendas registradas neste dia.</p>'; }
   function vz(a, b){ return b > 0.0001 ? a/b : null; }
   function xTxt(r){ return r===null ? 'novo' : (r >= 10 ? Math.round(r)+'×' : r.toFixed(1).replace('.',',')+'×'); }
   function pctVs(a, b){ return b > 0 ? (a/b-1)*100 : null; }
@@ -9252,12 +9266,20 @@ function vhResumo(){
   var bQtd = destaque(PQ, 6).map(function(o){ return linha(o, '', fmQ(o.h), fmQm(o.m)+'/dia', fmtMoney(o.fat)); }).join('');
   var bCli = destaque(CL, 6).map(function(o){ return linha(o, '', fmtMoney(o.h), o.m > 0.5 ? fmtMoney(o.m)+'/dia' : 'sem compras antes', 'mg '+vhP(o.mg)); }).join('');
   var bVen = destaque(V, 6).map(function(o){ return linha(o, '', fmtMoney(o.h), fmtMoney(o.m)+'/dia', o.cli+' cliente'+(o.cli!==1?'s':'')+' · mg '+vhP(o.mg)); }).join('');
-  box.innerHTML = hdr + '<div class="vh-rgrid">' +
+  return hdr + '<div class="vh-rgrid">' +
     bloco('💰', 'Faturamento', 'quem mais somou acima da média', bFat) +
     bloco('📦', 'Quantidades', 'produtos vendidos bem acima do normal', bQtd) +
     bloco('🤝', 'Clientes', 'compras bem acima da média do cliente', bCli) +
     bloco('🏆', 'Vendedores', 'acima da média do próprio vendedor', bVen) + '</div>' +
     '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">Média = total dos '+nd+' dias com venda nos 60 dias anteriores ÷ '+nd+', com os mesmos filtros. × = quantas vezes a média; em verde, 1,5× ou mais.</p>';
+}
+// resumo do dia: hoje, ontem ou os dois (lembrado no navegador)
+var VH_RES_VER = [['hoje','Hoje'],['ontem','Ontem'],['oh','Ontem e hoje']];
+function vhResVer(){ var v = null; try{ v = localStorage.getItem('vhResVer'); }catch(e){}
+  return VH_RES_VER.some(function(o){ return o[0]===v; }) ? v : 'hoje'; }
+function vhResSeg(){
+  var box = document.getElementById('vhResVer'); if(!box) return; var v = vhResVer();
+  box.innerHTML = VH_RES_VER.map(function(o){ return '<button type="button" data-vrv="'+o[0]+'" aria-pressed="'+(v===o[0])+'">'+o[1]+'</button>'; }).join('');
 }
 // colunas do quadro canal x loja: só hoje, ontem e hoje, mês e projeção ou tudo (lembrado no navegador)
 var VH_DET_VER = [['hoje','Hoje'],['oh','Ontem e hoje'],['mp','Mês e projeção'],['tudo','Tudo']];
@@ -9281,6 +9303,11 @@ function vhLigar(){
     document.getElementById('vhDet').setAttribute('data-ver', vhDetVer()); vhDetSeg();
   });
   var dcp = document.getElementById('vhDetCopiar'); dcp.innerHTML = ICO_COPIA; dcp.addEventListener('click', function(){ copiarCard(dcp, document.getElementById('vhDetCard'), 'vendas-hoje-canal-loja.png'); });
+  document.getElementById('vhResVer').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-vrv]'); if(!b) return;
+    try{ localStorage.setItem('vhResVer', b.getAttribute('data-vrv')); }catch(e){}
+    vhResumo();
+  });
   document.getElementById('vhRes').addEventListener('click', function(e){
     var cp = e.target.closest('.vh-rcp'); if(!cp) return;
     copiarCard(cp, cp.closest('.vh-rbk'), 'vendas-hoje-resumo-'+cp.getAttribute('data-nome').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()+'.png');
