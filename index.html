@@ -452,6 +452,32 @@ select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
 .vh-sub{font-size:12px; color:var(--text-muted); margin-top:3px;}
 .vh-dias{display:flex; gap:8px; flex-wrap:wrap;}
 .vh-cap{padding:2px;}
+.vh-res-h{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;}
+.vh-res-h .copy-img{opacity:.7; margin-left:0;}
+.vh-res-p{font-size:13px; line-height:1.65; color:var(--text-2); margin:0 0 8px;}
+.vh-res-p b{color:var(--text);}
+.vh-rgrid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:10px;}
+.vh-rbk{border:1px solid var(--border); border-radius:12px; padding:11px 12px; background:var(--surface-2); min-width:0;}
+.vh-rh{display:flex; gap:9px; align-items:center; margin-bottom:8px;}
+.vh-rh>span{font-size:20px;}
+.vh-rh b{display:block; font-family:'Sora',sans-serif; font-size:13.5px;}
+.vh-rh small{display:block; font-size:10.5px; color:var(--text-muted);}
+.vh-rl{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:3px 8px; align-items:center; padding:7px 0; border-top:1px dashed var(--border);}
+.vh-rl .vh-rn{grid-column:1/-1;}
+.vh-rn{display:flex; gap:6px; align-items:center; min-width:0; font-size:12px; font-weight:600;}
+.vh-rn .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.35;}
+.vh-rt{flex:none; font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:1px 5px; border-radius:4px; background:rgba(var(--ink),.08); color:var(--text-muted);}
+.vh-rv{white-space:nowrap; display:flex; align-items:baseline; gap:6px; min-width:0;}
+.vh-rv small{overflow:hidden; text-overflow:ellipsis;}
+.vh-rv b{font-family:'JetBrains Mono',monospace; font-size:12px;}
+.vh-rv small{font-size:10px; color:var(--text-muted);}
+.vh-rx{font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; padding:2px 6px; border-radius:6px; background:rgba(var(--ink),.06); color:var(--text-2); min-width:38px; text-align:center;}
+.vh-rx.bem{background:rgba(31,196,106,.16); color:var(--good);}
+.vh-rb{grid-column:1/-1; height:3px; border-radius:2px; background:var(--surface-3); overflow:hidden;}
+.vh-rb i{display:block; height:100%; background:var(--text-muted); opacity:.5;}
+.vh-rl.bem .vh-rb i{background:var(--good); opacity:.9;}
+@media(max-width:1300px){ .vh-rgrid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media(max-width:700px){ .vh-rgrid{grid-template-columns:1fr;} }
 .vh-geral{position:static!important; width:auto!important; height:auto!important; display:inline-flex!important; align-items:center; gap:6px; font:inherit; font-size:12px!important; font-weight:800; padding:6px 12px!important; border-radius:999px!important; border:1px solid var(--accent)!important; background:var(--surface)!important; color:var(--accent)!important; cursor:pointer; opacity:1!important;}
 .vh-c{position:relative;}
 .vh-c .copy-img{position:absolute; top:10px; right:10px; opacity:.55;}
@@ -2409,6 +2435,7 @@ table.data-table.vp-tbl{min-width:720px;}
         </div>
         <div class="vx-card"><div class="vx-ct">Canal &times; loja no mês</div><div class="vx-cs">Faturamento do mês até o dia, com a margem embaixo &middot; e-commerce pela loja que fatura (emitente) &middot; seguradoras = clientes do tipo seguradora</div><div class="vx-scroll"><table class="vh-mat" id="vhMat"></table></div></div>
         <p class="note-muted" id="vhNota" style="font-size:11px;"></p>
+        <div class="vx-card vh-res" id="vhResCard"><div class="vh-res-h"><div><div class="vx-ct">Resumo do dia</div><div class="vx-cs">O que foi destaque: faturamento, quantidades, clientes e vendedores bem acima da média</div></div><button type="button" class="copy-img vh-cp2" id="vhResCopiar" title="Copiar o resumo do dia como imagem" aria-label="Copiar o resumo do dia como imagem"></button></div><div id="vhRes"></div></div>
       </div>
       </section>
 
@@ -8883,10 +8910,88 @@ function vhDesenhar(){
   document.getElementById('vhMat').innerHTML = '<thead><tr><th>Canal</th>'+colsM.map(function(c){ return '<th title="'+escapeHtml(vhRegiao(c))+'">'+escapeHtml(c)+'</th>'; }).join('')+'<th>Grupo</th></tr></thead><tbody>'+body+'</tbody>';
   document.getElementById('vhNota').innerHTML = 'Média diária = vendas do mês até ontem ÷ dias úteis concluídos (feriados do município de cada loja; e-commerce por dias corridos). Tendência = média diária × dias úteis do mês. ▲▼ = venda do dia comparada com a média diária.' +
     (pode ? ' Clique no objetivo de um quadro para alterar (vale para o mês todo).' : '');
-  vhLigar();
+  vhLigar(); vhResumo();
+}
+/* ---------- Vendas Hoje: resumo do dia (o que ficou bem acima da média dos 60 dias anteriores) ---------- */
+VH.res = {}; VH.resPend = {};
+function vhResumo(){
+  var box = document.getElementById('vhRes'); if(!box || !VH.d) return;
+  var f = painelFiltros(null), dia = String(VH.d.dia).slice(0,10), key = JSON.stringify([f, dia]);
+  var R = VH.res[key];
+  if(!R){
+    if(VH.resPend[key]) return;
+    VH.resPend[key] = 1;
+    box.innerHTML = '<p class="note-muted status-txt">Comparando o dia com a média dos dias anteriores…</p>';
+    window.__NC_rpc('bi_vendas_destaques', {f:f, dia:dia}).then(function(r){ VH.res[key] = r || {}; })
+      .catch(function(e){ VH.res[key] = {erro: /bi_vendas_destaques|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'}; })
+      .then(function(){ delete VH.resPend[key]; if(VX.aba==='hoje' && state.currentView==='vendas') vhResumo(); });
+    return;
+  }
+  if(R.erro){ box.innerHTML = '<p class="note-muted">'+(R.erro==='falta' ? 'O banco ainda não tem o resumo do dia (rode o SQL vendas_destaques.sql).' : 'Não foi possível montar o resumo do dia agora.')+'</p>'; return; }
+  var nd = R.nd || 1, t = R.tot || {}, fh = c2(t.fh), lh = c2(t.lh), qh = +t.qh||0, mdF = c2(t.fb)/nd, mdL = c2(t.lb)/nd, mdQ = (+t.qb||0)/nd;
+  if(!(fh > 0.5)){ box.innerHTML = '<p class="note-muted">Ainda não há vendas registradas neste dia.</p>'; return; }
+  function vz(a, b){ return b > 0.0001 ? a/b : null; }
+  function xTxt(r){ return r===null ? 'novo' : (r >= 10 ? Math.round(r)+'×' : r.toFixed(1).replace('.',',')+'×'); }
+  function pctVs(a, b){ return b > 0 ? (a/b-1)*100 : null; }
+  var mgH = fh>0 ? lh/fh*100 : null, mgM = mdF>0 ? mdL/mdF*100 : null, excesso = fh - mdF;
+  // itens de uma lista: hoje, média por dia, diferença e quantas vezes a média
+  function itens(lista, nome, porQtd){
+    return (lista||[]).map(function(r){
+      var h = porQtd ? +r[3]||0 : c2(r[1]), m = Math.max(0, porQtd ? (+r[5]||0)/nd : c2(r[4])/nd);
+      return {nome: String(nome(r)).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), h:h, m:m, dif:h-m, x:vz(h, m), lb:c2(r[2]), fat:c2(r[1]), qtd:+r[3]||0, cli:+r[6]||0, mg: c2(r[1])>0 ? c2(r[2])/c2(r[1])*100 : null};
+    }).filter(function(o){ return o.dif > 0; });
+  }
+  // "bem acima": pelo menos 1,5× a média (ou sem histórico); se poucos, completa com os que mais somaram
+  function destaque(lst, n){ var bem = lst.filter(function(o){ return o.x===null || o.x >= 1.5; }); if(bem.length < 3) bem = bem.concat(lst.filter(function(o){ return bem.indexOf(o) < 0; }).slice(0, 3-bem.length)); return bem.slice(0, n); }
+  var dn = function(t){ return function(r){ return dimNome(t, r[0]) || '—'; }; }, nm7 = function(r){ return r[7] || '#'+r[0]; };
+  var L = itens(R.lojas, dn('loja')), C = itens(R.canais, dn('canal')), M = itens(R.marcas, dn('marca')), G = itens(R.categorias, dn('categoria'));
+  // sem ruído: produtos e clientes com pelo menos 0,3% do dia; quantidades com 3 peças ou mais
+  var piso = fh*0.003, grande = function(o){ return o.h >= piso; };
+  var P = itens(R.produtos, nm7).filter(grande), PQ = itens(R.produtos_q, nm7, true).filter(function(o){ return o.h >= 3; }),
+      CL = itens(R.clientes, nm7).filter(grande), V = itens(R.vendedores, dn('vendedor'));
+  var fmQ = function(v){ return fmtUn(Math.round(v))+' un'; }, fmQm = function(v){ return v < 10 ? v.toFixed(1).replace('.',',')+' un' : fmtUn(Math.round(v))+' un'; };
+
+  // frase de abertura
+  var vf = pctVs(fh, mdF), vq = pctVs(qh, mdQ), vc = pctVs(+t.clih||0, +R.cli_med||0);
+  var sobe = function(v){ return v===null ? '' : '<b class="'+(v>=0?'vh-up':'vh-dn')+'">'+(v>=0?'+':'')+v.toFixed(1).replace('.',',')+'%</b>'; };
+  var top1 = function(lst){ return lst.slice().sort(function(a, b){ return b.dif - a.dif; })[0]; };
+  var tl = top1(L), tm = top1(M), tg = top1(G), tc = top1(CL), tv = top1(V);
+  var parc = String(R.dia).slice(0,10)===isoDia(new Date()) ? ' (até a última carga: '+escapeHtml(cargaLabel(REAL.carga))+', o dia ainda não terminou)' : '';
+  var frase = 'O dia '+(parc ? 'está' : 'fechou')+' em <b>'+fmtMoney(fh)+'</b>'+parc+', '+sobe(vf)+' frente à média diária dos últimos '+nd+' dias com venda ('+fmtMoney(mdF)+'), com margem de <b>'+vhP(mgH)+'</b> (média '+vhP(mgM)+'). ' +
+    'Foram '+fmtUn(qh)+' peças ('+sobe(vq)+'), '+fmtUn(+t.clih||0)+' clientes ('+sobe(vc)+') e '+fmtUn(+t.nfh||0)+' notas.';
+  var dif = [];
+  if(excesso > 0 && tl) dif.push('a loja <b>'+escapeHtml(tl.nome)+'</b> respondeu por <b>'+vhP(Math.min(100, tl.dif/excesso*100))+'</b> do que o dia ficou acima da média (+'+fmtMoney(tl.dif)+')');
+  else if(tl) dif.push('a loja que mais vendeu acima do seu normal foi <b>'+escapeHtml(tl.nome)+'</b> (+'+fmtMoney(tl.dif)+')');
+  if(tc) dif.push('o cliente <b>'+escapeHtml(tc.nome)+'</b> comprou '+fmtMoney(tc.h)+(tc.x!==null ? ', '+xTxt(tc.x)+' a sua média diária' : ', sem compras nos 60 dias anteriores'));
+  if(tm && M.length) dif.push('a marca <b>'+escapeHtml(tm.nome)+'</b> somou +'+fmtMoney(tm.dif)+' acima do normal');
+  if(tv) dif.push('<b>'+escapeHtml(tv.nome)+'</b> foi o vendedor que mais superou a própria média (+'+fmtMoney(tv.dif)+(tv.x!==null ? ', '+xTxt(tv.x) : '')+')');
+  var hdr = '<p class="vh-res-p">'+frase+'</p>' + (dif.length ? '<p class="vh-res-p"><b>O que mais fez a diferença:</b> '+dif.join('; ')+'.</p>' : '');
+
+  function linha(o, tag, val, med, extra){
+    var bem = o.x===null || o.x >= 1.5, w = o.x===null ? 100 : Math.min(100, (o.x)/4*100);
+    return '<div class="vh-rl'+(bem?' bem':'')+'"><div class="vh-rn">'+(tag ? '<span class="vh-rt">'+tag+'</span>' : '')+'<span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</span></div>' +
+      '<div class="vh-rv"><b>'+val+'</b><small>média '+med+(extra ? ' · '+extra : '')+'</small></div><span class="vh-rx'+(bem?' bem':'')+'">'+xTxt(o.x)+'</span>' +
+      '<div class="vh-rb"><i style="width:'+w.toFixed(0)+'%"></i></div></div>';
+  }
+  function bloco(ico, tit, sub, html){ return '<div class="vh-rbk"><div class="vh-rh"><span>'+ico+'</span><div><b>'+tit+'</b><small>'+sub+'</small></div></div>'+(html || '<p class="note-muted" style="font-size:11.5px;">Nada acima da média neste dia.</p>')+'</div>'; }
+  // faturamento: loja, canal, marca e grupo que mais somaram acima da média, e os produtos
+  var fatL = [];
+  [[L,'Loja'],[C,'Canal'],[M,'Marca'],[G,'Grupo']].forEach(function(p){ destaque(p[0], p[1]==='Loja' ? 2 : 1).forEach(function(o){ fatL.push([o, p[1]]); }); });
+  destaque(P, 3).forEach(function(o){ fatL.push([o, 'Produto']); });
+  var bFat = fatL.map(function(p){ var o = p[0]; return linha(o, p[1], fmtMoney(o.h), fmtMoney(o.m), '+'+fmtMoney(o.dif)); }).join('');
+  var bQtd = destaque(PQ, 6).map(function(o){ return linha(o, '', fmQ(o.h), fmQm(o.m)+'/dia', fmtMoney(o.fat)); }).join('');
+  var bCli = destaque(CL, 6).map(function(o){ return linha(o, '', fmtMoney(o.h), o.m > 0.5 ? fmtMoney(o.m)+'/dia' : 'sem compras antes', 'mg '+vhP(o.mg)); }).join('');
+  var bVen = destaque(V, 6).map(function(o){ return linha(o, '', fmtMoney(o.h), fmtMoney(o.m)+'/dia', o.cli+' cliente'+(o.cli!==1?'s':'')+' · mg '+vhP(o.mg)); }).join('');
+  box.innerHTML = hdr + '<div class="vh-rgrid">' +
+    bloco('💰', 'Faturamento', 'quem mais somou acima da média', bFat) +
+    bloco('📦', 'Quantidades', 'produtos vendidos bem acima do normal', bQtd) +
+    bloco('🤝', 'Clientes', 'compras bem acima da média do cliente', bCli) +
+    bloco('🏆', 'Vendedores', 'acima da média do próprio vendedor', bVen) + '</div>' +
+    '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">Média = total dos '+nd+' dias com venda nos 60 dias anteriores ÷ '+nd+', com os mesmos filtros. × = quantas vezes a média; em verde, 1,5× ou mais.</p>';
 }
 function vhLigar(){
   var box = document.getElementById('vhCards'); if(box.dataset.lig) return; box.dataset.lig = '1';
+  var rc = document.getElementById('vhResCopiar'); rc.innerHTML = ICO_COPIA; rc.addEventListener('click', function(){ copiarCard(rc, document.getElementById('vhResCard'), 'vendas-hoje-resumo.png'); });
   document.getElementById('vhCopiarTudo').addEventListener('click', function(){ copiarCard(this, document.getElementById('vhCap'), 'vendas-hoje.png'); });
   box.addEventListener('click', function(e){
     var cp = e.target.closest('.vh-cp');
