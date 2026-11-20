@@ -461,6 +461,11 @@ table.vd-tbl{width:100%; border-collapse:collapse; min-width:1120px; font-size:1
 .vd-chev{display:inline-block; width:14px; transition:transform .15s;} .vd-sf:not(.vd-fech) .vd-chev{transform:rotate(90deg);}
 .vd-n{margin-left:10px; font-family:inherit; font-size:10px; font-weight:500; letter-spacing:.04em; text-transform:none; color:var(--text-muted);}
 tbody.vd-fech tr.vd-det{display:none;}
+.vd-ver{margin-left:auto; margin-right:8px; align-self:flex-start;} .vd-ver button{font-size:11.5px; white-space:nowrap;}
+#vhDet[data-ver="hoje"] .vd-co, #vhDet[data-ver="hoje"] .vd-cm, #vhDet[data-ver="hoje"] .vd-cp,
+#vhDet[data-ver="oh"] .vd-cm, #vhDet[data-ver="oh"] .vd-cp,
+#vhDet[data-ver="mp"] .vd-ch, #vhDet[data-ver="mp"] .vd-co{display:none;}
+#vhDet[data-ver]:not([data-ver="tudo"]){min-width:0; width:auto;}
 .vd-loja{font-weight:700; white-space:nowrap; width:110px;}
 .vd-tot td{background:rgba(242,200,17,.05);}
 .vd-tot .vd-loja{color:var(--text);}
@@ -2483,7 +2488,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <div class="vh-grupo-l" id="vhCardsT">Lojas &middot; atacado</div>
         <div class="vh-cards" id="vhCards"></div>
         </div>
-        <div class="vx-card" id="vhDetCard"><div class="vh-res-h"><div><div class="vx-ct">Hoje, ontem e mês por canal e loja</div><div class="vx-cs">Cada célula: total, clientes e seguradoras, com a margem &middot; hoje e ontem comparados com a média diária de cada um (▲▼) &middot; no mês, md = média diária &middot; projeção = média diária × dias úteis do mês (e-commerce: dias corridos)</div></div><button type="button" class="copy-img" id="vhDetCopiar" title="Copiar este quadro como imagem" aria-label="Copiar este quadro como imagem"></button></div><div class="mr-scroll"><table class="vd-tbl" id="vhDet"></table></div></div>
+        <div class="vx-card" id="vhDetCard"><div class="vh-res-h"><div><div class="vx-ct">Hoje, ontem e mês por canal e loja</div><div class="vx-cs">Cada célula: total, clientes e seguradoras (só no atacado e no grupo), com a margem &middot; hoje e ontem comparados com a média diária de cada um (▲▼) &middot; no mês, md = média diária &middot; projeção = média diária × dias úteis do mês (e-commerce: dias corridos)</div></div><div class="seg copy-img-no vd-ver" id="vhDetVer" role="group" aria-label="Colunas do quadro"></div><button type="button" class="copy-img" id="vhDetCopiar" title="Copiar este quadro como imagem" aria-label="Copiar este quadro como imagem"></button></div><div class="mr-scroll"><table class="vd-tbl" id="vhDet"></table></div></div>
         <div class="vx-card"><div class="vx-ct">Canal &times; loja no mês</div><div class="vx-cs">Faturamento do mês até o dia, com a margem embaixo &middot; e-commerce pela loja que fatura (emitente) &middot; seguradoras = clientes do tipo seguradora</div><div class="vx-scroll"><table class="vh-mat" id="vhMat"></table></div></div>
         <p class="note-muted" id="vhNota" style="font-size:11px;"></p>
         <div class="vx-card vh-res" id="vhResCard"><div class="vh-res-h"><div><div class="vx-ct">Resumo do dia</div><div class="vx-cs">O que foi destaque: faturamento, quantidades, clientes e vendedores bem acima da média</div></div><button type="button" class="copy-img vh-cp2" id="vhResCopiar" title="Copiar o resumo do dia como imagem" aria-label="Copiar o resumo do dia como imagem"></button></div><div id="vhRes"></div></div>
@@ -5260,7 +5265,7 @@ function imagemDoCard(panel){
   var desfaz = expandirParaCaptura(panel);
   var fundo = getComputedStyle(document.body).backgroundColor || '#0b0e13';
   var op = {pixelRatio: Math.max(2, window.devicePixelRatio||1), backgroundColor: fundo, cacheBust:false,
-    filter: function(n){ return !(n.classList && (n.classList.contains('copy-img') || n.classList.contains('vend-pdf'))); },
+    filter: function(n){ return !(n.classList && (n.classList.contains('copy-img') || n.classList.contains('vend-pdf') || n.classList.contains('copy-img-no'))); },
     style: {margin:'0'}};
   // corta o espaço vazio no pé do card (quando a linha da grade é mais alta que o conteúdo)
   var pr = panel.getBoundingClientRect(), fundoConteudo = 0;
@@ -9084,27 +9089,31 @@ function vhDesenhar(){
     function sub(a, b){ return {f:a.f-b.f, l:a.l-b.l}; }
     function lin(rot, o, ext, forte){ return '<div class="vd-l'+(forte?' f':'')+'"><span class="vd-v">'+(o.f > 0.5 || o.f < -0.5 ? fmtMoney(o.f).replace('R$ ','') : '—')+'</span><span class="vd-m">'+(vhMg(o)===null ? '' : 'mg '+vhMg(o).toFixed(1).replace('.',','))+'</span><span class="vd-r">'+rot+'</span><span class="vd-x">'+ext+'</span></div>'; }
     function vs(v, md){ return md > 0 ? vhVs((v/md-1)*100) : ''; }
+    var SG = true;   // linha de seguradoras: só no atacado (e nos totais do grupo)
+    function linS(o, ext){ return SG ? lin('Seguradoras', o, ext) : ''; }
+    function linC(o, ext){ return SG ? lin('Clientes', o, ext) : ''; }   // sem seguradoras, clientes = total: fica só o total
     function celHO(t, k, dd){   // hoje ou ontem: valor, margem e comparação com a média diária de cada parte
       var s0 = t[k==='h' ? 'sh' : 'so'], c0 = sub(t[k], s0);
       var mdT = dd.conc > 0 ? (t.m.f - t.h.f)/dd.conc : null, mdS = dd.conc > 0 ? (t.sm.f - t.sh.f)/dd.conc : null, mdC = mdT!==null ? mdT - mdS : null;
-      return '<td>'+lin('Total', t[k], vs(t[k].f, mdT), true)+lin('Clientes', c0, vs(c0.f, mdC))+lin('Seguradoras', s0, vs(s0.f, mdS))+'</td>';
+      return '<td class="vd-c'+k+'">'+lin('Total', t[k], vs(t[k].f, mdT), true)+linC(c0, vs(c0.f, mdC))+linS(s0, vs(s0.f, mdS))+'</td>';
     }
     function celM(t, dd){
       var cm = sub(t.m, t.sm), md = function(a, b){ return dd.conc > 0 ? '<em>md '+fmtMoney((a.f - b.f)/dd.conc).replace('R$ ','')+'</em>' : ''; };
       var ch = sub(t.h, t.sh);
-      return '<td>'+lin('Total', t.m, md(t.m, t.h), true)+lin('Clientes', cm, md(cm, ch))+lin('Seguradoras', t.sm, md(t.sm, t.sh))+'</td>';
+      return '<td class="vd-cm">'+lin('Total', t.m, md(t.m, t.h), true)+linC(cm, md(cm, ch))+linS(t.sm, md(t.sm, t.sh))+'</td>';
     }
     function pj(t, a, b, dd){ return dd.conc > 0 && dd.mes > 0 ? {f:(t[a].f - t[b].f)/dd.conc*dd.mes, l:(t[a].l - t[b].l)/dd.conc*dd.mes} : null; }
     function soma(x, y){ return x && y ? {f:x.f+y.f, l:x.l+y.l} : (x || y); }
     function celP(P, ob){   // projeção de fechamento: média diária × dias úteis do mês (e-commerce: corridos)
-      if(!P || !P.T) return '<td><div class="vd-l"><span class="vd-v">—</span></div></td>';
+      if(!P || !P.T) return '<td class="vd-cp"><div class="vd-l"><span class="vd-v">—</span></div></td>';
       var x = ob > 0 ? '<em>'+vhP(P.T.f/ob*100)+' do obj.</em>' : '';
-      return '<td>'+lin('Total', P.T, x, true)+lin('Clientes', P.C || {f:0,l:0}, '')+lin('Seguradoras', P.S || {f:0,l:0}, '')+'</td>';
+      return '<td class="vd-cp">'+lin('Total', P.T, x, true)+linC(P.C || {f:0,l:0}, '')+linS(P.S || {f:0,l:0}, '')+'</td>';
     }
     function proj(t, dd){ var T = pj(t,'m','h',dd), S = pj(t,'sm','sh',dd); return {T:T, S:S, C: T && S ? {f:T.f-S.f, l:T.l-S.l} : T}; }
     function bloco(rot, canal, cs, ddDe){
       var ls = cs.filter(function(c){ var x = A[c][canal]; return x && (x.m.f > 0.5 || x.h.f > 0.5); });
       if(!ls.length) return '';
+      SG = canal==='ATACADO';
       var linhas = ls.map(function(c){ var t = junta([c], [canal]), dd = ddDe(c); var ob = canal==='ATACADO' ? +obj[c] : (canal==='ECOMMERCE' ? +obj.ECOMMERCE : 0); return '<tr'+(ls.length > 1 ? ' class="vd-det"' : '')+'><td class="vd-loja">'+escapeHtml(c)+'</td>'+celHO(t, 'h', dd)+celHO(t, 'o', dd)+celM(t, dd)+celP(proj(t, dd), ob)+'</tr>'; });
       if(ls.length > 1){ var tt = junta(ls, [canal]), dt = canal==='ECOMMERCE' ? dc : du; linhas.push('<tr class="vd-tot"><td class="vd-loja">Total</td>'+celHO(tt, 'h', dt)+celHO(tt, 'o', dt)+celM(tt, dt)+celP(proj(tt, dt), canal==='ATACADO' && temObAtc ? rAtc.ob : 0)+'</tr>'); }
       var ab = (VH.aberto = VH.aberto || {})[canal], sf = ls.length > 1;
@@ -9112,6 +9121,8 @@ function vhDesenhar(){
     }
     var ddLoja = function(c){ return LOJA_MUNICIPIO[c] ? duLoja(c) : du; }, ddEcm = function(){ return dc; };
     var tAll = junta(todas, VH_CANAIS);
+    var hAtc = bloco('Atacado', 'ATACADO', lojas, ddLoja), hEcm = bloco('E-commerce', 'ECOMMERCE', todas, ddEcm), hOfi = bloco('Oficina', 'OFICINA', todas, ddLoja), hAce = bloco('Acessórios', 'ACESSORIOS', todas, ddLoja);
+    SG = true;
     function pSoma(a, b){ return {T:soma(a.T, b.T), S:soma(a.S, b.S), C:soma(a.C, b.C)}; }
     var pAE = pSoma(proj(junta(lojas, ['ATACADO']), du), proj(junta(todas, ['ECOMMERCE']), dc));
     var pAll = pSoma(pAE, proj(junta(todas, ['OFICINA','ACESSORIOS']), du));
@@ -9123,12 +9134,15 @@ function vhDesenhar(){
       var tA2 = junta(lojas, ['ATACADO']), tE2 = junta(todas, ['ECOMMERCE']);
       function md2(campoM, campoH){ var a = du.conc > 0 ? (tA2[campoM].f - tA2[campoH].f)/du.conc : 0, b = dc.conc > 0 ? (tE2[campoM].f - tE2[campoH].f)/dc.conc : 0; return du.conc > 0 || dc.conc > 0 ? a + b : null; }
       var mdT = md2('m','h'), mdS = md2('sm','sh'), mdC = mdT!==null ? mdT - mdS : null, t = rAE.t;
-      function ho(k){ var s0 = t[k==='h'?'sh':'so'], c0 = sub(t[k], s0); return '<td>'+lin('Total', t[k], vs(t[k].f, mdT), true)+lin('Clientes', c0, vs(c0.f, mdC))+lin('Seguradoras', s0, vs(s0.f, mdS))+'</td>'; }
+      function ho(k){ var s0 = t[k==='h'?'sh':'so'], c0 = sub(t[k], s0); return '<td class="vd-c'+k+'">'+lin('Total', t[k], vs(t[k].f, mdT), true)+lin('Clientes', c0, vs(c0.f, mdC))+lin('Seguradoras', s0, vs(s0.f, mdS))+'</td>'; }
       var cm = sub(t.m, t.sm), e = function(v){ return v===null ? '' : '<em>md '+fmtMoney(v).replace('R$ ','')+'</em>'; };
-      return '<tr class="vd-tot"><td class="vd-loja">Atacado + e-com</td>'+ho('h')+ho('o')+'<td>'+lin('Total', t.m, e(mdT), true)+lin('Clientes', cm, e(mdC))+lin('Seguradoras', t.sm, e(mdS))+'</td>'+celP(pAE, rAE.ob)+'</tr>';
+      return '<tr class="vd-tot"><td class="vd-loja">Atacado + e-com</td>'+ho('h')+ho('o')+'<td class="vd-cm">'+lin('Total', t.m, e(mdT), true)+lin('Clientes', cm, e(mdC))+lin('Seguradoras', t.sm, e(mdS))+'</td>'+celP(pAE, rAE.ob)+'</tr>';
     })());
-    document.getElementById('vhDet').innerHTML = '<thead><tr><th>Canal · loja</th><th>Hoje'+(ehHoje ? '' : ' ('+fmtDateFull(dD).slice(0,5)+')')+'</th><th>Ontem'+(ontem ? ' ('+fmtDateFull(vhDt(ontem)).slice(0,5)+')' : '')+'</th><th>Mês</th><th>Projeção</th></tr></thead>' +
-      bloco('Atacado', 'ATACADO', lojas, ddLoja) + bloco('E-commerce', 'ECOMMERCE', todas, ddEcm) + bloco('Oficina', 'OFICINA', todas, ddLoja) + bloco('Acessórios', 'ACESSORIOS', todas, ddLoja) + pa;
+    var tb = document.getElementById('vhDet');
+    tb.setAttribute('data-ver', vhDetVer());
+    tb.innerHTML = '<thead><tr><th>Canal · loja</th><th class="vd-ch">Hoje'+(ehHoje ? '' : ' ('+fmtDateFull(dD).slice(0,5)+')')+'</th><th class="vd-co">Ontem'+(ontem ? ' ('+fmtDateFull(vhDt(ontem)).slice(0,5)+')' : '')+'</th><th class="vd-cm">Mês</th><th class="vd-cp">Projeção</th></tr></thead>' +
+      hAtc + hEcm + hOfi + hAce + pa;
+    vhDetSeg();
   })();
 
   // matriz canal x loja
@@ -9226,6 +9240,14 @@ function vhResumo(){
     bloco('🏆', 'Vendedores', 'acima da média do próprio vendedor', bVen) + '</div>' +
     '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">Média = total dos '+nd+' dias com venda nos 60 dias anteriores ÷ '+nd+', com os mesmos filtros. × = quantas vezes a média; em verde, 1,5× ou mais.</p>';
 }
+// colunas do quadro canal x loja: só hoje, ontem e hoje, mês e projeção ou tudo (lembrado no navegador)
+var VH_DET_VER = [['hoje','Hoje'],['oh','Ontem e hoje'],['mp','Mês e projeção'],['tudo','Tudo']];
+function vhDetVer(){ var v = null; try{ v = localStorage.getItem('vhDetVer'); }catch(e){}
+  return VH_DET_VER.some(function(o){ return o[0]===v; }) ? v : 'tudo'; }
+function vhDetSeg(){
+  var box = document.getElementById('vhDetVer'); if(!box) return; var v = vhDetVer();
+  box.innerHTML = VH_DET_VER.map(function(o){ return '<button type="button" data-vdv="'+o[0]+'" aria-pressed="'+(v===o[0])+'">'+o[1]+'</button>'; }).join('');
+}
 function vhLigar(){
   var box = document.getElementById('vhCards'); if(box.dataset.lig) return; box.dataset.lig = '1';
   document.getElementById('vhDet').addEventListener('click', function(ev){
@@ -9233,6 +9255,11 @@ function vhLigar(){
     var tb = tr.parentNode, k = tb.getAttribute('data-vdc'), ab = tb.classList.toggle('vd-fech') === false;
     (VH.aberto = VH.aberto || {})[k] = ab;
     var n = tb.querySelector('.vd-n'); if(n) n.textContent = n.textContent.replace(/clique para \w+/, ab ? 'clique para recolher' : 'clique para abrir');
+  });
+  document.getElementById('vhDetVer').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-vdv]'); if(!b) return;
+    try{ localStorage.setItem('vhDetVer', b.getAttribute('data-vdv')); }catch(e){}
+    document.getElementById('vhDet').setAttribute('data-ver', vhDetVer()); vhDetSeg();
   });
   var dcp = document.getElementById('vhDetCopiar'); dcp.innerHTML = ICO_COPIA; dcp.addEventListener('click', function(){ copiarCard(dcp, document.getElementById('vhDetCard'), 'vendas-hoje-canal-loja.png'); });
   var rc = document.getElementById('vhResCopiar'); rc.innerHTML = ICO_COPIA; rc.addEventListener('click', function(){ copiarCard(rc, document.getElementById('vhResCard'), 'vendas-hoje-resumo.png'); });
