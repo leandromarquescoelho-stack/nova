@@ -1,13 +1,14 @@
 // Envio de teste do resumo de Vendas Hoje por e-mail (Resend).
 // Só o perfil BI pode chamar. Os números vêm de bi_vendas_hoje chamada com o token de quem pediu (escopo dele).
-// Não grava nada no banco. Secrets: RESEND_API_KEY; opcional RELATORIO_REMETENTE (padrão relatorios@novachevrolet.com.br).
+// Não grava nada no banco. Secrets: RESEND_API_KEY; opcional RELATORIO_REMETENTE (padrão onboarding@resend.dev).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const REMETENTE = Deno.env.get("RELATORIO_REMETENTE") || "relatorios@novachevrolet.com.br";
+// sem domínio próprio verificado: remetente de teste do Resend (só entrega para o e-mail dono da conta Resend)
+const REMETENTE = Deno.env.get("RELATORIO_REMETENTE") || "onboarding@resend.dev";
 const ORDEM = ["TATUAPE", "IPIRANGA", "JOAO DIAS", "SBC", "CAMPINAS", "RIO PRETO", "RIBEIRAO"];
 const CANAIS: [string, string][] = [["ATACADO", "Atacado"], ["ECOMMERCE", "E-commerce"], ["OFICINA", "Oficina"], ["ACESSORIOS", "Acessórios"]];
 
