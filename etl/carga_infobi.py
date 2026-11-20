@@ -437,6 +437,11 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
             est['preco_tab'] = pd.to_numeric(e['preco_tab'], errors='coerce').round(4)
         if trocar_estoque:
             copiar(cur, 'bi_estoque', est)
+            # foto do estoque do dia (comparação com o dia anterior em Vendas Hoje); banco sem a função: segue sem ela
+            cur.execute("select to_regprocedure('private.bi_estoque_foto()') is not null")
+            if cur.fetchone()[0]:
+                cur.execute('select private.bi_estoque_foto()')
+                log(f'foto do estoque: {cur.fetchone()[0]} itens')
             if novas:
                 log(f'estoque: custo unitário em {int(est["custo_u"].notna().sum()) if "custo_u" in est else 0} itens, '
                     f'classificação fiscal em {int(est["clsf"].notna().sum()) if "clsf" in est else 0}, '
