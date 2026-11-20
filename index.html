@@ -514,7 +514,7 @@ tbody.vd-fech tr.vd-det{display:none;}
 .mr-ctl{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:2px 0 12px;}
 .mr-ctl input{background:var(--surface-2); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:6px 10px; font-size:12.5px; min-width:200px;}
 .mr-kpis{grid-template-columns:repeat(5,minmax(0,1fr));}
-.mr-scroll{overflow-x:auto;} .mr-scroll table.mr-tbl{min-width:980px;}
+.mr-scroll{overflow-x:auto; overflow-y:hidden;} .mr-scroll table.mr-tbl{min-width:980px;}
 table.mr-tbl{width:100%; border-collapse:collapse; font-size:12.5px;}
 .mr-tbl th{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); text-align:left; padding:8px; border-bottom:1px solid var(--border-strong); white-space:nowrap; cursor:pointer; user-select:none;}
 .mr-tbl th.on{color:var(--text);} .mr-tbl th .ar{font-size:9px; margin-left:3px;}
@@ -2488,7 +2488,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <div class="vh-grupo-l" id="vhCardsT">Lojas &middot; atacado</div>
         <div class="vh-cards" id="vhCards"></div>
         </div>
-        <div class="vx-card" id="vhDetCard"><div class="vh-res-h"><div><div class="vx-ct">Hoje, Ontem e Mês</div><div class="vx-cs">(▲▼) Média diária no mês</div></div><div class="seg copy-img-no vd-ver" id="vhDetVer" role="group" aria-label="Colunas do quadro"></div><button type="button" class="copy-img" id="vhDetCopiar" title="Copiar este quadro como imagem" aria-label="Copiar este quadro como imagem"></button></div><div class="mr-scroll"><table class="vd-tbl" id="vhDet"></table></div></div>
+        <div class="vx-card" id="vhDetCard" data-encolher="#vhDet"><div class="vh-res-h"><div><div class="vx-ct">Hoje, Ontem e Mês</div><div class="vx-cs">(▲▼) Média diária no mês</div></div><div class="seg copy-img-no vd-ver" id="vhDetVer" role="group" aria-label="Colunas do quadro"></div><button type="button" class="copy-img" id="vhDetCopiar" title="Copiar este quadro como imagem" aria-label="Copiar este quadro como imagem"></button></div><div class="mr-scroll"><table class="vd-tbl" id="vhDet"></table></div></div>
         <div class="vx-card"><div class="vx-ct">Canal &times; loja no mês</div><div class="vx-cs">Faturamento do mês até o dia, com a margem embaixo &middot; e-commerce pela loja que fatura (emitente) &middot; seguradoras = clientes do tipo seguradora</div><div class="vx-scroll"><table class="vh-mat" id="vhMat"></table></div></div>
         <p class="note-muted" id="vhNota" style="font-size:11px;"></p>
         <div class="vx-card vh-res" id="vhResCard"><div class="vh-res-h"><div><div class="vx-ct">Resumo do dia</div><div class="vx-cs">O que foi destaque: faturamento, quantidades, clientes e vendedores bem acima da média</div></div><button type="button" class="copy-img vh-cp2" id="vhResCopiar" title="Copiar o resumo do dia como imagem" aria-label="Copiar o resumo do dia como imagem"></button></div><div id="vhRes"></div></div>
@@ -5263,6 +5263,15 @@ function expandirParaCaptura(panel){
 }
 function imagemDoCard(panel){
   var desfaz = expandirParaCaptura(panel);
+  // card que encolhe na imagem até a largura do conteúdo escolhido (ex.: quadro só com a coluna de hoje)
+  var ocultos = Array.prototype.slice.call(panel.querySelectorAll('.copy-img-no')).map(function(el){ var d = el.style.display; el.style.display = 'none'; return [el, d]; });
+  if(ocultos.length){ var desfazO = desfaz; desfaz = function(){ ocultos.forEach(function(o){ o[0].style.display = o[1]; }); desfazO(); }; }
+  var enc = panel.getAttribute('data-encolher'), alvo = enc && panel.querySelector(enc);
+  if(alvo){
+    var p0 = panel.getBoundingClientRect(), ps = getComputedStyle(panel), estilo = panel.getAttribute('style');
+    var w = Math.ceil(Math.max(alvo.getBoundingClientRect().right - p0.left + (parseFloat(ps.paddingRight)||0), 420));
+    if(w < p0.width - 4){ panel.style.width = w+'px'; var desfaz0 = desfaz; desfaz = function(){ if(estilo===null) panel.removeAttribute('style'); else panel.setAttribute('style', estilo); desfaz0(); }; }
+  }
   var fundo = getComputedStyle(document.body).backgroundColor || '#0b0e13';
   var op = {pixelRatio: Math.max(2, window.devicePixelRatio||1), backgroundColor: fundo, cacheBust:false,
     filter: function(n){ return !(n.classList && (n.classList.contains('copy-img') || n.classList.contains('vend-pdf') || n.classList.contains('copy-img-no'))); },
@@ -9119,7 +9128,7 @@ function vhDesenhar(){
       var linhas = ls.map(function(c){ var t = junta([c], [canal]), dd = ddDe(c); var ob = canal==='ATACADO' ? +obj[c] : (canal==='ECOMMERCE' ? +obj.ECOMMERCE : 0); temSeg(t); return '<tr'+(ls.length > 1 ? ' class="vd-det"' : '')+'><td class="vd-loja">'+escapeHtml(c)+'</td>'+celHO(t, 'h', dd)+celHO(t, 'o', dd)+celM(t, dd)+celP(proj(t, dd), ob)+'</tr>'; });
       if(ls.length > 1){ var tt = junta(ls, [canal]), dt = canal==='ECOMMERCE' ? dc : du; temSeg(tt); linhas.push('<tr class="vd-tot"><td class="vd-loja">Total</td>'+celHO(tt, 'h', dt)+celHO(tt, 'o', dt)+celM(tt, dt)+celP(proj(tt, dt), canal==='ATACADO' && temObAtc ? rAtc.ob : 0)+'</tr>'); }
       var ab = (VH.aberto = VH.aberto || {})[canal], sf = ls.length > 1;
-      return '<tbody class="vd-g'+(sf ? ' vd-sf'+(ab ? '' : ' vd-fech') : '')+'" data-vdc="'+canal+'"><tr class="vd-cab"><td colspan="5">'+(sf ? '<span class="vd-chev">▸</span>' : '')+rot+(sf ? '<span class="vd-n">'+ls.length+' lojas · '+(ab ? 'clique para recolher' : 'clique para abrir')+'</span>' : '')+'</td></tr>'+linhas.join('')+'</tbody>';
+      return '<tbody class="vd-g'+(sf ? ' vd-sf'+(ab ? '' : ' vd-fech') : '')+'" data-vdc="'+canal+'"><tr class="vd-cab"><td colspan="5">'+(sf ? '<span class="vd-chev">▸</span>' : '')+rot+(sf ? '<span class="vd-n copy-img-no">'+ls.length+' lojas · '+(ab ? 'clique para recolher' : 'clique para abrir')+'</span>' : '')+'</td></tr>'+linhas.join('')+'</tbody>';
     }
     var ddLoja = function(c){ return LOJA_MUNICIPIO[c] ? duLoja(c) : du; }, ddEcm = function(){ return dc; };
     var tAll = junta(todas, VH_CANAIS);
