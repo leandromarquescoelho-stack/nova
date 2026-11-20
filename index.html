@@ -4171,6 +4171,7 @@ function prTabela(cSel){
 // ===== E-commerce: guias Concorrência / Sugestão Cadastro =====
 var EC_ABA = 'conc';
 function ecAba(a){
+  if(!subOk('concorrencia', a)) return;
   EC_ABA = a;
   document.querySelectorAll('#ecGuias button').forEach(function(b){ var on = b.getAttribute('data-ec')===a; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
   document.getElementById('ecConc').hidden = a!=='conc';
@@ -6086,6 +6087,7 @@ function vpAcao(b){
 // ===== Vendedores: guias Consultoria / Planos em andamento =====
 var VD_ABA = 'consult', VD_FILTRO = 'and';
 function vdAba(a){
+  if(!subOk('vendedores', a)) return;   // aba não liberada no cadastro (ex.: clique no vendedor em Planos sem Consultoria)
   VD_ABA = a;
   document.querySelectorAll('#vdGuias button').forEach(function(b){ var on = b.getAttribute('data-vd')===a; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
   document.getElementById('vdConsult').hidden = a!=='consult';
@@ -8674,7 +8676,7 @@ function cliLigar(){
   // abas da tela Clientes (os filtros valem para as duas)
   document.getElementById('cliAbas').addEventListener('click', function(ev){
     var b = ev.target.closest('[data-cliaba]'); if(!b) return;
-    var aba = b.getAttribute('data-cliaba');
+    var aba = b.getAttribute('data-cliaba'); if(!subOk('clientes', aba)) return;
     Array.prototype.forEach.call(this.querySelectorAll('[data-cliaba]'), function(x){ x.setAttribute('aria-pressed', String(x===b)); });
     Array.prototype.forEach.call(document.querySelectorAll('[data-cliaba-painel]'), function(p){ p.style.display = p.getAttribute('data-cliaba-painel')===aba ? '' : 'none'; });
     document.getElementById('cliTitulo').textContent = aba==='disp' ? 'Filtros dos clientes' : 'Análise de clientes';
@@ -9009,6 +9011,7 @@ function renderVendasAbas(){
   else if(a==='hoje') vxHoje();
 }
 function vxTrocarAba(aba){
+  if(!subBotaoOk('vendas', aba)) return;
   VX.aba = aba;
   Array.prototype.forEach.call(document.querySelectorAll('#vxAbas [data-vxaba]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-vxaba')===aba)); });
   Array.prototype.forEach.call(document.querySelectorAll('[data-vxpainel]'), function(p){ p.hidden = p.getAttribute('data-vxpainel')!==aba; });
@@ -11546,7 +11549,11 @@ async function salvarCard(card, liberar){
   }
   if(USERS_TEM_EQUIPES && EQUIPES.length) payload.equipes = (USERS_TEM_ESCOPO && soEcommerce(grpSel(card,'canais'))) ? null : equipesPayload(role, grpSel(card,'equipes'));
   if(USERS_TEM_PARES){ var pp = paresPayload(card, role); payload.pares_modo = pp.pares_modo; payload.pares_equipes = pp.pares_equipes; }
-  if(USERS_TEM_ABAS){ var ab = grpSel(card,'abas'); payload.abas = abasComSubs(role, ab, card); }
+  if(USERS_TEM_ABAS){ var ab = grpSel(card,'abas');
+    // guia marcada com todas as abas desmarcadas gravaria "todas as abas": pede pelo menos uma
+    var semAba = role==='bi' ? [] : Object.keys(SUBABAS).filter(function(g){ return ab.indexOf(g)!==-1 && card.querySelector('.u-abas[data-grp="sub-'+g+'"]') && !grpSel(card, 'sub-'+g).length; });
+    if(semAba.length){ msg.style.color='var(--critical)'; msg.textContent = 'Na guia '+semAba.map(function(g){ return (ABAS.filter(function(a){ return a.k===g; })[0] || {}).t || g; }).join(', ')+', marque pelo menos uma aba.'; return; }
+    payload.abas = abasComSubs(role, ab, card); }
   var erro = validaEscopo(payload);
   if(erro){ msg.style.color='var(--critical)'; msg.textContent = erro; return; }
   if(CURRENT_PROFILE && CURRENT_PROFILE.id===id){ delete payload.role; delete payload.active; }
