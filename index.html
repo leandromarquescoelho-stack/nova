@@ -9175,7 +9175,8 @@ function vhDesenhar(){
   }).join('');
   if(temE) html += card('E-commerce', 'dias corridos', rEcm, {chave:'ECOMMERCE', cls:'ecm'});
   var parcial = nObj && !temObAtc ? 'Objetivo em '+nObj+' de '+lojas.length+' lojas' : null;
-  if(temA) html += card('Atacado', 'todas as lojas', rAtc, {cls:'tot', seg:true, semObj:parcial});
+  if(temA && lojas.length > 1) html += card('Atacado', 'todas as lojas',   // uma loja só: o total repetiria o quadro dela
+    rAtc, {cls:'tot', seg:true, semObj:parcial});
   if(temA && temE) html += card('Atacado + e-commerce', 'grupo', rAE, {cls:'tot', semObj:parcial || (temObAtc && !obEcm ? 'Falta o objetivo do e-commerce' : null)});
   document.getElementById('vhCards').innerHTML = html;
 
@@ -9382,10 +9383,12 @@ function vhPainel(){
     k('var(--vx-am)', 'Falta para o objetivo', rAE.ob ? fmtMoney(rAE.falta) : '—', rAE.ob ? 'atingido <b>'+vhP(rAE.at)+'</b>'+(rAE.porDia ? ' · '+fmtMoney(rAE.porDia)+' por dia útil' : '') : 'objetivo '+rotAE+' não cadastrado') +
     k('#14b8a6', 'Estoque a custo', S.E ? fmtMoney(+S.E.est[0]) : '—', S.E ? fmtUn(Math.round(+S.E.est[1]))+' peças · parado '+fmtMoney(+S.E.est[3]) : 'carregando') + '</div>';
   var NOME_C = {ATACADO:'Atacado', ECOMMERCE:'E-commerce', OFICINA:'Oficina', ACESSORIOS:'Acessórios'}, CORES = ['var(--vx-cy)','var(--vx-pu)','var(--vx-am)','var(--vx-gr)'];
+  var umaLoja = S.lojas.length===1 && S.canais.some(function(x){ return x.k==='ATACADO'; });
   var nC = S.canais.length, cn = '<div class="vp-canais" style="--vp-n:'+Math.max(1, nC)+'; --vp-nm:'+Math.max(1, Math.min(2, nC))+'">'+S.canais.map(function(x, i){
     var sh = g.h.f > 0 ? x.t.h.f/g.h.f*100 : 0, rr = x.k==='ATACADO' ? S.rAtc : (x.k==='ECOMMERCE' ? S.rEcm : null);
     var tp = rr && rr.tp!==null && rr.tp!==undefined ? ' · <b style="color:'+vhCorTend(rr.tp)+'">'+vhP(rr.tp)+'</b> do obj.' : '';
-    return '<div class="vp-cn"><div class="h"><span>'+NOME_C[x.k]+'</span><span>'+vhP(sh)+' do dia</span></div><div class="v">'+fmtMoney(x.t.h.f)+' '+vhMgB(x.t.h)+'</div>' +
+    var uma = umaLoja && x.k==='ATACADO';   // uma loja só: o card do atacado é o da loja (sem o quadro da loja repetido)
+    return '<div class="vp-cn"><div class="h"><span>'+NOME_C[x.k]+(uma ? ' · '+escapeHtml(S.lojas[0].nome) : '')+'</span><span>'+vhP(sh)+' do dia</span></div><div class="v">'+fmtMoney(x.t.h.f)+' '+vhMgB(x.t.h)+'</div>' +
       '<div class="vp-cn-l"><span>Mês</span><b>'+fmtMoney(x.t.m.f)+'</b>'+vhMgB(x.t.m)+'</div>' +
       '<div class="vp-cn-l"><span>Tendência</span><b>'+(x.tend!==null ? fmtMoney(x.tend) : '—')+'</b><span>'+tp+'</span></div>' +
       '<div class="vp-bar"><i style="width:'+Math.min(100, sh).toFixed(1)+'%; background:'+CORES[VH_CANAIS.indexOf(x.k)]+'"></i></div><div class="vp-cn-s" style="font-size:11.5px; color:var(--text-2); margin-top:6px;">'+vhVs(x.md > 0 ? (x.t.h.f/x.md-1)*100 : null)+' vs. média diária</div></div>';
@@ -9397,7 +9400,7 @@ function vhPainel(){
       (S.EL[nome] > 0.5 ? '<div class="x"><span>Estoque '+fmtMoney(S.EL[nome])+'</span></div>' : '') +
       '<div class="x"><span>Mês '+fmtMoney(r.t.m.f)+'</span><span>'+(r.ob ? 'tend. <b style="color:'+vhCorTend(r.tp)+'">'+vhP(r.tp)+'</b>' : (r.tend!==null ? 'tend. '+fmtMoney(r.tend) : ''))+'</span></div>'+bar+'</div>';
   }
-  var lj = '<div class="vp-lojas">'+S.lojas.map(function(o){ return tile(o.nome, o.tag, o.r); }).join('')  + '</div>';
+  var lj = umaLoja ? '' : '<div class="vp-lojas">'+S.lojas.map(function(o){ return tile(o.nome, o.tag, o.r); }).join('')  + '</div>';
   // destaques do dia (mesma consulta do resumo do dia, sem o filtro de clique)
   var f = painelFiltros(null), key = vhResChave(f, S.dia, false), R = VH.res[key];
   if(!R) vhResBuscar(f, S.dia, false, function(){ if(vpVisivel()) vhPainel(); });
