@@ -489,7 +489,8 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vh-res-p{font-size:13px; line-height:1.65; color:var(--text-2); margin:0 0 8px;}
 .vh-res-p b{color:var(--text);}
 .vh-rgrid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:10px;}
-.vh-rbk{border:1px solid var(--border); border-radius:12px; padding:11px 12px; background:var(--surface-2); min-width:0;}
+.vh-rbk{border:1px solid var(--border); border-radius:12px; padding:11px 12px; background:var(--surface-2); min-width:0; position:relative;}
+.vh-rbk .copy-img{position:absolute; top:9px; right:9px; opacity:.55;} .vh-rbk .copy-img:hover{opacity:1;} .vh-rbk .vh-rh{padding-right:30px;}
 .vh-rh{display:flex; gap:9px; align-items:center; margin-bottom:8px;}
 .vh-rh>span{font-size:20px;}
 .vh-rh b{display:block; font-family:'Sora',sans-serif; font-size:13.5px;}
@@ -9242,7 +9243,7 @@ function vhResumo(){
       '<div class="vh-rv"><b>'+val+'</b><small>média '+med+(extra ? ' · '+extra : '')+'</small></div><span class="vh-rx'+(bem?' bem':'')+'">'+xTxt(o.x)+'</span>' +
       '<div class="vh-rb"><i style="width:'+w.toFixed(0)+'%"></i></div></div>';
   }
-  function bloco(ico, tit, sub, html){ return '<div class="vh-rbk"><div class="vh-rh"><span>'+ico+'</span><div><b>'+tit+'</b><small>'+sub+'</small></div></div>'+(html || '<p class="note-muted" style="font-size:11.5px;">Nada acima da média neste dia.</p>')+'</div>'; }
+  function bloco(ico, tit, sub, html){ return '<div class="vh-rbk"><button type="button" class="copy-img vh-rcp" data-nome="'+tit+'" title="Copiar este quadro como imagem" aria-label="Copiar o quadro '+tit+' como imagem">'+ICO_COPIA+'</button><div class="vh-rh"><span>'+ico+'</span><div><b>'+tit+'</b><small>'+sub+'</small></div></div>'+(html || '<p class="note-muted" style="font-size:11.5px;">Nada acima da média neste dia.</p>')+'</div>'; }
   // faturamento: loja, canal, marca e grupo que mais somaram acima da média, e os produtos
   var fatL = [];
   [[L,'Loja'],[C,'Canal'],[M,'Marca'],[G,'Grupo']].forEach(function(p){ destaque(p[0], p[1]==='Loja' ? 2 : 1).forEach(function(o){ fatL.push([o, p[1]]); }); });
@@ -9280,6 +9281,10 @@ function vhLigar(){
     document.getElementById('vhDet').setAttribute('data-ver', vhDetVer()); vhDetSeg();
   });
   var dcp = document.getElementById('vhDetCopiar'); dcp.innerHTML = ICO_COPIA; dcp.addEventListener('click', function(){ copiarCard(dcp, document.getElementById('vhDetCard'), 'vendas-hoje-canal-loja.png'); });
+  document.getElementById('vhRes').addEventListener('click', function(e){
+    var cp = e.target.closest('.vh-rcp'); if(!cp) return;
+    copiarCard(cp, cp.closest('.vh-rbk'), 'vendas-hoje-resumo-'+cp.getAttribute('data-nome').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()+'.png');
+  });
   var rc = document.getElementById('vhResCopiar'); rc.innerHTML = ICO_COPIA; rc.addEventListener('click', function(){ copiarCard(rc, document.getElementById('vhResCard'), 'vendas-hoje-resumo.png'); });
   document.getElementById('vhCopiarTudo').addEventListener('click', function(){ copiarCard(this, document.getElementById('vhCap'), 'vendas-hoje.png'); });
   box.addEventListener('click', function(e){
