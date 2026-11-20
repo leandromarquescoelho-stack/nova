@@ -486,6 +486,9 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vd-r{font-size:11px;}
 .vd-x{font-size:10.5px;} .vd-x em{font-style:italic; font-family:'JetBrains Mono',monospace; color:var(--text-muted);}
 .vd-x .vh-up, .vd-x .vh-dn{font-weight:700;}
+.vh-email{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 10px; font-size:12.5px; color:var(--text-2);}
+.vh-email[hidden]{display:none;} .vh-email input{background:var(--surface); border:1px solid var(--border-strong); color:var(--text); border-radius:8px; padding:6px 9px; min-width:260px; max-width:100%; font-family:inherit;}
+#vhEmailMsg{font-size:12px;}
 #vhModo.vh-modo{display:inline-flex; width:auto; margin:0 0 12px;} #vhModo[hidden]{display:none;} .vh-modo button{font-size:12.5px; padding:6px 16px;}
 .vh-rl[data-fd]{cursor:pointer; border-radius:6px;} .vh-rl[data-fd]:hover{background:var(--surface-2);}
 .vh-rf{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:0 0 10px; font-size:12px; color:var(--text-2);}
@@ -2539,7 +2542,8 @@ table.data-table.vp-tbl{min-width:720px;}
         </div>
         <div id="vhModoCards">
         <div class="vh-cap" id="vhCap">
-        <div class="vh-topo"><div><h2 class="vh-tit" id="vhTit">Vendas de hoje</h2><div class="vh-sub" id="vhSub"></div></div><div class="vh-dias"><span id="vhDias" style="display:contents"></span><button type="button" class="vh-geral copy-img" id="vhCopiarTudo" title="Copiar a visão geral (indicadores e quadros) como imagem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Copiar visão geral</button></div></div>
+        <div class="vh-topo"><div><h2 class="vh-tit" id="vhTit">Vendas de hoje</h2><div class="vh-sub" id="vhSub"></div></div><div class="vh-dias"><span id="vhDias" style="display:contents"></span><button type="button" class="vh-geral copy-img" id="vhCopiarTudo" title="Copiar a visão geral (indicadores e quadros) como imagem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Copiar visão geral</button><button type="button" class="vh-geral copy-img" id="vhEmailBt" hidden title="Enviar um e-mail de teste com o resumo de vendas">✉ Enviar por e-mail</button></div></div>
+        <div class="vh-email copy-img-no" id="vhEmail" hidden><label>Enviar o resumo para <input type="email" id="vhEmailPara" value="leandro.marques@chevroletnova.com.br"></label><button type="button" class="tbtn primary" id="vhEmailEnviar">Enviar teste</button><span id="vhEmailMsg"></span></div>
         <div class="vh-kpis" id="vhKpis"></div>
         <div class="vh-grupo-l" id="vhCardsT">Lojas &middot; atacado</div>
         <div class="vh-cards" id="vhCards"></div>
@@ -9521,6 +9525,23 @@ function vhLigar(){
   document.getElementById('vpAgora').addEventListener('click', function(){ vpChecar(true); });
   var rc = document.getElementById('vhResCopiar'); rc.innerHTML = ICO_COPIA; rc.addEventListener('click', function(){ copiarCard(rc, document.getElementById('vhResCard'), 'vendas-hoje-resumo.png'); });
   document.getElementById('vhCopiarTudo').addEventListener('click', function(){ copiarCard(this, document.getElementById('vhCap'), 'vendas-hoje.png'); });
+  // teste de envio por e-mail (função relatorio-email, só perfil BI)
+  var emB = document.getElementById('vhEmailBt'); emB.hidden = !(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi');
+  emB.addEventListener('click', function(){ var f = document.getElementById('vhEmail'); f.hidden = !f.hidden; });
+  document.getElementById('vhEmailEnviar').addEventListener('click', async function(){
+    var bt = this, msg = document.getElementById('vhEmailMsg'), para = document.getElementById('vhEmailPara').value.trim();
+    bt.disabled = true; msg.style.color = 'var(--text-muted)'; msg.textContent = 'Enviando…';
+    try{
+      var sess = await supa.auth.getSession(), token = sess && sess.data && sess.data.session && sess.data.session.access_token;
+      if(!token) throw new Error('Sessão expirada, faça login novamente.');
+      var r = await fetch(SUPABASE_URL + '/functions/v1/relatorio-email', {method:'POST', headers:{'Content-Type':'application/json', 'Authorization':'Bearer '+token}, body: JSON.stringify({para:para})});
+      var js = await r.json().catch(function(){ return {}; });
+      if(!r.ok) throw new Error(js.error || (r.status===404 ? 'A função de e-mail ainda não foi publicada no Supabase.' : 'Falha ao enviar ('+r.status+').'));
+      msg.style.color = 'var(--good)'; msg.textContent = 'Enviado para '+para+'.';
+    } catch(e){ var t = (e && e.message) || 'Falha ao enviar.'; if(/failed to fetch|load failed|networkerror/i.test(t)) t = 'Não foi possível falar com a função de e-mail (ela já foi publicada no Supabase?).';
+      msg.style.color = 'var(--critical)'; msg.textContent = t; }
+    bt.disabled = false;
+  });
   box.addEventListener('click', function(e){
     var cp = e.target.closest('.vh-cp');
     if(cp){ var c = cp.closest('.vh-c'), nm = (c.querySelector('.vh-ch b')||{}).textContent || 'quadro'; copiarCard(cp, c, 'vendas-hoje-'+nm.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-').toLowerCase()+'.png'); return; }
