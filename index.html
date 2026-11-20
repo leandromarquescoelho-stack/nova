@@ -462,6 +462,13 @@ table.vd-tbl{width:100%; border-collapse:collapse; min-width:1120px; font-size:1
 .vd-n{margin-left:10px; font-family:inherit; font-size:10px; font-weight:500; letter-spacing:.04em; text-transform:none; color:var(--text-muted);}
 tbody.vd-fech tr.vd-det{display:none;}
 .vd-ver{margin-left:auto; margin-right:8px; align-self:flex-start;} .vd-ver button{font-size:11.5px; white-space:nowrap;}
+#vhDetCard .vh-res-h{flex-wrap:wrap;} #vhDetCard .vh-res-h > div:first-child{flex:1 1 220px; min-width:0;}
+@media (max-width:700px){
+  #vhDetCard .vh-res-h > div:first-child{flex-basis:calc(100% - 44px);}
+  #vhDetCard .vh-res-h .copy-img{order:1;}
+  .vd-ver{order:2; flex:1 1 100%; margin:4px 0 0; display:grid; grid-template-columns:repeat(4,1fr);}
+  .vd-ver button{padding:6px 2px; font-size:11px; white-space:normal; line-height:1.2;}
+}
 #vhDet[data-ver="hoje"] .vd-co, #vhDet[data-ver="hoje"] .vd-cm, #vhDet[data-ver="hoje"] .vd-cp,
 #vhDet[data-ver="oh"] .vd-cm, #vhDet[data-ver="oh"] .vd-cp,
 #vhDet[data-ver="mp"] .vd-ch, #vhDet[data-ver="mp"] .vd-co{display:none;}
