@@ -505,6 +505,36 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vh-c .vh-ch{padding-right:30px;}
 .vh-dias span{font-size:11.5px; padding:5px 10px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-2);}
 .vh-dias b{color:var(--text); font-family:'JetBrains Mono',monospace;}
+/* Vendedores > Maratona de Pontos */
+.mr-ctl{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:2px 0 12px;}
+.mr-ctl input{background:var(--surface-2); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:6px 10px; font-size:12.5px; min-width:200px;}
+.mr-kpis{grid-template-columns:repeat(5,minmax(0,1fr));}
+.mr-scroll{overflow-x:auto;} .mr-scroll table.mr-tbl{min-width:980px;}
+table.mr-tbl{width:100%; border-collapse:collapse; font-size:12.5px;}
+.mr-tbl th{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); text-align:left; padding:8px; border-bottom:1px solid var(--border-strong); white-space:nowrap; cursor:pointer; user-select:none;}
+.mr-tbl th.on{color:var(--text);} .mr-tbl th .ar{font-size:9px; margin-left:3px;}
+.mr-tbl td{padding:8px; border-bottom:1px solid var(--border); vertical-align:middle;}
+.mr-tbl tr.mr-v{cursor:pointer;} .mr-tbl tr.mr-v:hover td{background:rgba(var(--ink),.035);}
+.mr-tbl tr.mr-v.ab td{background:rgba(var(--ink),.05);}
+.mr-tbl .n{text-align:right; font-family:'JetBrains Mono',monospace; white-space:nowrap;}
+.mr-nome b{display:block; font-weight:700;} .mr-nome span{font-size:11px; color:var(--text-muted);}
+.mr-pts{font-family:'Sora',sans-serif; font-size:17px; font-weight:800;}
+.mr-bon{display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:rgba(16,185,129,.14); color:var(--vx-gr);}
+.mr-bon.z{background:rgba(var(--ink),.06); color:var(--text-muted); font-weight:600;}
+.mr-perto b{font-weight:700;} .mr-perto .s{font-size:11px; color:var(--text-2);}
+.mr-bar{height:5px; border-radius:3px; background:rgba(var(--ink),.08); margin-top:4px; overflow:hidden; max-width:180px;}
+.mr-bar i{display:block; height:100%; border-radius:3px;}
+.mr-prox{font-size:11.5px; color:var(--text-2); line-height:1.45;} .mr-prox b{color:var(--text);}
+.mr-det td{background:rgba(var(--ink),.025); padding:10px 12px 14px;}
+table.mr-dt{width:100%; border-collapse:collapse; font-size:12px;}
+.mr-dt th{font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); text-align:right; padding:5px 8px; border-bottom:1px solid var(--border);}
+.mr-dt th:first-child, .mr-dt td:first-child{text-align:left;}
+.mr-dt td{padding:5px 8px; border-bottom:1px solid var(--border); text-align:right; font-family:'JetBrains Mono',monospace; white-space:nowrap;}
+.mr-dt td:first-child{font-family:inherit;}
+.mr-dt tr.ok td{color:var(--vx-gr);} .mr-dt tr.ok td:first-child{font-weight:700;}
+.mr-st{font-family:inherit; font-size:11px; font-weight:700;}
+.mr-nota{font-size:11px; color:var(--text-muted); margin-top:10px; line-height:1.5;}
+@media (max-width:900px){ .mr-kpis{grid-template-columns:repeat(2,minmax(0,1fr));} }
 .vh-kpis{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:16px;}
 .vh-k{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; position:relative; overflow:hidden; min-width:0;}
 .vh-k::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--vh-c, var(--vx-cy));}
@@ -2453,7 +2483,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <div class="vh-grupo-l" id="vhCardsT">Lojas &middot; atacado</div>
         <div class="vh-cards" id="vhCards"></div>
         </div>
-        <div class="vx-card" id="vhDetCard"><div class="vh-res-h"><div><div class="vx-ct">Hoje, ontem e mês por canal e loja</div><div class="vx-cs">Cada célula: total, clientes e seguradoras, com a margem &middot; hoje e ontem comparados com a média diária de cada um (▲▼) &middot; no mês, md = média diária &middot; projeção = média diária × dias úteis do mês (e-commerce: dias corridos)</div></div><button type="button" class="copy-img" id="vhDetCopiar" title="Copiar este quadro como imagem" aria-label="Copiar este quadro como imagem"></button></div><div class="vx-scroll"><table class="vd-tbl" id="vhDet"></table></div></div>
+        <div class="vx-card" id="vhDetCard"><div class="vh-res-h"><div><div class="vx-ct">Hoje, ontem e mês por canal e loja</div><div class="vx-cs">Cada célula: total, clientes e seguradoras, com a margem &middot; hoje e ontem comparados com a média diária de cada um (▲▼) &middot; no mês, md = média diária &middot; projeção = média diária × dias úteis do mês (e-commerce: dias corridos)</div></div><button type="button" class="copy-img" id="vhDetCopiar" title="Copiar este quadro como imagem" aria-label="Copiar este quadro como imagem"></button></div><div class="mr-scroll"><table class="vd-tbl" id="vhDet"></table></div></div>
         <div class="vx-card"><div class="vx-ct">Canal &times; loja no mês</div><div class="vx-cs">Faturamento do mês até o dia, com a margem embaixo &middot; e-commerce pela loja que fatura (emitente) &middot; seguradoras = clientes do tipo seguradora</div><div class="vx-scroll"><table class="vh-mat" id="vhMat"></table></div></div>
         <p class="note-muted" id="vhNota" style="font-size:11px;"></p>
         <div class="vx-card vh-res" id="vhResCard"><div class="vh-res-h"><div><div class="vx-ct">Resumo do dia</div><div class="vx-cs">O que foi destaque: faturamento, quantidades, clientes e vendedores bem acima da média</div></div><button type="button" class="copy-img vh-cp2" id="vhResCopiar" title="Copiar o resumo do dia como imagem" aria-label="Copiar o resumo do dia como imagem"></button></div><div id="vhRes"></div></div>
@@ -2574,7 +2604,15 @@ table.data-table.vp-tbl{min-width:720px;}
       <!-- ============ VENDEDORES ============ -->
       <section class="view-panel" data-view-panel="vendedores" style="display:none;">
       <div class="vend-status" id="vendStatus" hidden role="status" aria-live="polite"><div class="vs-card"><span class="vs-spin"></span>Preparando o relatório. Aguarde<span class="vs-dots"><i>.</i><i>.</i><i>.</i></span></div></div>
-      <div class="pl-guias ec-guias" id="vdGuias" role="tablist"><button type="button" class="on" data-vd="consult" role="tab" aria-selected="true">Consultoria</button><button type="button" data-vd="planos" role="tab" aria-selected="false">Planos em andamento</button></div>
+      <div class="pl-guias ec-guias" id="vdGuias" role="tablist"><button type="button" class="on" data-vd="consult" role="tab" aria-selected="true">Consultoria</button><button type="button" data-vd="planos" role="tab" aria-selected="false">Planos em andamento</button><button type="button" data-vd="maratona" role="tab" aria-selected="false">Maratona de Pontos</button></div>
+      <div id="vdMaratona" hidden>
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Maratona de Pontos</h2><div class="psub" id="mrSub">Meta por categoria da campanha, vendido no mês e quanto falta para pontuar</div></div>
+        </div>
+        <div id="mrBody"></div>
+      </div>
+      </div>
       <div id="vdPlanos" hidden>
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
@@ -5971,6 +6009,7 @@ function vdAba(a){
   document.querySelectorAll('#vdGuias button').forEach(function(b){ var on = b.getAttribute('data-vd')===a; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
   document.getElementById('vdConsult').hidden = a!=='consult';
   document.getElementById('vdPlanos').hidden = a!=='planos';
+  document.getElementById('vdMaratona').hidden = a!=='maratona';
   document.getElementById('topVendSel').hidden = !(state.currentView==='vendedores' && a==='consult');
   if(a==='planos') vdPlanosCarregar(); else renderVendConsult();
 }
@@ -6011,6 +6050,130 @@ function vdPlanosLigar(){
     var b = e.target.closest('.vp-acao'); if(b) vpAcao(b);
   });
 }
+// ===== Vendedores > Maratona de Pontos: meta por categoria (bi_maratona), vendido no mês, pontos e o que falta =====
+var MR = {key:null, d:null, ord:'pts', dir:-1, aberto:{}, busca:''};
+var MR_ORD = {pts:'Pontos', perto:'Mais perto de bater', prox:'Menor valor p/ próximo bônus'};
+function mrMes(){ var fim = painelPeriodo().fim; return (+fim.slice(2,4))*100 + (+fim.slice(5,7)); }
+function mrBonus(p){ return p >= 20 ? Math.min(1000, Math.floor(p/10)*100) : 0; }
+function mrCarregar(){
+  var box = document.getElementById('mrBody'); if(!box) return;
+  var pf = painelFiltros(null) || {}, f = {}; ['loja','vendedor','equipe','funcao'].forEach(function(k){ if(pf[k]) f[k] = pf[k]; });
+  var mes = mrMes(), key = JSON.stringify([f, mes]);
+  if(MR.key===key && MR.d){ mrDesenhar(); return; }
+  MR.key = key; MR.d = null;
+  box.innerHTML = '<p class="note-muted status-txt">Calculando metas e pontos da campanha…</p>';
+  rpcMemo('bi_maratona', {f:f, p_mes:mes}).then(function(d){ if(MR.key!==key) return; MR.d = d; mrDesenhar(); })
+    .catch(function(e){ if(MR.key!==key) return; MR.key = null;
+      box.innerHTML = '<p class="note-muted">'+(/bi_maratona|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'O banco ainda não tem a campanha (rode o SQL maratona_pontos.sql).' : 'Não foi possível calcular a campanha agora.')+'</p>'; });
+}
+// dias úteis do mês da campanha: total, concluídos até o último dia com dados e restantes
+function mrDias(mes){
+  var ini = new Date(2000 + Math.floor(mes/100), mes%100 - 1, 1), fim = new Date(ini.getFullYear(), ini.getMonth()+1, 0);
+  var ult = vhDt(isoDia(DAYS[N_DAYS-1])), tot = contarDias(ini, fim, null).uteis, feito;
+  if(ult >= fim) feito = tot; else if(ult < ini) feito = 0; else feito = contarDias(ini, ult, null).uteis;
+  return {ini:ini, fim:fim, tot:tot, feito:feito, resta:Math.max(0, tot - feito), ult:ult};
+}
+// menor valor em vendas para somar 'need' pontos com as categorias ainda não batidas (mochila 0/1 nos pontos)
+function mrProximo(itens, need){
+  if(need <= 0) return {custo:0, cats:[]};
+  var dp = [{c:0, s:[]}];
+  for(var w = 1; w <= need; w++) dp[w] = null;
+  itens.forEach(function(it){
+    for(var w = need; w >= 0; w--){ if(!dp[w]) continue; var nw = Math.min(need, w + it.pts), nc = dp[w].c + it.falta;
+      if(!dp[nw] || nc < dp[nw].c) dp[nw] = {c:nc, s:dp[w].s.concat([it])}; }
+  });
+  return dp[need] ? {custo:dp[need].c, cats:dp[need].s} : null;
+}
+function mrCalc(){
+  var d = MR.d, D = mrDias(d.mes), cats = d.cats;
+  var V = (d.vend||[]).map(function(v){
+    var it = cats.map(function(c, i){ var meta = +v[4][i] || 0, vend = +v[5][i] || 0, pct = meta > 0 ? vend/meta : 0;
+      var proj = D.feito > 0 ? vend / D.feito * D.tot : vend;
+      return {cod:c[0], nome:c[1], pts:c[2], meta:meta, vend:vend, pct:pct, ok:meta > 0 && vend >= meta, falta:Math.max(0, meta - vend), proj:proj, projOk:meta > 0 && proj >= meta}; });
+    var pts = 0, ptsR = 0, soma = 0; it.forEach(function(x){ if(x.ok) pts += x.pts; if(x.projOk) ptsR += x.pts; soma += x.pct; });
+    var abertos = it.filter(function(x){ return !x.ok && x.meta > 0; });
+    var perto = abertos.slice().sort(function(a, b){ return b.pct - a.pct; })[0] || null;
+    var alvo = pts < 20 ? 20 : (pts >= 100 ? null : Math.floor(pts/10)*10 + 10);
+    var prox = alvo ? mrProximo(abertos, alvo - pts) : null;
+    return {id:v[0], nome:dimNome('vendedor', v[0]), loja:v[1]!==null ? dimNome('loja', v[1]) : '', funcao:v[2], equipe:v[3], it:it, pts:pts, ptsR:ptsR,
+      bonus:mrBonus(pts), bonusR:mrBonus(ptsR), desemp:soma/it.length, perto:perto, alvo:alvo, prox:prox, nOk:it.filter(function(x){ return x.ok; }).length};
+  });
+  return {D:D, V:V};
+}
+function semAcento(t){ return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim(); }
+function mrCor(p){ return p >= 1 ? 'var(--vx-gr)' : (p >= .9 ? 'var(--vx-am)' : (p >= .6 ? 'var(--vx-cy)' : 'var(--vx-re)')); }
+function mrPct(p){ return (p*100).toFixed(p >= .995 && p < 1 ? 1 : 0).replace('.', ',')+'%'; }
+function mrDesenhar(){
+  var box = document.getElementById('mrBody'); if(!box || !MR.d) return;
+  var C = mrCalc(), D = C.D, V = C.V, d = MR.d;
+  var nomeMes = D.ini.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+  document.getElementById('mrSub').textContent = 'Campanha de '+nomeMes+' · linha do mês '+d.linha_mes+' · '+D.feito+' de '+D.tot+' dias úteis ('+D.resta+' restantes) · ideal hoje '+mrPct(D.tot ? D.feito/D.tot : 0)+' · só atacado';
+  if(!V.length){ box.innerHTML = '<p class="note-muted">Nenhum vendedor participante neste escopo e filtros.</p>'; return; }
+  var pont = V.filter(function(v){ return v.pts > 0; }).length, gar = V.filter(function(v){ return v.bonus > 0; }), rit = V.filter(function(v){ return v.bonusR > 0; });
+  var quase = V.filter(function(v){ return v.perto && v.perto.pct >= .9; }).length;
+  function k(c, l, v, s){ return '<div class="vh-k" style="--vh-c:'+c+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>'; }
+  var soma = function(a, f){ return a.reduce(function(s, x){ return s + f(x); }, 0); };
+  var kp = '<div class="vh-kpis mr-kpis">' +
+    k('var(--vx-cy)', 'Participantes', V.length, 'vendedores do atacado (cadastro SELLER)') +
+    k('var(--vx-pu)', 'Já pontuaram', pont, 'com pelo menos 1 categoria batida') +
+    k('var(--vx-gr)', 'Bônus garantido', gar.length, gar.length ? fmtMoney(soma(gar, function(v){ return v.bonus; }))+' com 20 pontos ou mais' : 'ninguém com 20 pontos ainda') +
+    k('var(--vx-am)', 'No ritmo, garantem', rit.length, rit.length ? fmtMoney(soma(rit, function(v){ return v.bonusR; }))+' se mantiverem o ritmo' : 'ninguém chega a 20 pontos no ritmo atual') +
+    k('var(--vx-re)', 'Quase lá', quase, 'com uma categoria entre 90% e 99%') + '</div>';
+  var q = MR.busca.trim().toUpperCase();
+  var L = V.filter(function(v){ return !q || v.nome.toUpperCase().indexOf(q) >= 0 || v.loja.toUpperCase().indexOf(q) >= 0 || String(v.equipe||'').toUpperCase().indexOf(q) >= 0; });
+  var val = {pts:function(v){ return v.pts*1e4 + v.desemp; }, nome:function(v){ return v.nome; }, ritmo:function(v){ return v.ptsR*1e4 + v.pts; },
+    perto:function(v){ return v.perto ? v.perto.pct : -1; }, prox:function(v){ return v.prox ? v.prox.custo : 1e15; }, desemp:function(v){ return v.desemp; }, bonus:function(v){ return v.bonus*1e4 + v.pts; }};
+  var fv = val[MR.ord] || val.pts;
+  L.sort(function(a, b){ var x = fv(a), y = fv(b); return (typeof x==='string' ? x.localeCompare(y, 'pt-BR') : x - y) * MR.dir || b.pts - a.pts || a.nome.localeCompare(b.nome, 'pt-BR'); });
+  var ctl = '<div class="mr-ctl"><span class="note-muted" style="font-size:11.5px;">Classificar por</span><div class="seg">' + Object.keys(MR_ORD).map(function(o){
+      return '<button type="button" data-mro="'+o+'" aria-pressed="'+(MR.ord===o)+'">'+MR_ORD[o]+'</button>'; }).join('') + '</div>' +
+    '<input type="search" id="mrBusca" placeholder="Buscar vendedor, loja ou equipe" value="'+escapeHtml(MR.busca)+'"></div>';
+  function th(o, rot, cls){ var on = MR.ord===o; return '<th data-mrs="'+o+'" class="'+(cls||'')+(on ? ' on' : '')+'">'+rot+(on ? '<span class="ar">'+(MR.dir < 0 ? '▼' : '▲')+'</span>' : '')+'</th>'; }
+  var linhas = L.map(function(v, i){
+    var p = v.perto, ab = !!MR.aberto[v.id];
+    var perto = p ? '<div class="mr-perto"><b>'+escapeHtml(p.nome)+'</b> <span class="s">'+mrPct(p.pct)+' · faltam '+fmtMoney(p.falta)+' · '+p.pts+' pts</span><div class="mr-bar"><i style="width:'+Math.min(100, p.pct*100).toFixed(1)+'%; background:'+mrCor(p.pct)+'"></i></div></div>' : '<span class="note-muted">todas batidas</span>';
+    var prox = !v.alvo ? '<span class="mr-bon">pontuação máxima</span>' : (v.prox ? '<div class="mr-prox"><b>'+fmtMoney(v.prox.custo)+'</b> em vendas para '+v.alvo+' pts ('+fmtMoney(mrBonus(v.alvo))+')<br>'+v.prox.cats.map(function(x){ return escapeHtml(x.nome); }).join(', ')+'</div>' : '<span class="note-muted">não alcança '+v.alvo+' pts</span>');
+    var tr = '<tr class="mr-v'+(ab ? ' ab' : '')+'" data-mrv="'+v.id+'"><td class="n" style="color:var(--text-muted);">'+(i+1)+'</td>' +
+      '<td class="mr-nome"><b>'+escapeHtml(v.nome)+'</b><span>'+escapeHtml(v.loja)+(v.equipe && semAcento(v.equipe)!==semAcento(v.loja) ? ' · '+escapeHtml(v.equipe) : '')+' · '+v.nOk+' de '+v.it.length+' categorias</span></td>' +
+      '<td class="n"><span class="mr-pts">'+v.pts+'</span></td>' +
+      '<td class="n"><span class="mr-bon'+(v.bonus ? '' : ' z')+'">'+(v.bonus ? fmtMoney(v.bonus) : 'R$ 0')+'</span></td>' +
+      '<td class="n">'+v.ptsR+' pts<br><span style="font-size:11px; color:var(--text-muted);">'+(v.bonusR ? fmtMoney(v.bonusR) : 'sem bônus')+'</span></td>' +
+      '<td>'+perto+'</td><td>'+prox+'</td><td class="n">'+mrPct(v.desemp)+'</td></tr>';
+    if(ab) tr += '<tr class="mr-det"><td></td><td colspan="7">'+mrDetalhe(v, D)+'</td></tr>';
+    return tr;
+  }).join('');
+  box.innerHTML = kp + ctl + '<div class="mr-scroll"><table class="mr-tbl"><thead><tr><th></th>'+th('nome','Vendedor')+th('pts','Pontos','n')+th('bonus','Bônus','n')+th('ritmo','No ritmo','n') +
+    th('perto','Mais perto de bater')+th('prox','Próximo bônus')+th('desemp','Desemp.','n')+'</tr></thead><tbody>'+linhas+'</tbody></table></div>' +
+    '<p class="mr-nota">Clique no vendedor para ver todas as categorias. Pontua quem bate 100% da meta da categoria; bônus a partir de 20 pontos (R$ 200) até 100 pontos (R$ 1.000). ' +
+    'Meta: média do vendedor nos 5 meses fechados ('+d.meses.map(function(m){ return String(m%100).padStart(2,'0')+'/'+String(Math.floor(m/100)); }).join(', ')+'), sem o maior e o menor mês, × crescimento da categoria, nunca abaixo da meta mínima. ' +
+    'No ritmo: vendido ÷ dias úteis concluídos × dias úteis do mês. Próximo bônus: a combinação de categorias ainda não batidas que soma os pontos com o menor valor em vendas.</p>';
+}
+function mrDetalhe(v, D){
+  var it = v.it.slice().sort(function(a, b){ return (b.ok - a.ok) || (b.pct - a.pct); });
+  return '<table class="mr-dt"><thead><tr><th>Categoria</th><th>Pts</th><th>Meta</th><th>Vendido</th><th>Atingido</th><th>Falta</th><th>Por dia útil</th><th>No ritmo</th><th>Situação</th></tr></thead><tbody>' +
+    it.map(function(x){
+      var st = x.ok ? '✓ batida' : (x.projOk ? 'bate no ritmo' : (x.pct >= .9 ? 'quase lá' : ''));
+      return '<tr'+(x.ok ? ' class="ok"' : '')+'><td>'+escapeHtml(x.nome)+'</td><td>'+x.pts+'</td><td>'+fmtMoney(x.meta)+'</td><td>'+fmtMoney(x.vend)+'</td>' +
+        '<td style="color:'+mrCor(x.pct)+'">'+mrPct(x.pct)+'</td><td>'+(x.ok ? '–' : fmtMoney(x.falta))+'</td><td>'+(x.ok ? '–' : (D.resta ? fmtMoney(x.falta/D.resta) : '–'))+'</td>' +
+        '<td>'+(x.meta ? mrPct(x.proj/x.meta) : '–')+'</td><td class="mr-st" style="color:'+(x.ok ? 'var(--vx-gr)' : mrCor(x.pct))+'">'+st+'</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+function mrLigar(){
+  var box = document.getElementById('mrBody'); if(!box) return;
+  box.addEventListener('click', function(e){
+    var o = e.target.closest('[data-mro]');
+    if(o){ MR.ord = o.getAttribute('data-mro'); MR.dir = MR.ord==='prox' ? 1 : -1; mrDesenhar(); return; }
+    var h = e.target.closest('[data-mrs]');
+    if(h){ var k = h.getAttribute('data-mrs'); if(MR.ord===k) MR.dir = -MR.dir; else { MR.ord = k; MR.dir = (k==='nome' || k==='prox') ? 1 : -1; } mrDesenhar(); return; }
+    var r = e.target.closest('tr.mr-v');
+    if(r){ var id = r.getAttribute('data-mrv'); MR.aberto[id] = !MR.aberto[id]; mrDesenhar(); }
+  });
+  box.addEventListener('input', function(e){
+    if(e.target.id!=='mrBusca') return;
+    MR.busca = e.target.value; var pos = e.target.selectionStart; mrDesenhar();
+    var i = document.getElementById('mrBusca'); if(i){ i.focus(); try{ i.setSelectionRange(pos, pos); }catch(er){} }
+  });
+}
 function vpLigar(el){
   if(el.dataset.lig) return; el.dataset.lig = '1';
   el.addEventListener('click', function(e){
@@ -6036,6 +6199,7 @@ function vpLigar(el){
   });
 }
 function renderVendConsult(){
+  if(VD_ABA==='maratona'){ mrCarregar(); return; }
   var box = document.getElementById('vendConsultBody'), rankBox = document.getElementById('vendRankBody');
   rankBox.innerHTML = '';
   if(!VEND_PESSOAS.length){ box.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">Não há vendedores neste escopo de acesso.</p>'; return; }
@@ -10157,6 +10321,7 @@ function bindEvents(){
     document.getElementById('viewSub').textContent = meta.sub;
     document.getElementById('topVendSel').hidden = (view!=='vendedores' || VD_ABA!=='consult');
     if(view==='vendedores' && VD_ABA==='planos') vdPlanosCarregar();
+    if(view==='vendedores' && VD_ABA==='maratona') mrCarregar();
     document.getElementById('cliAbas').hidden = (view!=='clientes');
     if(VIEWS_COM_PRODUTOS.indexOf(view)!==-1 && !PRODUTOS_NO_PAINEL){ state.page = 1; renderAll(false); }
     if(view==='clientes'){ renderClientes(); }
@@ -10350,7 +10515,7 @@ function bindEvents(){
   // consultoria de vendedor
   document.getElementById('vendPdfBtn').addEventListener('click', salvarConsultoriaPdf);
   document.getElementById('vdGuias').addEventListener('click', function(e){ var b = e.target.closest('button[data-vd]'); if(b) vdAba(b.getAttribute('data-vd')); });
-  vdPlanosLigar();
+  vdPlanosLigar(); mrLigar();
   document.getElementById('vendConsultSelect').addEventListener('change', function(){
     state.vendConsultSel = this.value;
     renderVendSemRolar();
