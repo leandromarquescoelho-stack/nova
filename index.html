@@ -500,7 +500,7 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vp-rel{display:flex; flex-direction:column; align-items:flex-end; line-height:1.15;} .vp-rel b{font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700;} .vp-rel span{font-size:11px; color:var(--text-muted);}
 .vp-rel span.novo{color:var(--good); font-weight:700;}
 .vp-bts{display:flex; gap:6px;}
-.vp-kpis{display:grid; grid-template-columns:1.4fr repeat(4,1fr); gap:var(--vp-gap); margin-bottom:var(--vp-gap);}
+.vp-kpis{display:grid; grid-template-columns:1.4fr repeat(5,1fr); gap:var(--vp-gap); margin-bottom:var(--vp-gap);}
 .vp-k{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px; position:relative; overflow:hidden; min-width:0;}
 .vp-k::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--vh-c, var(--vx-cy));}
 .vp-k .l{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted);}
@@ -516,7 +516,7 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vp-l.tot{border-color:rgba(34,211,238,.35);}
 .vp-l .h{display:flex; justify-content:space-between; gap:6px; align-items:baseline;} .vp-l .h b{font-size:14px;} .vp-l .h span{font-size:11px; color:var(--text-muted);}
 .vp-l .v{font-family:'Sora',sans-serif; font-size:26px; font-weight:800; line-height:1.1;} .vp-l .x{font-size:12px; color:var(--text-2); display:flex; justify-content:space-between; gap:6px; flex-wrap:wrap;}
-.vp-dest{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--vp-gap);}
+.vp-dest{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:var(--vp-gap);}
 .vp-d{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; min-width:0;}
 .vp-d h4{margin:0 0 6px; font-size:13px;} .vp-d h4 small{font-weight:500; color:var(--text-muted); margin-left:6px;}
 .vp-dl{display:grid; grid-template-columns:22px minmax(0,1fr) auto; gap:8px; align-items:center; padding:6px 0; border-top:1px dashed var(--border); font-size:13px;}
@@ -591,7 +591,7 @@ table.mr-dt{width:100%; border-collapse:collapse; font-size:12px;}
 .mr-st{font-family:inherit; font-size:11px; font-weight:700;}
 .mr-nota{font-size:11px; color:var(--text-muted); margin-top:10px; line-height:1.5;}
 @media (max-width:900px){ .mr-kpis{grid-template-columns:repeat(2,minmax(0,1fr));} }
-.vh-kpis{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:16px;}
+.vh-kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(165px,1fr)); gap:10px; margin-bottom:16px;}
 .vh-k{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; position:relative; overflow:hidden; min-width:0;}
 .vh-k::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--vh-c, var(--vx-cy));}
 .vh-k .l{font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted);}
@@ -9113,6 +9113,8 @@ function vhDesenhar(){
   })();
   var gTot = junta(todas, VH_CANAIS), rG = calc(gTot, du, null);
 
+  // estoque a custo (posição da última carga), com os filtros do painel
+  var E = vhEst(painelFiltros(null), dia, vhDesenhar), EL = vhEstLojas(E), eOk = E && !E.erro && E.est;
   // KPIs
   function k(c, l, v, s, dest){ return '<div class="vh-k'+(dest?' dest':'')+'" style="--vh-c:'+c+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>'; }
   var sgH = junta(lojas, ['ATACADO']).sh, sgM = junta(lojas, ['ATACADO']).sm;
@@ -9122,7 +9124,8 @@ function vhDesenhar(){
     k('var(--vx-pu)', 'Mês até agora', fmtMoney(gTot.m.f), vhMgB(gTot.m)+' · média diária '+(rG.md!==null ? fmtMoney(rG.md) : '—')) +
     k(vhCorTend(rAE.tp), 'Tendência atacado + e-com', rAE.tend!==null ? fmtMoney(rAE.tend) : '—', rAE.tp!==null ? '<b style="color:'+vhCorTend(rAE.tp)+'">'+vhP(rAE.tp)+'</b> do objetivo' : (nObj && !temObAtc ? 'objetivo em '+nObj+' de '+lojas.length+' lojas: cadastre todas' : 'cadastre os objetivos nos quadros das lojas')) +
     k('var(--vx-am)', 'Objetivo atacado + e-com', rAE.ob ? fmtMoney(rAE.ob) : '—', rAE.ob ? 'atingido <b>'+vhP(rAE.at)+'</b> · faltam '+fmtMoney(rAE.falta)+(rAE.porDia ? '<br>precisa de '+fmtMoney(rAE.porDia)+' por dia útil' : '') : 'sem objetivo no mês') +
-    k('#a78bfa', 'Seguradoras · atacado', fmtMoney(sgH.f)+' <span style="font-size:12px; font-weight:600; color:var(--text-muted)">hoje</span>', vhMgB(sgH)+'<br>mês '+fmtMoney(sgM.f)+' '+vhMgB(sgM)+' · '+vhP(rAtc.t.m.f>0 ? sgM.f/rAtc.t.m.f*100 : null)+' do atacado');
+    k('#a78bfa', 'Seguradoras · atacado', fmtMoney(sgH.f)+' <span style="font-size:12px; font-weight:600; color:var(--text-muted)">hoje</span>', vhMgB(sgH)+'<br>mês '+fmtMoney(sgM.f)+' '+vhMgB(sgM)+' · '+vhP(rAtc.t.m.f>0 ? sgM.f/rAtc.t.m.f*100 : null)+' do atacado') +
+    k('#14b8a6', 'Estoque a custo', eOk ? fmtMoney(+E.est[0]) : (E && E.erro ? '—' : '…'), eOk ? fmtUn(Math.round(+E.est[1]))+' peças em '+fmtUn(+E.est[2])+' itens<br>parado '+fmtMoney(+E.est[3])+' · '+vhP(+E.est[0] > 0 ? E.est[3]/E.est[0]*100 : null) : (E && E.erro==='falta' ? 'rode o SQL vendas_hoje_estoque.sql' : (E && E.erro ? 'não foi possível ler o estoque' : 'carregando o estoque')));
 
   // quadros
   var pode = vhPodeObj();
@@ -9150,6 +9153,7 @@ function vhDesenhar(){
   var html = lojas.map(function(l){
     var r = calc(junta([l], ['ATACADO']), duLoja(l), +obj[l] || null);
     var chips = ['OFICINA','ACESSORIOS'].map(function(c){ var x = A[l][c]; return x && x.m.f > 0.5 ? '<span>'+(c==='OFICINA'?'Oficina':'Acessórios')+' no mês '+fmtMoney(x.m.f)+'</span>' : ''; }).join('');
+    if(EL[l] > 0.5) chips += '<span>Estoque '+fmtMoney(EL[l])+'</span>';
     return card(l, vhRegiao(l), r, {chave:l, seg:true, chips:chips});
   }).join('');
   html += card('E-commerce', 'dias corridos', rEcm, {chave:'ECOMMERCE', cls:'ecm'});
@@ -9238,13 +9242,28 @@ function vhDesenhar(){
   document.getElementById('vhNota').innerHTML = 'Média diária = vendas do mês até ontem ÷ dias úteis concluídos (feriados do município de cada loja; e-commerce por dias corridos). Tendência = média diária × dias úteis do mês. ▲▼ = venda do dia comparada com a média diária.' +
     (pode ? ' Clique no objetivo de um quadro para alterar (vale para o mês todo).' : '');
   // resumo para o Painel (tela de acompanhamento)
-  VH.sum = {dia:dia, ehHoje:ehHoje, semana:semana, dD:dD, ontem:ontem, gTot:gTot, rG:rG, rAtc:rAtc, rEcm:rEcm, rAE:rAE, du:du, dc:dc, nObj:nObj, temObAtc:temObAtc,
+  VH.sum = {E: eOk ? E : null, EL:EL, dia:dia, ehHoje:ehHoje, semana:semana, dD:dD, ontem:ontem, gTot:gTot, rG:rG, rAtc:rAtc, rEcm:rEcm, rAE:rAE, du:du, dc:dc, nObj:nObj, temObAtc:temObAtc,
     lojas: lojas.map(function(l){ return {nome:l, tag:vhRegiao(l), r:calc(junta([l], ['ATACADO']), duLoja(l), +obj[l] || null)}; }),
     canais: VH_CANAIS.map(function(k){ var t = junta(todas, [k]), dd = k==='ECOMMERCE' ? dc : du; return {k:k, t:t, md: dd.conc > 0 ? (t.m.f - t.h.f)/dd.conc : null}; })};
   vhLigar();
   if(VH.modo==='painel') vhPainel(); else vhResumo();
 }
 function vhCarga(){ return VH.carga || REAL.carga; }
+/* ---------- estoque (a custo) e novidades em estoque: bi_vendas_hoje_estoque ---------- */
+VH.est = {}; VH.estPend = {};
+function vhEstChave(f, d){ return JSON.stringify([f, d]); }
+function vhEst(f, d, depois){
+  var key = vhEstChave(f, d); if(VH.est[key]) return VH.est[key];
+  if(!VH.estPend[key]){
+    VH.estPend[key] = 1;
+    window.__NC_rpc('bi_vendas_hoje_estoque', {f:f, dia:d}).then(function(r){ VH.est[key] = r || {}; })
+      .catch(function(e){ VH.est[key] = {erro: /bi_vendas_hoje_estoque|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'}; })
+      .then(function(){ delete VH.estPend[key]; if(VX.aba==='hoje' && state.currentView==='vendas') depois(); });
+  }
+  return null;
+}
+// estoque por nome da loja
+function vhEstLojas(E){ var o = {}; ((E && E.lojas) || []).forEach(function(r){ o[dimNome('loja', r[0]) || ''] = +r[1] || 0; }); return o; }
 /* ---------- Vendas Hoje: Cards ou Painel (as duas abas podem ser liberadas separadamente no cadastro) ---------- */
 function vhModosLiberados(){ return ['cards','painel'].filter(function(m){ return subOk('vendas', m==='cards' ? 'hoje' : 'painel'); }); }
 function vhModoAplicar(){
@@ -9277,7 +9296,7 @@ function vpChecar(manual){
     var vista = vhCarga();
     if(c && (!vista || c.carregado_em !== vista.carregado_em)){
       VH.carga = c; VH.novaEm = new Date(); VH.diaAuto = true;
-      VH.key = null; VH.res = {}; VH.resPend = {}; VH.obj = {}; VH.objPend = {};
+      VH.key = null; VH.res = {}; VH.resPend = {}; VH.obj = {}; VH.objPend = {}; VH.est = {}; VH.estPend = {};
       if(vpVisivel()) vxHoje();
       if(manual) toast('Nova carga recebida. Atualizando o painel…');
     } else if(manual) toast('O painel já está com a carga mais recente.');
@@ -9308,6 +9327,17 @@ document.addEventListener('fullscreenchange', function(){
   var b = document.getElementById('vpTela'); if(b) b.textContent = document.fullscreenElement ? 'Sair da tela cheia' : 'Tela cheia';
   if(!document.fullscreenElement && VH.wake){ try{ VH.wake.release(); }catch(e){} VH.wake = null; }
 });
+// novidades em estoque: produtos que vendem bem e zeraram ou baixaram o estoque com as vendas do dia
+function vhNovItens(E){ return ((E && E.nov) || []).map(function(r){ var est = +r[3] || 0, md = (+r[6] || 0)/90;
+  return {loja: dimNome('loja', r[0]) || '', id:r[1], nome: String(r[2]||'#'+r[1]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), est:est, qd:+r[4]||0, fd:c2(r[5]), md:md, dias: md > 0 ? est/md : null, zerou: est <= 0}; }); }
+function vhNovTxt(o){ return (o.zerou ? '<b class="vh-dn">zerou</b>' : '<b style="color:var(--warning)">restam '+fmtUn(Math.round(o.est))+' un'+(o.dias!==null ? ' (≈'+Math.max(1, Math.round(o.dias))+' dia'+(Math.round(o.dias)>1?'s':'')+')' : '')+'</b>') +
+  ' · vendeu '+fmtUn(o.qd)+' hoje · média '+(o.md < 10 ? o.md.toFixed(1).replace('.',',') : fmtUn(Math.round(o.md)))+'/dia'; }
+function vpNovidades(E){
+  var it = vhNovItens(E).slice(0, 8);
+  return '<div class="vp-d"><h4>Novidades em estoque<small>vendem bem e zeraram ou baixaram</small></h4>'+(it.length ? it.map(function(o, i){
+    return '<div class="vp-dl"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.loja)+' · '+escapeHtml(o.nome)+'<small>'+vhNovTxt(o)+'</small></span><b>'+fmtMoney(o.fd)+'</b></div>';
+  }).join('') : '<p class="note-muted" style="font-size:12px;">'+(E ? 'Nenhum produto de boa venda zerou ou baixou o estoque hoje.' : 'Carregando…')+'</p>')+'</div>';
+}
 function vhPainel(){
   var S = VH.sum, box = document.getElementById('vpBody'); if(!S || !box) return;
   var c = vhCarga();
@@ -9320,7 +9350,8 @@ function vhPainel(){
     k('#64748b', 'Ontem', fmtMoney(g.o.f), vhMgB(g.o)+' '+vhVs(rG.vsO)) +
     k('var(--vx-pu)', 'Mês até agora', fmtMoney(g.m.f), vhMgB(g.m)+' · '+S.du.conc+' de '+S.du.mes+' dias úteis') +
     k(vhCorTend(rAE.tp), 'Tendência atacado + e-com', rAE.tend!==null ? fmtMoney(rAE.tend) : '—', rAE.tp!==null ? '<b style="color:'+vhCorTend(rAE.tp)+'">'+vhP(rAE.tp)+'</b> do objetivo' : 'sem objetivo completo no mês') +
-    k('var(--vx-am)', 'Falta para o objetivo', rAE.ob ? fmtMoney(rAE.falta) : '—', rAE.ob ? 'atingido <b>'+vhP(rAE.at)+'</b>'+(rAE.porDia ? ' · '+fmtMoney(rAE.porDia)+' por dia útil' : '') : 'objetivo atacado + e-com não cadastrado') + '</div>';
+    k('var(--vx-am)', 'Falta para o objetivo', rAE.ob ? fmtMoney(rAE.falta) : '—', rAE.ob ? 'atingido <b>'+vhP(rAE.at)+'</b>'+(rAE.porDia ? ' · '+fmtMoney(rAE.porDia)+' por dia útil' : '') : 'objetivo atacado + e-com não cadastrado') +
+    k('#14b8a6', 'Estoque a custo', S.E ? fmtMoney(+S.E.est[0]) : '—', S.E ? fmtUn(Math.round(+S.E.est[1]))+' peças · parado '+fmtMoney(+S.E.est[3]) : 'carregando') + '</div>';
   var NOME_C = {ATACADO:'Atacado', ECOMMERCE:'E-commerce', OFICINA:'Oficina', ACESSORIOS:'Acessórios'}, CORES = ['var(--vx-cy)','var(--vx-pu)','var(--vx-am)','var(--vx-gr)'];
   var cn = '<div class="vp-canais">'+S.canais.filter(function(x){ return x.t.m.f > 0.5 || x.t.h.f > 0.5; }).map(function(x, i){
     var sh = g.h.f > 0 ? x.t.h.f/g.h.f*100 : 0;
@@ -9331,6 +9362,7 @@ function vhPainel(){
     var bar = r.ob ? '<div class="vp-bar" title="Barra: atingido no mês · traço: tendência"><i style="width:'+Math.min(100, r.at||0).toFixed(1)+'%; background:'+vhCorTend(r.tp)+'"></i>'+(r.tp!==null ? '<em style="left:calc('+Math.min(100, r.tp).toFixed(1)+'% - 1px)"></em>' : '')+'</div>' : '';
     return '<div class="vp-l'+(cls?' '+cls:'')+'"><div class="h"><b>'+escapeHtml(nome)+'</b><span>'+escapeHtml(tag||'')+'</span></div>' +
       '<div class="v">'+fmtMoney(r.t.h.f)+'</div><div class="x"><span>'+vhVs(r.vsH)+' vs. média</span>'+vhMgB(r.t.h)+'</div>' +
+      (S.EL[nome] > 0.5 ? '<div class="x"><span>Estoque '+fmtMoney(S.EL[nome])+'</span></div>' : '') +
       '<div class="x"><span>Mês '+fmtMoney(r.t.m.f)+'</span><span>'+(r.ob ? 'tend. <b style="color:'+vhCorTend(r.tp)+'">'+vhP(r.tp)+'</b>' : (r.tend!==null ? 'tend. '+fmtMoney(r.tend) : ''))+'</span></div>'+bar+'</div>';
   }
   var lj = '<div class="vp-lojas">'+S.lojas.map(function(o){ return tile(o.nome, o.tag, o.r); }).join('') + (S.rEcm.t.m.f > 0.5 ? tile('E-commerce', 'dias corridos', S.rEcm) : '') + (S.lojas.length > 1 ? tile('Atacado', 'todas as lojas', S.rAtc, 'tot') : '') + '</div>';
@@ -9348,7 +9380,7 @@ function vhPainel(){
   }
   var nm7 = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
   var ds = RR ? '<div class="vp-dest">' + lista('Vendedores em destaque', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) +
-      lista('Clientes em destaque', 'compras do dia', RR.clientes, nm7) + lista('Produtos em destaque', 'faturamento do dia', RR.produtos, nm7) + '</div>'
+      lista('Clientes em destaque', 'compras do dia', RR.clientes, nm7) + lista('Produtos em destaque', 'faturamento do dia', RR.produtos, nm7) + vpNovidades(S.E) + '</div>'
     : (R && R.erro ? '' : '<p class="note-muted status-txt">Carregando os destaques do dia…</p>');
   box.innerHTML = kp + cn + lj + ds;
 }
@@ -9391,11 +9423,12 @@ function vhResumo(){
   }
   box.innerHTML = dias.map(function(d){
     var rot = (d===dia ? 'Hoje' : 'Ontem')+' · '+fmtDateFull(vhDt(d));
-    return (dias.length > 1 ? '<div class="vh-res-dia">'+rot+'</div>' : '') + vhResumoDia(VH.res[vhResChave(f, d, mes)], mes ? 'm' : (d===dia ? 'h' : 'o'));
+    var nov = !mes && d===dia ? (vhEst(f, d, vhResumo) || 'carregando') : null;
+    return (dias.length > 1 ? '<div class="vh-res-dia">'+rot+'</div>' : '') + vhResumoDia(VH.res[vhResChave(f, d, mes)], mes ? 'm' : (d===dia ? 'h' : 'o'), nov);
   }).join('');
 }
 // resumo de um dia (resultado de bi_vendas_destaques) em html
-function vhResumoDia(R, qual){
+function vhResumoDia(R, qual, NOV){
   if(R.erro){ return '<p class="note-muted">'+(R.erro==='falta' ? 'O banco ainda não tem o resumo do dia (rode o SQL vendas_destaques.sql).' : (R.erro==='falta_mes' ? 'O banco ainda não tem o resumo do mês (rode o SQL vendas_destaques_mes.sql).' : 'Não foi possível montar o resumo agora.'))+'</p>'; }
   var MES = qual==='m', SFX = MES ? '' : '/dia';
   // projeção do mês: no mesmo ritmo do grupo (tendência ÷ vendido no mês)
@@ -9468,7 +9501,15 @@ function vhResumoDia(R, qual){
     bloco('💰', 'Faturamento', 'quem mais somou acima da média', bFat) +
     bloco('📦', 'Quantidades', 'produtos vendidos bem acima do normal', bQtd) +
     bloco('🤝', 'Clientes', 'compras bem acima da média do cliente', bCli) +
-    bloco('🏆', 'Vendedores', 'acima da média do próprio vendedor', bVen) + '</div>' +
+    bloco('🏆', 'Vendedores', 'acima da média do próprio vendedor', bVen) +
+    (NOV ? bloco('📉', 'Novidades em estoque', 'vendem bem e zeraram ou baixaram o estoque com as vendas do dia', NOV==='carregando' ? '<p class="note-muted" style="font-size:11.5px;">Carregando o estoque…</p>' :
+      (NOV.erro ? '<p class="note-muted" style="font-size:11.5px;">'+(NOV.erro==='falta' ? 'Rode o SQL vendas_hoje_estoque.sql para ver este quadro.' : 'Não foi possível ler o estoque.')+'</p>' :
+      vhNovItens(NOV).slice(0, 8).map(function(o){
+        var on = VH.resF.produto && String(VH.resF.produto.id)===String(o.id);
+        return '<div class="vh-rl" data-fd="produto" data-fi="'+escapeHtml(o.id)+'" data-fn="'+escapeHtml(o.nome)+'" title="'+(on ? 'Clique para tirar o filtro' : 'Clique para filtrar os demais quadros por este produto')+'"><div class="vh-rn"><span class="vh-rt">'+escapeHtml(o.loja)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</span></div>' +
+          '<div class="vh-rv"><b>'+fmtMoney(o.fd)+'</b><small>'+vhNovTxt(o)+'</small></div></div>';
+      }).join(''))) : '') + '</div>' +
+    (NOV ? '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">Novidades em estoque: produtos que venderam em 8 dias ou mais nos 90 dias anteriores e que, na loja, ficaram sem estoque ou com menos de 7 dias de cobertura na última carga.</p>' : '') +
     '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">'+(MES ? 'Média = mesmo período (dia 1 a '+ddmm.slice(0,2)+') dos '+nd+' meses anteriores com venda ÷ '+nd+', com os mesmos filtros. Projeção = no ritmo de fechamento do grupo (média diária × dias úteis do mês).' : 'Média = total dos '+nd+' dias com venda nos 60 dias anteriores ÷ '+nd+', com os mesmos filtros.')+' × = quantas vezes a média; em verde, 1,5× ou mais.</p>';
 }
 // resumo do dia: hoje, ontem ou os dois (lembrado no navegador)
