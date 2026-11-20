@@ -524,6 +524,7 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vp-d h4{margin:0 0 6px; font-size:13px;} .vp-d h4 small{font-weight:500; color:var(--text-muted); margin-left:6px;}
 .vp-dl{display:grid; grid-template-columns:22px minmax(0,1fr) auto; gap:8px; align-items:center; padding:6px 0; border-top:1px dashed var(--border); font-size:13px;}
 .vp-dl .n{color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:11px;} .vp-dl .nm{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .vp-dl b{white-space:nowrap;}
+@media (max-width:1100px){ .vp-dl.x{display:none;} }
 .vp-dl small{display:block; font-size:10.5px; color:var(--text-muted); white-space:normal;}
 @media (max-width:1100px){ .vp-kpis{grid-template-columns:repeat(3,1fr);} .vp-k.g{grid-column:1 / -1;} .vp-dest{grid-template-columns:1fr;} }
 @media (max-width:700px){ .vp-lojas{grid-template-columns:repeat(2,minmax(0,1fr));} .vp-l .v{font-size:20px;} .vp-kpis{grid-template-columns:repeat(2,1fr);} .vp-canais{grid-template-columns:repeat(2,1fr);} .vp-rel{align-items:flex-start;} .vp-tit{font-size:18px;} }
@@ -9345,8 +9346,8 @@ function vhEntTxt(o){
   return '<b class="vh-up">entrou +'+fmtUn(Math.round(o.entrou))+' un</b> · '+(o.zerado ? '<b>estava zerado</b>' : 'antes '+fmtUn(Math.round(o.ant))+(o.baixo ? ' (baixo)' : ''))+' · agora '+fmtUn(Math.round(o.est))+cob;
 }
 function vpNovidades(E){
-  var en = vhEntItens(E).slice(0, 6), it = vhNovItens(E).slice(0, en.length ? 3 : 8), i = 0;
-  var lin = function(o, txt, v){ i++; return '<div class="vp-dl"><span class="n">'+i+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.loja)+' · '+escapeHtml(o.nome)+'<small>'+txt+'</small></span><b>'+v+'</b></div>'; };
+  var en = vhEntItens(E).slice(0, 5), it = vhNovItens(E).slice(0, en.length ? 2 : 7), i = 0;
+  var lin = function(o, txt, v){ i++; return '<div class="vp-dl'+(i > 5 ? ' x' : '')+'"><span class="n">'+i+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.loja)+' · '+escapeHtml(o.nome)+'<small>'+txt+'</small></span><b>'+v+'</b></div>'; };
   var h = en.map(function(o){ return lin(o, vhEntTxt(o), '<span class="vh-up">'+(o.entrou!==null ? '+'+fmtUn(Math.round(o.entrou)) : fmtUn(Math.round(o.est)))+' un</span>'); }).join('') +
     (it.length ? '<div style="font-size:11px; color:var(--text-muted); margin:8px 0 2px; font-weight:700;">ZEROU OU BAIXOU</div>' : '') + it.map(function(o){ return lin(o, vhNovTxt(o), fmtMoney(o.fd)); }).join('');
   return '<div class="vp-d"><h4>Novidades em estoque<small>o que entrou e o que zerou</small></h4>'+(h || '<p class="note-muted" style="font-size:12px;">'+(E ? 'Nenhuma entrada ou ruptura de produto de boa venda hoje.' : 'Carregando…')+'</p>')+'</div>';
@@ -9388,10 +9389,10 @@ function vhPainel(){
   else if(!R.erro) VH.vpUlt = R;
   var RR = R && !R.erro ? R : VH.vpUlt;
   function lista(tit, sub, rows, nome, dim){
-    var it = (rows||[]).map(function(r){ return {nome:nome(r), h:c2(r[1]), m:c2(r[4])/(RR.nd||1)}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 8);
+    var it = (rows||[]).map(function(r){ return {nome:nome(r), h:c2(r[1]), m:c2(r[4])/(RR.nd||1)}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 7);
     return '<div class="vp-d"><h4>'+tit+'<small>'+sub+'</small></h4>'+(it.length ? it.map(function(o, i){
       var x = o.m > 0.5 ? o.h/o.m : null;
-      return '<div class="vp-dl"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+'</small></span><b>'+fmtMoney(o.h)+'</b></div>';
+      return '<div class="vp-dl'+(i >= 5 ? ' x' : '')+'"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+'</small></span><b>'+fmtMoney(o.h)+'</b></div>';
     }).join('') : '<p class="note-muted" style="font-size:12px;">Sem vendas ainda.</p>')+'</div>';
   }
   var nm7 = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
