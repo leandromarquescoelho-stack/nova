@@ -486,6 +486,44 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vd-r{font-size:11px;}
 .vd-x{font-size:10.5px;} .vd-x em{font-style:italic; font-family:'JetBrains Mono',monospace; color:var(--text-muted);}
 .vd-x .vh-up, .vd-x .vh-dn{font-weight:700;}
+#vhModo.vh-modo{display:inline-flex; width:auto; margin:0 0 12px;} #vhModo[hidden]{display:none;} .vh-modo button{font-size:12.5px; padding:6px 16px;}
+.vh-rl[data-fd]{cursor:pointer; border-radius:6px;} .vh-rl[data-fd]:hover{background:var(--surface-2);}
+.vh-rf{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:0 0 10px; font-size:12px; color:var(--text-2);}
+.vh-rf button{border:1px solid var(--accent); background:rgba(34,211,238,.08); color:var(--text); border-radius:999px; padding:4px 10px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:inherit;}
+.vh-rf button.lp{border-color:var(--border); background:transparent; color:var(--text-muted);}
+.vp{--vp-gap:12px;} .vp:fullscreen{background:var(--bg); padding:18px 22px; overflow:auto;}
+.vp-top{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:var(--vp-gap);}
+.vp-tt{flex:1 1 280px; min-width:0;} .vp-tit{font-family:'Sora',sans-serif; font-size:22px; font-weight:800;} .vp-sub{font-size:12px; color:var(--text-muted); margin-top:2px;}
+.vp-rel{display:flex; flex-direction:column; align-items:flex-end; line-height:1.15;} .vp-rel b{font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700;} .vp-rel span{font-size:11px; color:var(--text-muted);}
+.vp-rel span.novo{color:var(--good); font-weight:700;}
+.vp-bts{display:flex; gap:6px;}
+.vp-kpis{display:grid; grid-template-columns:1.4fr repeat(4,1fr); gap:var(--vp-gap); margin-bottom:var(--vp-gap);}
+.vp-k{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px; position:relative; overflow:hidden; min-width:0;}
+.vp-k::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--vh-c, var(--vx-cy));}
+.vp-k .l{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted);}
+.vp-k .v{font-family:'Sora',sans-serif; font-size:clamp(18px,1.55vw,30px); font-weight:800; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.vp-k.g .v{font-size:clamp(26px,2.6vw,46px); color:var(--vx-cy-t);} .vp-k .s{font-size:12.5px; color:var(--text-2); margin-top:4px; line-height:1.45;}
+.vp-canais{display:grid; grid-template-columns:repeat(4,1fr); gap:var(--vp-gap); margin-bottom:var(--vp-gap);}
+.vp-cn{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 14px;}
+.vp-cn .h{display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); font-weight:700;} .vp-cn .v{font-family:'Sora',sans-serif; font-size:20px; font-weight:800; margin:2px 0 6px;}
+.vp-bar{height:7px; border-radius:99px; background:var(--surface-3); position:relative; overflow:visible;} .vp-bar i{position:absolute; left:0; top:0; bottom:0; border-radius:99px;}
+.vp-bar em{position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--text); border-radius:2px;}
+.vp-lojas{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:var(--vp-gap); margin-bottom:var(--vp-gap);}
+.vp-l{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; min-width:0;}
+.vp-l.tot{border-color:rgba(34,211,238,.35);}
+.vp-l .h{display:flex; justify-content:space-between; gap:6px; align-items:baseline;} .vp-l .h b{font-size:14px;} .vp-l .h span{font-size:11px; color:var(--text-muted);}
+.vp-l .v{font-family:'Sora',sans-serif; font-size:26px; font-weight:800; line-height:1.1;} .vp-l .x{font-size:12px; color:var(--text-2); display:flex; justify-content:space-between; gap:6px; flex-wrap:wrap;}
+.vp-dest{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--vp-gap);}
+.vp-d{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; min-width:0;}
+.vp-d h4{margin:0 0 6px; font-size:13px;} .vp-d h4 small{font-weight:500; color:var(--text-muted); margin-left:6px;}
+.vp-dl{display:grid; grid-template-columns:22px minmax(0,1fr) auto; gap:8px; align-items:center; padding:6px 0; border-top:1px dashed var(--border); font-size:13px;}
+.vp-dl .n{color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:11px;} .vp-dl .nm{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .vp-dl b{white-space:nowrap;}
+.vp-dl small{display:block; font-size:10.5px; color:var(--text-muted);}
+@media (max-width:1100px){ .vp-kpis{grid-template-columns:repeat(3,1fr);} .vp-k.g{grid-column:1 / -1;} .vp-dest{grid-template-columns:1fr;} }
+@media (max-width:700px){ .vp-lojas{grid-template-columns:repeat(2,minmax(0,1fr));} .vp-l .v{font-size:20px;} .vp-kpis{grid-template-columns:repeat(2,1fr);} .vp-canais{grid-template-columns:repeat(2,1fr);} .vp-rel{align-items:flex-start;} .vp-tit{font-size:18px;} }
+.u-subs{display:flex; flex-direction:column; gap:8px;} .u-sub{display:flex; gap:8px; align-items:flex-start;} .u-sub-g{flex:0 0 96px; font-size:11.5px; font-weight:700; color:var(--text-2); padding-top:6px;}
+.u-sub.off{opacity:.4;}
+@media (max-width:600px){ .u-sub{flex-direction:column; gap:4px;} .u-sub-g{flex-basis:auto; padding-top:0;} }
 .vh-res-h{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;}
 .vh-res-h .copy-img{opacity:.7; margin-left:0;}
 .vh-res-p{font-size:13px; line-height:1.65; color:var(--text-2); margin:0 0 8px;}
@@ -2492,6 +2530,14 @@ table.data-table.vp-tbl{min-width:720px;}
       </div>
 
       <div class="vx-tc" data-vxpainel="hoje" hidden>
+        <div class="seg vh-modo" id="vhModo" role="tablist" aria-label="Formato de Vendas Hoje"><button type="button" data-vhm="cards" aria-pressed="true">Cards</button><button type="button" data-vhm="painel" aria-pressed="false">Painel</button></div>
+        <div id="vhModoPainel" class="vp" hidden>
+          <div class="vp-top"><div class="vp-tt"><div class="vp-tit" id="vpTit">Vendas de hoje</div><div class="vp-sub" id="vpSub"></div></div>
+            <div class="vp-rel"><b id="vpHora">--:--</b><span id="vpProx">atualiza sozinho</span></div>
+            <div class="vp-bts"><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
+          <div id="vpBody"><p class="note-muted status-txt">Carregando o painel…</p></div>
+        </div>
+        <div id="vhModoCards">
         <div class="vh-cap" id="vhCap">
         <div class="vh-topo"><div><h2 class="vh-tit" id="vhTit">Vendas de hoje</h2><div class="vh-sub" id="vhSub"></div></div><div class="vh-dias"><span id="vhDias" style="display:contents"></span><button type="button" class="vh-geral copy-img" id="vhCopiarTudo" title="Copiar a visão geral (indicadores e quadros) como imagem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Copiar visão geral</button></div></div>
         <div class="vh-kpis" id="vhKpis"></div>
@@ -2501,7 +2547,8 @@ table.data-table.vp-tbl{min-width:720px;}
         <div class="vx-card" id="vhDetCard" data-encolher="#vhDet"><div class="vh-res-h"><div><div class="vx-ct">Hoje, Ontem e Mês</div><div class="vx-cs">(▲▼) Comparação com a média diária no mês</div></div><div class="seg copy-img-no vd-ver" id="vhDetVer" role="group" aria-label="Colunas do quadro"></div><button type="button" class="copy-img" id="vhDetCopiar" title="Copiar este quadro como imagem" aria-label="Copiar este quadro como imagem"></button></div><div class="mr-scroll"><table class="vd-tbl" id="vhDet"></table></div></div>
         <div class="vx-card"><div class="vx-ct">Canal &times; loja no mês</div><div class="vx-cs">Faturamento do mês até o dia, com a margem embaixo &middot; e-commerce pela loja que fatura (emitente) &middot; seguradoras = clientes do tipo seguradora</div><div class="vx-scroll"><table class="vh-mat" id="vhMat"></table></div></div>
         <p class="note-muted" id="vhNota" style="font-size:11px;"></p>
-        <div class="vx-card vh-res" id="vhResCard"><div class="vh-res-h"><div><div class="vx-ct">Resumo do dia</div><div class="vx-cs">O que foi destaque: faturamento, quantidades, clientes e vendedores bem acima da média</div></div><div class="seg copy-img-no vd-ver" id="vhResVer" role="group" aria-label="Dia do resumo"></div><button type="button" class="copy-img vh-cp2" id="vhResCopiar" title="Copiar o resumo do dia como imagem" aria-label="Copiar o resumo do dia como imagem"></button></div><div id="vhRes"></div></div>
+        <div class="vx-card vh-res" id="vhResCard"><div class="vh-res-h"><div><div class="vx-ct" id="vhResTit">Resumo do dia</div><div class="vx-cs" id="vhResSubT">O que foi destaque: faturamento, quantidades, clientes e vendedores bem acima da média &middot; clique num item para filtrar os demais</div></div><div class="seg copy-img-no vd-ver" id="vhResVer" role="group" aria-label="Dia do resumo"></div><button type="button" class="copy-img vh-cp2" id="vhResCopiar" title="Copiar o resumo do dia como imagem" aria-label="Copiar o resumo do dia como imagem"></button></div><div id="vhResF"></div><div id="vhRes"></div></div>
+        </div>
       </div>
       </section>
 
@@ -2929,6 +2976,8 @@ table.data-table.vp-tbl{min-width:720px;}
           <label class="ui-sem-email" id="uiSemEmailWrap"><input type="checkbox" id="uiSemEmail"> Cadastrar sem enviar e-mail: eu mesmo defino a senha</label>
           <div class="u-abas-label">Guias liberadas</div>
           <div class="u-abas" id="uiAbas" data-grp="abas"></div>
+          <div class="u-abas-label" id="uiSubsL">Abas liberadas em cada guia</div>
+          <div id="uiSubs"></div>
           <div class="u-abas-label u-esc">Lojas liberadas</div>
           <div class="u-abas u-esc" id="uiLojas" data-grp="lojas"></div>
           <div class="u-abas-label u-esc">Canais liberados</div>
@@ -8974,14 +9023,15 @@ function vhMgB(o){ var m = vhMg(o); return m===null ? '' : '<span class="vh-mg" 
 function vhPodeObj(){ return !!(CURRENT_PROFILE && ['bi','diretoria'].indexOf(CURRENT_PROFILE.role)>=0); }
 function vhCorTend(p){ return p===null ? 'var(--vx-cy)' : (p>=100 ? 'var(--good)' : (p>=85 ? '#22d3ee' : (p>=70 ? '#f59e0b' : 'var(--critical)'))); }
 function vxHoje(){
-  var f = painelFiltros(null), dia = isoDia(DAYS[N_DAYS-1]), key = JSON.stringify([f, dia]);
+  var f = painelFiltros(null), dia = VH.diaAuto ? null : isoDia(DAYS[N_DAYS-1]), key = JSON.stringify([f, dia]);
+  vhModoAplicar();
   if(VH.key!==key){
     if(VH.pend===key) return;
     VH.pend = key;
     document.getElementById('vhKpis').innerHTML = '<p class="note-muted status-txt">Carregando as vendas do dia…</p>';
     document.getElementById('vhCards').innerHTML = ''; document.getElementById('vhMat').innerHTML = '';
     window.__NC_rpc('bi_vendas_hoje', {f:f, dia:dia}).then(function(d){
-      if(VH.pend!==key) return; VH.key = key; VH.d = d || {}; VH.pend = null;
+      if(VH.pend!==key) return; VH.key = key; VH.d = d || {}; VH.pend = null; VH.lido = Date.now();
       if(VX.aba==='hoje' && state.currentView==='vendas') vxHoje();
     }).catch(function(e){
       if(VH.pend!==key) return; VH.pend = null;
@@ -8989,7 +9039,7 @@ function vxHoje(){
     });
     return;
   }
-  var mes = String(VH.d.dia || dia).slice(0,7)+'-01';
+  var mes = String(VH.d.dia || dia || '').slice(0,7)+'-01';
   if(VH.obj[mes]===undefined && !VH.objPend[mes]){
     VH.objPend[mes] = 1;
     window.__NC_rpc('bi_objetivos', {p_mes:mes}).then(function(o){ VH.obj[mes] = o || {}; }).catch(function(){ VH.obj[mes] = {}; })
@@ -9039,7 +9089,7 @@ function vhDesenhar(){
   var ehHoje = dia===isoDia(new Date());
   var semana = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][dD.getDay()];
   document.getElementById('vhTit').textContent = (ehHoje ? 'Vendas de hoje' : 'Vendas do dia')+' · '+semana+', '+fmtDateFull(dD).slice(0,5);
-  document.getElementById('vhSub').innerHTML = 'Mês de '+fmtDateFull(ini).slice(0,5)+' a '+fmtDateFull(dD).slice(0,5)+(ontem ? ' · "ontem" = '+fmtDateFull(vhDt(ontem)).slice(0,5) : '')+' · '+escapeHtml(cargaLabel(REAL.carga))+' · filtros do painel aplicados, exceto o período';
+  document.getElementById('vhSub').innerHTML = 'Mês de '+fmtDateFull(ini).slice(0,5)+' a '+fmtDateFull(dD).slice(0,5)+(ontem ? ' · "ontem" = '+fmtDateFull(vhDt(ontem)).slice(0,5) : '')+' · '+escapeHtml(cargaLabel(vhCarga()))+' · filtros do painel aplicados, exceto o período';
   document.getElementById('vhDias').innerHTML = '<span>Dias úteis <b>'+du.mes+'</b></span><span>Concluídos <b>'+du.conc+'</b></span><span>Faltam <b>'+(du.mes-du.conc)+'</b></span><span>E-commerce <b>'+dc.conc+'</b> de <b>'+dc.mes+'</b> dias</span>';
 
   // objetivos: loja (atacado) e ECOMMERCE; atacado total = soma das lojas
@@ -9183,37 +9233,171 @@ function vhDesenhar(){
   document.getElementById('vhMat').innerHTML = '<thead><tr><th>Canal</th>'+colsM.map(function(c){ return '<th title="'+escapeHtml(vhRegiao(c))+'">'+escapeHtml(c)+'</th>'; }).join('')+'<th>Grupo</th></tr></thead><tbody>'+body+'</tbody>';
   document.getElementById('vhNota').innerHTML = 'Média diária = vendas do mês até ontem ÷ dias úteis concluídos (feriados do município de cada loja; e-commerce por dias corridos). Tendência = média diária × dias úteis do mês. ▲▼ = venda do dia comparada com a média diária.' +
     (pode ? ' Clique no objetivo de um quadro para alterar (vale para o mês todo).' : '');
-  vhLigar(); vhResumo();
+  // resumo para o Painel (tela de acompanhamento)
+  VH.sum = {dia:dia, ehHoje:ehHoje, semana:semana, dD:dD, ontem:ontem, gTot:gTot, rG:rG, rAtc:rAtc, rEcm:rEcm, rAE:rAE, du:du, dc:dc, nObj:nObj, temObAtc:temObAtc,
+    lojas: lojas.map(function(l){ return {nome:l, tag:vhRegiao(l), r:calc(junta([l], ['ATACADO']), duLoja(l), +obj[l] || null)}; }),
+    canais: VH_CANAIS.map(function(k){ var t = junta(todas, [k]), dd = k==='ECOMMERCE' ? dc : du; return {k:k, t:t, md: dd.conc > 0 ? (t.m.f - t.h.f)/dd.conc : null}; })};
+  vhLigar();
+  if(VH.modo==='painel') vhPainel(); else vhResumo();
+}
+function vhCarga(){ return VH.carga || REAL.carga; }
+/* ---------- Vendas Hoje: Cards ou Painel (as duas abas podem ser liberadas separadamente no cadastro) ---------- */
+function vhModosLiberados(){ return ['cards','painel'].filter(function(m){ return subOk('vendas', m==='cards' ? 'hoje' : 'painel'); }); }
+function vhModoAplicar(){
+  var lib = vhModosLiberados(); if(!lib.length) lib = ['cards'];
+  if(!VH.modo){ try{ VH.modo = localStorage.getItem('vhModo'); }catch(e){} }
+  if(lib.indexOf(VH.modo) < 0) VH.modo = lib[0];
+  var seg = document.getElementById('vhModo'); if(!seg) return;
+  seg.hidden = lib.length < 2;
+  Array.prototype.forEach.call(seg.querySelectorAll('[data-vhm]'), function(b){ var m = b.getAttribute('data-vhm'); b.hidden = lib.indexOf(m) < 0; b.setAttribute('aria-pressed', String(m===VH.modo)); });
+  document.getElementById('vhModoPainel').hidden = VH.modo!=='painel';
+  document.getElementById('vhModoCards').hidden = VH.modo==='painel';
+  if(VH.modo==='painel' && !VH.prox) VH.prox = Date.now() + VP_INTERVALO;
+}
+function vhModo(m){
+  VH.modo = m; try{ localStorage.setItem('vhModo', m); }catch(e){}
+  vhModoAplicar();
+  if(!VH.d || !VH.d.dia) return;
+  if(m==='painel') vhPainel(); else vhResumo();
+}
+/* ---------- Painel: tela de acompanhamento que se atualiza sozinha ----------
+   A cada minuto procura uma carga nova; quando chega, busca de novo as vendas do dia e redesenha sem recarregar a página
+   (a tela cheia continua). */
+var VP_INTERVALO = 60*1000;
+function vpVisivel(){ return state.currentView==='vendas' && VX.aba==='hoje' && VH.modo==='painel'; }
+function vpHora(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function vpChecar(manual){
+  VH.prox = Date.now() + VP_INTERVALO;
+  var px = document.getElementById('vpProx'); if(manual && px) px.textContent = 'procurando uma carga nova…';
+  return window.__NC_cargaAtual().then(function(c){
+    var vista = vhCarga();
+    if(c && (!vista || c.carregado_em !== vista.carregado_em)){
+      VH.carga = c; VH.novaEm = new Date(); VH.diaAuto = true;
+      VH.key = null; VH.res = {}; VH.resPend = {}; VH.obj = {}; VH.objPend = {};
+      if(vpVisivel()) vxHoje();
+      if(manual) toast('Nova carga recebida. Atualizando o painel…');
+    } else if(manual) toast('O painel já está com a carga mais recente.');
+  }).catch(function(){ if(manual) toast('Não foi possível procurar uma carga nova agora.'); });
+}
+setInterval(function(){
+  if(!vpVisivel() || document.hidden) return;
+  var agora = new Date(), h = document.getElementById('vpHora'), px = document.getElementById('vpProx');
+  if(h) h.textContent = vpHora(agora)+':'+String(agora.getSeconds()).padStart(2,'0');
+  if(!VH.prox) VH.prox = Date.now() + VP_INTERVALO;
+  var falta = Math.max(0, Math.round((VH.prox - Date.now())/1000));
+  if(px){
+    var novo = VH.novaEm && (Date.now() - VH.novaEm) < 10*60*1000;
+    px.className = novo ? 'novo' : '';
+    px.textContent = (novo ? 'carga nova recebida às '+vpHora(VH.novaEm)+' · ' : 'atualiza sozinho · ')+'próxima busca em '+Math.floor(falta/60)+':'+String(falta%60).padStart(2,'0');
+  }
+  if(falta<=0) vpChecar(false);
+}, 1000);
+function vpTelaCheia(){
+  var el = document.getElementById('vhModoPainel');
+  if(document.fullscreenElement){ document.exitFullscreen && document.exitFullscreen(); return; }
+  var pr = el.requestFullscreen ? el.requestFullscreen() : (el.webkitRequestFullscreen ? el.webkitRequestFullscreen() : null);
+  Promise.resolve(pr).catch(function(){ toast('O navegador não permitiu a tela cheia.'); });
+  // mantém a tela ligada (TV/monitor), quando o navegador permite
+  try{ if(navigator.wakeLock) navigator.wakeLock.request('screen').then(function(w){ VH.wake = w; }).catch(function(){}); }catch(e){}
+}
+document.addEventListener('fullscreenchange', function(){
+  var b = document.getElementById('vpTela'); if(b) b.textContent = document.fullscreenElement ? 'Sair da tela cheia' : 'Tela cheia';
+  if(!document.fullscreenElement && VH.wake){ try{ VH.wake.release(); }catch(e){} VH.wake = null; }
+});
+function vhPainel(){
+  var S = VH.sum, box = document.getElementById('vpBody'); if(!S || !box) return;
+  var c = vhCarga();
+  document.getElementById('vpTit').textContent = (S.ehHoje ? 'Vendas de hoje' : 'Vendas do dia')+' · '+S.semana+', '+fmtDateFull(S.dD).slice(0,5);
+  document.getElementById('vpSub').textContent = (cargaLabel(c) || 'Sem informação de carga')+(VH.lido ? ' · lido às '+vpHora(new Date(VH.lido)) : '')+' · filtros do painel aplicados';
+  function k(cor, l, v, sub, cls){ return '<div class="vp-k'+(cls?' '+cls:'')+'" style="--vh-c:'+cor+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div></div>'; }
+  var g = S.gTot, rG = S.rG, rAE = S.rAE;
+  var kp = '<div class="vp-kpis">' +
+    k('var(--vx-cy)', S.ehHoje ? 'Hoje · grupo' : 'No dia · grupo', fmtMoney(g.h.f), vhMgB(g.h)+' '+vhVs(rG.vsH)+' vs. média diária ('+(rG.md!==null ? fmtMoney(rG.md) : '—')+')', 'g') +
+    k('#64748b', 'Ontem', fmtMoney(g.o.f), vhMgB(g.o)+' '+vhVs(rG.vsO)) +
+    k('var(--vx-pu)', 'Mês até agora', fmtMoney(g.m.f), vhMgB(g.m)+' · '+S.du.conc+' de '+S.du.mes+' dias úteis') +
+    k(vhCorTend(rAE.tp), 'Tendência atacado + e-com', rAE.tend!==null ? fmtMoney(rAE.tend) : '—', rAE.tp!==null ? '<b style="color:'+vhCorTend(rAE.tp)+'">'+vhP(rAE.tp)+'</b> do objetivo' : 'sem objetivo completo no mês') +
+    k('var(--vx-am)', 'Falta para o objetivo', rAE.ob ? fmtMoney(rAE.falta) : '—', rAE.ob ? 'atingido <b>'+vhP(rAE.at)+'</b>'+(rAE.porDia ? ' · '+fmtMoney(rAE.porDia)+' por dia útil' : '') : 'objetivo atacado + e-com não cadastrado') + '</div>';
+  var NOME_C = {ATACADO:'Atacado', ECOMMERCE:'E-commerce', OFICINA:'Oficina', ACESSORIOS:'Acessórios'}, CORES = ['var(--vx-cy)','var(--vx-pu)','var(--vx-am)','var(--vx-gr)'];
+  var cn = '<div class="vp-canais">'+S.canais.map(function(x, i){
+    var sh = g.h.f > 0 ? x.t.h.f/g.h.f*100 : 0;
+    return '<div class="vp-cn"><div class="h"><span>'+NOME_C[x.k]+'</span><span>'+vhP(sh)+' do dia</span></div><div class="v">'+fmtMoney(x.t.h.f)+'</div>' +
+      '<div class="vp-bar"><i style="width:'+Math.min(100, sh).toFixed(1)+'%; background:'+CORES[i]+'"></i></div><div class="vp-cn-s" style="font-size:11.5px; color:var(--text-2); margin-top:6px;">'+vhVs(x.md > 0 ? (x.t.h.f/x.md-1)*100 : null)+' vs. média · mês '+fmtMoney(x.t.m.f)+'</div></div>';
+  }).join('')+'</div>';
+  function tile(nome, tag, r, cls){
+    var bar = r.ob ? '<div class="vp-bar" title="Barra: atingido no mês · traço: tendência"><i style="width:'+Math.min(100, r.at||0).toFixed(1)+'%; background:'+vhCorTend(r.tp)+'"></i>'+(r.tp!==null ? '<em style="left:calc('+Math.min(100, r.tp).toFixed(1)+'% - 1px)"></em>' : '')+'</div>' : '';
+    return '<div class="vp-l'+(cls?' '+cls:'')+'"><div class="h"><b>'+escapeHtml(nome)+'</b><span>'+escapeHtml(tag||'')+'</span></div>' +
+      '<div class="v">'+fmtMoney(r.t.h.f)+'</div><div class="x"><span>'+vhVs(r.vsH)+' vs. média</span>'+vhMgB(r.t.h)+'</div>' +
+      '<div class="x"><span>Mês '+fmtMoney(r.t.m.f)+'</span><span>'+(r.ob ? 'tend. <b style="color:'+vhCorTend(r.tp)+'">'+vhP(r.tp)+'</b>' : (r.tend!==null ? 'tend. '+fmtMoney(r.tend) : ''))+'</span></div>'+bar+'</div>';
+  }
+  var lj = '<div class="vp-lojas">'+S.lojas.map(function(o){ return tile(o.nome, o.tag, o.r); }).join('') + tile('E-commerce', 'dias corridos', S.rEcm) + tile('Atacado', 'todas as lojas', S.rAtc, 'tot') + '</div>';
+  // destaques do dia (mesma consulta do resumo do dia, sem o filtro de clique)
+  var f = painelFiltros(null), key = vhResChave(f, S.dia, false), R = VH.res[key];
+  if(!R) vhResBuscar(f, S.dia, false, function(){ if(vpVisivel()) vhPainel(); });
+  else if(!R.erro) VH.vpUlt = R;
+  var RR = R && !R.erro ? R : VH.vpUlt;
+  function lista(tit, sub, rows, nome, dim){
+    var it = (rows||[]).map(function(r){ return {nome:nome(r), h:c2(r[1]), m:c2(r[4])/(RR.nd||1)}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 8);
+    return '<div class="vp-d"><h4>'+tit+'<small>'+sub+'</small></h4>'+(it.length ? it.map(function(o, i){
+      var x = o.m > 0.5 ? o.h/o.m : null;
+      return '<div class="vp-dl"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+'</small></span><b>'+fmtMoney(o.h)+'</b></div>';
+    }).join('') : '<p class="note-muted" style="font-size:12px;">Sem vendas ainda.</p>')+'</div>';
+  }
+  var nm7 = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
+  var ds = RR ? '<div class="vp-dest">' + lista('Vendedores em destaque', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) +
+      lista('Clientes em destaque', 'compras do dia', RR.clientes, nm7) + lista('Produtos em destaque', 'faturamento do dia', RR.produtos, nm7) + '</div>'
+    : (R && R.erro ? '' : '<p class="note-muted status-txt">Carregando os destaques do dia…</p>');
+  box.innerHTML = kp + cn + lj + ds;
 }
 /* ---------- Vendas Hoje: resumo do dia (o que ficou bem acima da média dos 60 dias anteriores) ---------- */
-VH.res = {}; VH.resPend = {};
+VH.res = {}; VH.resPend = {}; VH.resF = {};
+function vhResChave(f, d, mes){ return JSON.stringify([f, d, mes ? 1 : 0]); }
+function vhResBuscar(f, d, mes, depois){
+  var key = vhResChave(f, d, mes); if(VH.res[key] || VH.resPend[key]) return; VH.resPend[key] = 1;
+  var fn = mes ? 'bi_vendas_destaques_mes' : 'bi_vendas_destaques';
+  window.__NC_rpc(fn, {f:f, dia:d}).then(function(r){ VH.res[key] = r || {}; })
+    .catch(function(e){ VH.res[key] = {erro: new RegExp(fn+'|schema cache|does not exist', 'i').test(String(e && (e.message||e))) ? (mes ? 'falta_mes' : 'falta') : 'erro'}; })
+    .then(function(){ delete VH.resPend[key]; depois(); });
+}
+// filtro por clique: cada item clicado (loja, marca, cliente…) filtra os demais quadros do resumo
+var VH_RES_DIM = {loja:'Loja', canal:'Canal', marca:'Marca', categoria:'Grupo', produto:'Produto', cliente:'Cliente', vendedor:'Vendedor'};
+function vhResFiltros(f){
+  var f2 = JSON.parse(JSON.stringify(f));
+  Object.keys(VH.resF).forEach(function(d){ f2[d] = [VH.resF[d].id]; });
+  return f2;
+}
+function vhResFiltroBarra(){
+  var el = document.getElementById('vhResF'); if(!el) return;
+  var ks = Object.keys(VH.resF);
+  el.innerHTML = ks.length ? '<div class="vh-rf copy-img-no"><span>Filtrando por:</span>'+ks.map(function(d){ return '<button type="button" data-rfx="'+d+'" title="Tirar este filtro">'+VH_RES_DIM[d]+': '+escapeHtml(VH.resF[d].nome)+' ✕</button>'; }).join('') +
+    (ks.length > 1 ? '<button type="button" class="lp" data-rfx="*">Limpar</button>' : '')+'</div>' : '';
+}
 function vhResumo(){
   var box = document.getElementById('vhRes'); if(!box || !VH.d) return;
-  var f = painelFiltros(null), dia = String(VH.d.dia).slice(0,10), ver = vhResVer();
-  var dias = (ver==='hoje' ? [dia] : (ver==='ontem' ? [VH.ontem] : [VH.ontem, dia])).filter(Boolean);
-  vhResSeg();
+  var f = vhResFiltros(painelFiltros(null)), dia = String(VH.d.dia).slice(0,10), ver = vhResVer(), mes = ver==='mes';
+  var dias = mes ? [dia] : (ver==='hoje' ? [dia] : (ver==='ontem' ? [VH.ontem] : [VH.ontem, dia])).filter(Boolean);
+  vhResSeg(); vhResFiltroBarra();
+  document.getElementById('vhResTit').textContent = mes ? 'Resumo do mês' : 'Resumo do dia';
+  document.getElementById('vhResSubT').innerHTML = (mes ? 'Mês até o dia comparado com o mesmo período dos meses anteriores, com a projeção de fechamento' : 'O que foi destaque: faturamento, quantidades, clientes e vendedores bem acima da média')+' &middot; clique num item para filtrar os demais';
   if(!dias.length){ box.innerHTML = '<p class="note-muted">Não há um dia anterior com vendas neste mês para comparar.</p>'; return; }
-  var chave = function(d){ return JSON.stringify([f, d]); }, falta = dias.filter(function(d){ return !VH.res[chave(d)]; });
+  var falta = dias.filter(function(d){ return !VH.res[vhResChave(f, d, mes)]; });
   if(falta.length){
-    box.innerHTML = '<p class="note-muted status-txt">Comparando '+(dias.length > 1 ? 'os dias' : 'o dia')+' com a média dos dias anteriores…</p>';
-    falta.forEach(function(d){
-      var key = chave(d); if(VH.resPend[key]) return; VH.resPend[key] = 1;
-      window.__NC_rpc('bi_vendas_destaques', {f:f, dia:d}).then(function(r){ VH.res[key] = r || {}; })
-        .catch(function(e){ VH.res[key] = {erro: /bi_vendas_destaques|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'}; })
-        .then(function(){ delete VH.resPend[key]; if(VX.aba==='hoje' && state.currentView==='vendas') vhResumo(); });
-    });
+    box.innerHTML = '<p class="note-muted status-txt">'+(mes ? 'Comparando o mês com o mesmo período dos meses anteriores…' : 'Comparando '+(dias.length > 1 ? 'os dias' : 'o dia')+' com a média dos dias anteriores…')+'</p>';
+    falta.forEach(function(d){ vhResBuscar(f, d, mes, function(){ if(VX.aba==='hoje' && state.currentView==='vendas' && VH.modo!=='painel') vhResumo(); }); });
     return;
   }
   box.innerHTML = dias.map(function(d){
     var rot = (d===dia ? 'Hoje' : 'Ontem')+' · '+fmtDateFull(vhDt(d));
-    return (dias.length > 1 ? '<div class="vh-res-dia">'+rot+'</div>' : '') + vhResumoDia(VH.res[chave(d)], d===dia ? 'h' : 'o');
+    return (dias.length > 1 ? '<div class="vh-res-dia">'+rot+'</div>' : '') + vhResumoDia(VH.res[vhResChave(f, d, mes)], mes ? 'm' : (d===dia ? 'h' : 'o'));
   }).join('');
 }
 // resumo de um dia (resultado de bi_vendas_destaques) em html
 function vhResumoDia(R, qual){
-  if(R.erro){ return '<p class="note-muted">'+(R.erro==='falta' ? 'O banco ainda não tem o resumo do dia (rode o SQL vendas_destaques.sql).' : 'Não foi possível montar o resumo do dia agora.')+'</p>'; }
+  if(R.erro){ return '<p class="note-muted">'+(R.erro==='falta' ? 'O banco ainda não tem o resumo do dia (rode o SQL vendas_destaques.sql).' : (R.erro==='falta_mes' ? 'O banco ainda não tem o resumo do mês (rode o SQL vendas_destaques_mes.sql).' : 'Não foi possível montar o resumo agora.'))+'</p>'; }
+  var MES = qual==='m', SFX = MES ? '' : '/dia';
+  // projeção do mês: no mesmo ritmo do grupo (tendência ÷ vendido no mês)
+  var S = VH.sum, fatorP = MES && S && S.gTot.m.f > 0 && S.rG.tend!==null ? S.rG.tend/S.gTot.m.f : null;
   var nd = R.nd || 1, t = R.tot || {}, fh = c2(t.fh), lh = c2(t.lh), qh = +t.qh||0, mdF = c2(t.fb)/nd, mdL = c2(t.lb)/nd, mdQ = (+t.qb||0)/nd;
-  if(!(fh > 0.5)){ return '<p class="note-muted">Ainda não há vendas registradas neste dia.</p>'; }
+  if(!(fh > 0.5)){ return '<p class="note-muted">Ainda não há vendas registradas '+(MES ? 'neste mês' : 'neste dia')+'.</p>'; }
   function vz(a, b){ return b > 0.0001 ? a/b : null; }
   function xTxt(r){ return r===null ? 'novo' : (r >= 10 ? Math.round(r)+'×' : r.toFixed(1).replace('.',',')+'×'); }
   function pctVs(a, b){ return b > 0 ? (a/b-1)*100 : null; }
@@ -9222,7 +9406,7 @@ function vhResumoDia(R, qual){
   function itens(lista, nome, porQtd){
     return (lista||[]).map(function(r){
       var h = porQtd ? +r[3]||0 : c2(r[1]), m = Math.max(0, porQtd ? (+r[5]||0)/nd : c2(r[4])/nd);
-      return {nome: String(nome(r)).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), h:h, m:m, dif:h-m, x:vz(h, m), lb:c2(r[2]), fat:c2(r[1]), qtd:+r[3]||0, cli:+r[6]||0, mg: c2(r[1])>0 ? c2(r[2])/c2(r[1])*100 : null};
+      return {id:r[0], nome: String(nome(r)).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), h:h, m:m, dif:h-m, x:vz(h, m), lb:c2(r[2]), fat:c2(r[1]), qtd:+r[3]||0, cli:+r[6]||0, mg: c2(r[1])>0 ? c2(r[2])/c2(r[1])*100 : null};
     }).filter(function(o){ return o.dif > 0; });
   }
   // "bem acima": pelo menos 1,5× a média (ou sem histórico); se poucos, completa com os que mais somaram
@@ -9241,19 +9425,28 @@ function vhResumoDia(R, qual){
   var top1 = function(lst){ return lst.slice().sort(function(a, b){ return b.dif - a.dif; })[0]; };
   var tl = top1(L), tm = top1(M), tg = top1(G), tc = top1(CL), tv = top1(V);
   var parc = String(R.dia).slice(0,10)===isoDia(new Date()) ? ' (até a última carga: '+escapeHtml(cargaLabel(REAL.carga))+', o dia ainda não terminou)' : '';
-  var frase = 'O dia '+(parc ? 'está' : 'fechou')+' em <b>'+fmtMoney(fh)+'</b>'+parc+', '+sobe(vf)+' frente à média diária dos últimos '+nd+' dias com venda ('+fmtMoney(mdF)+'), com margem de <b>'+vhP(mgH)+'</b> (média '+vhP(mgM)+'). ' +
+  var ddmm = fmtDateFull(vhDt(R.dia)).slice(0,5);
+  var frase = MES ? 'O mês até '+ddmm+' soma <b>'+fmtMoney(fh)+'</b>'+parc+', '+sobe(vf)+' frente ao mesmo período (dia 1 a '+ddmm.slice(0,2)+') '+(nd > 1 ? 'dos '+nd+' meses anteriores' : 'do mês anterior')+' ('+fmtMoney(mdF)+' em média), com margem de <b>'+vhP(mgH)+'</b> (média '+vhP(mgM)+'). ' +
+      (fatorP ? 'No ritmo atual, a projeção de fechamento é de <b>'+fmtMoney(fh*fatorP)+'</b>. ' : '') +
+      'Foram '+fmtUn(qh)+' peças ('+sobe(vq)+'), '+fmtUn(+t.clih||0)+' clientes ('+sobe(vc)+') e '+fmtUn(+t.nfh||0)+' notas.'
+    : 'O dia '+(parc ? 'está' : 'fechou')+' em <b>'+fmtMoney(fh)+'</b>'+parc+', '+sobe(vf)+' frente à média diária dos últimos '+nd+' dias com venda ('+fmtMoney(mdF)+'), com margem de <b>'+vhP(mgH)+'</b> (média '+vhP(mgM)+'). ' +
     'Foram '+fmtUn(qh)+' peças ('+sobe(vq)+'), '+fmtUn(+t.clih||0)+' clientes ('+sobe(vc)+') e '+fmtUn(+t.nfh||0)+' notas.';
+  var oPer = MES ? 'o mês' : 'o dia';
   var dif = [];
-  if(excesso > 0 && tl) dif.push('a loja <b>'+escapeHtml(tl.nome)+'</b> respondeu por <b>'+vhP(Math.min(100, tl.dif/excesso*100))+'</b> do que o dia ficou acima da média (+'+fmtMoney(tl.dif)+')');
+  if(excesso > 0 && tl) dif.push('a loja <b>'+escapeHtml(tl.nome)+'</b> respondeu por <b>'+vhP(Math.min(100, tl.dif/excesso*100))+'</b> do que '+oPer+' ficou acima da média (+'+fmtMoney(tl.dif)+')');
   else if(tl) dif.push('a loja que mais vendeu acima do seu normal foi <b>'+escapeHtml(tl.nome)+'</b> (+'+fmtMoney(tl.dif)+')');
-  if(tc) dif.push('o cliente <b>'+escapeHtml(tc.nome)+'</b> comprou '+fmtMoney(tc.h)+(tc.x!==null ? ', '+xTxt(tc.x)+' a sua média diária' : ', sem compras nos 60 dias anteriores'));
+  if(tc) dif.push('o cliente <b>'+escapeHtml(tc.nome)+'</b> comprou '+fmtMoney(tc.h)+(tc.x!==null ? ', '+xTxt(tc.x)+(MES ? ' a sua média no mesmo período' : ' a sua média diária') : (MES ? ', sem compras no mesmo período dos meses anteriores' : ', sem compras nos 60 dias anteriores')));
   if(tm && M.length) dif.push('a marca <b>'+escapeHtml(tm.nome)+'</b> somou +'+fmtMoney(tm.dif)+' acima do normal');
   if(tv) dif.push('<b>'+escapeHtml(tv.nome)+'</b> foi o vendedor que mais superou a própria média (+'+fmtMoney(tv.dif)+(tv.x!==null ? ', '+xTxt(tv.x) : '')+')');
   var hdr = '<p class="vh-res-p">'+frase+'</p>' + (dif.length ? '<p class="vh-res-p"><b>O que mais fez a diferença:</b> '+dif.join('; ')+'.</p>' : '');
 
-  function linha(o, tag, val, med, extra){
+  var DIM_TAG = {Loja:'loja', Canal:'canal', Marca:'marca', Grupo:'categoria', Produto:'produto'};
+  function linha(o, tag, val, med, extra, dim){
     var bem = o.x===null || o.x >= 1.5, w = o.x===null ? 100 : Math.min(100, (o.x)/4*100);
-    return '<div class="vh-rl'+(bem?' bem':'')+'"><div class="vh-rn">'+(tag ? '<span class="vh-rt">'+tag+'</span>' : '')+'<span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</span></div>' +
+    dim = dim || DIM_TAG[tag];
+    var on = dim && VH.resF[dim] && String(VH.resF[dim].id)===String(o.id);
+    var at = dim && o.id!==undefined && o.id!==null ? ' data-fd="'+dim+'" data-fi="'+escapeHtml(o.id)+'" data-fn="'+escapeHtml(o.nome)+'" title="'+(on ? 'Clique para tirar o filtro' : 'Clique para filtrar os demais quadros por '+escapeHtml(o.nome))+'"' : '';
+    return '<div class="vh-rl'+(bem?' bem':'')+'"'+at+'><div class="vh-rn">'+(tag ? '<span class="vh-rt">'+tag+'</span>' : '')+'<span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</span></div>' +
       '<div class="vh-rv"><b>'+val+'</b><small>média '+med+(extra ? ' · '+extra : '')+'</small></div><span class="vh-rx'+(bem?' bem':'')+'">'+xTxt(o.x)+'</span>' +
       '<div class="vh-rb"><i style="width:'+w.toFixed(0)+'%"></i></div></div>';
   }
@@ -9262,19 +9455,20 @@ function vhResumoDia(R, qual){
   var fatL = [];
   [[L,'Loja'],[C,'Canal'],[M,'Marca'],[G,'Grupo']].forEach(function(p){ destaque(p[0], p[1]==='Loja' ? 2 : 1).forEach(function(o){ fatL.push([o, p[1]]); }); });
   destaque(P, 3).forEach(function(o){ fatL.push([o, 'Produto']); });
-  var bFat = fatL.map(function(p){ var o = p[0]; return linha(o, p[1], fmtMoney(o.h), fmtMoney(o.m), '+'+fmtMoney(o.dif)); }).join('');
-  var bQtd = destaque(PQ, 6).map(function(o){ return linha(o, '', fmQ(o.h), fmQm(o.m)+'/dia', fmtMoney(o.fat)); }).join('');
-  var bCli = destaque(CL, 6).map(function(o){ return linha(o, '', fmtMoney(o.h), o.m > 0.5 ? fmtMoney(o.m)+'/dia' : 'sem compras antes', 'mg '+vhP(o.mg)); }).join('');
-  var bVen = destaque(V, 6).map(function(o){ return linha(o, '', fmtMoney(o.h), fmtMoney(o.m)+'/dia', o.cli+' cliente'+(o.cli!==1?'s':'')+' · mg '+vhP(o.mg)); }).join('');
+  var pj = function(o){ return fatorP ? ' · proj. '+fmtMoney(o.h*fatorP) : ''; };
+  var bFat = fatL.map(function(p){ var o = p[0]; return linha(o, p[1], fmtMoney(o.h), fmtMoney(o.m), '+'+fmtMoney(o.dif)+pj(o)); }).join('');
+  var bQtd = destaque(PQ, 6).map(function(o){ return linha(o, '', fmQ(o.h), fmQm(o.m)+SFX, fmtMoney(o.fat), 'produto'); }).join('');
+  var bCli = destaque(CL, 6).map(function(o){ return linha(o, '', fmtMoney(o.h), o.m > 0.5 ? fmtMoney(o.m)+SFX : 'sem compras antes', 'mg '+vhP(o.mg), 'cliente'); }).join('');
+  var bVen = destaque(V, 6).map(function(o){ return linha(o, '', fmtMoney(o.h), fmtMoney(o.m)+SFX, o.cli+' cliente'+(o.cli!==1?'s':'')+' · mg '+vhP(o.mg)+pj(o), 'vendedor'); }).join('');
   return hdr + '<div class="vh-rgrid">' +
     bloco('💰', 'Faturamento', 'quem mais somou acima da média', bFat) +
     bloco('📦', 'Quantidades', 'produtos vendidos bem acima do normal', bQtd) +
     bloco('🤝', 'Clientes', 'compras bem acima da média do cliente', bCli) +
     bloco('🏆', 'Vendedores', 'acima da média do próprio vendedor', bVen) + '</div>' +
-    '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">Média = total dos '+nd+' dias com venda nos 60 dias anteriores ÷ '+nd+', com os mesmos filtros. × = quantas vezes a média; em verde, 1,5× ou mais.</p>';
+    '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">'+(MES ? 'Média = mesmo período (dia 1 a '+ddmm.slice(0,2)+') dos '+nd+' meses anteriores com venda ÷ '+nd+', com os mesmos filtros. Projeção = no ritmo de fechamento do grupo (média diária × dias úteis do mês).' : 'Média = total dos '+nd+' dias com venda nos 60 dias anteriores ÷ '+nd+', com os mesmos filtros.')+' × = quantas vezes a média; em verde, 1,5× ou mais.</p>';
 }
 // resumo do dia: hoje, ontem ou os dois (lembrado no navegador)
-var VH_RES_VER = [['hoje','Hoje'],['ontem','Ontem'],['oh','Ontem e hoje']];
+var VH_RES_VER = [['hoje','Hoje'],['ontem','Ontem'],['oh','Ontem e hoje'],['mes','Mês e projeção']];
 function vhResVer(){ var v = null; try{ v = localStorage.getItem('vhResVer'); }catch(e){}
   return VH_RES_VER.some(function(o){ return o[0]===v; }) ? v : 'hoje'; }
 function vhResSeg(){
@@ -9309,9 +9503,22 @@ function vhLigar(){
     vhResumo();
   });
   document.getElementById('vhRes').addEventListener('click', function(e){
-    var cp = e.target.closest('.vh-rcp'); if(!cp) return;
-    copiarCard(cp, cp.closest('.vh-rbk'), 'vendas-hoje-resumo-'+cp.getAttribute('data-nome').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()+'.png');
+    var cp = e.target.closest('.vh-rcp');
+    if(cp){ copiarCard(cp, cp.closest('.vh-rbk'), 'vendas-hoje-resumo-'+cp.getAttribute('data-nome').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()+'.png'); return; }
+    var it = e.target.closest('.vh-rl[data-fd]'); if(!it) return;
+    var d = it.getAttribute('data-fd'), id = it.getAttribute('data-fi'), atual = VH.resF[d];
+    if(atual && String(atual.id)===id) delete VH.resF[d];
+    else VH.resF[d] = {id: /^\d+$/.test(id) ? +id : id, nome: it.getAttribute('data-fn')};
+    vhResumo();
   });
+  document.getElementById('vhResF').addEventListener('click', function(e){
+    var b = e.target.closest('[data-rfx]'); if(!b) return;
+    var d = b.getAttribute('data-rfx'); if(d==='*') VH.resF = {}; else delete VH.resF[d];
+    vhResumo();
+  });
+  document.getElementById('vhModo').addEventListener('click', function(e){ var b = e.target.closest('[data-vhm]'); if(b) vhModo(b.getAttribute('data-vhm')); });
+  document.getElementById('vpTela').addEventListener('click', vpTelaCheia);
+  document.getElementById('vpAgora').addEventListener('click', function(){ vpChecar(true); });
   var rc = document.getElementById('vhResCopiar'); rc.innerHTML = ICO_COPIA; rc.addEventListener('click', function(){ copiarCard(rc, document.getElementById('vhResCard'), 'vendas-hoje-resumo.png'); });
   document.getElementById('vhCopiarTudo').addEventListener('click', function(){ copiarCard(this, document.getElementById('vhCap'), 'vendas-hoje.png'); });
   box.addEventListener('click', function(e){
@@ -10386,6 +10593,7 @@ function bindEvents(){
   window.__NC_switchView = function(v){ switchView(v); };
   function switchView(view){
     state.currentView = view;
+    setTimeout(function(){ if(state.currentView===view) subabasCorrigir(view); }, 0);
     Array.prototype.forEach.call(document.querySelectorAll('.nav-item'), function(n){
       if(n.getAttribute('data-view')===view) n.setAttribute('aria-current','page');
       else n.removeAttribute('aria-current');
@@ -10987,6 +11195,63 @@ var ABAS = [
   {k:'concorrencia', t:'E-commerce', restrita:true}, {k:'precos', t:'Preços', restrita:true}, {k:'planejamento', t:'Planejamento', restrita:true}
 ];
 var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
+// abas dentro de cada guia: gravadas em profiles.abas como "guia.aba"; guia sem nenhuma = todas as abas dela
+var SUBABAS = {
+  vendas: [{k:'lojas', t:'Lojas'}, {k:'marcas', t:'Marcas'}, {k:'grupos', t:'Grupos'}, {k:'produtos', t:'Produtos'}, {k:'insights', t:'Insights'},
+           {k:'regioes', t:'Regiões'}, {k:'lojames', t:'Loja × Mês'}, {k:'hoje', t:'Vendas Hoje · Cards'}, {k:'painel', t:'Vendas Hoje · Painel'}],
+  vendedores: [{k:'consult', t:'Consultoria'}, {k:'planos', t:'Planos em andamento'}, {k:'maratona', t:'Maratona de Pontos'}],
+  clientes: [{k:'analise', t:'Análise de clientes'}, {k:'disp', t:'Clientes Disponíveis'}, {k:'cidades', t:'Cidades que mais compram'}, {k:'cidmov', t:'Cidades que mais mudaram'}],
+  concorrencia: [{k:'conc', t:'Concorrência'}, {k:'cad', t:'Sugestão Cadastro'}]
+};
+var SUBABAS_UI = {vendas:{box:'#vxAbas', at:'data-vxaba'}, vendedores:{box:'#vdGuias', at:'data-vd'}, clientes:{box:'#cliAbas', at:'data-cliaba'}, concorrencia:{box:'#ecGuias', at:'data-ec'}};
+function subsDoPerfil(p, g){
+  var todos = SUBABAS[g].map(function(a){ return a.k; });
+  if(!p || p.role==='bi' || !Array.isArray(p.abas)) return todos;
+  var sel = p.abas.filter(function(x){ return String(x).indexOf(g+'.')===0; }).map(function(x){ return String(x).slice(g.length+1); })
+    .filter(function(x){ return todos.indexOf(x)!==-1; });
+  return sel.length ? todos.filter(function(x){ return sel.indexOf(x)!==-1; }) : todos;
+}
+function subOk(g, k){ return subsDoPerfil(CURRENT_PROFILE, g).indexOf(k)!==-1; }
+// botão da aba no site: Vendas Hoje aparece se Cards ou Painel estiver liberado
+function subBotaoOk(g, k){ return g==='vendas' && k==='hoje' ? (subOk('vendas','hoje') || subOk('vendas','painel')) : subOk(g, k); }
+function subabasAplicar(){
+  Object.keys(SUBABAS_UI).forEach(function(g){
+    var u = SUBABAS_UI[g], box = document.querySelector(u.box); if(!box) return;
+    Array.prototype.forEach.call(box.querySelectorAll('['+u.at+']'), function(b){ b.style.display = subBotaoOk(g, b.getAttribute(u.at)) ? '' : 'none'; });
+  });
+}
+// ao abrir uma guia: se a aba ativa não está liberada, vai para a primeira liberada
+function subabasCorrigir(view){
+  var u = SUBABAS_UI[view]; if(!u) return;
+  var box = document.querySelector(u.box); if(!box) return;
+  var bts = Array.prototype.slice.call(box.querySelectorAll('['+u.at+']'));
+  var ativo = bts.filter(function(b){ return b.getAttribute('aria-pressed')==='true' || b.getAttribute('aria-selected')==='true'; })[0];
+  if(ativo && ativo.style.display!=='none') return;
+  var prim = bts.filter(function(b){ return b.style.display!=='none'; })[0];
+  if(prim) prim.click();
+}
+function subChipsHtml(p, disabled){
+  return '<div class="u-subs">'+Object.keys(SUBABAS).map(function(g){
+    var nome = (ABAS.filter(function(a){ return a.k===g; })[0] || {}).t || g;
+    return '<div class="u-sub" data-sg="'+g+'"><span class="u-sub-g">'+escapeHtml(nome)+'</span><div class="u-abas" data-grp="sub-'+g+'">'+chipsHtml(SUBABAS[g], subsDoPerfil(p, g), disabled)+'</div></div>';
+  }).join('')+'</div>';
+}
+// guia desmarcada: as abas dela ficam apagadas (não valem)
+function subAjustar(root){
+  if(!root) return; var gs = grpSel(root, 'abas');
+  Array.prototype.forEach.call(root.querySelectorAll('.u-sub[data-sg]'), function(el){ el.classList.toggle('off', gs.indexOf(el.getAttribute('data-sg'))===-1); });
+}
+// guias + abas a gravar: com alguma aba desmarcada, grava a lista explícita com "guia.aba"
+function abasComSubs(role, ab, root){
+  if(role==='bi') return null;
+  var subs = [];
+  Object.keys(SUBABAS).forEach(function(g){
+    if(ab.indexOf(g)===-1) return;
+    var sel = grpSel(root, 'sub-'+g);
+    if(sel.length && sel.length < SUBABAS[g].length) sel.forEach(function(k){ subs.push(g+'.'+k); });
+  });
+  return subs.length ? ab.concat(subs) : abasPayload(role, ab);
+}
 var ABAS_PADRAO = ABAS.filter(function(a){ return !a.restrita; }).map(function(a){ return a.k; });
 // nulo no banco = guias padrão (sem as restritas); qualquer outra combinação vai como lista
 function abasPayload(role, ab){
@@ -11104,7 +11369,8 @@ function userCard(p){
       (USERS_TEM_ESCOPO ? '' : '<label class="u-loja-w">Loja<select class="u-loja">'+lojaOptions(p.loja)+'</select></label>') +
       '<label class="u-vend-w">Vendedor nos dados<input type="text" class="u-vendedor" list="uVendList" value="'+escapeHtml(p.vendedor_nome||'')+'" placeholder="comece a digitar"></label>' +
     '</div>' +
-    (USERS_TEM_ABAS ? '<div class="u-abas-label">Guias liberadas</div><div class="u-abas" data-grp="abas">'+abasChips(abas, p.role==='bi')+'</div>' : '') +
+    (USERS_TEM_ABAS ? '<div class="u-abas-label">Guias liberadas</div><div class="u-abas" data-grp="abas">'+abasChips(abas, p.role==='bi')+'</div>' +
+      '<div class="u-abas-label">Abas liberadas em cada guia</div>'+subChipsHtml(p, p.role==='bi') : '') +
     (USERS_TEM_ESCOPO ? escopoChips(p.role==='bi' ? uniaoOrd(lojasUniverso(), listaPerfil(p.lojas)) : lojasDoPerfil(p), p.role==='bi' ? canaisUniverso() : canaisDoPerfil(p), p.role==='bi') : '') +
     equipesChips(p.role==='bi' ? EQUIPES.slice() : equipesDoPerfil(p), p.role==='bi') +
     paresHtml(p) +
@@ -11149,6 +11415,7 @@ function abrirUserPop(id){
   document.addEventListener('keydown', escUserPop);
   var card = bg.querySelector('.u-card');
   bindAbas(card); ligarPares(card); ajustaEscopo(card); ligarEquipesCanal(card);
+  subAjustar(card); card.addEventListener('click', function(e){ if(e.target.closest('[data-grp="abas"] .u-aba')) subAjustar(card); });
   card.querySelector('.u-role').addEventListener('change', function(){ ajustaEscopo(card); });
   card.querySelector('.u-save').addEventListener('click', function(){ salvarCard(card, false); });
   var lib = card.querySelector('.u-liberar'); if(lib) lib.addEventListener('click', function(){ salvarCard(card, true); });
@@ -11193,7 +11460,7 @@ async function salvarCard(card, liberar){
   }
   if(USERS_TEM_EQUIPES && EQUIPES.length) payload.equipes = (USERS_TEM_ESCOPO && soEcommerce(grpSel(card,'canais'))) ? null : equipesPayload(role, grpSel(card,'equipes'));
   if(USERS_TEM_PARES){ var pp = paresPayload(card, role); payload.pares_modo = pp.pares_modo; payload.pares_equipes = pp.pares_equipes; }
-  if(USERS_TEM_ABAS){ var ab = grpSel(card,'abas'); payload.abas = abasPayload(role, ab); }
+  if(USERS_TEM_ABAS){ var ab = grpSel(card,'abas'); payload.abas = abasComSubs(role, ab, card); }
   var erro = validaEscopo(payload);
   if(erro){ msg.style.color='var(--critical)'; msg.textContent = erro; return; }
   if(CURRENT_PROFILE && CURRENT_PROFILE.id===id){ delete payload.role; delete payload.active; }
@@ -11263,8 +11530,12 @@ async function renderUsersAdmin(){
   document.getElementById('uVendList').innerHTML = VEND_PESSOAS.map(function(v){ return '<option value="'+escapeHtml(v)+'">'; }).join('');
   var uiL = document.getElementById('uiLoja'); if(uiL && !uiL.options.length) uiL.innerHTML = lojaOptions('');
   var uiA = document.getElementById('uiAbas');
-  if(uiA && !uiA.dataset.built){ uiA.innerHTML = abasChips(ABAS_PADRAO, false); bindAbas(uiA); uiA.dataset.built='1'; }
+  if(uiA && !uiA.dataset.built){ uiA.innerHTML = abasChips(ABAS_PADRAO, false); bindAbas(uiA); uiA.dataset.built='1';
+    var uiS = document.getElementById('uiSubs'); uiS.innerHTML = subChipsHtml(null, false); bindAbas(uiS);
+    var fm = document.getElementById('userInviteForm'); subAjustar(fm);
+    uiA.addEventListener('click', function(){ subAjustar(fm); }); }
   if(uiA) uiA.style.display = USERS_TEM_ABAS ? '' : 'none';
+  ['uiSubs','uiSubsL'].forEach(function(id){ var el = document.getElementById(id); if(el) el.style.display = USERS_TEM_ABAS ? '' : 'none'; });
   uiA && (uiA.previousElementSibling.style.display = USERS_TEM_ABAS ? '' : 'none');
   renderUsersStats();
   renderUsersList();
@@ -11418,7 +11689,7 @@ if(userInviteFormEl){
     if(!email){ msg.textContent = 'Informe um e-mail.'; return; }
     if(semEmail && senha.length < 6){ msg.style.color='var(--critical)'; msg.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; return; }
     var abasConv = USERS_TEM_ABAS && role!=='bi' ? grpSel(userInviteFormEl,'abas') : null;
-    if(abasConv) abasConv = abasPayload(role, abasConv);
+    if(abasConv) abasConv = abasComSubs(role, abasConv, userInviteFormEl);
     var escConv = USERS_TEM_ESCOPO ? escopoPayload(role, grpSel(userInviteFormEl,'lojas'), grpSel(userInviteFormEl,'canais')) : {lojas:null, canais:null};
     if(USERS_TEM_ESCOPO && role==='gerencia') loja = (escConv.lojas||[])[0] || '';
     var eqConv = (USERS_TEM_EQUIPES && EQUIPES.length && !(USERS_TEM_ESCOPO && soEcommerce(grpSel(userInviteFormEl,'canais')))) ? equipesPayload(role, grpSel(userInviteFormEl,'equipes')) : null;
@@ -11449,6 +11720,7 @@ if(userInviteFormEl){
       msg.textContent = semEmail ? email+' cadastrado. Já pode entrar com a senha que você definiu.' : 'Convite enviado para '+email+'.';
       userInviteFormEl.reset();
       var uiA2 = document.getElementById('uiAbas'); uiA2.innerHTML = abasChips(ABAS_PADRAO, false); bindAbas(uiA2);
+      var uiS2 = document.getElementById('uiSubs'); uiS2.innerHTML = subChipsHtml(null, false); bindAbas(uiS2); subAjustar(userInviteFormEl);
       var uiE2 = document.getElementById('uiEquipes'); if(uiE2 && EQUIPES.length){ uiE2.innerHTML = chipsHtml(EQUIPES.map(function(v){ return {k:v,t:v}; }), EQUIPES, false); bindAbas(uiE2); }
       var uiC2 = document.getElementById('uiCanais'); if(uiC2 && USERS_TEM_ESCOPO){ uiC2.innerHTML = chipsHtml(canaisUniverso().map(function(v){ return {k:v,t:v}; }), canaisUniverso(), false); bindAbas(uiC2); }
       document.getElementById('uiRole').dispatchEvent(new Event('change'));
@@ -11502,6 +11774,7 @@ function doLogin(u){
     var nav = document.querySelector('.nav-item[data-view="'+v+'"]');
     if(nav) nav.style.display = liberadas.indexOf(v)!==-1 ? '' : 'none';
   });
+  subabasAplicar();
   var pronto;
   if(appBooted){ initFilterSelects(); state.page=1; pronto = renderAll(false); }
   else { appBooted = true; pronto = bootApp(); }
