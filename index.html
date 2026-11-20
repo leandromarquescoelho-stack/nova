@@ -9318,10 +9318,10 @@ function vhPainel(){
     k(vhCorTend(rAE.tp), 'Tendência atacado + e-com', rAE.tend!==null ? fmtMoney(rAE.tend) : '—', rAE.tp!==null ? '<b style="color:'+vhCorTend(rAE.tp)+'">'+vhP(rAE.tp)+'</b> do objetivo' : 'sem objetivo completo no mês') +
     k('var(--vx-am)', 'Falta para o objetivo', rAE.ob ? fmtMoney(rAE.falta) : '—', rAE.ob ? 'atingido <b>'+vhP(rAE.at)+'</b>'+(rAE.porDia ? ' · '+fmtMoney(rAE.porDia)+' por dia útil' : '') : 'objetivo atacado + e-com não cadastrado') + '</div>';
   var NOME_C = {ATACADO:'Atacado', ECOMMERCE:'E-commerce', OFICINA:'Oficina', ACESSORIOS:'Acessórios'}, CORES = ['var(--vx-cy)','var(--vx-pu)','var(--vx-am)','var(--vx-gr)'];
-  var cn = '<div class="vp-canais">'+S.canais.map(function(x, i){
+  var cn = '<div class="vp-canais">'+S.canais.filter(function(x){ return x.t.m.f > 0.5 || x.t.h.f > 0.5; }).map(function(x, i){
     var sh = g.h.f > 0 ? x.t.h.f/g.h.f*100 : 0;
     return '<div class="vp-cn"><div class="h"><span>'+NOME_C[x.k]+'</span><span>'+vhP(sh)+' do dia</span></div><div class="v">'+fmtMoney(x.t.h.f)+'</div>' +
-      '<div class="vp-bar"><i style="width:'+Math.min(100, sh).toFixed(1)+'%; background:'+CORES[i]+'"></i></div><div class="vp-cn-s" style="font-size:11.5px; color:var(--text-2); margin-top:6px;">'+vhVs(x.md > 0 ? (x.t.h.f/x.md-1)*100 : null)+' vs. média · mês '+fmtMoney(x.t.m.f)+'</div></div>';
+      '<div class="vp-bar"><i style="width:'+Math.min(100, sh).toFixed(1)+'%; background:'+CORES[VH_CANAIS.indexOf(x.k)]+'"></i></div><div class="vp-cn-s" style="font-size:11.5px; color:var(--text-2); margin-top:6px;">'+vhVs(x.md > 0 ? (x.t.h.f/x.md-1)*100 : null)+' vs. média · mês '+fmtMoney(x.t.m.f)+'</div></div>';
   }).join('')+'</div>';
   function tile(nome, tag, r, cls){
     var bar = r.ob ? '<div class="vp-bar" title="Barra: atingido no mês · traço: tendência"><i style="width:'+Math.min(100, r.at||0).toFixed(1)+'%; background:'+vhCorTend(r.tp)+'"></i>'+(r.tp!==null ? '<em style="left:calc('+Math.min(100, r.tp).toFixed(1)+'% - 1px)"></em>' : '')+'</div>' : '';
@@ -9329,7 +9329,7 @@ function vhPainel(){
       '<div class="v">'+fmtMoney(r.t.h.f)+'</div><div class="x"><span>'+vhVs(r.vsH)+' vs. média</span>'+vhMgB(r.t.h)+'</div>' +
       '<div class="x"><span>Mês '+fmtMoney(r.t.m.f)+'</span><span>'+(r.ob ? 'tend. <b style="color:'+vhCorTend(r.tp)+'">'+vhP(r.tp)+'</b>' : (r.tend!==null ? 'tend. '+fmtMoney(r.tend) : ''))+'</span></div>'+bar+'</div>';
   }
-  var lj = '<div class="vp-lojas">'+S.lojas.map(function(o){ return tile(o.nome, o.tag, o.r); }).join('') + tile('E-commerce', 'dias corridos', S.rEcm) + tile('Atacado', 'todas as lojas', S.rAtc, 'tot') + '</div>';
+  var lj = '<div class="vp-lojas">'+S.lojas.map(function(o){ return tile(o.nome, o.tag, o.r); }).join('') + (S.rEcm.t.m.f > 0.5 ? tile('E-commerce', 'dias corridos', S.rEcm) : '') + (S.lojas.length > 1 ? tile('Atacado', 'todas as lojas', S.rAtc, 'tot') : '') + '</div>';
   // destaques do dia (mesma consulta do resumo do dia, sem o filtro de clique)
   var f = painelFiltros(null), key = vhResChave(f, S.dia, false), R = VH.res[key];
   if(!R) vhResBuscar(f, S.dia, false, function(){ if(vpVisivel()) vhPainel(); });
