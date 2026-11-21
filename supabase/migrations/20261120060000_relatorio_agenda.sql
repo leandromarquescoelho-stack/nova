@@ -57,7 +57,7 @@ begin
       'dono', (select coalesce(p.full_name, p.email) from public.profiles p where p.id = a.dono),
       'ultimos', (select coalesce(json_agg(json_build_object('slot', e.slot, 'status', e.status, 'detalhe', e.detalhe) order by e.slot desc), '[]'::json)
                     from (select * from public.bi_relatorio_envio e2 where e2.agenda_id = a.id order by e2.slot desc limit 5) e))
-      order by a.id), '[]'::json) from public.bi_relatorio_agenda a);
+      order by a.id) from public.bi_relatorio_agenda a), '[]'::json);
 end $function$;
 
 create or replace function public.bi_relatorio_gravar(p jsonb)

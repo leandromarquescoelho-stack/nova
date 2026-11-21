@@ -1,6 +1,10 @@
-// Envio de teste do resumo de Vendas Hoje por e-mail (Resend).
-// Só o perfil BI pode chamar. Os números vêm de bi_vendas_hoje chamada com o token de quem pediu (escopo dele).
-// Não grava nada no banco. Secrets: RESEND_API_KEY; opcional RELATORIO_REMETENTE (padrão onboarding@resend.dev).
+// Resumo de Vendas Hoje por e-mail (Resend). Três jeitos de chamar:
+//  1. {para}                       perfil BI logado: teste, com o escopo de quem pediu, sem filtros.
+//  2. {agenda_id}                  perfil BI logado: "Enviar agora" de um agendamento (Configurações).
+//  3. {agenda_id, slot, token}     pg_cron (private.bi_relatorio_disparar): envio agendado; o token é o segredo do Vault.
+// Nos agendamentos, os números vêm de bi_relatorio_vendas com o acesso de quem criou o agendamento e os filtros salvos.
+// Grava só o resultado do envio em bi_relatorio_envio. Publicar com verify_jwt = false (o pg_cron não manda JWT;
+// a função confere o login ou o token). Secrets: RESEND_API_KEY; opcional RELATORIO_REMETENTE (padrão onboarding@resend.dev).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -30,32 +34,12 @@ type Soma = { f: number; l: number };
 const z = (): Soma => ({ f: 0, l: 0 });
 const mg = (o: Soma) => o.f > 0 ? o.l / o.f * 100 : null;
 
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return cors(new Response("ok"));
-  if (req.method !== "POST") return json({ error: "Método não permitido" }, 405);
-  try {
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const caller = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-    const { data: u, error: uErr } = await caller.auth.getUser();
-    if (uErr || !u?.user) return json({ error: "Não autenticado" }, 401);
-    const { data: perfil } = await admin.from("profiles").select("role, active").eq("id", u.user.id).maybeSingle();
-    if (!perfil?.active || perfil.role !== "bi") return json({ error: "Só o perfil BI pode enviar o teste." }, 403);
-
-    const chave = Deno.env.get("RESEND_API_KEY");
-    if (!chave) return json({ error: "Falta cadastrar a chave do Resend nos secrets das funções (RESEND_API_KEY)." }, 503);
-
-    const body = await req.json().catch(() => ({}));
-    const para = String(body?.para ?? "").trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(para)) return json({ error: "E-mail de destino inválido." }, 400);
-
-    // vendas do mês até o último dia com venda, no escopo de quem pediu
-    const { data: d, error: vErr } = await caller.rpc("bi_vendas_hoje", { f: {}, dia: null });
-    if (vErr) return json({ error: "Erro ao ler as vendas: " + vErr.message }, 500);
+type Saida = { html: string; dia: string } | { erro: string };
+// monta o e-mail a partir do retorno de bi_vendas_hoje
+async function montar(admin: ReturnType<typeof createClient>, d: any, titulo: string, filtrosTxt: string, rodape: string): Promise<Saida> {
     const dia = String(d?.dia ?? "").slice(0, 10);
     const linhas: unknown[][] = d?.linhas ?? [];
-    if (!dia || !linhas.length) return json({ error: "Sem vendas no mês para montar o resumo." }, 400);
-
+    if (!dia || !linhas.length) return { erro: "Sem vendas no mês para montar o resumo." };
     const { data: dims } = await admin.from("bi_dim").select("id, tipo, valor").in("tipo", ["loja", "canal", "tipo_cliente"]);
     const nome: Record<string, Record<number, string>> = {};
     for (const x of dims ?? []) (nome[x.tipo] ??= {})[x.id] = x.valor;
@@ -100,7 +84,7 @@ Deno.serve(async (req: Request) => {
       `<td style="padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;width:33%"><div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em">${rot}</div><div style="font-size:22px;font-weight:800;margin-top:4px">${v}</div><div style="font-size:12px;color:#475569">${sub}</div></td>`;
     const html = `<!doctype html><html><body style="margin:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif">
 <div style="max-width:680px;margin:0 auto;padding:20px;background:#ffffff">
-<div style="font-size:12px;color:#64748b">Nova Chevrolet BI · e-mail de teste</div>
+<div style="font-size:12px;color:#64748b">${esc(titulo)}</div>
 <h2 style="margin:4px 0 14px;font-size:20px;color:#0f172a">Vendas de ${dm(dia)}</h2>
 <table cellspacing="8" cellpadding="0" style="width:100%"><tr>
 ${kpi("Hoje · grupo", brl(grupo.h.f), "margem " + pct(mg(grupo.h)))}
@@ -109,18 +93,81 @@ ${kpi("Mês até agora", brl(grupo.m.f), "margem " + pct(mg(grupo.m)))}
 </tr></table>
 ${tabela("Por canal", porCanal)}
 ${tabela("Atacado por loja", porLoja)}
-<p style="font-size:11px;color:#64748b;margin-top:18px">Dados até ${dm(dia)}, no acesso de quem enviou. E-commerce pela loja. Os números completos, com média diária e projeção, estão no painel.</p>
+${filtrosTxt ? `<p style="font-size:12px;color:#475569;margin:0 0 6px">Filtros: ${esc(filtrosTxt)}</p>` : ""}<p style="font-size:11px;color:#64748b;margin-top:18px">Dados até ${dm(dia)}, ${esc(rodape)}. E-commerce pela loja. Os números completos, com média diária e projeção, estão no painel.</p>
 </div></body></html>`;
 
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + chave, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `Nova Chevrolet BI <${REMETENTE}>`, to: [para], subject: `Vendas de ${dm(dia)} · teste`, html }),
-    });
-    const out = await r.json().catch(() => ({}));
-    if (!r.ok) return json({ error: "O Resend recusou o envio: " + (out?.message || r.status) }, 502);
-    return json({ ok: true, id: out?.id, para, dia });
+    return { html, dia };
+}
+
+async function enviar(chave: string, para: string[], assunto: string, html: string) {
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + chave, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: `Nova Chevrolet BI <${REMETENTE}>`, to: para, subject: assunto, html }),
+  });
+  const out = await r.json().catch(() => ({}));
+  return r.ok ? { ok: true as const, id: out?.id } : { ok: false as const, erro: "O Resend recusou o envio: " + (out?.message || r.status) };
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return cors(new Response("ok"));
+  if (req.method !== "POST") return json({ error: "Método não permitido" }, 405);
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const body = await req.json().catch(() => ({}));
+  const agendaId = Number(body?.agenda_id) || null;
+  const slot: string | null = body?.slot ? String(body.slot) : null;
+  const marcar = async (status: string, detalhe: string) => {
+    if (agendaId && slot) await admin.from("bi_relatorio_envio").update({ status, detalhe: detalhe.slice(0, 500) }).eq("agenda_id", agendaId).eq("slot", slot);
+  };
+  try {
+    // quem chama: pg_cron (token) ou usuário BI logado
+    let viaCron = false;
+    if (body?.token) {
+      const { data: ok } = await admin.rpc("bi_relatorio_token_ok", { t: String(body.token) });
+      if (ok !== true || !agendaId || !slot) return json({ error: "Token inválido" }, 401);
+      viaCron = true;
+    }
+    let caller: ReturnType<typeof createClient> | null = null;
+    if (!viaCron) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      caller = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
+      const { data: u, error: uErr } = await caller.auth.getUser();
+      if (uErr || !u?.user) return json({ error: "Não autenticado" }, 401);
+      const { data: perfil } = await admin.from("profiles").select("role, active").eq("id", u.user.id).maybeSingle();
+      if (!perfil?.active || perfil.role !== "bi") return json({ error: "Só o perfil BI pode enviar." }, 403);
+    }
+
+    const chave = Deno.env.get("RESEND_API_KEY");
+    if (!chave) { await marcar("erro", "falta RESEND_API_KEY"); return json({ error: "Falta cadastrar a chave do Resend nos secrets das funções (RESEND_API_KEY)." }, 503); }
+
+    // 1. teste avulso
+    if (!agendaId) {
+      const para = String(body?.para ?? "").trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(para)) return json({ error: "E-mail de destino inválido." }, 400);
+      const { data: d, error: vErr } = await caller!.rpc("bi_vendas_hoje", { f: {}, dia: null });
+      if (vErr) return json({ error: "Erro ao ler as vendas: " + vErr.message }, 500);
+      const m = await montar(admin, d, "Nova Chevrolet BI · e-mail de teste", "", "no acesso de quem enviou");
+      if ("erro" in m) return json({ error: m.erro }, 400);
+      const e = await enviar(chave, [para], `Vendas de ${dm(m.dia)} · teste`, m.html);
+      if (!e.ok) return json({ error: e.erro }, 502);
+      return json({ ok: true, id: e.id, para: [para], dia: m.dia });
+    }
+
+    // 2 e 3. agendamento
+    const { data: ag } = await admin.from("bi_relatorio_agenda").select("*").eq("id", agendaId).maybeSingle();
+    if (!ag) { await marcar("erro", "agendamento não encontrado"); return json({ error: "Agendamento não encontrado." }, 404); }
+    if (viaCron && !ag.ativo) { await marcar("erro", "agendamento desativado"); return json({ error: "Agendamento desativado." }, 409); }
+    const { data: d, error: vErr } = await admin.rpc("bi_relatorio_vendas", { p_uid: ag.dono, f: ag.filtros ?? {} });
+    if (vErr) { await marcar("erro", "vendas: " + vErr.message); return json({ error: "Erro ao ler as vendas: " + vErr.message }, 500); }
+    const m = await montar(admin, d, "Nova Chevrolet BI · " + (ag.nome || "Resumo de vendas"), ag.filtros_txt || "", "no acesso de quem criou o agendamento");
+    if ("erro" in m) { await marcar("erro", m.erro); return json({ error: m.erro }, 400); }
+    const e = await enviar(chave, ag.para, `${ag.nome || "Vendas"} · ${dm(m.dia)}`, m.html);
+    if (!e.ok) { await marcar("erro", e.erro); return json({ error: e.erro }, 502); }
+    await marcar("ok", "enviado para " + ag.para.length + " destinatário(s) · dados de " + dm(m.dia));
+    return json({ ok: true, id: e.id, para: ag.para, dia: m.dia });
   } catch (e) {
-    return json({ error: "Falha ao enviar: " + String((e as Error)?.message ?? e) }, 500);
+    const t = String((e as Error)?.message ?? e);
+    await marcar("erro", t).catch(() => {});
+    return json({ error: "Falha ao enviar: " + t }, 500);
   }
 });
