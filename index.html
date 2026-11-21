@@ -2443,7 +2443,7 @@ table.data-table.vp-tbl{min-width:720px;}
 
       <div class="vx-tc" data-vxpainel="produtos" hidden>
         <div class="vx-g2">
-          <div class="vx-card"><div class="vx-ct">Top Produtos &mdash; Faturamento</div><div class="vx-cs">Por código de produto &middot; 15 maiores</div><div class="vx-cw"><canvas id="vxPF"></canvas></div></div>
+          <div class="vx-card"><div class="vx-ct">Top Produtos &mdash; Faturamento</div><div class="vx-cs">Código e descrição &middot; 15 maiores</div><div class="vx-cw"><canvas id="vxPF"></canvas></div></div>
           <div class="vx-card"><div class="vx-ct">Top Produtos &mdash; Margem %</div><div class="vx-cs">Maiores margens entre os 100 que mais faturam</div><div class="vx-cw"><canvas id="vxPM"></canvas></div></div>
         </div>
         <div class="vx-card"><div class="vx-ct">Tabela &mdash; Produtos</div><div class="vx-cs">100 maiores &middot; clique no cabeçalho para ordenar</div><div class="vx-scroll"><table class="vx-tbl" id="vxTP"></table></div></div>
@@ -9005,6 +9005,7 @@ function vxCores(base, keys, fk){
   var sel = fk && state[fk] && state[fk].length ? state[fk] : null;
   return keys.map(function(k, i){ var c = Array.isArray(base) ? base[i] : base; return sel && sel.indexOf(k)===-1 ? c+'55' : c; });
 }
+function vxRotFr(){ return window.innerWidth < 560 ? 0.62 : 0.48; }  // parte da largura do gráfico para rótulos longos (produtos)
 function vxGrafico(id, tipo, labels, vals, cores, opt){
   vxDestruir(id);
   var el = document.getElementById(id); if(!el) return;
@@ -9017,7 +9018,11 @@ function vxGrafico(id, tipo, labels, vals, cores, opt){
   var horiz = opt.horiz, fmtV = opt.fmt || vxM;
   var eixoValor = {grid:{color:grid}, border:{display:false}, ticks:{color:muted, font:{family:'JetBrains Mono', size:10}, callback:function(v){ return opt.pct ? v+'%' : vxM(v).replace('R$ ',''); }}};
   var eixoCat = {grid:{display:false}, border:{display:false}, ticks:{color:tick, font:{family:'JetBrains Mono', size:10}, autoSkip:false, maxRotation:horiz?0:40,
-    callback:function(v){ var s = this.getLabelForValue(v); return s.length>22 ? s.slice(0,21)+'…' : s; }}};
+    callback:function(v){ var s = this.getLabelForValue(v), c = function(t, m){ return t.length>m ? t.slice(0,m-1)+'…' : t; };
+      if(!opt.corte) return c(s, 22);
+      // código · descrição: corta para caber na faixa reservada aos rótulos (fonte mono de 10px ≈ 6px por letra)
+      return c(s, Math.max(14, Math.min(opt.corte, Math.floor((this.chart.width*vxRotFr() - 14)/6.1)))); }}};
+  if(opt.corte) eixoCat.afterFit = function(sc){ sc.width = Math.max(sc.width, sc.chart.width*vxRotFr()); };
   VX.ch[id] = new Chart(el.getContext('2d'), {type:'bar',
     data:{labels:labels, datasets:[{data:vals, backgroundColor:cores, borderRadius:3, borderSkipped:false, maxBarThickness:horiz?18:34}]},
     options:{indexAxis: horiz ? 'y' : 'x', responsive:true, maintainAspectRatio:false, animation:{duration:350},
@@ -9848,9 +9853,11 @@ function vxProdutos(){
   rows.forEach(function(r){ r.sh = tot>0 ? r.fat/tot*100 : 0; });
   rows.sort(function(a,b){ return b.fat-a.fat; });
   var top = rows.slice(0, 15);
-  vxGrafico('vxPF', 'bar', top.map(function(r){ return r.k; }), top.map(function(r){ return r.fat; }), VX_PAL.am, {horiz:true});
+  // rótulo: código · descrição (sem repetir o código quando a descrição já começa com ele)
+  var rot = function(r){ var n = String(r.nome||'').replace(new RegExp('^'+String(r.k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')+'\\s*[-·]?\\s*'), '').trim(); return n ? r.k+' · '+n : String(r.k); };
+  vxGrafico('vxPF', 'bar', top.map(rot), top.map(function(r){ return r.fat; }), VX_PAL.am, {horiz:true, corte:48});
   var pm = rows.slice(0, 100).sort(function(a,b){ return b.mg-a.mg; }).slice(0, 15);
-  vxGrafico('vxPM', 'bar', pm.map(function(r){ return r.k; }), pm.map(function(r){ return +r.mg.toFixed(2); }), pm.map(function(r){ return vxMc(r.mg); }), {horiz:true, pct:true});
+  vxGrafico('vxPM', 'bar', pm.map(rot), pm.map(function(r){ return +r.mg.toFixed(2); }), pm.map(function(r){ return vxMc(r.mg); }), {horiz:true, pct:true, corte:48});
   vxTabela('vxTP', [VX_COL.rk, {k:'k', t:'Código', td:function(r){ return '<td class="mn">'+escapeHtml(r.k)+'</td>'; }},
     {k:'nome', t:'Produto', td:function(r){ return '<td class="nm" style="font-weight:600;">'+escapeHtml(r.nome)+'</td>'; }},
     {k:'marca', t:'Marca', td:function(r){ return '<td>'+escapeHtml(r.marca||'')+'</td>'; }},
