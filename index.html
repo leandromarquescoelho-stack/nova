@@ -522,12 +522,21 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vp-l.tot{border-color:rgba(34,211,238,.35);}
 .vp-l .h{display:flex; justify-content:space-between; gap:6px; align-items:baseline;} .vp-l .h b{font-size:14px;} .vp-l .h span{font-size:11px; color:var(--text-muted);}
 .vp-l{container-type:inline-size; padding:10px 11px !important;} .vp-l .v{font-family:'Sora',sans-serif; font-size:clamp(16px,13cqi,28px); font-weight:800; line-height:1.1; white-space:nowrap;} .vp-l .h{flex-direction:column; align-items:flex-start !important; gap:0 !important;} .vp-l .h b{white-space:nowrap;} .vp-l .h span{white-space:nowrap; font-size:10.5px !important;} .vp-l .x{font-size:12px; color:var(--text-2); display:flex; justify-content:space-between; gap:6px; flex-wrap:wrap;}
+.vp-tk{display:flex; align-items:stretch; margin-top:var(--vp-gap); background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden;}
+.vp-tk-h{flex:0 0 auto; display:flex; align-items:center; padding:0 14px; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; background:var(--surface-2,var(--surface-3)); color:var(--text); border-right:1px solid var(--border);}
+.vp-tk-w{flex:1 1 auto; overflow:hidden; mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);}
+.vp-tk-r{display:inline-flex; white-space:nowrap; animation:vpTk var(--vp-tk-s,60s) linear infinite; padding:10px 0;}
+.vp-tk:hover .vp-tk-r{animation-play-state:paused;}
+.vp-ti{display:inline-flex; align-items:center; gap:8px; padding:0 22px; font-size:13px; border-right:1px dashed var(--border);}
+.vp-ti em{font-style:normal; font-size:10px; font-weight:800; letter-spacing:.06em; color:#fff; padding:2px 7px; border-radius:99px;}
+.vp-ti span{color:var(--text-2); font-size:12px;}
+@keyframes vpTk{from{transform:translateX(0);} to{transform:translateX(-50%);}}
+@media (prefers-reduced-motion:reduce){ .vp-tk-w{overflow-x:auto;} .vp-tk-r{animation:none;} }
 .vp-dest{display:grid; grid-template-columns:repeat(auto-fit,minmax(255px,1fr)); gap:var(--vp-gap);}
 .vp-d{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; min-width:0;}
 .vp-d h4{margin:0 0 6px; font-size:13px;} .vp-d h4 small{font-weight:500; color:var(--text-muted); margin-left:6px;}
 .vp-dl{display:grid; grid-template-columns:22px minmax(0,1fr) auto; gap:8px; align-items:center; padding:6px 0; border-top:1px dashed var(--border); font-size:13px;}
 .vp-dl .n{color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:11px;} .vp-dl .nm{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .vp-dl b{white-space:nowrap;}
-@media (max-width:1100px){ .vp-dl.x{display:none;} }
 .vp-dl small{display:block; font-size:10.5px; color:var(--text-muted); white-space:normal;}
 @media (max-width:1100px){ .vp-kpis{grid-template-columns:repeat(3,1fr);} .vp-k.g{grid-column:1 / -1;} .vp-dest{grid-template-columns:1fr;} }
 @media (max-width:700px){ .vp-lojas{grid-template-columns:repeat(2,minmax(0,1fr));} .vp-l .v{font-size:20px;} .vp-kpis{grid-template-columns:repeat(2,1fr);} .vp-canais{grid-template-columns:repeat(var(--vp-nm,2),1fr);} .vp-rel{align-items:flex-start;} .vp-tit{font-size:18px;} }
@@ -9481,8 +9490,8 @@ function vhEntTxt(o){
   return '<b class="vh-up">entrou +'+fmtUn(Math.round(o.entrou))+' un</b> · '+(o.zerado ? '<b>estava zerado</b>' : 'antes '+fmtUn(Math.round(o.ant))+(o.baixo ? ' (baixo)' : ''))+' · agora '+fmtUn(Math.round(o.est))+cob;
 }
 function vpNovidades(E){
-  var en = vhEntItens(E).slice(0, 5), it = vhNovItens(E).slice(0, en.length ? 2 : 7), i = 0;
-  var lin = function(o, txt, v){ i++; return '<div class="vp-dl'+(i > 5 ? ' x' : '')+'"><span class="n">'+i+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.loja)+' · '+escapeHtml(o.nome)+'<small>'+txt+'</small></span><b>'+v+'</b></div>'; };
+  var en = vhEntItens(E).slice(0, 3), it = vhNovItens(E).slice(0, en.length ? 2 : 5), i = 0;
+  var lin = function(o, txt, v){ i++; return '<div class="vp-dl"><span class="n">'+i+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.loja)+' · '+escapeHtml(o.nome)+'<small>'+txt+'</small></span><b>'+v+'</b></div>'; };
   var h = en.map(function(o){ return lin(o, vhEntTxt(o), '<span class="vh-up">'+(o.entrou!==null ? '+'+fmtUn(Math.round(o.entrou)) : fmtUn(Math.round(o.est)))+' un</span>'); }).join('') +
     (it.length ? '<div style="font-size:11px; color:var(--text-muted); margin:8px 0 2px; font-weight:700;">ZEROU OU BAIXOU</div>' : '') + it.map(function(o){ return lin(o, vhNovTxt(o), fmtMoney(o.fd)); }).join('');
   return '<div class="vp-d"><h4>Novidades em estoque<small>o que entrou e o que zerou</small></h4>'+(h || '<p class="note-muted" style="font-size:12px;">'+(E ? 'Nenhuma entrada ou ruptura de produto de boa venda hoje.' : 'Carregando…')+'</p>')+'</div>';
@@ -9540,17 +9549,43 @@ function vhPainel(){
   else if(!R.erro) VH.vpUlt = R;
   var RR = R && !R.erro ? R : VH.vpUlt;
   function lista(tit, sub, rows, nome, dim){
-    var it = (rows||[]).map(function(r){ return {nome:nome(r), h:c2(r[1]), m:c2(r[4])/(RR.nd||1)}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 7);
+    var it = (rows||[]).map(function(r){ return {nome:nome(r), h:c2(r[1]), m:c2(r[4])/(RR.nd||1)}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 5);
     return '<div class="vp-d"><h4>'+tit+'<small>'+sub+'</small></h4>'+(it.length ? it.map(function(o, i){
       var x = o.m > 0.5 ? o.h/o.m : null;
-      return '<div class="vp-dl'+(i >= 5 ? ' x' : '')+'"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+'</small></span><b>'+fmtMoney(o.h)+'</b></div>';
+      return '<div class="vp-dl"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+'</small></span><b>'+fmtMoney(o.h)+'</b></div>';
     }).join('') : '<p class="note-muted" style="font-size:12px;">Sem vendas ainda.</p>')+'</div>';
   }
   var nm7 = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
   var ds = RR ? '<div class="vp-dest">' + lista('Vendedores em destaque', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) +
       lista('Clientes em destaque', 'compras do dia', RR.clientes, nm7) + lista('Produtos em destaque', 'faturamento do dia', RR.produtos, nm7) + vpNovidades(S.E) + '</div>'
     : (R && R.erro ? '' : '<p class="note-muted status-txt">Carregando os destaques do dia…</p>');
-  box.innerHTML = kp + cn + lj + ds;
+  box.innerHTML = kp + cn + lj + ds + vpTicker(RR, S.E);
+}
+/* ticker: produtos vendendo bem que pedem atenção (acima da própria média e/ou com estoque acabando) */
+function vpTicker(RR, E){
+  var it = [], alta = [], vistos = {};
+  var nome = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
+  // 1) vendeu bem e o estoque zerou ou está acabando
+  vhNovItens(E).forEach(function(o){ if(vistos[o.id]) return; vistos[o.id] = 1;
+    it.push({t: o.zerou ? 'ZEROU' : 'ESTOQUE BAIXO', c: o.zerou ? 'var(--critical)' : 'var(--warning)', n: o.loja+' · '+o.nome,
+      d: 'vendeu '+fmtUn(o.qd)+' un hoje · '+(o.zerou ? 'sem estoque' : 'restam '+fmtUn(Math.round(o.est))+' un'+(o.dias!==null ? ' (≈'+Math.max(1, Math.round(o.dias))+' dia'+(Math.round(o.dias)>1?'s':'')+')' : ''))}); });
+  // 2) vendendo bem acima da própria média dos 60 dias anteriores
+  var nd = (RR && RR.nd) || 1;
+  ((RR && RR.produtos) || []).concat((RR && RR.produtos_q) || []).forEach(function(r){
+    var id = r[0]; if(vistos[id]) return;
+    var h = c2(r[1]), m = c2(r[4])/nd, q = +r[3] || 0, qm = (+r[5] || 0)/nd, x = m > 0.5 ? h/m : null;
+    if(x!==null && x < 1.8) return;
+    vistos[id] = 1;
+    alta.push({t: x===null ? 'NOVIDADE' : 'EM ALTA', c: x===null ? 'var(--vx-pu)' : 'var(--good)', n: nome(r),
+      d: fmtMoney(h)+' hoje · '+fmtUn(q)+' un'+(x===null ? ' · sem venda nos 60 dias anteriores' : ' · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'× a média ('+(qm < 10 ? qm.toFixed(1).replace('.',',') : fmtUn(Math.round(qm)))+' un/dia)')});
+  });
+  // intercala estoque e em alta, até 8 de cada
+  var mix = []; it = it.slice(0, 8); alta = alta.slice(0, 8);
+  for(var i = 0; i < Math.max(it.length, alta.length); i++){ if(alta[i]) mix.push(alta[i]); if(it[i]) mix.push(it[i]); }
+  it = mix;
+  if(!it.length) return '';
+  var h = it.map(function(o){ return '<span class="vp-ti"><em style="background:'+o.c+'">'+o.t+'</em><b>'+escapeHtml(o.n)+'</b><span>'+o.d+'</span></span>'; }).join('');
+  return '<div class="vp-tk" title="Passe o mouse para pausar"><div class="vp-tk-h">Atenção na venda</div><div class="vp-tk-w"><div class="vp-tk-r" style="--vp-tk-s:'+Math.max(30, it.length*7)+'s">'+h+h+'</div></div></div>';
 }
 /* ---------- Vendas Hoje: resumo do dia (o que ficou bem acima da média dos 60 dias anteriores) ---------- */
 VH.res = {}; VH.resPend = {}; VH.resF = {};
