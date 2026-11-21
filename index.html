@@ -1213,6 +1213,26 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .u-card .u-abas-label{ margin:0 0 -6px; }
 .u-abas{ display:flex; flex-wrap:wrap; gap:6px; }
 .u-aba{ border:1px solid var(--border); background:var(--surface); color:var(--text-muted); border-radius:999px; padding:5px 11px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:'Manrope',sans-serif; }
+.ra-form{border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:12px; background:var(--surface);}
+.ra-grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:10px;}
+.ra-grid label{display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--text-muted); font-weight:700;}
+.ra-grid input,.ra-grid textarea,.ra-add input{font:inherit; font-size:13px; padding:7px 9px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text);}
+.ra-l{font-size:12px; color:var(--text-muted); font-weight:700; margin:12px 0 6px;}
+.ra-filt{display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12.5px;}
+.ra-filt span{flex:1 1 220px;}
+.ra-add{display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+.ra-chk{display:flex; gap:8px; align-items:center; font-size:12.5px; margin:8px 0;}
+.ra-acts{display:flex; gap:8px; align-items:center; margin-top:12px;}
+.ra-msg{font-size:12px;}
+.btn-sm{border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:8px; padding:6px 10px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit;}
+.ra-x{margin-left:4px; opacity:.6;}
+.ra-item{border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:10px;}
+.ra-item.off{opacity:.6;}
+.ra-item h4{margin:0 0 4px; font-size:14px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+.ra-item .ra-meta{font-size:12px; color:var(--text-muted); line-height:1.6;}
+.ra-item .ra-acts{margin-top:8px;}
+.ra-env{display:inline-block; margin-right:10px;}
+@media (max-width:700px){ .ra-grid{grid-template-columns:1fr;} }
 .u-aba[aria-pressed="true"]{ background:rgba(34,211,238,.12); border-color:rgba(34,211,238,.45); color:var(--accent); }
 .u-aba:disabled{ cursor:not-allowed; opacity:.6; }
 .u-foot{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:11px; }
@@ -3022,6 +3042,32 @@ table.data-table.vp-tbl{min-width:720px;}
         </div>
         <div id="fontesWrap" class="table-scroll"></div>
         <div class="psub" style="margin-top:10px;">Por segurança o link salvo aparece abreviado. Para trocar, cole o novo link e salve. Para atualizar os dados, substitua o arquivo no OneDrive mantendo o mesmo nome; assim o link continua valendo.</div>
+      </div>
+      <div class="panel" style="margin-bottom:14px;" id="raPanel">
+        <div class="panel-head">
+          <div><h2>Envio automático por e-mail</h2><div class="psub">Resumo de Vendas Hoje por e-mail: destinatários, filtros do painel, dias da semana e horários (hora de Brasília). Feriados nacionais, de SP e da capital podem ser pulados.</div></div>
+          <button type="button" class="tbtn" id="raNovo">+ Novo agendamento</button>
+        </div>
+        <form id="raForm" class="ra-form" hidden autocomplete="off">
+          <div class="ra-grid">
+            <label>Nome<input type="text" id="raNome" maxlength="80" placeholder="Ex.: Resumo da diretoria"></label>
+            <label class="ra-w">Enviar para<textarea id="raPara" rows="2" placeholder="email@para.com.br, outro@para.com.br"></textarea></label>
+          </div>
+          <div class="ra-l">Filtros do painel</div>
+          <div class="ra-filt"><span id="raFiltTxt">Sem filtros (tudo no acesso de quem criou)</span>
+            <button type="button" class="btn-sm" id="raFiltUsar">Usar os filtros aplicados agora</button><button type="button" class="btn-sm" id="raFiltLimpar">Sem filtros</button></div>
+          <div class="ra-l">Dias da semana</div>
+          <div class="u-abas" id="raDias"></div>
+          <div class="ra-l">Horários</div>
+          <div class="ra-add"><input type="time" id="raHora" value="08:00"><button type="button" class="btn-sm" id="raHoraAdd">Adicionar</button><span class="u-abas" id="raHoras"></span></div>
+          <div class="ra-l">Feriados e exceções</div>
+          <label class="ra-chk"><input type="checkbox" id="raFeriados" checked> Não enviar em feriados (nacionais, estaduais de SP e municipais da capital)</label>
+          <div class="ra-add"><input type="date" id="raExc"><button type="button" class="btn-sm" id="raExcAdd">Adicionar data sem envio</button><span class="u-abas" id="raExcs"></span></div>
+          <label class="ra-chk"><input type="checkbox" id="raAtivo" checked> Ativo</label>
+          <div class="ra-acts"><button type="submit" class="tbtn">Salvar</button><button type="button" class="btn-sm" id="raCancelar">Cancelar</button><span id="raMsg" class="ra-msg"></span></div>
+        </form>
+        <div id="raLista"></div>
+        <div class="psub" style="margin-top:10px;">O e-mail sai com os números do último dia com vendas, no acesso de quem criou o agendamento. Sem domínio próprio verificado no Resend, só o e-mail dono da conta Resend recebe.</div>
       </div>
       <div class="panel">
         <div class="panel-head">
@@ -11721,7 +11767,109 @@ function fmtDataHora(iso){
   if(isNaN(d.getTime())) return '—';
   return fmtDateShort(iso)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
+/* ---------- Configurações > Envio automático por e-mail (agendamentos do resumo de Vendas Hoje) ---------- */
+var RA = {lista:[], ed:null, ligado:false};
+var RA_DIAS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+function raFiltrosTxt(){
+  var p = [];
+  TAG_DEFS.forEach(function(d){ var v = state[d[0]]||[]; if(v.length) p.push(d[1]+': '+v.slice(0,6).map(function(x){ return filtroRotulo(d[0], x); }).join(', ')+(v.length>6 ? ' e mais '+(v.length-6) : '')); });
+  if(state.diaSemana) p.push(DIA_SEMANA_ROT[state.diaSemana]);
+  return p.join(' · ');
+}
+function raChips(box, itens, rot){
+  document.getElementById(box).innerHTML = itens.map(function(x, i){ return '<button type="button" class="u-aba" aria-pressed="true" data-i="'+i+'" title="Remover">'+escapeHtml(rot ? rot(x) : x)+'<span class="ra-x">×</span></button>'; }).join('');
+}
+function raDesenharForm(){
+  var e = RA.ed;
+  document.getElementById('raDias').innerHTML = RA_DIAS.map(function(t, i){ return '<button type="button" class="u-aba" data-d="'+i+'" aria-pressed="'+(e.dias.indexOf(i)!==-1)+'">'+t+'</button>'; }).join('');
+  raChips('raHoras', e.horarios);
+  raChips('raExcs', e.excecoes, function(d){ return d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4); });
+  document.getElementById('raFiltTxt').textContent = e.filtros_txt || 'Sem filtros (tudo no acesso de quem criou)';
+}
+function raAbrir(a){
+  RA.ed = a ? {id:a.id, nome:a.nome, para:a.para.slice(), filtros:a.filtros||{}, filtros_txt:a.filtros_txt||'', dias:(a.dias||[]).slice(), horarios:(a.horarios||[]).slice(), pular_feriados:a.pular_feriados, excecoes:(a.excecoes||[]).slice(), ativo:a.ativo}
+            : {id:null, nome:'', para:[], filtros:painelFiltros(null), filtros_txt:raFiltrosTxt(), dias:[1,2,3,4,5], horarios:['08:00'], pular_feriados:true, excecoes:[], ativo:true};
+  document.getElementById('raNome').value = RA.ed.nome;
+  document.getElementById('raPara').value = RA.ed.para.join(', ');
+  document.getElementById('raFeriados').checked = RA.ed.pular_feriados;
+  document.getElementById('raAtivo').checked = RA.ed.ativo;
+  document.getElementById('raMsg').textContent = '';
+  raDesenharForm();
+  var f = document.getElementById('raForm'); f.hidden = false; f.scrollIntoView({block:'nearest'});
+}
+function raLigar(){
+  if(RA.ligado) return; RA.ligado = true;
+  document.getElementById('raNovo').addEventListener('click', function(){ raAbrir(null); });
+  document.getElementById('raCancelar').addEventListener('click', function(){ document.getElementById('raForm').hidden = true; RA.ed = null; });
+  document.getElementById('raFiltUsar').addEventListener('click', function(){ RA.ed.filtros = painelFiltros(null); RA.ed.filtros_txt = raFiltrosTxt(); raDesenharForm(); });
+  document.getElementById('raFiltLimpar').addEventListener('click', function(){ RA.ed.filtros = {}; RA.ed.filtros_txt = ''; raDesenharForm(); });
+  document.getElementById('raDias').addEventListener('click', function(ev){ var b = ev.target.closest('[data-d]'); if(!b) return; var d = +b.getAttribute('data-d'), i = RA.ed.dias.indexOf(d); if(i<0) RA.ed.dias.push(d); else RA.ed.dias.splice(i,1); raDesenharForm(); });
+  document.getElementById('raHoraAdd').addEventListener('click', function(){ var v = document.getElementById('raHora').value; if(/^\d\d:\d\d$/.test(v) && RA.ed.horarios.indexOf(v)<0){ RA.ed.horarios.push(v); RA.ed.horarios.sort(); raDesenharForm(); } });
+  document.getElementById('raExcAdd').addEventListener('click', function(){ var v = document.getElementById('raExc').value; if(/^\d{4}-\d\d-\d\d$/.test(v) && RA.ed.excecoes.indexOf(v)<0){ RA.ed.excecoes.push(v); RA.ed.excecoes.sort(); raDesenharForm(); } });
+  document.getElementById('raHoras').addEventListener('click', function(ev){ var b = ev.target.closest('[data-i]'); if(b){ RA.ed.horarios.splice(+b.getAttribute('data-i'),1); raDesenharForm(); } });
+  document.getElementById('raExcs').addEventListener('click', function(ev){ var b = ev.target.closest('[data-i]'); if(b){ RA.ed.excecoes.splice(+b.getAttribute('data-i'),1); raDesenharForm(); } });
+  document.getElementById('raForm').addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    var e = RA.ed, msg = document.getElementById('raMsg');
+    e.nome = document.getElementById('raNome').value.trim();
+    e.para = document.getElementById('raPara').value.split(/[\s,;]+/).map(function(x){ return x.trim(); }).filter(Boolean);
+    e.pular_feriados = document.getElementById('raFeriados').checked; e.ativo = document.getElementById('raAtivo').checked;
+    var ruim = e.para.filter(function(x){ return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x); });
+    if(!e.para.length || ruim.length){ msg.style.color = 'var(--critical)'; msg.textContent = ruim.length ? 'E-mail inválido: '+ruim.join(', ') : 'Informe pelo menos um e-mail.'; return; }
+    if(!e.dias.length){ msg.style.color = 'var(--critical)'; msg.textContent = 'Escolha pelo menos um dia da semana.'; return; }
+    if(!e.horarios.length){ msg.style.color = 'var(--critical)'; msg.textContent = 'Adicione pelo menos um horário.'; return; }
+    msg.style.color = 'var(--text-muted)'; msg.textContent = 'Salvando…';
+    try{
+      await window.__NC_rpc('bi_relatorio_gravar', {p: {id: e.id, nome: e.nome, para: e.para, filtros: e.filtros, filtros_txt: e.filtros_txt, dias: e.dias.map(String), horarios: e.horarios, pular_feriados: e.pular_feriados, excecoes: e.excecoes, ativo: e.ativo}});
+      document.getElementById('raForm').hidden = true; RA.ed = null; toast('Agendamento salvo.'); raCarregar();
+    } catch(er){ msg.style.color = 'var(--critical)'; msg.textContent = raErro(er); }
+  });
+  document.getElementById('raLista').addEventListener('click', async function(ev){
+    var b = ev.target.closest('[data-ra]'); if(!b) return;
+    var id = +b.closest('[data-id]').getAttribute('data-id'), a = RA.lista.filter(function(x){ return x.id===id; })[0], acao = b.getAttribute('data-ra');
+    var msg = b.closest('.ra-item').querySelector('.ra-msg');
+    if(acao==='ed'){ raAbrir(a); return; }
+    if(acao==='del'){
+      if(b.getAttribute('data-ok')!=='1'){ b.setAttribute('data-ok','1'); b.textContent = 'Confirmar exclusão'; return; }
+      try{ await window.__NC_rpc('bi_relatorio_excluir', {p_id: id}); toast('Agendamento excluído.'); raCarregar(); } catch(er){ msg.style.color='var(--critical)'; msg.textContent = raErro(er); }
+      return;
+    }
+    if(acao==='env'){
+      b.disabled = true; msg.style.color = 'var(--text-muted)'; msg.textContent = 'Enviando…';
+      try{
+        var sess = await supa.auth.getSession(), token = sess && sess.data && sess.data.session && sess.data.session.access_token;
+        if(!token) throw new Error('Sessão expirada, faça login novamente.');
+        var r = await fetch(SUPABASE_URL + '/functions/v1/relatorio-email', {method:'POST', headers:{'Content-Type':'application/json', 'Authorization':'Bearer '+token}, body: JSON.stringify({agenda_id: id})});
+        var js = await r.json().catch(function(){ return {}; });
+        if(!r.ok) throw new Error(js.error || 'Falha ao enviar ('+r.status+').');
+        msg.style.color = 'var(--good)'; msg.textContent = 'Enviado para '+(js.para||[]).join(', ')+'.';
+        clearTimeout(msg._t); msg._t = setTimeout(function(){ msg.textContent = ''; }, 10000);
+      } catch(er){ var t = (er && er.message) || 'Falha ao enviar.'; if(/failed to fetch|load failed|networkerror/i.test(t)) t = 'Não foi possível falar com a função de e-mail.'; msg.style.color = 'var(--critical)'; msg.textContent = t; }
+      b.disabled = false;
+    }
+  });
+}
+function raErro(er){ var t = String((er && (er.message || er)) || 'erro'); return /bi_relatorio|schema cache|does not exist/i.test(t) ? 'O banco ainda não tem os agendamentos (rode o SQL relatorio_agenda.sql).' : t; }
+async function raCarregar(){
+  var box = document.getElementById('raLista'); if(!box) return;
+  raLigar();
+  box.innerHTML = '<div class="status-txt" style="font-size:12px; padding:8px 2px;">Carregando…</div>';
+  try{ RA.lista = (await window.__NC_rpc('bi_relatorio_listar', {})) || []; }
+  catch(er){ RA.lista = []; box.innerHTML = '<p class="note-muted" style="font-size:12px;">'+escapeHtml(raErro(er))+'</p>'; return; }
+  if(!RA.lista.length){ box.innerHTML = '<p class="note-muted" style="font-size:12px;">Nenhum agendamento. Clique em "+ Novo agendamento".</p>'; return; }
+  var dt = function(d){ return d.slice(8,10)+'/'+d.slice(5,7); };
+  box.innerHTML = RA.lista.map(function(a){
+    var dias = (a.dias||[]).slice().sort().map(function(d){ return RA_DIAS[d]; }).join(', ');
+    var ult = (a.ultimos||[]).map(function(u){ var t = new Date(u.slot); return '<span class="ra-env" title="'+escapeHtml(u.detalhe||'')+'">'+String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0')+' '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+' '+(u.status==='ok' ? '✅' : (u.status==='erro' ? '⚠️' : '⏳'))+'</span>'; }).join('');
+    return '<div class="ra-item'+(a.ativo ? '' : ' off')+'" data-id="'+a.id+'"><h4>'+escapeHtml(a.nome)+(a.ativo ? '' : ' <span class="note-muted" style="font-size:11px;">desativado</span>')+'</h4><div class="ra-meta">' +
+      'Para: '+escapeHtml(a.para.join(', '))+'<br>'+dias+' às '+escapeHtml((a.horarios||[]).join(', '))+(a.pular_feriados ? ' · sem feriados' : ' · inclusive feriados') +
+      ((a.excecoes||[]).length ? ' · sem envio em '+a.excecoes.map(dt).join(', ') : '')+'<br>Filtros: '+escapeHtml(a.filtros_txt || 'nenhum')+' · criado por '+escapeHtml(a.dono||'—') +
+      (ult ? '<br>Últimos envios: '+ult : '')+'</div>' +
+      '<div class="ra-acts"><button type="button" class="btn-sm" data-ra="ed">Editar</button><button type="button" class="btn-sm" data-ra="env">Enviar agora</button><button type="button" class="btn-sm" data-ra="del">Excluir</button><span class="ra-msg"></span></div></div>';
+  }).join('');
+}
 async function renderFontesAdmin(){
+  raCarregar();
   var wrap = document.getElementById('fontesWrap');
   var cw = document.getElementById('cargasWrap');
   if(!wrap) return;
