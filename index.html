@@ -1233,6 +1233,10 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .cp-fgrid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px;} .cp-fgrid[hidden]{display:none;}
 .cp-fgrid label,.cp-prod{display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--text-muted); font-weight:700;} .cp-prod{margin-top:10px;}
 .cp-fgrid input,.cp-fgrid textarea,.cp-prod textarea,#cpDimV{font:inherit; font-size:13px; padding:7px 9px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text);}
+.cp-seg{display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,2.4fr) minmax(0,.8fr) minmax(0,.8fr) auto; gap:8px; align-items:end; margin-bottom:8px;}
+.cp-seg label{display:flex; flex-direction:column; gap:4px; font-size:11.5px; color:var(--text-muted); font-weight:700;}
+.cp-seg input,.cp-seg textarea{font:inherit; font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text);} .cp-seg textarea{resize:vertical; min-height:32px;}
+@media (max-width:760px){ .cp-seg{grid-template-columns:1fr 1fr;} .cp-seg-c{grid-column:1 / -1;} }
 .cp-w2{grid-column:span 2;} .cp-w4{grid-column:1 / -1;} .cp-atalhos{display:flex; gap:6px; align-items:flex-end; flex-wrap:wrap;}
 #cpMetrica,#cpTipo{display:inline-flex; width:auto;}
 .cp-head{display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; margin:6px 0 6px;} .cp-head h2{margin:0; font-family:'Sora',sans-serif; font-size:20px;}
@@ -1248,7 +1252,7 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .cp-leg{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--text-2); margin-top:8px;} .cp-leg i{display:inline-block; width:16px; height:3px; border-radius:2px; vertical-align:middle; margin-right:6px;}
 .cp-leg i.tr{height:0; border-top:2px dashed var(--text);} .cp-leg i.pt{height:0; border-top:2px dotted var(--text-muted);}
 .cp-2{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; margin-top:14px;}
-.cp-tbl td.nm{max-width:340px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.cp-segt td small{display:block; font-size:10.5px; color:var(--text-muted); font-weight:400;} .cp-tbl td.nm{max-width:340px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 @media (max-width:1100px){ .cp-kpis{grid-template-columns:repeat(2,minmax(0,1fr));} .cp-2{grid-template-columns:1fr;} .cp-fgrid{grid-template-columns:repeat(2,minmax(0,1fr));} }
 @media (max-width:560px){ .cp-sv{height:180px;} .cp-k .v{font-size:17px;} }
 .ra-form{border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:12px; background:var(--surface);}
@@ -2966,7 +2970,7 @@ table.data-table.vp-tbl{min-width:720px;}
             <div class="seg" id="cpMetrica"><button type="button" data-v="fat" aria-pressed="true">Faturamento (R$)</button><button type="button" data-v="qtd" aria-pressed="false">Quantidade (peças)</button><button type="button" data-v="lb" aria-pressed="false">Lucro bruto (R$)</button></div>
             <div class="ra-l">Meta</div>
             <div class="seg" id="cpTipo"><button type="button" data-v="fixa" aria-pressed="true">Número definido</button><button type="button" data-v="base" aria-pressed="false">Período anterior + crescimento</button></div>
-            <div class="cp-fgrid" id="cpFixa" style="margin-top:8px;"><label><span>Meta <span id="cpUn">(R$)</span></span><input type="number" id="cpValor" min="0" step="any" placeholder="0"></label></div>
+            <div class="cp-fgrid" id="cpFixa" style="margin-top:8px;"><label><span>Meta geral <span id="cpUn">(R$)</span></span><input type="number" id="cpValor" min="0" step="any" placeholder="soma das linhas"></label></div>
             <div class="cp-fgrid" id="cpBase" hidden style="margin-top:8px;">
               <label>Comparar de<input type="date" id="cpBIni"></label><label>Até<input type="date" id="cpBFim"></label>
               <label>Crescimento (%)<input type="number" id="cpCresc" step="any" placeholder="0"></label>
@@ -2977,7 +2981,11 @@ table.data-table.vp-tbl{min-width:720px;}
               <button type="button" class="btn-sm" id="cpUsarPainel" title="Copia os filtros que estão aplicados no painel agora">Usar os filtros aplicados no painel</button></div>
             <div class="u-abas" id="cpFiltros" style="margin-top:8px;"></div>
             <label class="cp-prod">Produtos participantes (códigos separados por espaço, vírgula ou linha)<textarea id="cpProd" rows="2" placeholder="98553888 98550168 …"></textarea></label>
+            <div class="ra-add" style="margin-top:6px;"><button type="button" class="btn-sm" id="cpXlsBt" title="Lê o arquivo e traz os códigos que existem no cadastro; com coluna de linha, monta as linhas da campanha">Importar itens do Excel da campanha</button><input type="file" id="cpXls" accept=".xlsx,.xls,.xlsm,.csv" hidden></div>
             <div class="note-muted" id="cpProdMsg" style="font-size:12px;"></div>
+            <div class="ra-l">Linhas da campanha (opcional): cada linha com os próprios produtos, meta e bônus por unidade, apurada separadamente</div>
+            <div id="cpSegs"></div>
+            <div class="ra-add"><button type="button" class="btn-sm" id="cpSegAdd">+ Adicionar linha</button><span class="note-muted" style="font-size:11.5px;">O Excel da campanha com uma coluna de linha (ou família/segmento) e outra de código cria as linhas sozinho.</span></div>
             <label class="ra-chk"><input type="checkbox" id="cpAtivo" checked> Campanha ativa</label>
             <div class="ra-acts"><button type="submit" class="tbtn primary">Salvar campanha</button><button type="button" class="tbtn" id="cpCancelar">Cancelar</button><span class="ra-msg" id="cpMsg"></span></div>
           </form>
@@ -10965,7 +10973,8 @@ function cpPainel(){
   var pRest = dias.filter(function(x){ return !x.feito; }).reduce(function(t, x){ return t + x.p; }, 0) + (corre && feitos.length ? feitos[feitos.length-1].p : 0);
   var ritmo = pConc > 0 ? vConc/pConc : null, proj = ult >= fim ? real : (ritmo!==null ? vConc + ritmo*pRest : null);
   var baseTot = c.meta_tipo==='base' ? cv((D.base||[])[ix-1]) : null;
-  var meta = c.meta_tipo==='base' ? (baseTot>0 ? baseTot*(1+(+c.cresc||0)/100) : null) : (+c.meta_valor || null);
+  var segs = c.segs || [], metaSegs = segs.reduce(function(t, g){ return t + (+g.meta||0); }, 0);
+  var meta = c.meta_tipo==='base' ? (baseTot>0 ? baseTot*(1+(+c.cresc||0)/100) : null) : (+c.meta_valor || metaSegs || null);
   var at = meta ? real/meta*100 : null, pp = meta && proj!==null ? proj/meta*100 : null, falta = meta ? Math.max(0, meta-real) : null;
   var pAteHoje = dias.filter(function(x){ return x.feito; }).reduce(function(t, x){ return t + x.p; }, 0), ideal = meta ? meta*pAteHoje/pTot : null;
   var porDiaUtil = meta && pRest > 0 && ult < fim ? Math.max(0, meta - (corre ? vConc : real))/pRest : null;
@@ -10981,6 +10990,7 @@ function cpPainel(){
     k('#64748b', 'Meta até hoje', ideal!==null && ult < fim ? cpVal(m, ideal) : '—', ideal!==null && ult < fim ? (real >= ideal ? '<span class="vh-up">à frente '+cpCurto(m, real-ideal)+'</span>' : '<span class="vh-dn">atrás '+cpCurto(m, ideal-real)+'</span>') : (ult >= fim ? 'campanha encerrada' : '—'), ideal ? vpMetaInd(real, ideal, 'Ritmo', '', fu) : '') +
     k(pp!==null ? cor(pp) : 'var(--vx-am)', 'Projeção', proj!==null ? cpVal(m, proj) : '—', pp!==null ? '<b style="color:'+cor(pp)+'">'+vhP(pp)+'</b> da meta no fim' : 'mantendo o ritmo dos dias concluídos', meta && proj!==null ? vpMetaInd(proj, meta, 'Meta no fim', '', fu) : '') +
     k('var(--vx-am)', 'Falta', falta!==null ? cpVal(m, falta) : '—', porDiaUtil!==null ? cpVal(m, porDiaUtil)+' por dia útil restante' : (falta===0 ? '<span class="vh-up">meta batida</span>' : '—')) + '</div>';
+  if(segs.length) h += cpSegsTabela(c, D, segs, real, proj, ix, cv, m);
   h += '<div class="vx-card"><div class="vx-ct">Evolução acumulada</div><div class="vx-cs">Realizado (linha cheia) · meta acumulada pelos dias úteis (tracejado) · projeção (tracejado colorido)'+(c.meta_tipo==='base' ? ' · base anterior (cinza)' : '')+'</div>'+cpGrafico(dias, meta, pTot, proj, c, D, ix, cv)+'</div>';
   // lojas
   var lj = (D.lojas||[]).map(function(r){ return {nome: dimNome('loja', r[0]) || 'N/D', v: cv(r[ix]), b: c.meta_tipo==='base' ? cv(r[ix+3]) : null}; }).filter(function(o){ return o.v || o.b; });
@@ -10995,6 +11005,28 @@ function cpPainel(){
     '</tbody></table></div></div></div>';
   h += '<p class="note-muted" style="font-size:11.5px;">Usa só os filtros da campanha (os filtros do painel não se aplicam aqui), dentro do acesso de cada usuário. Ritmo e projeção pelos dias úteis; sábado e domingo valem o peso definido em Dias úteis. O último dia com venda, se a campanha ainda corre, fica fora do ritmo por poder estar incompleto.</p>';
   box.innerHTML = h;
+}
+// linhas da campanha: cada uma apurada separadamente, com prêmio = unidades × bônus quando a linha bate a meta
+function cpSegsTabela(c, D, segs, real, proj, ix, cv, m){
+  var R = {}; (D.segs||[]).forEach(function(r){ R[r[0]] = r; });
+  var fat = real > 0 && proj!==null ? proj/real : null, cr = 1+(+c.cresc||0)/100, totG = 0, totP = 0, nOk = 0;
+  var linhas = segs.map(function(g, i){
+    var r = R[i] || [], v = cv(r[ix]), b = c.meta_tipo==='base' ? cv(r[ix+3]) : null, q = +r[2] || 0, qp = fat!==null ? q*fat : null;
+    var mt = +g.meta || (c.meta_tipo==='base' && b > 0 ? b*cr : null), p = mt ? v/mt*100 : null, pj = mt && fat!==null ? v*fat/mt*100 : null, bon = +g.bonus || 0;
+    var ok = mt && v >= mt, garantido = ok && bon ? q*bon : 0, previsto = !ok && bon && pj!==null && pj >= 100 ? qp*bon : 0;
+    totG += garantido; totP += garantido || previsto; if(ok) nOk++;
+    var pr = !bon ? '<span class="note-muted">—</span>' : (ok ? '<b class="vh-up">'+fmtMoney(garantido)+'</b><small>meta batida</small>' :
+      (previsto ? '<b style="color:var(--warning)">'+fmtMoney(previsto)+'</b><small>previsto, se mantiver o ritmo</small>' : '<b class="vh-dn">R$ 0</b><small>'+(mt ? 'faltam '+cpVal(m, Math.max(0, mt-v)) : 'sem meta')+'</small>'));
+    return '<tr><td><b>'+escapeHtml(g.nome)+'</b><small>'+(g.produtos||[]).length+' produto'+((g.produtos||[]).length>1?'s':'')+'</small></td>' +
+      (c.meta_tipo==='base' ? '<td>'+cpVal(m, b||0)+'</td>' : '') + '<td>'+(mt ? cpVal(m, mt) : '—')+'</td><td>'+cpVal(m, v)+'</td>' +
+      '<td>'+(p!==null ? '<b style="color:'+vhCorTend(p)+'">'+vhP(p)+'</b>' : '—')+'</td><td>'+(pj!==null ? '<span style="color:'+vhCorTend(pj)+'">'+vhP(pj)+'</span>' : '—')+'</td>' +
+      '<td>'+(bon ? fmtMoney2(bon) : '—')+'</td><td class="cp-pr">'+pr+'</td></tr>';
+  });
+  var temBon = segs.some(function(g){ return +g.bonus > 0; });
+  return '<div class="vx-card" style="margin-bottom:14px;"><div class="vx-ct">Linhas da campanha</div><div class="vx-cs">Cada linha é apurada separadamente: só paga o bônus a linha que bater a própria meta · '+nOk+' de '+segs.length+' batida'+(nOk===1?'':'s')+
+    (temBon ? ' · prêmio garantido <b class="vh-up">'+fmtMoney(totG)+'</b> · previsto no fim <b>'+fmtMoney(totP)+'</b>' : '')+'</div>' +
+    '<div class="vx-scroll"><table class="vx-tbl cp-tbl cp-segt"><thead><tr><th>Linha</th>'+(c.meta_tipo==='base' ? '<th>Base</th>' : '')+'<th>Meta</th><th>Realizado</th><th>Atingido</th><th>Projeção</th><th>Bônus/un.</th><th>Prêmio</th></tr></thead><tbody>'+linhas.join('')+'</tbody></table></div>' +
+    (temBon ? '<p class="note-muted" style="font-size:11px; margin:6px 0 0;">Prêmio = unidades vendidas × bônus por unidade. A GM limita o pagamento ao estoque informado no formulário dela, que não está no painel.</p>' : '')+'</div>';
 }
 function cpGrafico(dias, meta, pTot, proj, c, D, ix, cv){
   var n = dias.length; if(!n) return '';
@@ -11023,8 +11055,8 @@ function cpGrafico(dias, meta, pTot, proj, c, D, ix, cv){
 /* ---------- cadastro ---------- */
 function cpNovaEd(c){
   var h = new Date(), i = new Date(h.getFullYear(), h.getMonth(), 1), f = new Date(h.getFullYear(), h.getMonth()+1, 0);
-  var e = c ? JSON.parse(JSON.stringify(c)) : {id:null, nome:'', descricao:'', ini:isoDia(i), fim:isoDia(f), f:{}, metrica:'fat', meta_tipo:'fixa', meta_valor:null, base_ini:null, base_fim:null, cresc:null, ativo:true};
-  e.f = e.f || {}; return e;
+  var e = c ? JSON.parse(JSON.stringify(c)) : {id:null, nome:'', descricao:'', ini:isoDia(i), fim:isoDia(f), f:{}, metrica:'fat', meta_tipo:'fixa', meta_valor:null, base_ini:null, base_fim:null, cresc:null, ativo:true, segs:[]};
+  e.f = e.f || {}; e.segs = (e.segs||[]).map(function(g){ return {nome:g.nome||'', txt:(g.produtos||[]).map(function(id){ return (PRODINFO[id]||{}).pn || ''; }).filter(Boolean).join(' '), meta:g.meta, bonus:g.bonus}; }); return e;
 }
 function cpAbrir(c){
   CP.ed = cpNovaEd(c); var e = CP.ed;
@@ -11041,6 +11073,7 @@ function cpAbrir(c){
   document.getElementById('cpNome').focus();
 }
 function cpFormDesenhar(){
+  if(document.querySelector('#cpSegs .cp-seg')) cpSegsLer();
   var e = CP.ed;
   [['cpMetrica', e.metrica], ['cpTipo', e.meta_tipo]].forEach(function(x){ Array.prototype.forEach.call(document.querySelectorAll('#'+x[0]+' [data-v]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-v')===x[1])); }); });
   document.getElementById('cpFixa').hidden = e.meta_tipo!=='fixa'; document.getElementById('cpBase').hidden = e.meta_tipo!=='base';
@@ -11048,12 +11081,69 @@ function cpFormDesenhar(){
   var ch = [];
   Object.keys(e.f).forEach(function(k){ if(k==='produto') return; (e.f[k]||[]).forEach(function(id){ var d = CP_DIMS.filter(function(x){ return x[0]===k; })[0];
     ch.push('<button type="button" class="u-aba" aria-pressed="true" data-k="'+k+'" data-id="'+id+'" title="Remover">'+escapeHtml((d ? d[1] : k)+': '+(d ? dimNome(k, id) : id))+'<span class="ra-x">×</span></button>'); }); });
+  cpSegsDesenhar();
   document.getElementById('cpFiltros').innerHTML = ch.join('') || '<span class="note-muted" style="font-size:12px;">Nenhum filtro: a campanha mede todas as vendas.</span>';
+}
+function cpSegsLer(){ Array.prototype.forEach.call(document.querySelectorAll('#cpSegs .cp-seg'), function(el, i){ var g = CP.ed.segs[i]; if(!g) return;
+  g.nome = el.querySelector('[data-s="nome"]').value; g.txt = el.querySelector('[data-s="txt"]').value;
+  var m = el.querySelector('[data-s="meta"]').value, b = el.querySelector('[data-s="bonus"]').value; g.meta = m==='' ? null : +m; g.bonus = b==='' ? null : +b; }); }
+function cpSegsDesenhar(){
+  var e = CP.ed, base = e.meta_tipo==='base';
+  document.getElementById('cpSegs').innerHTML = e.segs.map(function(g, i){
+    var n = g.txt ? g.txt.split(/[\s,;]+/).filter(Boolean).length : 0;
+    return '<div class="cp-seg"><label>Linha<input type="text" data-s="nome" maxlength="80" value="'+escapeHtml(g.nome||'')+'" placeholder="Ex.: MOTORES PARCIAIS"></label>' +
+      '<label class="cp-seg-c">Códigos ('+n+')<textarea data-s="txt" rows="1" placeholder="códigos da linha">'+escapeHtml(g.txt||'')+'</textarea></label>' +
+      '<label'+(base ? ' title="Com meta pelo período anterior, a meta da linha é a base dela + o crescimento"' : '')+'>Meta'+(base ? ' (opcional)' : '')+'<input type="number" data-s="meta" min="0" step="any" value="'+(g.meta!==null && g.meta!==undefined ? g.meta : '')+'" placeholder="'+(base ? 'base + cresc.' : '0')+'"></label>' +
+      '<label>Bônus R$/un.<input type="number" data-s="bonus" min="0" step="any" value="'+(g.bonus!==null && g.bonus!==undefined ? g.bonus : '')+'" placeholder="0,00"></label>' +
+      '<button type="button" class="btn-sm" data-sx="'+i+'" title="Remover a linha">×</button></div>';
+  }).join('');
 }
 function cpDimLista(){
   var k = document.getElementById('cpDim').value;
   document.getElementById('cpDimL').innerHTML = ((META.dims && META.dims[k]) || []).map(function(x){ return '<option value="'+escapeHtml(x[1])+'">'; }).join('');
   document.getElementById('cpDimV').value = '';
+}
+// Excel da campanha: procura em todas as abas e células os códigos que existem no cadastro de produtos
+function cpImportarXls(fl){
+  var msg = document.getElementById('cpProdMsg'); msg.textContent = 'Lendo '+fl.name+'…';
+  Promise.all([carregarXlsx(), Promise.resolve(CP.cat || carregarCatalogo()).catch(function(){}), fl.arrayBuffer()]).then(function(r){
+    CP.pn = null; var X = r[0], mp = cpPnMapa(), wb = X.read(r[2], {type:'array'}), achou = [], vistos = {}, abas = 0;
+    var atuais = cpLerProdutos().ok; atuais.forEach(function(id){ vistos[id] = 1; });
+    var ach = function(v){ if(v===null || v==='') return null; var c = String(v).trim().toUpperCase(); return mp[c] || mp[c.replace(/^0+(?=\d{6,})/, '')] || mp[c.replace(/[.\-\s]/g,'')] || null; };
+    // planilha com coluna de linha e de código: monta as linhas da campanha
+    var grupos = {}, ordem = [], bonusG = {};
+    wb.SheetNames.forEach(function(nm){
+      var L = X.utils.sheet_to_json(wb.Sheets[nm], {header:1, raw:true, defval:''}), hi = -1, ci = -1, li = -1, bi = -1;
+      for(var r0 = 0; r0 < Math.min(20, L.length) && hi < 0; r0++){ var row = (L[r0]||[]).map(function(x){ return String(x).trim().toLowerCase(); });
+        var c1 = row.findIndex(function(x){ return /^(c[oó]d|pn\b|part|item|refer|n[uú]mero da pe)/.test(x); }), l1 = row.findIndex(function(x){ return /^(linha|segmento|fam[ií]lia|grupo|categoria)/.test(x); });
+        if(c1 >= 0 && l1 >= 0){ hi = r0; ci = c1; li = l1; bi = row.findIndex(function(x){ return /b[oô]nus|pr[eê]mio/.test(x); }); } }
+      if(hi < 0) return;
+      var atual = '';
+      for(var k = hi+1; k < L.length; k++){ var rw = L[k]||[], g = String(rw[li]||'').trim() || atual; atual = g; var id = ach(rw[ci]); if(!id || !g) continue;
+        if(!grupos[g]){ grupos[g] = []; ordem.push(g); } if(grupos[g].indexOf(id)<0) grupos[g].push(id);
+        if(bi >= 0 && +rw[bi] > 0 && !bonusG[g]) bonusG[g] = +rw[bi]; }
+    });
+    if(ordem.length){
+      cpSegsLer();
+      ordem.forEach(function(g){ var ex = CP.ed.segs.filter(function(x){ return String(x.nome).toUpperCase()===g.toUpperCase(); })[0], pns = grupos[g].map(function(id){ return PRODINFO[id].pn; });
+        if(ex){ var tem = (ex.txt||'').split(/[\s,;]+/).filter(Boolean); pns.forEach(function(pn){ if(tem.indexOf(pn)<0) tem.push(pn); }); ex.txt = tem.join(' '); if(!ex.bonus && bonusG[g]) ex.bonus = bonusG[g]; }
+        else CP.ed.segs.push({nome:g, txt:pns.join(' '), meta:null, bonus:bonusG[g]||null}); });
+      cpSegsDesenhar();
+      var nIt = ordem.reduce(function(t, g){ return t + grupos[g].length; }, 0);
+      msg.innerHTML = '<span class="vh-up">'+ordem.length+' linha'+(ordem.length>1?'s':'')+' com '+nIt+' produto'+(nIt>1?'s':'')+' do cadastro lidas de '+escapeHtml(fl.name)+'.</span> Confira as linhas, informe a meta e o bônus de cada uma e salve.';
+      return;
+    }
+    wb.SheetNames.forEach(function(nm){ abas++;
+      X.utils.sheet_to_json(wb.Sheets[nm], {header:1, raw:true, defval:''}).forEach(function(lin){ (lin||[]).forEach(function(v){
+        if(v===null || v==='') return;
+        var t = typeof v==='number' ? String(Math.round(v)===v ? v : v) : String(v);
+        t.split(/[\s,;\/]+/).forEach(function(c){ c = c.trim().toUpperCase(); var id = mp[c] || mp[c.replace(/^0+(?=\d{6,})/, '')] || mp[c.replace(/[.\-]/g,'')];
+          if(id && !vistos[id]){ vistos[id] = 1; achou.push(id); } }); }); }); });
+    if(!achou.length){ msg.innerHTML = '<span class="vh-dn">Nenhum código novo do cadastro encontrado em '+escapeHtml(fl.name)+'.</span>'; return; }
+    var ta = document.getElementById('cpProd'), pns = achou.map(function(id){ return PRODINFO[id].pn; });
+    ta.value = (ta.value.trim() ? ta.value.trim()+' ' : '') + pns.join(' ');
+    msg.innerHTML = '<span class="vh-up">'+achou.length+' produto'+(achou.length>1?'s':'')+' do cadastro encontrado'+(achou.length>1?'s':'')+' em '+escapeHtml(fl.name)+' ('+abas+' aba'+(abas>1?'s':'')+').</span> Confira a lista e salve.';
+  }).catch(function(){ msg.innerHTML = '<span class="vh-dn">Não foi possível ler o arquivo.</span>'; });
 }
 function cpLerProdutos(){
   var txt = document.getElementById('cpProd').value, mp = cpPnMapa(), ok = [], nao = [];
@@ -11075,14 +11165,22 @@ function cpSalvar2(){
   e.cresc = document.getElementById('cpCresc').value==='' ? 0 : +document.getElementById('cpCresc').value;
   e.ativo = document.getElementById('cpAtivo').checked;
   var pr = cpLerProdutos(); if(pr.ok.length) e.f.produto = pr.ok; else delete e.f.produto;
+  cpSegsLer();
+  var mp = cpPnMapa(), naoS = [], segs = [];
+  e.segs.forEach(function(g){ var ids = [];
+    (g.txt||'').split(/[\s,;]+/).filter(Boolean).forEach(function(c){ var id = mp[c.toUpperCase()]; if(id){ if(ids.indexOf(id)<0) ids.push(id); } else naoS.push((g.nome||'linha')+': '+c); });
+    if(g.nome || ids.length) segs.push({nome:(g.nome||'Linha '+(segs.length+1)).trim(), produtos:ids, meta: g.meta>0 ? g.meta : null, bonus: g.bonus>0 ? g.bonus : null}); });
+  if(naoS.length){ msg.textContent = 'Códigos não encontrados nas linhas: '+naoS.slice(0,12).join(', ')+(naoS.length>12 ? '…' : ''); return; }
+  if(segs.some(function(g){ return !g.produtos.length; })){ msg.textContent = 'Cada linha precisa de pelo menos um código de produto.'; return; }
   if(pr.nao.length){ document.getElementById('cpProdMsg').innerHTML = '<span class="vh-dn">Códigos não encontrados no cadastro: '+escapeHtml(pr.nao.slice(0,20).join(', '))+(pr.nao.length>20 ? '…' : '')+'</span>'; msg.textContent = 'Corrija os códigos de produto.'; return; }
   if(!e.nome){ msg.textContent = 'Informe o nome da campanha.'; return; }
   if(!e.ini || !e.fim || e.fim < e.ini){ msg.textContent = 'Confira o período da campanha.'; return; }
-  if(e.meta_tipo==='fixa' && !(e.meta_valor > 0)){ msg.textContent = 'Informe a meta.'; return; }
+  if(e.meta_tipo==='fixa' && !(e.meta_valor > 0) && !segs.some(function(g){ return g.meta > 0; })){ msg.textContent = 'Informe a meta (geral ou das linhas).'; return; }
   if(e.meta_tipo==='base' && (!e.base_ini || !e.base_fim || e.base_fim < e.base_ini)){ msg.textContent = 'Informe o período de comparação.'; return; }
   // R$ é gravado em reais; a consulta devolve centavos e o site converte
   msg.textContent = 'Salvando…';
-  window.__NC_rpc('bi_campanha_gravar', {p:e}).then(function(id){
+  var envio = JSON.parse(JSON.stringify(e)); envio.segs = segs;
+  window.__NC_rpc('bi_campanha_gravar', {p:envio}).then(function(id){
     msg.textContent = ''; document.getElementById('cpForm').hidden = true; CP.sel = id; CP.lista = null; CP.dados = {}; renderCampanhas(); toast('Campanha salva.');
   }).catch(function(err){ msg.textContent = 'Não foi possível salvar: '+String(err && (err.message||err)).slice(0,160); });
 }
@@ -11095,8 +11193,8 @@ function cpLigar(){
   document.getElementById('cpNova').addEventListener('click', function(){ cpAbrir(null); });
   document.getElementById('cpCancelar').addEventListener('click', function(){ document.getElementById('cpForm').hidden = true; });
   document.getElementById('cpForm').addEventListener('submit', cpSalvar);
-  document.getElementById('cpMetrica').addEventListener('click', function(ev){ var b = ev.target.closest('[data-v]'); if(b){ CP.ed.metrica = b.getAttribute('data-v'); cpFormDesenhar(); } });
-  document.getElementById('cpTipo').addEventListener('click', function(ev){ var b = ev.target.closest('[data-v]'); if(b){ CP.ed.meta_tipo = b.getAttribute('data-v'); cpFormDesenhar(); } });
+  document.getElementById('cpMetrica').addEventListener('click', function(ev){ var b = ev.target.closest('[data-v]'); if(b){ cpSegsLer(); CP.ed.metrica = b.getAttribute('data-v'); cpFormDesenhar(); } });
+  document.getElementById('cpTipo').addEventListener('click', function(ev){ var b = ev.target.closest('[data-v]'); if(b){ cpSegsLer(); CP.ed.meta_tipo = b.getAttribute('data-v'); cpFormDesenhar(); } });
   document.getElementById('cpBase').addEventListener('click', function(ev){ var b = ev.target.closest('[data-at]'); if(!b) return;
     var i = cpDt(document.getElementById('cpIni').value || isoDia(new Date())), f = cpDt(document.getElementById('cpFim').value || isoDia(new Date())), a, z;
     if(b.getAttribute('data-at')==='ano'){ a = new Date(i.getFullYear()-1, i.getMonth(), i.getDate()); z = new Date(f.getFullYear()-1, f.getMonth(), f.getDate()); }
@@ -11115,6 +11213,10 @@ function cpLigar(){
     cpFormDesenhar(); });
   document.getElementById('cpFiltros').addEventListener('click', function(ev){ var b = ev.target.closest('[data-k]'); if(!b) return;
     var k = b.getAttribute('data-k'), id = +b.getAttribute('data-id'); CP.ed.f[k] = (CP.ed.f[k]||[]).filter(function(x){ return x!==id; }); if(!CP.ed.f[k].length) delete CP.ed.f[k]; cpFormDesenhar(); });
+  document.getElementById('cpSegAdd').addEventListener('click', function(){ cpSegsLer(); CP.ed.segs.push({nome:'', txt:'', meta:null, bonus:null}); cpSegsDesenhar(); });
+  document.getElementById('cpSegs').addEventListener('click', function(ev){ var b = ev.target.closest('[data-sx]'); if(!b) return; cpSegsLer(); CP.ed.segs.splice(+b.getAttribute('data-sx'), 1); cpSegsDesenhar(); });
+  document.getElementById('cpXlsBt').addEventListener('click', function(){ document.getElementById('cpXls').click(); });
+  document.getElementById('cpXls').addEventListener('change', function(){ var fl = this.files && this.files[0]; this.value = ''; if(fl) cpImportarXls(fl); });
   document.getElementById('cpPainel').addEventListener('click', function(ev){ var b = ev.target.closest('[data-cpa]'); if(!b) return;
     var c = CP.lista.filter(function(x){ return x.id===CP.sel; })[0]; if(!c) return;
     if(b.getAttribute('data-cpa')==='ed'){ cpAbrir(c); return; }
