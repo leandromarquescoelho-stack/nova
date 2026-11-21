@@ -1225,6 +1225,32 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .u-card .u-abas-label{ margin:0 0 -6px; }
 .u-abas{ display:flex; flex-wrap:wrap; gap:6px; }
 .u-aba{ border:1px solid var(--border); background:var(--surface); color:var(--text-muted); border-radius:999px; padding:5px 11px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:'Manrope',sans-serif; }
+.cp-top{display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; margin-bottom:12px;}
+.cp-lista{display:flex; gap:8px; flex-wrap:wrap; flex:1 1 400px;}
+.cp-chip{font:inherit; text-align:left; display:flex; flex-direction:column; gap:2px; padding:8px 14px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); cursor:pointer;}
+.cp-chip b{font-size:13.5px;} .cp-chip span{font-size:11.5px; color:var(--text-muted);} .cp-chip.on{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset;} .cp-chip.off{opacity:.65;}
+.cp-bts{display:flex; gap:8px; flex-wrap:wrap;} .btn-sm.perigo{color:var(--critical); border-color:var(--critical);}
+.cp-fgrid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px;} .cp-fgrid[hidden]{display:none;}
+.cp-fgrid label,.cp-prod{display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--text-muted); font-weight:700;} .cp-prod{margin-top:10px;}
+.cp-fgrid input,.cp-fgrid textarea,.cp-prod textarea,#cpDimV{font:inherit; font-size:13px; padding:7px 9px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text);}
+.cp-w2{grid-column:span 2;} .cp-w4{grid-column:1 / -1;} .cp-atalhos{display:flex; gap:6px; align-items:flex-end; flex-wrap:wrap;}
+#cpMetrica,#cpTipo{display:inline-flex; width:auto;}
+.cp-head{display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; margin:6px 0 6px;} .cp-head h2{margin:0; font-family:'Sora',sans-serif; font-size:20px;}
+.cp-filt{font-size:12.5px; color:var(--text-2); margin-bottom:6px;} .cp-desc{font-size:12.5px; color:var(--text-2); background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:8px 12px; margin-bottom:10px;}
+.cp-kpis{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin:10px 0 14px;}
+.cp-k{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; position:relative; overflow:hidden; min-width:0;}
+.cp-k::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--vh-c);}
+.cp-k .l{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted);}
+.cp-k .v{font-family:'Sora',sans-serif; font-size:20px; font-weight:800; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .cp-k .s{font-size:12px; color:var(--text-2); margin-top:4px; line-height:1.45;}
+.cp-k .vp-bar{display:block; width:auto; height:7px; margin-top:0; border-radius:99px; overflow:visible;} .cp-k .vp-bar i{position:absolute; height:auto;}
+.cp-gr{position:relative; margin-top:8px;} .cp-sv{display:block; width:100%; height:240px;} .cp-ymax{position:absolute; left:10px; top:0; font-size:10.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;}
+.cp-eixo{display:flex; justify-content:space-between; font-size:10.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; padding:0 4px;}
+.cp-leg{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--text-2); margin-top:8px;} .cp-leg i{display:inline-block; width:16px; height:3px; border-radius:2px; vertical-align:middle; margin-right:6px;}
+.cp-leg i.tr{height:0; border-top:2px dashed var(--text);} .cp-leg i.pt{height:0; border-top:2px dotted var(--text-muted);}
+.cp-2{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; margin-top:14px;}
+.cp-tbl td.nm{max-width:340px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+@media (max-width:1100px){ .cp-kpis{grid-template-columns:repeat(2,minmax(0,1fr));} .cp-2{grid-template-columns:1fr;} .cp-fgrid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media (max-width:560px){ .cp-sv{height:180px;} .cp-k .v{font-size:17px;} }
 .ra-form{border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:12px; background:var(--surface);}
 .ra-grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:10px;}
 .ra-grid label{display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--text-muted); font-weight:700;}
@@ -2094,6 +2120,9 @@ table.data-table.vp-tbl{min-width:720px;}
       <div class="nav-item" data-view="precos">
         <span class="ico">&#128178;</span><span class="label">Preços</span><span class="tip">Preços</span>
       </div>
+      <div class="nav-item" data-view="gm">
+        <span class="ico">&#127942;</span><span class="label">GM</span><span class="tip">GM</span>
+      </div>
       <div class="nav-item" data-view="planejamento">
         <span class="ico">&#127919;</span><span class="label">Planejamento</span><span class="tip">Planejamento</span>
       </div>
@@ -2915,6 +2944,44 @@ table.data-table.vp-tbl{min-width:720px;}
           </div>
           <div class="cc-scroll"><table class="cc-tbl pr-tbl" id="prTbl"></table></div>
           <p class="note-muted" id="prNota"></p>
+        </div>
+      </section>
+
+      <!-- ============ GM ============ -->
+      <section class="view-panel" data-view-panel="gm" style="display:none;">
+        <div class="pl-guias" id="gmGuias" role="tablist"><button type="button" class="on" data-gm="campanhas" role="tab" aria-selected="true">Campanhas GM</button></div>
+        <div id="gmCampanhas">
+          <div class="cp-top">
+            <div class="cp-lista" id="cpLista"><p class="note-muted status-txt">Carregando campanhas…</p></div>
+            <div class="cp-bts"><button type="button" class="tbtn primary" id="cpNova" hidden>+ Nova campanha</button></div>
+          </div>
+          <form id="cpForm" class="ra-form" hidden autocomplete="off">
+            <div class="cp-fgrid">
+              <label class="cp-w2">Nome da campanha<input type="text" id="cpNome" maxlength="120" placeholder="Ex.: Campanha Óleo ACDelco novembro"></label>
+              <label>Início<input type="date" id="cpIni"></label>
+              <label>Fim<input type="date" id="cpFim"></label>
+              <label class="cp-w4">Regras / observações do boletim<textarea id="cpDesc" rows="2" maxlength="2000" placeholder="Ex.: premiação, faixas, itens participantes…"></textarea></label>
+            </div>
+            <div class="ra-l">Métrica medida</div>
+            <div class="seg" id="cpMetrica"><button type="button" data-v="fat" aria-pressed="true">Faturamento (R$)</button><button type="button" data-v="qtd" aria-pressed="false">Quantidade (peças)</button><button type="button" data-v="lb" aria-pressed="false">Lucro bruto (R$)</button></div>
+            <div class="ra-l">Meta</div>
+            <div class="seg" id="cpTipo"><button type="button" data-v="fixa" aria-pressed="true">Número definido</button><button type="button" data-v="base" aria-pressed="false">Período anterior + crescimento</button></div>
+            <div class="cp-fgrid" id="cpFixa" style="margin-top:8px;"><label><span>Meta <span id="cpUn">(R$)</span></span><input type="number" id="cpValor" min="0" step="any" placeholder="0"></label></div>
+            <div class="cp-fgrid" id="cpBase" hidden style="margin-top:8px;">
+              <label>Comparar de<input type="date" id="cpBIni"></label><label>Até<input type="date" id="cpBFim"></label>
+              <label>Crescimento (%)<input type="number" id="cpCresc" step="any" placeholder="0"></label>
+              <div class="cp-atalhos"><button type="button" class="btn-sm" data-at="ano">Mesmo período do ano anterior</button><button type="button" class="btn-sm" data-at="mes">Mês anterior</button></div>
+            </div>
+            <div class="ra-l">Filtros da campanha (só valem nesta aba)</div>
+            <div class="ra-add"><select class="fsel" id="cpDim"></select><input type="text" id="cpDimV" list="cpDimL" placeholder="Digite e escolha…" style="min-width:220px;"><datalist id="cpDimL"></datalist><button type="button" class="btn-sm" id="cpDimAdd">Adicionar</button>
+              <button type="button" class="btn-sm" id="cpUsarPainel" title="Copia os filtros que estão aplicados no painel agora">Usar os filtros aplicados no painel</button></div>
+            <div class="u-abas" id="cpFiltros" style="margin-top:8px;"></div>
+            <label class="cp-prod">Produtos participantes (códigos separados por espaço, vírgula ou linha)<textarea id="cpProd" rows="2" placeholder="98553888 98550168 …"></textarea></label>
+            <div class="note-muted" id="cpProdMsg" style="font-size:12px;"></div>
+            <label class="ra-chk"><input type="checkbox" id="cpAtivo" checked> Campanha ativa</label>
+            <div class="ra-acts"><button type="submit" class="tbtn primary">Salvar campanha</button><button type="button" class="tbtn" id="cpCancelar">Cancelar</button><span class="ra-msg" id="cpMsg"></span></div>
+          </form>
+          <div id="cpPainel"></div>
         </div>
       </section>
 
@@ -9409,11 +9476,12 @@ function vpSparkAcum(vals, total, metaAcum, tend){
   return h+'</svg>';
 }
 // indicador de meta: valor ÷ meta, barra e texto
-function vpMetaInd(v, meta, rot, tit){
+function vpMetaInd(v, meta, rot, tit, fmt){
+  fmt = fmt || fmtCurto;
   if(!(meta > 0)) return '';
   var p = v/meta*100, cor = vhCorTend(p);
   return '<div class="vp-mi"'+(tit ? ' title="'+escapeHtml(tit)+'"' : '')+'><div class="t"><span>'+rot+'</span><b style="color:'+cor+'">'+vhP(p)+'</b></div><div class="vp-bar"><i style="width:'+Math.min(100, p).toFixed(1)+'%; background:'+cor+'"></i></div>' +
-    '<div class="d">'+fmtCurto(v)+' de '+fmtCurto(meta)+'</div></div>';
+    '<div class="d">'+fmt(v)+' de '+fmt(meta)+'</div></div>';
 }
 /* ---------- estoque (a custo) e novidades em estoque: bi_vendas_hoje_estoque ---------- */
 VH.est = {}; VH.estPend = {};
@@ -10833,6 +10901,230 @@ function renderTudo(refreshing){
 }
 
 /* ============================================================
+   GM › CAMPANHAS GM: campanhas com filtros, métrica e meta próprias (bi_campanha*)
+   ============================================================ */
+var CP = {lista:null, sel:null, dados:{}, pend:{}, ed:null, ligado:false};
+var CP_DIMS = [['marca','Marca'],['linha','Linha'],['categoria','Grupo'],['subcategoria','Subgrupo'],['montadora','Montadora'],['curva_gm','Curva GM'],
+  ['grupo_peca','Grupo de peça'],['classificacao','Classificação'],['aplicacao','Aplicação'],['loja','Loja'],['canal','Canal'],['tipo_cliente','Tipo de cliente']];
+var CP_MET = {fat:'Faturamento', qtd:'Quantidade', lb:'Lucro bruto'};
+function cpPode(){ return !!(CURRENT_PROFILE && ['bi','diretoria'].indexOf(CURRENT_PROFILE.role)>=0); }
+function cpVal(m, v){ return m==='qtd' ? fmtUn(v)+' pç' : fmtMoney(v); }
+function cpCurto(m, v){ return m==='qtd' ? fmtUn(v)+' pç' : fmtCurto(v); }
+function cpDt(s){ return new Date(String(s).slice(0,10)+'T12:00:00'); }
+function cpDtBR(s){ return s ? fmtDateFull(cpDt(s)).slice(0,5)+'/'+String(s).slice(2,4) : ''; }
+function cpPeso(d){ var p = pesoDia(d, false, null); return p!==null && p!==undefined ? p : (tipoDia(d, null)==='util' ? 1 : 0); }
+function cpPnMapa(){ if(CP.pn) return CP.pn; var m = CP.pn = {}; Object.keys(PRODINFO).forEach(function(id){ var pn = PRODINFO[id].pn; if(pn) m[String(pn).toUpperCase()] = +id; }); return m; }
+function cpFiltrosTxt(f){
+  var p = [];
+  CP_DIMS.forEach(function(d){ var v = f[d[0]]; if(v && v.length) p.push(d[1]+': '+v.slice(0,6).map(function(id){ return dimNome(d[0], id); }).join(', ')+(v.length>6 ? ' e mais '+(v.length-6) : '')); });
+  Object.keys(f).forEach(function(k){ if(k!=='produto' && !CP_DIMS.some(function(d){ return d[0]===k; }) && f[k] && f[k].length) p.push(k+': '+f[k].length+' item(ns)'); });
+  if(f.produto && f.produto.length) p.push(f.produto.length+' produto'+(f.produto.length>1?'s':'')+': '+f.produto.slice(0,5).map(function(id){ return (PRODINFO[id]||{}).pn || '#'+id; }).join(', ')+(f.produto.length>5 ? '…' : ''));
+  return p.join(' · ') || 'Sem filtros (todas as vendas no seu acesso)';
+}
+function renderCampanhas(){
+  cpLigar();
+  if(!CP.cat) CP.cat = carregarCatalogo().then(function(){ CP.pn = null; }).catch(function(){ CP.cat = null; });
+  document.getElementById('cpNova').hidden = !cpPode();
+  if(CP.lista===null){
+    if(CP.pendLista) return; CP.pendLista = 1;
+    window.__NC_rpc('bi_campanhas', {}).then(function(l){ CP.lista = l || []; })
+      .catch(function(e){ CP.lista = []; CP.erro = /bi_campanha|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'; })
+      .then(function(){ CP.pendLista = 0; if(state.currentView==='gm') renderCampanhas(); });
+    return;
+  }
+  var box = document.getElementById('cpLista');
+  if(CP.erro==='falta'){ box.innerHTML = '<p class="note-muted">O banco ainda não tem as campanhas (rode o SQL campanhas_gm.sql).</p>'; document.getElementById('cpNova').hidden = true; return; }
+  if(!CP.lista.length){ box.innerHTML = '<p class="note-muted">Nenhuma campanha cadastrada ainda.'+(cpPode() ? ' Clique em "Nova campanha" para criar a primeira.' : '')+'</p>'; document.getElementById('cpPainel').innerHTML = ''; return; }
+  if(!CP.sel || !CP.lista.some(function(c){ return c.id===CP.sel; })) CP.sel = CP.lista[0].id;
+  box.innerHTML = CP.lista.map(function(c){
+    return '<button type="button" class="cp-chip'+(c.id===CP.sel ? ' on' : '')+(c.ativo ? '' : ' off')+'" data-cp="'+c.id+'"><b>'+escapeHtml(c.nome)+'</b><span>'+cpDtBR(c.ini)+' a '+cpDtBR(c.fim)+(c.ativo ? '' : ' · encerrada')+'</span></button>';
+  }).join('');
+  cpPainel();
+}
+function cpPainel(){
+  var c = CP.lista.filter(function(x){ return x.id===CP.sel; })[0], box = document.getElementById('cpPainel'); if(!c) return;
+  var key = c.id+'|'+c.atualizado_em, D = CP.dados[key];
+  if(!D){
+    box.innerHTML = '<p class="note-muted status-txt" style="padding:12px 0;">Calculando a campanha…</p>';
+    if(!CP.pend[key]){ CP.pend[key] = 1;
+      window.__NC_rpc('bi_campanha_dados', {p_id:c.id}).then(function(d){ CP.dados[key] = d || {}; }).catch(function(){ CP.dados[key] = {erro:1}; })
+        .then(function(){ delete CP.pend[key]; if(state.currentView==='gm' && CP.sel===c.id) cpPainel(); }); }
+    return;
+  }
+  if(D.erro){ box.innerHTML = '<p class="note-muted">Não foi possível calcular a campanha agora.</p>'; return; }
+  var m = c.metrica, ix = m==='qtd' ? 2 : (m==='lb' ? 3 : 1), cv = function(v){ return m==='qtd' ? (+v||0) : c2(v); };
+  // dias da campanha, pesos (dia útil = 1; sábado e domingo pelo peso de Dias úteis) e série diária
+  var ini = cpDt(c.ini), fim = cpDt(c.fim), ult = D.ultimo ? cpDt(D.ultimo) : ini, dias = [];
+  var porDia = {}; (D.dias||[]).forEach(function(r){ porDia[String(r[0]).slice(0,10)] = cv(r[ix]); });
+  for(var d = new Date(ini); d <= fim; d = new Date(d.getFullYear(), d.getMonth(), d.getDate()+1, 12)){ var iso = isoDia(d); dias.push({iso:iso, d:d, p:cpPeso(d), v:porDia[iso]||0, feito: d <= ult}); }
+  var real = dias.reduce(function(t, x){ return t + x.v; }, 0);
+  var pTot = dias.reduce(function(t, x){ return t + x.p; }, 0) || 1;
+  // último dia com venda pode estar incompleto: o ritmo usa os dias anteriores a ele quando a campanha ainda corre
+  var corre = ult < fim && ult >= ini, feitos = dias.filter(function(x){ return x.feito; });
+  var conc = corre ? feitos.slice(0, -1) : feitos, pConc = conc.reduce(function(t, x){ return t + x.p; }, 0), vConc = conc.reduce(function(t, x){ return t + x.v; }, 0);
+  var pRest = dias.filter(function(x){ return !x.feito; }).reduce(function(t, x){ return t + x.p; }, 0) + (corre && feitos.length ? feitos[feitos.length-1].p : 0);
+  var ritmo = pConc > 0 ? vConc/pConc : null, proj = ult >= fim ? real : (ritmo!==null ? vConc + ritmo*pRest : null);
+  var baseTot = c.meta_tipo==='base' ? cv((D.base||[])[ix-1]) : null;
+  var meta = c.meta_tipo==='base' ? (baseTot>0 ? baseTot*(1+(+c.cresc||0)/100) : null) : (+c.meta_valor || null);
+  var at = meta ? real/meta*100 : null, pp = meta && proj!==null ? proj/meta*100 : null, falta = meta ? Math.max(0, meta-real) : null;
+  var pAteHoje = dias.filter(function(x){ return x.feito; }).reduce(function(t, x){ return t + x.p; }, 0), ideal = meta ? meta*pAteHoje/pTot : null;
+  var porDiaUtil = meta && pRest > 0 && ult < fim ? Math.max(0, meta - (corre ? vConc : real))/pRest : null;
+  var cor = function(p){ return vhCorTend(p); }, fu = function(v){ return cpCurto(m, v); };
+  function k(cl, l, v, s, extra){ return '<div class="cp-k" style="--vh-c:'+cl+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div>'+(extra||'')+'</div>'; }
+  var status = ult < ini ? 'ainda não começou' : (ult >= fim ? 'encerrada' : 'em andamento · dados até '+cpDtBR(D.ultimo));
+  var h = '<div class="cp-head"><div><h2>'+escapeHtml(c.nome)+'</h2><div class="psub">'+cpDtBR(c.ini)+' a '+cpDtBR(c.fim)+' · '+status+' · '+CP_MET[m]+'</div></div>' +
+    (cpPode() ? '<div class="cp-bts"><button type="button" class="btn-sm" data-cpa="ed">Editar</button><button type="button" class="btn-sm" data-cpa="ex">Excluir</button></div>' : '')+'</div>' +
+    '<div class="cp-filt"><b>Filtros:</b> '+escapeHtml(cpFiltrosTxt(c.f||{}))+'</div>' + (c.descricao ? '<div class="cp-desc">'+escapeHtml(c.descricao).replace(/\n/g,'<br>')+'</div>' : '');
+  h += '<div class="cp-kpis">' +
+    k('var(--vx-cy)', 'Realizado', cpVal(m, real), meta ? '<b style="color:'+cor(at)+'">'+vhP(at)+'</b> da meta' : 'sem meta', vpMetaInd(real, meta, 'Atingido', '', fu)) +
+    k('var(--vx-pu)', 'Meta', meta ? cpVal(m, meta) : '—', c.meta_tipo==='base' ? (baseTot>0 ? 'base '+cpVal(m, baseTot)+' ('+cpDtBR(c.base_ini)+' a '+cpDtBR(c.base_fim)+') + '+String(+c.cresc||0).replace('.',',')+'%' : 'sem venda no período de comparação') : 'número definido') +
+    k('#64748b', 'Meta até hoje', ideal!==null && ult < fim ? cpVal(m, ideal) : '—', ideal!==null && ult < fim ? (real >= ideal ? '<span class="vh-up">à frente '+cpCurto(m, real-ideal)+'</span>' : '<span class="vh-dn">atrás '+cpCurto(m, ideal-real)+'</span>') : (ult >= fim ? 'campanha encerrada' : '—'), ideal ? vpMetaInd(real, ideal, 'Ritmo', '', fu) : '') +
+    k(pp!==null ? cor(pp) : 'var(--vx-am)', 'Projeção', proj!==null ? cpVal(m, proj) : '—', pp!==null ? '<b style="color:'+cor(pp)+'">'+vhP(pp)+'</b> da meta no fim' : 'mantendo o ritmo dos dias concluídos', meta && proj!==null ? vpMetaInd(proj, meta, 'Meta no fim', '', fu) : '') +
+    k('var(--vx-am)', 'Falta', falta!==null ? cpVal(m, falta) : '—', porDiaUtil!==null ? cpVal(m, porDiaUtil)+' por dia útil restante' : (falta===0 ? '<span class="vh-up">meta batida</span>' : '—')) + '</div>';
+  h += '<div class="vx-card"><div class="vx-ct">Evolução acumulada</div><div class="vx-cs">Realizado (linha cheia) · meta acumulada pelos dias úteis (tracejado) · projeção (tracejado colorido)'+(c.meta_tipo==='base' ? ' · base anterior (cinza)' : '')+'</div>'+cpGrafico(dias, meta, pTot, proj, c, D, ix, cv)+'</div>';
+  // lojas
+  var lj = (D.lojas||[]).map(function(r){ return {nome: dimNome('loja', r[0]) || 'N/D', v: cv(r[ix]), b: c.meta_tipo==='base' ? cv(r[ix+3]) : null}; }).filter(function(o){ return o.v || o.b; });
+  var tl = lj.reduce(function(t, o){ return t + o.v; }, 0) || 1;
+  h += '<div class="cp-2"><div class="vx-card"><div class="vx-ct">Por loja</div><div class="vx-cs">'+(c.meta_tipo==='base' ? 'Meta da loja = base da loja + '+String(+c.cresc||0).replace('.',',')+'%' : 'Participação no realizado')+'</div><div class="vx-scroll" style="max-height:420px;"><table class="vx-tbl cp-tbl"><thead><tr><th>Loja</th><th>Realizado</th>'+(c.meta_tipo==='base' ? '<th>Base</th><th>Meta</th><th>Atingido</th>' : '<th>Part.</th>')+'</tr></thead><tbody>' +
+    lj.map(function(o){ var mt = o.b!==null ? o.b*(1+(+c.cresc||0)/100) : null, p = mt>0 ? o.v/mt*100 : null;
+      return '<tr><td>'+escapeHtml(o.nome)+'</td><td>'+cpVal(m, o.v)+'</td>'+(c.meta_tipo==='base' ? '<td>'+cpVal(m, o.b||0)+'</td><td>'+(mt ? cpVal(m, mt) : '—')+'</td><td>'+(p!==null ? '<b style="color:'+cor(p)+'">'+vhP(p)+'</b>' : '—')+'</td>' : '<td>'+vhP(o.v/tl*100)+'</td>')+'</tr>'; }).join('') +
+    '</tbody></table></div></div>';
+  var pr = (D.produtos||[]).map(function(r){ return {nome: String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), v: cv(r[ix]), b: c.meta_tipo==='base' ? cv(r[ix+3]) : null, q: +r[2]||0}; });
+  h += '<div class="vx-card"><div class="vx-ct">Produtos</div><div class="vx-cs">Os 40 que mais contribuem na campanha</div><div class="vx-scroll" style="max-height:420px;"><table class="vx-tbl cp-tbl"><thead><tr><th>Produto</th><th>'+(m==='qtd' ? 'Peças' : CP_MET[m])+'</th>'+(c.meta_tipo==='base' ? '<th>Base</th><th>Var.</th>' : (m==='qtd' ? '' : '<th>Peças</th>'))+'</tr></thead><tbody>' +
+    pr.map(function(o){ return '<tr><td class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</td><td>'+cpVal(m, o.v)+'</td>'+(c.meta_tipo==='base' ? '<td>'+cpVal(m, o.b||0)+'</td><td>'+(o.b>0 ? vhVs((o.v/o.b-1)*100) : '<span class="note-muted">novo</span>')+'</td>' : (m==='qtd' ? '' : '<td>'+fmtUn(o.q)+'</td>'))+'</tr>'; }).join('') +
+    '</tbody></table></div></div></div>';
+  h += '<p class="note-muted" style="font-size:11.5px;">Usa só os filtros da campanha (os filtros do painel não se aplicam aqui), dentro do acesso de cada usuário. Ritmo e projeção pelos dias úteis; sábado e domingo valem o peso definido em Dias úteis. O último dia com venda, se a campanha ainda corre, fica fora do ritmo por poder estar incompleto.</p>';
+  box.innerHTML = h;
+}
+function cpGrafico(dias, meta, pTot, proj, c, D, ix, cv){
+  var n = dias.length; if(!n) return '';
+  var W = 900, H = 240, L = 8, R = 8, T = 12, B = 22, ac = [], t = 0, ultI = -1;
+  dias.forEach(function(x, i){ if(x.feito){ t += x.v; ac.push(t); ultI = i; } });
+  var mAc = [], pa = 0; if(meta) dias.forEach(function(x){ pa += x.p; mAc.push(meta*pa/pTot); });
+  var bAc = []; if(c.meta_tipo==='base'){ var bd = {}; (D.base_dias||[]).forEach(function(r){ bd[String(r[0]).slice(0,10)] = cv(r[ix]); }); var b0 = cpDt(c.base_ini), tb = 0;
+    for(var i = 0; i < n; i++){ var di = new Date(b0.getFullYear(), b0.getMonth(), b0.getDate()+i, 12); if(di > cpDt(c.base_fim)) break; tb += bd[isoDia(di)]||0; bAc.push(tb); } }
+  var mx = Math.max(1, t, proj||0, meta||0, bAc.length ? bAc[bAc.length-1] : 0)*1.05;
+  var X = function(i){ return (L + (n>1 ? i/(n-1) : 0)*(W-L-R)).toFixed(1); }, Y = function(v){ return (T + (1 - v/mx)*(H-T-B)).toFixed(1); };
+  var s = '<svg class="cp-sv" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="Evolução acumulada da campanha">';
+  [0.25,0.5,0.75,1].forEach(function(f){ s += '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(mx/1.05*f)+'" y2="'+Y(mx/1.05*f)+'" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
+  if(bAc.length) s += '<polyline fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="1 3" vector-effect="non-scaling-stroke" points="'+bAc.map(function(v, i){ return X(i)+','+Y(v); }).join(' ')+'"/>';
+  if(mAc.length) s += '<polyline fill="none" stroke="var(--text)" stroke-width="1.4" stroke-dasharray="5 4" opacity=".7" vector-effect="non-scaling-stroke" points="'+mAc.map(function(v, i){ return X(i)+','+Y(v); }).join(' ')+'"/>';
+  if(ac.length){
+    if(proj!==null && ultI < n-1) s += '<line x1="'+X(ultI)+'" y1="'+Y(t)+'" x2="'+X(n-1)+'" y2="'+Y(proj)+'" stroke="var(--vx-cy)" stroke-width="2" stroke-dasharray="6 4" opacity=".8" vector-effect="non-scaling-stroke"/>';
+    s += '<polygon fill="var(--vx-cy)" opacity=".14" points="'+X(0)+','+(H-B)+' '+ac.map(function(v, i){ return X(i)+','+Y(v); }).join(' ')+' '+X(ultI)+','+(H-B)+'"/>';
+    s += '<polyline fill="none" stroke="var(--vx-cy)" stroke-width="2.5" vector-effect="non-scaling-stroke" points="'+ac.map(function(v, i){ return X(i)+','+Y(v); }).join(' ')+'"/>';
+  }
+  s += '</svg>';
+  var marcas = [0, Math.floor((n-1)/2), n-1].filter(function(v, i, a){ return a.indexOf(v)===i; });
+  var eixo = '<div class="cp-eixo">'+marcas.map(function(i){ return '<span>'+fmtDateFull(dias[i].d).slice(0,5)+'</span>'; }).join('')+'</div>';
+  var leg = '<div class="cp-leg"><span><i style="background:var(--vx-cy)"></i>Realizado '+cpCurto(c.metrica, t)+'</span>'+(meta ? '<span><i class="tr"></i>Meta '+cpCurto(c.metrica, meta)+'</span>' : '')+(proj!==null ? '<span><i class="tr" style="border-color:var(--vx-cy)"></i>Projeção '+cpCurto(c.metrica, proj)+'</span>' : '')+(bAc.length ? '<span><i class="pt"></i>Base '+cpCurto(c.metrica, bAc[bAc.length-1])+'</span>' : '')+'</div>';
+  return '<div class="cp-gr"><div class="cp-ymax">'+cpCurto(c.metrica, mx/1.05)+'</div>'+s+eixo+'</div>'+leg;
+}
+/* ---------- cadastro ---------- */
+function cpNovaEd(c){
+  var h = new Date(), i = new Date(h.getFullYear(), h.getMonth(), 1), f = new Date(h.getFullYear(), h.getMonth()+1, 0);
+  var e = c ? JSON.parse(JSON.stringify(c)) : {id:null, nome:'', descricao:'', ini:isoDia(i), fim:isoDia(f), f:{}, metrica:'fat', meta_tipo:'fixa', meta_valor:null, base_ini:null, base_fim:null, cresc:null, ativo:true};
+  e.f = e.f || {}; return e;
+}
+function cpAbrir(c){
+  CP.ed = cpNovaEd(c); var e = CP.ed;
+  document.getElementById('cpNome').value = e.nome || ''; document.getElementById('cpDesc').value = e.descricao || '';
+  document.getElementById('cpIni').value = String(e.ini).slice(0,10); document.getElementById('cpFim').value = String(e.fim).slice(0,10);
+  document.getElementById('cpValor').value = e.meta_valor!==null && e.meta_valor!==undefined ? (e.metrica==='qtd' ? e.meta_valor : e.meta_valor) : '';
+  document.getElementById('cpBIni').value = e.base_ini ? String(e.base_ini).slice(0,10) : ''; document.getElementById('cpBFim').value = e.base_fim ? String(e.base_fim).slice(0,10) : '';
+  document.getElementById('cpCresc').value = e.cresc!==null && e.cresc!==undefined ? e.cresc : '';
+  document.getElementById('cpAtivo').checked = e.ativo!==false;
+  document.getElementById('cpProd').value = (e.f.produto||[]).map(function(id){ return (PRODINFO[id]||{}).pn || ''; }).filter(Boolean).join(' ');
+  document.getElementById('cpProdMsg').textContent = ''; document.getElementById('cpMsg').textContent = '';
+  cpFormDesenhar();
+  var fm = document.getElementById('cpForm'); fm.hidden = false; fm.scrollIntoView({block:'start', behavior:'smooth'});
+  document.getElementById('cpNome').focus();
+}
+function cpFormDesenhar(){
+  var e = CP.ed;
+  [['cpMetrica', e.metrica], ['cpTipo', e.meta_tipo]].forEach(function(x){ Array.prototype.forEach.call(document.querySelectorAll('#'+x[0]+' [data-v]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-v')===x[1])); }); });
+  document.getElementById('cpFixa').hidden = e.meta_tipo!=='fixa'; document.getElementById('cpBase').hidden = e.meta_tipo!=='base';
+  document.getElementById('cpUn').textContent = e.metrica==='qtd' ? '(peças)' : '(R$)';
+  var ch = [];
+  Object.keys(e.f).forEach(function(k){ if(k==='produto') return; (e.f[k]||[]).forEach(function(id){ var d = CP_DIMS.filter(function(x){ return x[0]===k; })[0];
+    ch.push('<button type="button" class="u-aba" aria-pressed="true" data-k="'+k+'" data-id="'+id+'" title="Remover">'+escapeHtml((d ? d[1] : k)+': '+(d ? dimNome(k, id) : id))+'<span class="ra-x">×</span></button>'); }); });
+  document.getElementById('cpFiltros').innerHTML = ch.join('') || '<span class="note-muted" style="font-size:12px;">Nenhum filtro: a campanha mede todas as vendas.</span>';
+}
+function cpDimLista(){
+  var k = document.getElementById('cpDim').value;
+  document.getElementById('cpDimL').innerHTML = ((META.dims && META.dims[k]) || []).map(function(x){ return '<option value="'+escapeHtml(x[1])+'">'; }).join('');
+  document.getElementById('cpDimV').value = '';
+}
+function cpLerProdutos(){
+  var txt = document.getElementById('cpProd').value, mp = cpPnMapa(), ok = [], nao = [];
+  txt.split(/[\s,;]+/).filter(Boolean).forEach(function(c){ var id = mp[c.toUpperCase()]; if(id) { if(ok.indexOf(id)<0) ok.push(id); } else nao.push(c); });
+  return {ok:ok, nao:nao};
+}
+function cpSalvar(ev){
+  ev.preventDefault();
+  var msg = document.getElementById('cpMsg');
+  msg.textContent = 'Conferindo…';
+  Promise.resolve(CP.cat || carregarCatalogo()).catch(function(){}).then(function(){ CP.pn = null; cpSalvar2(); });
+}
+function cpSalvar2(){
+  var e = CP.ed, msg = document.getElementById('cpMsg');
+  e.nome = document.getElementById('cpNome').value.trim(); e.descricao = document.getElementById('cpDesc').value.trim();
+  e.ini = document.getElementById('cpIni').value; e.fim = document.getElementById('cpFim').value;
+  e.meta_valor = document.getElementById('cpValor').value==='' ? null : +document.getElementById('cpValor').value;
+  e.base_ini = document.getElementById('cpBIni').value || null; e.base_fim = document.getElementById('cpBFim').value || null;
+  e.cresc = document.getElementById('cpCresc').value==='' ? 0 : +document.getElementById('cpCresc').value;
+  e.ativo = document.getElementById('cpAtivo').checked;
+  var pr = cpLerProdutos(); if(pr.ok.length) e.f.produto = pr.ok; else delete e.f.produto;
+  if(pr.nao.length){ document.getElementById('cpProdMsg').innerHTML = '<span class="vh-dn">Códigos não encontrados no cadastro: '+escapeHtml(pr.nao.slice(0,20).join(', '))+(pr.nao.length>20 ? '…' : '')+'</span>'; msg.textContent = 'Corrija os códigos de produto.'; return; }
+  if(!e.nome){ msg.textContent = 'Informe o nome da campanha.'; return; }
+  if(!e.ini || !e.fim || e.fim < e.ini){ msg.textContent = 'Confira o período da campanha.'; return; }
+  if(e.meta_tipo==='fixa' && !(e.meta_valor > 0)){ msg.textContent = 'Informe a meta.'; return; }
+  if(e.meta_tipo==='base' && (!e.base_ini || !e.base_fim || e.base_fim < e.base_ini)){ msg.textContent = 'Informe o período de comparação.'; return; }
+  // R$ é gravado em reais; a consulta devolve centavos e o site converte
+  msg.textContent = 'Salvando…';
+  window.__NC_rpc('bi_campanha_gravar', {p:e}).then(function(id){
+    msg.textContent = ''; document.getElementById('cpForm').hidden = true; CP.sel = id; CP.lista = null; CP.dados = {}; renderCampanhas(); toast('Campanha salva.');
+  }).catch(function(err){ msg.textContent = 'Não foi possível salvar: '+String(err && (err.message||err)).slice(0,160); });
+}
+function cpLigar(){
+  if(CP.ligado) return; CP.ligado = true;
+  document.getElementById('cpDim').innerHTML = CP_DIMS.map(function(d){ return '<option value="'+d[0]+'">'+d[1]+'</option>'; }).join('');
+  cpDimLista();
+  document.getElementById('cpDim').addEventListener('change', cpDimLista);
+  document.getElementById('cpLista').addEventListener('click', function(ev){ var b = ev.target.closest('[data-cp]'); if(!b) return; CP.sel = +b.getAttribute('data-cp'); renderCampanhas(); });
+  document.getElementById('cpNova').addEventListener('click', function(){ cpAbrir(null); });
+  document.getElementById('cpCancelar').addEventListener('click', function(){ document.getElementById('cpForm').hidden = true; });
+  document.getElementById('cpForm').addEventListener('submit', cpSalvar);
+  document.getElementById('cpMetrica').addEventListener('click', function(ev){ var b = ev.target.closest('[data-v]'); if(b){ CP.ed.metrica = b.getAttribute('data-v'); cpFormDesenhar(); } });
+  document.getElementById('cpTipo').addEventListener('click', function(ev){ var b = ev.target.closest('[data-v]'); if(b){ CP.ed.meta_tipo = b.getAttribute('data-v'); cpFormDesenhar(); } });
+  document.getElementById('cpBase').addEventListener('click', function(ev){ var b = ev.target.closest('[data-at]'); if(!b) return;
+    var i = cpDt(document.getElementById('cpIni').value || isoDia(new Date())), f = cpDt(document.getElementById('cpFim').value || isoDia(new Date())), a, z;
+    if(b.getAttribute('data-at')==='ano'){ a = new Date(i.getFullYear()-1, i.getMonth(), i.getDate()); z = new Date(f.getFullYear()-1, f.getMonth(), f.getDate()); }
+    else { a = new Date(i.getFullYear(), i.getMonth()-1, 1); z = new Date(i.getFullYear(), i.getMonth(), 0); }
+    document.getElementById('cpBIni').value = isoDia(a); document.getElementById('cpBFim').value = isoDia(z); });
+  document.getElementById('cpDimAdd').addEventListener('click', function(){
+    var k = document.getElementById('cpDim').value, v = document.getElementById('cpDimV').value.trim(), id = (DIMI[k]||{})[v];
+    if(id===undefined){ document.getElementById('cpMsg').textContent = 'Escolha um valor da lista.'; return; }
+    var a = CP.ed.f[k] = CP.ed.f[k] || []; if(a.indexOf(id)<0) a.push(id);
+    document.getElementById('cpMsg').textContent = ''; document.getElementById('cpDimV').value = ''; cpFormDesenhar(); });
+  document.getElementById('cpDimV').addEventListener('keydown', function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); document.getElementById('cpDimAdd').click(); } });
+  document.getElementById('cpUsarPainel').addEventListener('click', function(){
+    var f = painelFiltros(null), pr = f.produto; delete f.semana; delete f.produto;
+    Object.keys(f).forEach(function(k){ f[k] = f[k].filter(function(x){ return x!==-1; }); if(!f[k].length) delete f[k]; });
+    CP.ed.f = f; if(pr) document.getElementById('cpProd').value = pr.map(function(id){ return (PRODINFO[id]||{}).pn || ''; }).filter(Boolean).join(' ');
+    cpFormDesenhar(); });
+  document.getElementById('cpFiltros').addEventListener('click', function(ev){ var b = ev.target.closest('[data-k]'); if(!b) return;
+    var k = b.getAttribute('data-k'), id = +b.getAttribute('data-id'); CP.ed.f[k] = (CP.ed.f[k]||[]).filter(function(x){ return x!==id; }); if(!CP.ed.f[k].length) delete CP.ed.f[k]; cpFormDesenhar(); });
+  document.getElementById('cpPainel').addEventListener('click', function(ev){ var b = ev.target.closest('[data-cpa]'); if(!b) return;
+    var c = CP.lista.filter(function(x){ return x.id===CP.sel; })[0]; if(!c) return;
+    if(b.getAttribute('data-cpa')==='ed'){ cpAbrir(c); return; }
+    if(b.getAttribute('data-ok')!=='1'){ b.setAttribute('data-ok', '1'); b.textContent = 'Confirmar exclusão'; b.classList.add('perigo'); setTimeout(function(){ if(b.isConnected){ b.removeAttribute('data-ok'); b.textContent = 'Excluir'; b.classList.remove('perigo'); } }, 4000); return; }
+    window.__NC_rpc('bi_campanha_excluir', {p_id:c.id}).then(function(){ CP.lista = null; CP.sel = null; renderCampanhas(); toast('Campanha excluída.'); })
+      .catch(function(){ toast('Não foi possível excluir agora.'); });
+  });
+}
+
+/* ============================================================
    EVENTOS
    ============================================================ */
 function bindEvents(){
@@ -10863,6 +11155,7 @@ function bindEvents(){
     diasuteis:{title:'Dias úteis', sub:'Calendário de dias úteis por loja, feriados e venda por tipo de dia'},
     precos:{title:'Preços', sub:'Simulador de preço de venda: margem pelo preço ou preço pela margem, por loja'},
     concorrencia:{title:'E-commerce', sub:'Concorrência de preços (VTEX e Peça Chevrolet) e sugestão de cadastro de produtos'},
+    gm:{title:'GM', sub:'Campanhas GM: evolução de cada campanha do boletim contra a meta'},
     planejamento:{title:'Planejamento', sub:'Projeções e metas de vendas por ano, em formato de apresentação'},
     usuarios:{title:'Usuários', sub:'Gestão de acessos ao painel (somente BI)'},
     fontes:{title:'Configurações', sub:'Links das planilhas e origem dos dados da carga (somente BI)'}
@@ -10896,6 +11189,7 @@ function bindEvents(){
       renderVendConsult();
     }
     if(view==='planejamento'){ renderPlanejamento(); }
+    if(view==='gm'){ renderCampanhas(); }
     if(view==='concorrencia'){ renderConcorrencia(); }
     if(view==='precos'){ renderPrecos(); }
     if(view==='diasuteis'){ renderDiasUteis(); }
@@ -11469,7 +11763,7 @@ var ABAS = [
   {k:'dashboard', t:'Dashboard'}, {k:'vendas', t:'Vendas'}, {k:'estoque', t:'Estoque'},
   {k:'vendedores', t:'Vendedores'}, {k:'clientes', t:'Clientes'}, {k:'diasuteis', t:'Dias úteis'},
   // restritas: só aparecem para quem as tiver marcadas no cadastro (o "todas as guias" antigo não as inclui)
-  {k:'concorrencia', t:'E-commerce', restrita:true}, {k:'precos', t:'Preços', restrita:true}, {k:'planejamento', t:'Planejamento', restrita:true}
+  {k:'concorrencia', t:'E-commerce', restrita:true}, {k:'precos', t:'Preços', restrita:true}, {k:'planejamento', t:'Planejamento', restrita:true}, {k:'gm', t:'GM', restrita:true}
 ];
 var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
 // abas dentro de cada guia: gravadas em profiles.abas como "guia.aba"; guia sem nenhuma = todas as abas dela
@@ -11478,9 +11772,10 @@ var SUBABAS = {
            {k:'regioes', t:'Regiões'}, {k:'lojames', t:'Loja × Mês'}, {k:'hoje', t:'Vendas Hoje'}],
   vendedores: [{k:'consult', t:'Consultoria'}, {k:'planos', t:'Planos em andamento'}, {k:'maratona', t:'Maratona de Pontos'}],
   clientes: [{k:'analise', t:'Análise de clientes'}, {k:'disp', t:'Clientes Disponíveis'}, {k:'cidades', t:'Cidades que mais compram'}, {k:'cidmov', t:'Cidades que mais mudaram'}],
-  concorrencia: [{k:'conc', t:'Concorrência'}, {k:'cad', t:'Sugestão Cadastro'}]
+  concorrencia: [{k:'conc', t:'Concorrência'}, {k:'cad', t:'Sugestão Cadastro'}],
+  gm: [{k:'campanhas', t:'Campanhas GM'}]
 };
-var SUBABAS_UI = {vendas:{box:'#vxAbas', at:'data-vxaba'}, vendedores:{box:'#vdGuias', at:'data-vd'}, clientes:{box:'#cliAbas', at:'data-cliaba'}, concorrencia:{box:'#ecGuias', at:'data-ec'}};
+var SUBABAS_UI = {vendas:{box:'#vxAbas', at:'data-vxaba'}, vendedores:{box:'#vdGuias', at:'data-vd'}, clientes:{box:'#cliAbas', at:'data-cliaba'}, concorrencia:{box:'#ecGuias', at:'data-ec'}, gm:{box:'#gmGuias', at:'data-gm'}};
 function subsDoPerfil(p, g){
   var todos = SUBABAS[g].map(function(a){ return a.k; });
   if(!p || p.role==='bi' || !Array.isArray(p.abas)) return todos;
