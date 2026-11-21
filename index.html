@@ -2119,7 +2119,7 @@ table.data-table.vp-tbl{min-width:720px;}
         </button>
         <div>
           <h1 id="viewTitle">Dashboard</h1>
-          <div class="sub" id="viewSub">Visão geral de vendas e estoque</div>
+          <div class="sub" id="viewSub">Vendas do dia ao vivo · atualiza sozinho a cada carga nova</div>
           <div class="updated"><span class="dot-live" id="liveDot"></span><span id="updatedText">Atualizado agora</span></div>
           <div class="sub-abas" id="cliAbas" hidden><button type="button" data-cliaba="analise" aria-pressed="true">Análise de clientes</button><button type="button" data-cliaba="disp" aria-pressed="false">Clientes Disponíveis</button><button type="button" data-cliaba="cidades" aria-pressed="false">Cidades que mais compram</button><button type="button" data-cliaba="cidmov" aria-pressed="false">Cidades que mais mudaram</button></div>
         </div>
@@ -2386,71 +2386,12 @@ table.data-table.vp-tbl{min-width:720px;}
 
       <!-- ============ VISÃO GERAL ============ -->
       <section class="view-panel" data-view-panel="dashboard">
-      <!-- ---- KPIs ---- -->
-      <div class="kpi-grid" id="kpiGrid"></div>
-
-      <!-- ---- mês em andamento: acumulado do mês, comparação e projeção ---- -->
-      <div class="panel" style="margin-bottom:14px;">
-        <div class="panel-head">
-          <div><h2 id="mtdTitle">Mês em andamento</h2><div class="psub" id="mtdSub">Acumulado do mês vs. mesmos dias do mês anterior &middot; projeção para o fechamento</div></div>
+        <div id="vhModoPainel" class="vp">
+          <div class="vp-top"><div class="vp-tt"><div class="vp-tit" id="vpTit">Vendas de hoje</div><div class="vp-sub" id="vpSub"></div></div>
+            <div class="vp-rel"><b id="vpHora">--:--</b><span id="vpProx">atualiza sozinho</span></div>
+            <div class="vp-bts"><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
+          <div id="vpBody"><p class="note-muted status-txt">Carregando o painel…</p></div>
         </div>
-        <div class="mtd-grid" id="mtdGrid"></div>
-        <div class="mtd-bar" id="mtdBar"></div>
-        <p class="note-muted" id="mtdNota"></p>
-      </div>
-
-      <!-- ---- evolução mensal por canal + margem ---- -->
-      <div class="panel" style="margin-bottom:14px;">
-        <div class="panel-head">
-          <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal (colunas ao fundo) &middot; cada indicador na própria faixa e escala &middot; du = dias úteis</div></div>
-        </div>
-        <div class="chart-scroll"><div class="chart-wrap chart-larga"><div id="monthChart"></div></div></div>
-        <div class="leg-row" id="monthLegend"></div>
-      </div>
-      <!-- ---- main chart + category ---- -->
-      <div class="grid-main">
-        <div class="panel">
-          <div class="panel-head">
-            <div>
-              <h2>Evolução das Vendas</h2>
-              <div class="psub">Acompanhamento ao longo do período selecionado</div>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
-              <div class="seg" id="metricSeg">
-                <button aria-pressed="true" data-m="fat">Faturamento</button>
-                <button data-m="qtd">Qtd. peças</button>
-                <button data-m="margem">Margem</button>
-                <button data-m="ticket">Ticket médio</button>
-              </div>
-              <div class="period-toggle" id="rangeToggle">
-                <button data-r="7d">7D</button>
-                <button data-r="30d" aria-pressed="true">30D</button>
-                <button data-r="3m">3M</button>
-                <button data-r="6m">6M</button>
-                <button data-r="12m">12M</button>
-              </div>
-            </div>
-          </div>
-          <div class="chart-scroll"><div class="chart-wrap">
-            <div id="mainChart"></div>
-            <div class="chart-tip" id="mainTip"></div>
-          </div></div>
-          <div class="legend" id="mainLegend"></div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-head">
-            <div><h2>Vendas por Categoria</h2><div class="psub">Faturamento &middot; participação</div></div>
-            <select class="fsel" id="catSort">
-              <option value="fat">Maior faturamento</option>
-              <option value="qtd">Maior quantidade</option>
-              <option value="growth">Maior crescimento</option>
-            </select>
-          </div>
-          <div class="barlist scroll-limit" id="catList"></div>
-        </div>
-      </div>
-
       </section>
 
       <!-- ============ VENDAS ============ -->
@@ -2536,6 +2477,71 @@ table.data-table.vp-tbl{min-width:720px;}
       </div>
 
       <div class="vx-tc" data-vxpainel="lojames" hidden>
+      <!-- ---- KPIs ---- -->
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <!-- ---- mês em andamento: acumulado do mês, comparação e projeção ---- -->
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2 id="mtdTitle">Mês em andamento</h2><div class="psub" id="mtdSub">Acumulado do mês vs. mesmos dias do mês anterior &middot; projeção para o fechamento</div></div>
+        </div>
+        <div class="mtd-grid" id="mtdGrid"></div>
+        <div class="mtd-bar" id="mtdBar"></div>
+        <p class="note-muted" id="mtdNota"></p>
+      </div>
+
+      <!-- ---- evolução mensal por canal + margem ---- -->
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Evolução mensal por canal</h2><div class="psub">Faturamento de cada mês por canal (colunas ao fundo) &middot; cada indicador na própria faixa e escala &middot; du = dias úteis</div></div>
+        </div>
+        <div class="chart-scroll"><div class="chart-wrap chart-larga"><div id="monthChart"></div></div></div>
+        <div class="leg-row" id="monthLegend"></div>
+      </div>
+      <!-- ---- main chart + category ---- -->
+      <div class="grid-main">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Evolução das Vendas</h2>
+              <div class="psub">Acompanhamento ao longo do período selecionado</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+              <div class="seg" id="metricSeg">
+                <button aria-pressed="true" data-m="fat">Faturamento</button>
+                <button data-m="qtd">Qtd. peças</button>
+                <button data-m="margem">Margem</button>
+                <button data-m="ticket">Ticket médio</button>
+              </div>
+              <div class="period-toggle" id="rangeToggle">
+                <button data-r="7d">7D</button>
+                <button data-r="30d" aria-pressed="true">30D</button>
+                <button data-r="3m">3M</button>
+                <button data-r="6m">6M</button>
+                <button data-r="12m">12M</button>
+              </div>
+            </div>
+          </div>
+          <div class="chart-scroll"><div class="chart-wrap">
+            <div id="mainChart"></div>
+            <div class="chart-tip" id="mainTip"></div>
+          </div></div>
+          <div class="legend" id="mainLegend"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Vendas por Categoria</h2><div class="psub">Faturamento &middot; participação</div></div>
+            <select class="fsel" id="catSort">
+              <option value="fat">Maior faturamento</option>
+              <option value="qtd">Maior quantidade</option>
+              <option value="growth">Maior crescimento</option>
+            </select>
+          </div>
+          <div class="barlist scroll-limit" id="catList"></div>
+        </div>
+      </div>
+
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
           <div><h2>Loja &times; mês</h2><div class="psub" id="heatSub">Faturamento mensal de cada loja &middot; cor mais forte = mês mais alto daquela loja</div></div>
@@ -2557,13 +2563,6 @@ table.data-table.vp-tbl{min-width:720px;}
       </div>
 
       <div class="vx-tc" data-vxpainel="hoje" hidden>
-        <div class="seg vh-modo" id="vhModo" role="tablist" aria-label="Formato de Vendas Hoje"><button type="button" data-vhm="cards" aria-pressed="true">Cards</button><button type="button" data-vhm="painel" aria-pressed="false">Painel</button></div>
-        <div id="vhModoPainel" class="vp" hidden>
-          <div class="vp-top"><div class="vp-tt"><div class="vp-tit" id="vpTit">Vendas de hoje</div><div class="vp-sub" id="vpSub"></div></div>
-            <div class="vp-rel"><b id="vpHora">--:--</b><span id="vpProx">atualiza sozinho</span></div>
-            <div class="vp-bts"><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
-          <div id="vpBody"><p class="note-muted status-txt">Carregando o painel…</p></div>
-        </div>
         <div id="vhModoCards">
         <div class="vh-cap" id="vhCap">
         <div class="vh-topo"><div><h2 class="vh-tit" id="vhTit">Vendas de hoje</h2><div class="vh-sub" id="vhSub"></div></div><div class="vh-dias"><span id="vhDias" style="display:contents"></span><button type="button" class="vh-geral copy-img" id="vhCopiarTudo" title="Copiar a visão geral (indicadores e quadros) como imagem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Copiar visão geral</button><button type="button" class="vh-geral copy-img" id="vhEmailBt" hidden title="Enviar um e-mail de teste com o resumo de vendas">✉ Enviar por e-mail</button></div></div>
@@ -9085,7 +9084,7 @@ function renderVendasAbas(){
   else if(a==='produtos') vxProdutos();
   else if(a==='insights') vxInsights();
   else if(a==='regioes') vxRegioes();
-  else if(a==='lojames') renderHeatLoja();
+  else if(a==='lojames'){ renderHeatLoja(); renderMonthChart(); }
   else if(a==='hoje') vxHoje();
 }
 function vxTrocarAba(aba){
@@ -9127,7 +9126,7 @@ function vxHoje(){
     document.getElementById('vhCards').innerHTML = ''; document.getElementById('vhMat').innerHTML = '';
     window.__NC_rpc('bi_vendas_hoje', {f:f, dia:dia}).then(function(d){
       if(VH.pend!==key) return; VH.key = key; VH.d = d || {}; VH.pend = null; VH.lido = Date.now();
-      if(VX.aba==='hoje' && state.currentView==='vendas') vxHoje();
+      if(vhAtivo()) vxHoje();
     }).catch(function(e){
       if(VH.pend!==key) return; VH.pend = null;
       document.getElementById('vhKpis').innerHTML = '<p class="note-muted">'+(/bi_vendas_hoje|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'O banco ainda não tem a consulta de Vendas Hoje (rode o SQL vendas_hoje.sql).' : 'Não foi possível carregar as vendas do dia.')+'</p>';
@@ -9138,7 +9137,7 @@ function vxHoje(){
   if(VH.obj[mes]===undefined && !VH.objPend[mes]){
     VH.objPend[mes] = 1;
     window.__NC_rpc('bi_objetivos', {p_mes:mes}).then(function(o){ VH.obj[mes] = o || {}; }).catch(function(){ VH.obj[mes] = {}; })
-      .then(function(){ delete VH.objPend[mes]; if(VX.aba==='hoje' && state.currentView==='vendas') vhDesenhar(); });
+      .then(function(){ delete VH.objPend[mes]; if(vhAtivo()) vhDesenhar(); });
   }
   vhDesenhar();
 }
@@ -9356,36 +9355,23 @@ function vhEst(f, d, depois){
     VH.estPend[key] = 1;
     window.__NC_rpc('bi_vendas_hoje_estoque', {f:f, dia:d}).then(function(r){ VH.est[key] = r || {}; })
       .catch(function(e){ VH.est[key] = {erro: /bi_vendas_hoje_estoque|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'}; })
-      .then(function(){ delete VH.estPend[key]; if(VX.aba==='hoje' && state.currentView==='vendas') depois(); });
+      .then(function(){ delete VH.estPend[key]; if(vhAtivo()) depois(); });
   }
   return null;
 }
 // estoque por nome da loja
 function vhEstLojas(E){ var o = {}; ((E && E.lojas) || []).forEach(function(r){ o[dimNome('loja', r[0]) || ''] = +r[1] || 0; }); return o; }
-/* ---------- Vendas Hoje: Cards ou Painel (as duas abas podem ser liberadas separadamente no cadastro) ---------- */
-function vhModosLiberados(){ return ['cards','painel'].filter(function(m){ return subOk('vendas', m==='cards' ? 'hoje' : 'painel'); }); }
+/* ---------- Vendas Hoje: Cards (guia Vendas) ou Painel (Dashboard), conforme a guia aberta ---------- */
+function vhAtivo(){ return state.currentView==='dashboard' || (state.currentView==='vendas' && VX.aba==='hoje'); }
 function vhModoAplicar(){
-  var lib = vhModosLiberados(); if(!lib.length) lib = ['cards'];
-  if(!VH.modo){ try{ VH.modo = localStorage.getItem('vhModo'); }catch(e){} }
-  if(lib.indexOf(VH.modo) < 0) VH.modo = lib[0];
-  var seg = document.getElementById('vhModo'); if(!seg) return;
-  seg.hidden = lib.length < 2;
-  Array.prototype.forEach.call(seg.querySelectorAll('[data-vhm]'), function(b){ var m = b.getAttribute('data-vhm'); b.hidden = lib.indexOf(m) < 0; b.setAttribute('aria-pressed', String(m===VH.modo)); });
-  document.getElementById('vhModoPainel').hidden = VH.modo!=='painel';
-  document.getElementById('vhModoCards').hidden = VH.modo==='painel';
+  VH.modo = state.currentView==='dashboard' ? 'painel' : 'cards';
   if(VH.modo==='painel' && !VH.prox) VH.prox = Date.now() + VP_INTERVALO;
-}
-function vhModo(m){
-  VH.modo = m; try{ localStorage.setItem('vhModo', m); }catch(e){}
-  vhModoAplicar();
-  if(!VH.d || !VH.d.dia) return;
-  if(m==='painel') vhPainel(); else vhResumo();
 }
 /* ---------- Painel: tela de acompanhamento que se atualiza sozinha ----------
    A cada minuto procura uma carga nova; quando chega, busca de novo as vendas do dia e redesenha sem recarregar a página
    (a tela cheia continua). */
 var VP_INTERVALO = 60*1000;
-function vpVisivel(){ return state.currentView==='vendas' && VX.aba==='hoje' && VH.modo==='painel'; }
+function vpVisivel(){ return state.currentView==='dashboard'; }
 function vpHora(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
 function vpChecar(manual){
   VH.prox = Date.now() + VP_INTERVALO;
@@ -9680,7 +9666,6 @@ function vhLigar(){
     var d = b.getAttribute('data-rfx'); if(d==='*') VH.resF = {}; else delete VH.resF[d];
     vhResumo();
   });
-  document.getElementById('vhModo').addEventListener('click', function(e){ var b = e.target.closest('[data-vhm]'); if(b) vhModo(b.getAttribute('data-vhm')); });
   document.getElementById('vpTela').addEventListener('click', vpTelaCheia);
   document.getElementById('vpAgora').addEventListener('click', function(){ vpChecar(true); });
   var rc = document.getElementById('vhResCopiar'); rc.innerHTML = ICO_COPIA; rc.addEventListener('click', function(){ copiarCard(rc, document.getElementById('vhResCard'), 'vendas-hoje-resumo.png'); });
@@ -10727,6 +10712,7 @@ function renderTudo(refreshing){
   renderLojaList();
   if(state.currentView==='clientes' && (CLI_ABA==='cidades' || CLI_ABA==='cidmov')) renderCidades(); // busca clientes por cidade só quando a aba de cidades está aberta
   if(state.currentView==='vendas') renderVendasAbas();
+  if(state.currentView==='dashboard') vxHoje();
   if(PRODUTOS_NO_PAINEL) renderTable();
   renderActiveTags();
   if(state.currentView==='clientes') renderClientes();
@@ -10759,8 +10745,8 @@ function bindEvents(){
 
   // nav items -> troca de guia real
   var VIEW_META = {
-    dashboard:{title:'Dashboard', sub:'Visão geral de vendas e estoque'},
-    vendas:{title:'Vendas', sub:'Lojas, marcas, grupos, produtos, insights, regiões e loja × mês'},
+    dashboard:{title:'Dashboard', sub:'Vendas do dia ao vivo · atualiza sozinho a cada carga nova'},
+    vendas:{title:'Vendas', sub:'Lojas, marcas, grupos, produtos, insights, regiões, loja × mês e vendas hoje'},
     estoque:{title:'Estoque', sub:'Valor, giro, saúde do estoque, alertas e produtos'},
     vendedores:{title:'Vendedores', sub:'Performance e consultoria comparativa'},
     clientes:{title:'Clientes', sub:'Carteira, termômetro de compras, clientes disponíveis (60 dias sem compra) e cidades'},
@@ -10793,6 +10779,7 @@ function bindEvents(){
     if(VIEWS_COM_PRODUTOS.indexOf(view)!==-1 && !PRODUTOS_NO_PAINEL){ state.page = 1; renderAll(false); }
     if(view==='clientes'){ renderClientes(); }
     if(view==='vendas'){ renderVendasAbas(); }
+    if(view==='dashboard' && painelChave!==null){ vxHoje(); }
     if(view==='clientes' && (CLI_ABA==='cidades' || CLI_ABA==='cidmov')){ renderCidades(); }
     if(view==='vendedores'){
       // nomes dos produtos nos radares: cadastro leve; quando chega, redesenha
@@ -11380,7 +11367,7 @@ var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
 // abas dentro de cada guia: gravadas em profiles.abas como "guia.aba"; guia sem nenhuma = todas as abas dela
 var SUBABAS = {
   vendas: [{k:'lojas', t:'Lojas'}, {k:'marcas', t:'Marcas'}, {k:'grupos', t:'Grupos'}, {k:'produtos', t:'Produtos'}, {k:'insights', t:'Insights'},
-           {k:'regioes', t:'Regiões'}, {k:'lojames', t:'Loja × Mês'}, {k:'hoje', t:'Vendas Hoje · Cards'}, {k:'painel', t:'Vendas Hoje · Painel'}],
+           {k:'regioes', t:'Regiões'}, {k:'lojames', t:'Loja × Mês'}, {k:'hoje', t:'Vendas Hoje'}],
   vendedores: [{k:'consult', t:'Consultoria'}, {k:'planos', t:'Planos em andamento'}, {k:'maratona', t:'Maratona de Pontos'}],
   clientes: [{k:'analise', t:'Análise de clientes'}, {k:'disp', t:'Clientes Disponíveis'}, {k:'cidades', t:'Cidades que mais compram'}, {k:'cidmov', t:'Cidades que mais mudaram'}],
   concorrencia: [{k:'conc', t:'Concorrência'}, {k:'cad', t:'Sugestão Cadastro'}]
@@ -11389,13 +11376,12 @@ var SUBABAS_UI = {vendas:{box:'#vxAbas', at:'data-vxaba'}, vendedores:{box:'#vdG
 function subsDoPerfil(p, g){
   var todos = SUBABAS[g].map(function(a){ return a.k; });
   if(!p || p.role==='bi' || !Array.isArray(p.abas)) return todos;
-  var sel = p.abas.filter(function(x){ return String(x).indexOf(g+'.')===0; }).map(function(x){ return String(x).slice(g.length+1); })
+  var sel = p.abas.filter(function(x){ return String(x).indexOf(g+'.')===0; }).map(function(x){ x = String(x).slice(g.length+1); return g==='vendas' && x==='painel' ? 'hoje' : x; })
     .filter(function(x){ return todos.indexOf(x)!==-1; });
   return sel.length ? todos.filter(function(x){ return sel.indexOf(x)!==-1; }) : todos;
 }
 function subOk(g, k){ return subsDoPerfil(CURRENT_PROFILE, g).indexOf(k)!==-1; }
-// botão da aba no site: Vendas Hoje aparece se Cards ou Painel estiver liberado
-function subBotaoOk(g, k){ return g==='vendas' && k==='hoje' ? (subOk('vendas','hoje') || subOk('vendas','painel')) : subOk(g, k); }
+function subBotaoOk(g, k){ return subOk(g, k); }
 function subabasAplicar(){
   Object.keys(SUBABAS_UI).forEach(function(g){
     var u = SUBABAS_UI[g], box = document.querySelector(u.box); if(!box) return;
