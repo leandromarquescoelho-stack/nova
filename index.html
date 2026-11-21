@@ -2076,9 +2076,6 @@ table.data-table.vp-tbl{min-width:720px;}
       <div class="nav-item" data-view="diasuteis">
         <span class="ico">&#128197;</span><span class="label">Dias úteis</span><span class="tip">Dias úteis</span>
       </div>
-      <div class="nav-item" data-view="insights">
-        <span class="ico">&#128161;</span><span class="label">Insights</span><span class="tip">Insights</span>
-      </div>
       <div class="nav-item" data-view="concorrencia">
         <span class="ico">&#127991;&#65039;</span><span class="label">E-commerce</span><span class="tip">E-commerce</span>
       </div>
@@ -2443,6 +2440,15 @@ table.data-table.vp-tbl{min-width:720px;}
       <div class="vx-tc" data-vxpainel="insights" hidden>
         <div class="vx-ins-head"><div class="vx-ct" style="font-size:14px;">Insights da seleção atual</div><div class="vx-ctx" id="vxInsCtx">Todos os filtros ativos</div></div>
         <div class="vx-ins" id="vxIns"></div>
+      <div style="margin-top:16px;">
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Onde está o dinheiro</h2><div class="psub" id="insBase">Oportunidades estimadas a partir dos dados de vendas e estoque</div></div>
+        </div>
+        <div class="opp-grid" id="oppGrid"></div>
+      </div>
+      <div id="insSections"></div>
+      </div>
       </div>
 
       <div class="vx-tc" data-vxpainel="regioes" hidden>
@@ -2822,15 +2828,6 @@ table.data-table.vp-tbl{min-width:720px;}
       </section>
 
       <!-- ============ INSIGHTS ============ -->
-      <section class="view-panel" data-view-panel="insights" style="display:none;">
-      <div class="panel" style="margin-bottom:14px;">
-        <div class="panel-head">
-          <div><h2>Onde está o dinheiro</h2><div class="psub" id="insBase">Oportunidades estimadas a partir dos dados de vendas e estoque</div></div>
-        </div>
-        <div class="opp-grid" id="oppGrid"></div>
-      </div>
-      <div id="insSections"></div>
-      </section>
 
       <!-- ============ CONCORRÊNCIA ============ -->
       <section class="view-panel" data-view-panel="concorrencia" style="display:none;">
@@ -3171,8 +3168,8 @@ EST.produto.forEach(function(pid, i){ (EST_POR_PROD[pid] = EST_POR_PROD[pid] || 
 var REF_DIA = DAYS[N_DAYS-1];
 // cadastro de produtos e estoque item a item: só quando uma aba precisa (o dashboard não precisa)
 var PROD_OK = false, PROD_PR = null;
-var VIEWS_COM_PRODUTOS = ['estoque','insights']; // vendedores só precisa do cadastro (nomes, marca e categoria dos produtos)
-function precisaProdutos(){ return VIEWS_COM_PRODUTOS.indexOf(state.currentView)!==-1 || (state.currentView==='vendas' && VX.aba==='produtos') || estoqueFiltrosAtivos() || state.produto.length>0; }
+var VIEWS_COM_PRODUTOS = ['estoque']; // vendedores só precisa do cadastro (nomes, marca e categoria dos produtos)
+function precisaProdutos(){ return VIEWS_COM_PRODUTOS.indexOf(state.currentView)!==-1 || (state.currentView==='vendas' && (VX.aba==='produtos' || VX.aba==='insights')) || estoqueFiltrosAtivos() || state.produto.length>0; }
 // só o cadastro de produtos (sem o estoque item a item): basta para a aba Vendedores
 var CAT_PR = null;
 function carregarCatalogo(){
@@ -9082,7 +9079,7 @@ function renderVendasAbas(){
   else if(a==='marcas') vxDimensao('marca', 'Marca', 'vxMF', 'vxMM', 'vxTM', VX_PAL.cy, VX_PAL.pu);
   else if(a==='grupos') vxDimensao('categoria', 'Grupo', 'vxGF', 'vxGM', 'vxTG', VX_PAL.re, VX_PAL.am);
   else if(a==='produtos') vxProdutos();
-  else if(a==='insights') vxInsights();
+  else if(a==='insights'){ vxInsights(); if(PRODUTOS_NO_PAINEL) renderInsights(); }
   else if(a==='regioes') vxRegioes();
   else if(a==='lojames'){ renderHeatLoja(); renderMonthChart(); }
   else if(a==='hoje') vxHoje();
@@ -9092,6 +9089,7 @@ function vxTrocarAba(aba){
   VX.aba = aba;
   Array.prototype.forEach.call(document.querySelectorAll('#vxAbas [data-vxaba]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-vxaba')===aba)); });
   Array.prototype.forEach.call(document.querySelectorAll('[data-vxpainel]'), function(p){ p.hidden = p.getAttribute('data-vxpainel')!==aba; });
+  if(aba==='insights' && !PRODUTOS_NO_PAINEL){ vxInsights(); document.getElementById('insSections').innerHTML = '<p class="note-muted status-txt">Carregando produtos…</p>'; renderAll(false); return; }
   if(aba==='produtos' && !PRODUTOS_NO_PAINEL){ document.getElementById('vxTP').innerHTML = '<tbody><tr><td class="status-txt" style="padding:20px;">Carregando produtos…</td></tr></tbody>'; renderAll(false); return; }
   renderVendasAbas();
 }
@@ -10718,7 +10716,6 @@ function renderTudo(refreshing){
   if(state.currentView==='clientes') renderClientes();
   if(state.currentView==='vendedores') renderVendConsult();
   if(state.currentView==='precos') prVendas();
-  if(state.currentView==='insights') renderInsights();
   if(state.currentView==='diasuteis') renderDiasUteis();
 }
 
@@ -10751,7 +10748,6 @@ function bindEvents(){
     vendedores:{title:'Vendedores', sub:'Performance e consultoria comparativa'},
     clientes:{title:'Clientes', sub:'Carteira, termômetro de compras, clientes disponíveis (60 dias sem compra) e cidades'},
     diasuteis:{title:'Dias úteis', sub:'Calendário de dias úteis por loja, feriados e venda por tipo de dia'},
-    insights:{title:'Insights', sub:'Oportunidades para aumentar faturamento e margem'},
     precos:{title:'Preços', sub:'Simulador de preço de venda: margem pelo preço ou preço pela margem, por loja'},
     concorrencia:{title:'E-commerce', sub:'Concorrência de preços (VTEX e Peça Chevrolet) e sugestão de cadastro de produtos'},
     planejamento:{title:'Planejamento', sub:'Projeções e metas de vendas por ano, em formato de apresentação'},
@@ -10786,7 +10782,6 @@ function bindEvents(){
       if(!CAT_PR) carregarCatalogo().then(function(){ if(state.currentView==='vendedores') renderVendConsult(); }).catch(function(){});
       renderVendConsult();
     }
-    if(view==='insights'){ renderInsights(); }
     if(view==='planejamento'){ renderPlanejamento(); }
     if(view==='concorrencia'){ renderConcorrencia(); }
     if(view==='precos'){ renderPrecos(); }
@@ -11359,7 +11354,7 @@ async function fetchAllProfiles(){
 }
 var ABAS = [
   {k:'dashboard', t:'Dashboard'}, {k:'vendas', t:'Vendas'}, {k:'estoque', t:'Estoque'},
-  {k:'vendedores', t:'Vendedores'}, {k:'clientes', t:'Clientes'}, {k:'diasuteis', t:'Dias úteis'}, {k:'insights', t:'Insights'},
+  {k:'vendedores', t:'Vendedores'}, {k:'clientes', t:'Clientes'}, {k:'diasuteis', t:'Dias úteis'},
   // restritas: só aparecem para quem as tiver marcadas no cadastro (o "todas as guias" antigo não as inclui)
   {k:'concorrencia', t:'E-commerce', restrita:true}, {k:'precos', t:'Preços', restrita:true}, {k:'planejamento', t:'Planejamento', restrita:true}
 ];
