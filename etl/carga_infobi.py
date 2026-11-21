@@ -36,6 +36,8 @@ COLS_HIST = ['dia', 'mes'] + DIMS_I + ['produto', 'cliente', 'qtd', 'fat', 'cust
 ATRIB = ('categoria', 'subcategoria', 'marca', 'montadora', 'linha', 'classificacao', 'grupo_peca', 'aplicacao', 'curva_gm')
 PESSOA = {'F': 'PESSOA FÍSICA', 'J': 'PESSOA JURÍDICA'}
 ABAS_OBRIG = ('vendas', 'estoque', 'catalogo', 'marcas', 'vendedores')
+# abas de metas e campanha (opcionais): com erro, a carga segue sem elas
+ABAS_METAS = ('lojas', 'meta_lojas', 'meta_vendas_vendedores', 'meta_lb_vendedores', 'maratona', 'maratona_config')
 # colunas que podem faltar conforme a versão do arquivo (no formato com a aba transacionadores, os dados do
 # cliente e o nome do vendedor saíram da aba vendas)
 COLS_OPCIONAIS = {'razao', 'cidade', 'tipo_cliente', 'nome_vendedor', 'equipe', 'codigo_loja', 'subcategoria',
@@ -111,7 +113,13 @@ def ler_abas(nome, buf, spec):
             if achada:
                 colunas['cep'] = achada
                 log(f'{papel}: coluna de CEP encontrada')
-        out[papel] = renomear(df, colunas, papel)
+        try:
+            out[papel] = renomear(df, colunas, papel)
+        except ValueError as ex:
+            if papel not in ABAS_METAS:
+                raise
+            log(f'AVISO {papel}: {ex}; aba ignorada nesta carga')
+            continue
         log(f'{papel}: {len(out[papel])} linhas lidas')
     return out
 
@@ -314,6 +322,100 @@ def ids_chave(cur, tabela, coluna, chaves):
 
 
 # ---------------------------------------------------------------- gravação
+def _mes(serie):
+    return datas(serie).dt.to_period('M').dt.to_timestamp().dt.date
+
+
+def _tem(cur, tabela):
+    cur.execute('select to_regclass(%s) is not null', (tabela,))
+    return cur.fetchone()[0]
+
+
+def gravar_metas(cur, dfs):
+    """Abas lojas, meta_lojas, meta_vendas_vendedores, meta_lb_vendedores, maratona e maratona_config."""
+    lojas = {}
+    if 'lojas' in dfs and _tem(cur, 'public.bi_loja'):
+        t = dfs['lojas'].copy()
+        t['codigo'] = texto(t['codigo']).str.upper()
+        t['nome'] = texto(t['nome']).map(lambda x: normaliza(x) if isinstance(x, str) else x)
+        t = t.dropna(subset=['codigo', 'nome']).drop_duplicates('codigo')
+        for c in ('regiao', 'divisao'):
+            t[c] = texto(t[c]) if c in t else None
+        cur.execute('delete from public.bi_loja')
+        copiar(cur, 'bi_loja', t[['codigo', 'nome', 'regiao', 'divisao']])
+        lojas = dict(zip(t['codigo'], t['nome']))
+        log(f'lojas: {len(t)}')
+    # metas mensais das lojas -> bi_objetivo (chave = nome da loja no atacado, ECOMMERCE no e-commerce)
+    cur.execute("select exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'bi_objetivo' and column_name = 'origem')")
+    if 'meta_lojas' in dfs and cur.fetchone()[0]:
+        t = dfs['meta_lojas'].copy()
+        canal = texto(t['canal_loja']).fillna('').str.upper()
+        cod = texto(t['loja']).fillna('').str.upper()
+        t['chave'] = [('ECOMMERCE' if c.startswith('ECOMMERCE') or k == 'ECOMMERCE' else lojas.get(k)) for c, k in zip(canal, cod)]
+        sem = sorted(set(cod[t['chave'].isna()]))
+        if sem:
+            log(f'AVISO meta_lojas: código de loja sem nome na aba lojas: {sem}')
+        t['mes'] = _mes(t['mes'])
+        t['meta'] = numero(t['meta'])
+        t = t.dropna(subset=['chave', 'mes'])
+        t = t[t['meta'] >= 0].drop_duplicates(['mes', 'chave'], keep='last')
+        cur.execute("delete from public.bi_objetivo where origem = 'planilha'")
+        cur.executemany("""insert into public.bi_objetivo (mes, chave, valor, origem, atualizado_por) values (%s, %s, %s, 'planilha', null)
+                           on conflict (mes, chave) do update set valor = excluded.valor, origem = 'planilha',
+                           atualizado_por = null, atualizado_em = now()""",
+                        [(m, c, float(v)) for m, c, v in t[['mes', 'chave', 'meta']].itertuples(index=False)])
+        log(f'metas das lojas: {len(t)} (mês x loja)')
+    # metas dos vendedores: venda por dia e % de LB, por RE e mês
+    if ('meta_vendas_vendedores' in dfs or 'meta_lb_vendedores' in dfs) and _tem(cur, 'public.bi_meta_vend'):
+        partes = []
+        for papel, col in (('meta_vendas_vendedores', 'venda_dia'), ('meta_lb_vendedores', 'lb')):
+            if papel not in dfs:
+                continue
+            t = dfs[papel].copy()
+            t['re'] = sku_texto(t['re']).astype(str).str.strip()
+            t['mes'] = _mes(t['mes'])
+            t[col] = numero(t['meta'])
+            t = t[(t['re'] != '') & (t['re'] != 'nan')].dropna(subset=['mes']).drop_duplicates(['re', 'mes'], keep='last')
+            partes.append(t[['re', 'mes', col]].set_index(['re', 'mes']))
+        m = pd.concat(partes, axis=1).reset_index()
+        for col in ('venda_dia', 'lb'):
+            if col not in m:
+                m[col] = None
+        # loja do vendedor (coluna da loja na aba vendedores -> nome na aba lojas)
+        ven = dfs.get('vendedores')
+        if ven is not None and 'codigo_loja' in ven and lojas:
+            rl = dict(zip(sku_texto(ven['re']).astype(str).str.strip(), texto(ven['codigo_loja']).str.upper()))
+            m['loja'] = m['re'].map(lambda r: lojas.get(rl.get(r)))
+        else:
+            m['loja'] = None
+        cur.execute('delete from public.bi_meta_vend')
+        copiar(cur, 'bi_meta_vend', m[['re', 'mes', 'venda_dia', 'lb', 'loja']])
+        log(f'metas dos vendedores: {len(m)} (RE x mês)')
+    # maratona: pontos e crescimento por mês (bi_maratona_peso) e linha do mês (bi_maratona_cfg); mes = (ano-2000)*100 + mês
+    if 'maratona_config' in dfs and _tem(cur, 'public.bi_maratona_peso'):
+        t = dfs['maratona_config'].copy()
+        t['cod'] = texto(t['loc']).str.upper()
+        d = pd.to_datetime(_mes(t['mes']))
+        t['mes'] = ((d.dt.year - 2000) * 100 + d.dt.month).astype('Int64')
+        t = t.dropna(subset=['cod', 'mes']).drop_duplicates(['cod', 'mes'], keep='last')
+        cur.execute('select cod from public.bi_maratona_cat')
+        cats = {r[0] for r in cur.fetchall()}
+        fora = sorted(set(t['cod']) - cats)
+        if fora:
+            log(f'AVISO maratona_config: categorias que o site ainda não conhece (ficam de fora): {fora}')
+        t = t[t['cod'].isin(cats)]
+        t['pontos'] = numero(t['pontos']).round().astype(int)
+        t['cresc'] = numero(t['crescimento']).round(4)
+        cur.execute('delete from public.bi_maratona_peso')
+        copiar(cur, 'bi_maratona_peso', t[['cod', 'mes', 'pontos', 'cresc']])
+        lin = t.assign(linha=texto(t['cod_lin']).str.upper() if 'cod_lin' in t else None).dropna(subset=['linha'])
+        lin = lin.drop_duplicates('mes', keep='last')
+        cur.execute('delete from public.bi_maratona_cfg')
+        cur.executemany('insert into public.bi_maratona_cfg (mes, linha_mes) values (%s, %s)',
+                        [(int(m), l) for m, l in lin[['mes', 'linha']].itertuples(index=False)])
+        log(f'maratona: pesos de {t["mes"].nunique()} meses, linha do mês em {len(lin)}')
+
+
 def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
     agora = datetime.now(timezone.utc).isoformat()
     v, e, prod, cli = preparar(dfs, regras)
@@ -459,6 +561,10 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
             cur.execute('delete from public.bi_clsf')
             copiar(cur, 'bi_clsf', tab)
             log(f'classificações fiscais: {len(tab)}')
+
+        # metas (lojas e vendedores) e maratona, quando o arquivo e o banco têm
+        if trocar_estoque:
+            gravar_metas(cur, dfs)
 
         # limpeza: o que nenhuma linha usa mais
         cur.execute("""delete from public.bi_produto p where not exists (select 1 from public.bi_venda v where v.produto = p.id)
