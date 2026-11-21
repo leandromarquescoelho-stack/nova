@@ -3529,20 +3529,15 @@ function periodRange(key){
 }
 
 // meta é mensal: proporcional aos dias corridos do período
-// meta de venda da planilha (por dia) x dias úteis de cada mês do período, com os feriados da loja do vendedor; LB do último mês
-function metaVendPeriodo(n, pr){
-  var M = REAL.metaVend && REAL.metaVend[n]; if(!M) return null;
-  var a = DAYS[Math.max(0, pr.start)], b = DAYS[Math.max(0, pr.end)]; if(!a || !b) return null;
-  var venda = 0, achou = false, lb = null;
-  for(var d = new Date(a.getFullYear(), a.getMonth(), 1); d <= b; d = new Date(d.getFullYear(), d.getMonth()+1, 1)){
-    var k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'), x = M[k]; if(!x) continue;
-    if(x.lb!==null) lb = x.lb;
-    if(x.dia===null) continue;
-    var ini = d < a ? a : d, fim = new Date(d.getFullYear(), d.getMonth()+1, 0); if(fim > b) fim = b;
-    var du = x.loja ? diasUteisLoja(x.loja, ini, fim) : contarDias(ini, fim, null).uteis;
-    venda += x.dia * du; achou = true;
-  }
-  return achou ? {venda: venda, lb: lb} : null;
+// meta de venda da planilha: sempre o mês cheio (dia 1 ao último dia) do último dia com dados = valor por dia x dias úteis do mês,
+// com os feriados da loja do vendedor; LB é % de margem (não multiplica)
+function metaVendMes(n){
+  var M = REAL.metaVend && REAL.metaVend[n], u = DAYS[N_DAYS-1]; if(!M || !u) return null;
+  var k = u.getFullYear()+'-'+String(u.getMonth()+1).padStart(2,'0'), x = M[k]; if(!x || (x.dia===null && x.lb===null)) return null;
+  var ini = new Date(u.getFullYear(), u.getMonth(), 1), fim = new Date(u.getFullYear(), u.getMonth()+1, 0);
+  var du = x.loja ? diasUteisLoja(x.loja, ini, fim) : contarDias(ini, fim, null).uteis;
+  var duFeito = x.loja ? diasUteisLoja(x.loja, ini, u) : contarDias(ini, u, null).uteis;
+  return {mes:k, ini:isoDia(ini), fim:isoDia(u), dia:x.dia, du:du, duFeito:duFeito, venda: x.dia!==null ? x.dia*du : null, lb:x.lb};
 }
 function metaFator(pr){ var a=DAYS[Math.max(0,pr.start)], b=DAYS[Math.max(0,pr.end)]; return Math.max(1, Math.round((b-a)/86400000)+1)/30.4375; }
 function sumRange(arr,s,e){ var t=0; for(var i=s;i<=e && i<arr.length;i++){ if(i>=0) t+=arr[i]; } return t; }
@@ -5922,6 +5917,27 @@ function renderParesCtl(eqLista){
     }
   });
 }
+// card da meta do mês do vendedor (planilha): vendido de 1º até o último dia com dados, qualquer que seja o período escolhido
+var VC_MES = {};
+function vcMetaKpi(n, fv){
+  var mt = metaVendMes(n); if(!mt) return '';
+  var k = JSON.stringify([fv, mt.ini, mt.fim]), D = VC_MES[k];
+  if(D===undefined){
+    VC_MES[k] = null;
+    rpcMemo('bi_vendedores', {f: fv, per: {ini: mt.ini, fim: mt.fim}}).then(function(d){ VC_MES[k] = d || {}; if(state.currentView==='vendedores') renderVendConsult(); })
+      .catch(function(){ VC_MES[k] = {}; });
+  }
+  var r = D ? (D.v||[]).filter(function(x){ return x[0]!==null && x[0] >= 0 && dimNome('vendedor', x[0])===n; })[0] : null;
+  var fat = r ? c2(r[1]) : 0, lb = r ? c2(r[3]) : 0, mg = fat > 0 ? lb/fat*100 : null;
+  var nm = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][+mt.mes.slice(5)-1];
+  var at = mt.venda ? fat/mt.venda*100 : null, ideal = mt.du ? mt.duFeito/mt.du*100 : null;
+  var sub = !D ? 'carregando o vendido no mês…' :
+    'vendido '+fmtMoney(fat)+(at!==null ? ' · atingido <b style="color:'+vhCorTend(ideal ? at/ideal*100 : at)+'">'+at.toFixed(1).replace('.',',')+'%</b>' : '') +
+    (mt.lb!==null ? ' · meta de LB '+(mt.lb*100).toFixed(1).replace('.',',')+'%'+(mg!==null ? ' (real '+mg.toFixed(1).replace('.',',')+'%)' : '') : '');
+  return vcKpi('Meta de '+nm, mt.venda!==null ? fmtMoney(mt.venda) : '—', sub,
+    'Meta da planilha para o mês inteiro (dia 1 ao último dia), qualquer que seja o período escolhido: '+(mt.dia!==null ? fmtMoney(mt.dia)+' por dia × '+mt.du+' dias úteis' : 'sem meta de venda')+' (feriados da loja do vendedor). ' +
+    'Vendido de 1º até o último dia com dados; ideal hoje '+(ideal!==null ? ideal.toFixed(0)+'%' : '—')+' ('+mt.duFeito+' de '+mt.du+' dias úteis). A meta de LB é % de margem e não se multiplica.');
+}
 function vcKpi(label, value, sub, dica){
   return '<div class="kpi-card"'+(dica ? ' title="'+String(dica).replace(/"/g,'&quot;')+'" style="cursor:help;"' : '')+'><div class="klabel">'+label+(dica ? ' <span style="opacity:.6">ⓘ</span>' : '')+'</div><div class="kvalue">'+value+'</div>' +
     '<div class="kdelta flat" style="margin-top:4px; white-space:normal;">'+sub+'</div></div>';
@@ -6364,12 +6380,12 @@ function renderVendConsult(){
     var m = map[n];
     var skuCount = m.skuMes!==undefined ? m.skuMes : Object.keys(m.skus).length;
     var ticket = m.qtd>0 ? m.fat/m.qtd : 0;
-    var mv = metaVendPeriodo(n, pr), metaVal = mv ? mv.venda : (SELLER_META[n] ? SELLER_META[n]*metaFator(pr) : 0);
+    var metaVal = SELLER_META[n] ? SELLER_META[n]*metaFator(pr) : 0;
     var metaPct = (metaVal>0) ? m.fat/metaVal*100 : 0;
     var margemPct = m.fat>0 ? m.lb/m.fat*100 : 0;
     var marcaHHI = hhi(m.marcas, sumOf(m.marcas));
     var catHHI = hhi(m.categorias, sumOf(m.categorias));
-    return {name:n, fat:m.fat, qtd:m.qtd, lb:m.lb, skuCount:skuCount, ticket:ticket, metaPct:metaPct, metaVal: mv ? metaVal : null, metaLb: mv ? mv.lb : null,
+    return {name:n, fat:m.fat, qtd:m.qtd, lb:m.lb, skuCount:skuCount, ticket:ticket, metaPct:metaPct,
       margemPct:margemPct, marcas:m.marcas, categorias:m.categorias, produtos:m.produtos, marcaHHI:marcaHHI, catHHI:catHHI,
       cli:m.cli||0, nfs:m.nfs||0, tkCli: m.cli>0 ? m.fat/m.cli : 0};
   }).sort(function(a,b){ return b.fat-a.fat; });
@@ -6416,8 +6432,7 @@ function renderVendConsult(){
 
   var kpisHtml = '<div class="kpi-grid" style="margin-bottom:16px;">' +
     vcKpi('Faturamento no período', fmtMoney(me.fat), 'Posição '+posicao+' de '+rows.length+' vendedores') +
-    (me.metaVal ? vcKpi('Meta de venda no período', fmtMoney(me.metaVal), 'atingido <b style="color:'+vhCorTend(me.metaPct)+'">'+me.metaPct.toFixed(1).replace('.',',')+'%</b>'+(me.metaLb!==null && me.metaLb!==undefined ? ' · meta de LB '+(me.metaLb*100).toFixed(1).replace('.',',')+'% (real '+me.margemPct.toFixed(1).replace('.',',')+'%)' : ''),
-      'Meta da planilha: valor por dia × dias úteis de cada mês do período (feriados da loja do vendedor). A meta de LB é % de margem e não se multiplica.') : '') +
+    vcMetaKpi(selName, fv) +
     vcKpi('vs. média · mediana', '<span style="color:'+corPct(vsAvgPct)+'">'+fmtPct(vsAvgPct)+'</span> <span style="font-size:.62em; color:var(--text-muted); font-weight:500;">·</span> <span style="color:'+corPct(vsMedPct)+'">'+fmtPct(vsMedPct)+'</span>',
       'Pares: média '+fmtMoney(peerAvg)+' · mediana '+fmtMoney(peerMedian),
       'Compara o faturamento de '+selName+' com o dos outros '+others.length+' vendedores, nos mesmos filtros e período.\n\n' +
