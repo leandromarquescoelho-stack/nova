@@ -512,6 +512,9 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vp-cn{container-type:inline-size;} .vp-cn-l{display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12px; color:var(--text-2); margin-top:3px;} .vp-cn-l > span:first-child{min-width:68px; color:var(--text-muted);}
 .vp-cn .h{display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); font-weight:700;} .vp-cn .v{font-family:'Sora',sans-serif; font-size:clamp(18px,8cqi,26px); font-weight:800; margin:2px 0 6px;}
 .vp-bar{height:7px; border-radius:99px; background:var(--surface-3); position:relative; overflow:visible;} .vp-bar i{position:absolute; left:0; top:0; bottom:0; border-radius:99px;}
+.vp-sp{display:block; width:100%; height:30px; margin-top:8px;} .vp-k.g .vp-sp{height:40px;}
+.vp-mi{margin-top:8px;} .vp-mi .t{display:flex; justify-content:space-between; gap:8px; font-size:11.5px; color:var(--text-2); margin-bottom:4px;} .vp-mi .t b{font-family:'JetBrains Mono',monospace; font-size:12px;} .vp-mi .d{font-size:11px; color:var(--text-muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.vp .vp-bar{display:block; width:auto; height:7px; margin-top:0; border-radius:99px; overflow:visible;} .vp .vp-bar i{position:absolute; height:auto;}
 .vp-bar em{position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--text); border-radius:2px;}
 .vp-lojas{display:grid; grid-template-columns:repeat(auto-fit,minmax(0,1fr)); grid-auto-flow:column; gap:10px; margin-bottom:var(--vp-gap);}
 @media (max-width:1100px){ .vp-lojas{grid-auto-flow:row; grid-template-columns:repeat(auto-fill,minmax(170px,1fr));} }
@@ -9339,11 +9342,65 @@ function vhDesenhar(){
   // resumo para o Painel (tela de acompanhamento)
   VH.sum = {E: eOk ? E : null, EL:EL, dia:dia, ehHoje:ehHoje, semana:semana, dD:dD, ontem:ontem, gTot:gTot, rG:rG, rAtc:rAtc, rEcm:rEcm, rAE:rAE, rotAE:rotAE, du:du, dc:dc, nObj:nObj, temObAtc:temObAtc,
     lojas: lojas.map(function(l){ return {nome:l, tag:vhRegiao(l), r:calc(junta([l], ['ATACADO']), duLoja(l), +obj[l] || null)}; }),
-    canais: CL.map(function(k){ var t = junta(todas, [k]), dd = k==='ECOMMERCE' ? dc : du; var md = dd.conc > 0 ? (t.m.f - t.h.f)/dd.conc : null; return {k:k, t:t, md:md, tend: md!==null ? md*dd.mes : null}; })};
+    canais: CL.map(function(k){ var t = junta(todas, [k]), dd = k==='ECOMMERCE' ? dc : du; var md = dd.conc > 0 ? (t.m.f - t.h.f)/dd.conc : null; return {k:k, t:t, md:md, tend: md!==null ? md*dd.mes : null}; }),
+    ser: vhSerie(d, dia, mes, dD, lojas), meta: {atc: rAE===rEcm ? null : rAtc.ob, ecm: rAE===rAtc ? null : rEcm.ob, ae: rAE.ob, du: du.mes, dc: dc.mes}};
   vhLigar();
   if(VH.modo==='painel') vhPainel(); else vhResumo();
 }
 function vhCarga(){ return VH.carga || REAL.carga; }
+/* ---------- séries diárias do mês para os minigráficos do Dashboard ---------- */
+function vhSerie(d, dia, mes, dD, lojas){
+  var dias = [], ix = {}, n = dD.getDate();
+  for(var i = 1; i <= n; i++){ var x = new Date(dD.getFullYear(), dD.getMonth(), i, 12), iso = isoDia(x); ix[iso] = dias.length; dias.push({iso:iso, util: tipoDia(x, null)==='util'}); }
+  var z = function(){ return new Array(dias.length).fill(0); }, S = {dias:dias, g:z(), ae:z(), canal:{}, loja:{}};
+  VH_CANAIS.forEach(function(k){ S.canal[k] = z(); }); lojas.forEach(function(l){ S.loja[l] = z(); });
+  (d.linhas||[]).forEach(function(r){
+    var j = ix[String(r[0]).slice(0,10)]; if(j===undefined) return;
+    var canal = String(dimNome('canal', r[3])||'').toUpperCase(), loja = dimNome('loja', r[1]) || 'N/D', f = c2(r[5]);
+    if(VH_CANAIS.indexOf(canal) < 0) return;
+    S.g[j] += f; S.canal[canal][j] += f;
+    if(canal==='ATACADO' && S.loja[loja]){ S.loja[loja][j] += f; }
+    if(canal==='ECOMMERCE' || (canal==='ATACADO' && S.loja[loja])) S.ae[j] += f;
+  });
+  return S;
+}
+// meta de um dia (atacado + e-commerce): atacado só em dia útil (meta ÷ dias úteis), e-commerce todos os dias (meta ÷ dias corridos)
+function vpMetaDia(M, iso, so){
+  if(!M || !M.ae) { if(!so) return null; }
+  var util = tipoDia(vhDt(iso), null)==='util', a = M.atc ? (util ? M.atc/M.du : 0) : 0, e = M.ecm ? M.ecm/M.dc : 0;
+  if(so==='atc') return M.atc ? (util ? M.atc/M.du : 0) : null;
+  if(so==='ecm') return M.ecm ? M.ecm/M.dc : null;
+  return a + e;
+}
+// minigráfico de barras (um por dia); destaque = índice em cor cheia; linha = meta diária
+function vpSpark(vals, o){
+  o = o || {}; var n = vals.length; if(!n) return '';
+  var W = 100, H = 30, mx = Math.max.apply(null, vals.concat(o.meta ? [o.meta] : []).concat([1])), bw = W/n;
+  var h = '<svg class="vp-sp" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">';
+  vals.forEach(function(v, i){ var bh = Math.max(v > 0 ? 1 : 0, v/mx*(H-2)); var on = o.dest===undefined ? i===n-1 : (Array.isArray(o.dest) ? o.dest.indexOf(i)>=0 : i===o.dest);
+    h += '<rect x="'+(i*bw+bw*0.14).toFixed(2)+'" y="'+(H-bh).toFixed(2)+'" width="'+(bw*0.72).toFixed(2)+'" height="'+bh.toFixed(2)+'" rx="0.6" fill="'+(o.cor||'var(--vh-c)')+'" opacity="'+(on ? 1 : 0.35)+'"/>'; });
+  if(o.meta) h += '<line x1="0" x2="'+W+'" y1="'+(H-o.meta/mx*(H-2)).toFixed(2)+'" y2="'+(H-o.meta/mx*(H-2)).toFixed(2)+'" stroke="var(--text)" stroke-width="0.8" stroke-dasharray="2 1.5" vector-effect="non-scaling-stroke" opacity=".7"/>';
+  return h+'</svg>';
+}
+// minigráfico do acumulado no mês: linha real até hoje, tracejado da tendência até o fim do mês e a linha da meta
+function vpSparkAcum(vals, total, metaAcum, tend){
+  var n = vals.length, ac = [], t = 0; vals.forEach(function(v){ t += v; ac.push(t); });
+  var mx = Math.max(1, t, tend || 0, metaAcum ? metaAcum[metaAcum.length-1] : 0), W = 100, H = 30;
+  var X = function(i){ return (i/(Math.max(1, total-1))*W).toFixed(2); }, Y = function(v){ return (H - v/mx*(H-2)).toFixed(2); };
+  var h = '<svg class="vp-sp" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">';
+  if(metaAcum) h += '<polyline fill="none" stroke="var(--text)" stroke-width="1" stroke-dasharray="2 1.5" opacity=".55" vector-effect="non-scaling-stroke" points="'+metaAcum.map(function(v, i){ return X(i)+','+Y(v); }).join(' ')+'"/>';
+  if(tend) h += '<line x1="'+X(n-1)+'" y1="'+Y(t)+'" x2="'+X(total-1)+'" y2="'+Y(tend)+'" stroke="var(--vh-c)" stroke-width="1.6" stroke-dasharray="3 2" opacity=".7" vector-effect="non-scaling-stroke"/>';
+  h += '<polygon fill="var(--vh-c)" opacity=".16" points="'+X(0)+','+H+' '+ac.map(function(v, i){ return X(i)+','+Y(v); }).join(' ')+' '+X(n-1)+','+H+'"/>';
+  h += '<polyline fill="none" stroke="var(--vh-c)" stroke-width="2" vector-effect="non-scaling-stroke" points="'+ac.map(function(v, i){ return X(i)+','+Y(v); }).join(' ')+'"/>';
+  return h+'</svg>';
+}
+// indicador de meta: valor ÷ meta, barra e texto
+function vpMetaInd(v, meta, rot, tit){
+  if(!(meta > 0)) return '';
+  var p = v/meta*100, cor = vhCorTend(p);
+  return '<div class="vp-mi"'+(tit ? ' title="'+escapeHtml(tit)+'"' : '')+'><div class="t"><span>'+rot+'</span><b style="color:'+cor+'">'+vhP(p)+'</b></div><div class="vp-bar"><i style="width:'+Math.min(100, p).toFixed(1)+'%; background:'+cor+'"></i></div>' +
+    '<div class="d">'+fmtCurto(v)+' de '+fmtCurto(meta)+'</div></div>';
+}
 /* ---------- estoque (a custo) e novidades em estoque: bi_vendas_hoje_estoque ---------- */
 VH.est = {}; VH.estPend = {};
 function vhEstChave(f, d){ return JSON.stringify([f, d]); }
@@ -9437,12 +9494,22 @@ function vhPainel(){
   document.getElementById('vpSub').textContent = (cargaLabel(c) || 'Sem informação de carga')+(VH.lido ? ' · lido às '+vpHora(new Date(VH.lido)) : '')+' · filtros do painel aplicados';
   function k(cor, l, v, sub, cls){ return '<div class="vp-k'+(cls?' '+cls:'')+'" style="--vh-c:'+cor+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div></div>'; }
   var g = S.gTot, rG = S.rG, rAE = S.rAE, rotAE = S.rotAE || 'atacado + e-com';
+  var SE = S.ser, M = S.meta, nD = SE.dias.length, iO = S.ontem ? SE.dias.map(function(x){ return x.iso; }).indexOf(S.ontem) : -1;
+  var mdH = M.ae ? vpMetaDia(M, S.dia) : null, mdO = M.ae && S.ontem ? vpMetaDia(M, S.ontem) : null;
+  var fimM = new Date(S.dD.getFullYear(), S.dD.getMonth()+1, 0).getDate(), metaAc = null;
+  if(M.ae){ metaAc = []; var acm = 0; for(var di = 1; di <= fimM; di++){ acm += vpMetaDia(M, isoDia(new Date(S.dD.getFullYear(), S.dD.getMonth(), di, 12))); metaAc.push(acm); } }
+  var idealHoje = metaAc ? metaAc[nD-1] : null;
   var kp = '<div class="vp-kpis">' +
-    k('var(--vx-cy)', S.ehHoje ? 'Hoje · grupo' : 'No dia · grupo', fmtMoney(g.h.f), vhMgB(g.h)+' '+vhVs(rG.vsH)+' vs. média diária ('+(rG.md!==null ? fmtMoney(rG.md) : '—')+')', 'g') +
-    k('#64748b', 'Ontem', fmtMoney(g.o.f), vhMgB(g.o)+' '+vhVs(rG.vsO)) +
-    k('var(--vx-pu)', 'Mês até agora', fmtMoney(g.m.f), vhMgB(g.m)+' · '+S.du.conc+' de '+S.du.mes+' dias úteis') +
-    k(vhCorTend(rAE.tp), 'Tendência '+rotAE, rAE.tend!==null ? fmtMoney(rAE.tend) : '—', rAE.tp!==null ? '<b style="color:'+vhCorTend(rAE.tp)+'">'+vhP(rAE.tp)+'</b> da meta' : 'sem meta completa no mês') +
-    k('var(--vx-am)', 'Falta para a meta', rAE.ob ? fmtMoney(rAE.falta) : '—', rAE.ob ? 'atingido <b>'+vhP(rAE.at)+'</b>'+(rAE.porDia ? ' · '+fmtMoney(rAE.porDia)+' por dia útil' : '') : 'meta '+rotAE+' não cadastrado') +
+    k('var(--vx-cy)', S.ehHoje ? 'Hoje · grupo' : 'No dia · grupo', fmtMoney(g.h.f), vhMgB(g.h)+' '+vhVs(rG.vsH)+' vs. média diária ('+(rG.md!==null ? fmtMoney(rG.md) : '—')+')' +
+      vpMetaInd(rAE.t.h.f, mdH, 'Meta do dia', 'Meta e venda de '+rotAE)+vpSpark(SE.g), 'g') +
+    k('#64748b', 'Ontem', fmtMoney(g.o.f), vhMgB(g.o)+' '+vhVs(rG.vsO) +
+      vpMetaInd(rAE.t.o.f, mdO, 'Meta do dia', 'Meta e venda de '+rotAE)+(iO >= 0 ? vpSpark(SE.g, {dest:iO, cor:'#94a3b8'}) : '')) +
+    k('var(--vx-pu)', 'Mês até agora', fmtMoney(g.m.f), vhMgB(g.m)+' · '+S.du.conc+' de '+S.du.mes+' dias úteis' +
+      vpMetaInd(rAE.t.m.f, idealHoje, 'Meta até hoje', 'Meta acumulada do dia 1 até hoje e venda de '+rotAE)+vpSparkAcum(SE.ae, fimM, metaAc, null)) +
+    k(vhCorTend(rAE.tp), 'Projeção '+rotAE, rAE.tend!==null ? fmtMoney(rAE.tend) : '—', (rAE.ob ? 'se mantiver a média diária' : 'sem meta completa no mês') +
+      vpMetaInd(rAE.tend||0, rAE.ob, 'Meta do mês', 'Projeção ÷ meta do mês de '+rotAE)+vpSparkAcum(SE.ae, fimM, metaAc, rAE.tend)) +
+    k('var(--vx-am)', 'Falta para a meta', rAE.ob ? fmtMoney(rAE.falta) : '—', rAE.ob ? (rAE.porDia ? fmtMoney(rAE.porDia)+' por dia útil restante' : 'meta do mês') +
+      vpMetaInd(rAE.t.m.f, rAE.ob, 'Atingido', 'Vendido no mês ÷ meta do mês de '+rotAE) : 'meta '+rotAE+' não cadastrada') +
     k('#14b8a6', 'Estoque a custo', S.E ? fmtMoney(+S.E.est[0]) : '—', S.E ? fmtUn(Math.round(+S.E.est[1]))+' peças · parado '+fmtMoney(+S.E.est[3]) : 'carregando') + '</div>';
   var NOME_C = {ATACADO:'Atacado', ECOMMERCE:'E-commerce', OFICINA:'Oficina', ACESSORIOS:'Acessórios'}, CORES = ['var(--vx-cy)','var(--vx-pu)','var(--vx-am)','var(--vx-gr)'];
   var umaLoja = S.lojas.length===1 && S.canais.some(function(x){ return x.k==='ATACADO'; });
@@ -9453,14 +9520,18 @@ function vhPainel(){
     return '<div class="vp-cn"><div class="h"><span>'+NOME_C[x.k]+(uma ? ' · '+escapeHtml(S.lojas[0].nome) : '')+'</span><span>'+vhP(sh)+' do dia</span></div><div class="v">'+fmtMoney(x.t.h.f)+' '+vhMgB(x.t.h)+'</div>' +
       '<div class="vp-cn-l"><span>Mês</span><b>'+fmtMoney(x.t.m.f)+'</b>'+vhMgB(x.t.m)+'</div>' +
       '<div class="vp-cn-l"><span>Tendência</span><b>'+(x.tend!==null ? fmtMoney(x.tend) : '—')+'</b><span>'+tp+'</span></div>' +
-      '<div class="vp-bar"><i style="width:'+Math.min(100, sh).toFixed(1)+'%; background:'+CORES[VH_CANAIS.indexOf(x.k)]+'"></i></div><div class="vp-cn-s" style="font-size:11.5px; color:var(--text-2); margin-top:6px;">'+vhVs(x.md > 0 ? (x.t.h.f/x.md-1)*100 : null)+' vs. média diária</div></div>';
+      '<div class="vp-bar"><i style="width:'+Math.min(100, sh).toFixed(1)+'%; background:'+CORES[VH_CANAIS.indexOf(x.k)]+'"></i></div><div class="vp-cn-s" style="font-size:11.5px; color:var(--text-2); margin-top:6px;">'+vhVs(x.md > 0 ? (x.t.h.f/x.md-1)*100 : null)+' vs. média diária</div>' +
+      (x.k==='ATACADO' || x.k==='ECOMMERCE' ? vpMetaInd(x.t.h.f, vpMetaDia(M, S.dia, x.k==='ATACADO' ? 'atc' : 'ecm'), 'Meta do dia') : '') +
+      vpSpark(SE.canal[x.k], {cor:CORES[VH_CANAIS.indexOf(x.k)], meta: x.k==='ATACADO' && M.atc ? M.atc/M.du : (x.k==='ECOMMERCE' && M.ecm ? M.ecm/M.dc : 0)})+'</div>';
   }).join('')+'</div>';
   function tile(nome, tag, r, cls){
     var bar = r.ob ? '<div class="vp-bar" title="Barra: atingido no mês · traço: tendência"><i style="width:'+Math.min(100, r.at||0).toFixed(1)+'%; background:'+vhCorTend(r.tp)+'"></i>'+(r.tp!==null ? '<em style="left:calc('+Math.min(100, r.tp).toFixed(1)+'% - 1px)"></em>' : '')+'</div>' : '';
     return '<div class="vp-l'+(cls?' '+cls:'')+'"><div class="h"><b>'+escapeHtml(nome)+'</b><span>'+escapeHtml(tag||'')+'</span></div>' +
       '<div class="v">'+fmtMoney(r.t.h.f)+'</div><div class="x"><span>'+vhVs(r.vsH)+' vs. média</span>'+vhMgB(r.t.h)+'</div>' +
       (S.EL[nome] > 0.5 ? '<div class="x"><span>Estoque '+fmtMoney(S.EL[nome])+'</span></div>' : '') +
-      '<div class="x"><span>Mês '+fmtMoney(r.t.m.f)+'</span><span>'+(r.ob ? 'tend. <b style="color:'+vhCorTend(r.tp)+'">'+vhP(r.tp)+'</b>' : (r.tend!==null ? 'tend. '+fmtMoney(r.tend) : ''))+'</span></div>'+bar+'</div>';
+      '<div class="x"><span>Mês '+fmtMoney(r.t.m.f)+'</span><span>'+(r.ob ? 'tend. <b style="color:'+vhCorTend(r.tp)+'">'+vhP(r.tp)+'</b>' : (r.tend!==null ? 'tend. '+fmtMoney(r.tend) : ''))+'</span></div>'+bar +
+      (r.ob && r.dd && r.dd.mes ? (function(){ var md = tipoDia(S.dD, LOJA_MUNICIPIO[nome]||null)==='util' ? r.ob/r.dd.mes : 0; return md > 0 ? vpMetaInd(r.t.h.f, md, 'Meta do dia') : ''; })() : '') +
+      (SE.loja[nome] ? vpSpark(SE.loja[nome], {cor:'var(--vx-cy)', meta: r.ob && r.dd && r.dd.mes ? r.ob/r.dd.mes : 0}) : '')+'</div>';
   }
   var lj = umaLoja ? '' : '<div class="vp-lojas">'+S.lojas.map(function(o){ return tile(o.nome, o.tag, o.r); }).join('')  + '</div>';
   // destaques do dia (mesma consulta do resumo do dia, sem o filtro de clique)
