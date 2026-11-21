@@ -3529,6 +3529,21 @@ function periodRange(key){
 }
 
 // meta é mensal: proporcional aos dias corridos do período
+// meta de venda da planilha (por dia) x dias úteis de cada mês do período, com os feriados da loja do vendedor; LB do último mês
+function metaVendPeriodo(n, pr){
+  var M = REAL.metaVend && REAL.metaVend[n]; if(!M) return null;
+  var a = DAYS[Math.max(0, pr.start)], b = DAYS[Math.max(0, pr.end)]; if(!a || !b) return null;
+  var venda = 0, achou = false, lb = null;
+  for(var d = new Date(a.getFullYear(), a.getMonth(), 1); d <= b; d = new Date(d.getFullYear(), d.getMonth()+1, 1)){
+    var k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'), x = M[k]; if(!x) continue;
+    if(x.lb!==null) lb = x.lb;
+    if(x.dia===null) continue;
+    var ini = d < a ? a : d, fim = new Date(d.getFullYear(), d.getMonth()+1, 0); if(fim > b) fim = b;
+    var du = x.loja ? diasUteisLoja(x.loja, ini, fim) : contarDias(ini, fim, null).uteis;
+    venda += x.dia * du; achou = true;
+  }
+  return achou ? {venda: venda, lb: lb} : null;
+}
 function metaFator(pr){ var a=DAYS[Math.max(0,pr.start)], b=DAYS[Math.max(0,pr.end)]; return Math.max(1, Math.round((b-a)/86400000)+1)/30.4375; }
 function sumRange(arr,s,e){ var t=0; for(var i=s;i<=e && i<arr.length;i++){ if(i>=0) t+=arr[i]; } return t; }
 
@@ -6190,7 +6205,7 @@ function mrDesenhar(){
   var box = document.getElementById('mrBody'); if(!box || !MR.d) return;
   var C = mrCalc(), D = C.D, V = C.V, d = MR.d;
   var nomeMes = D.ini.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
-  document.getElementById('mrSub').textContent = 'Campanha de '+nomeMes+' · linha do mês '+d.linha_mes+' · '+D.feito+' de '+D.tot+' dias úteis ('+D.resta+' restantes) · ideal hoje '+mrPct(D.tot ? D.feito/D.tot : 0)+' · só atacado';
+  document.getElementById('mrSub').textContent = 'Campanha de '+nomeMes+' · '+(d.linha_definida===false ? 'linha do mês a definir (usando '+d.linha_mes+', a do mês anterior)' : 'linha do mês '+d.linha_mes)+' · '+D.feito+' de '+D.tot+' dias úteis ('+D.resta+' restantes) · ideal hoje '+mrPct(D.tot ? D.feito/D.tot : 0)+' · só atacado';
   if(!V.length){ box.innerHTML = '<p class="note-muted">Nenhum vendedor participante neste escopo e filtros.</p>'; return; }
   var pont = V.filter(function(v){ return v.pts > 0; }).length, gar = V.filter(function(v){ return v.bonus > 0; }), rit = V.filter(function(v){ return v.bonusR > 0; });
   var quase = V.filter(function(v){ return v.perto && v.perto.pct >= .9; }).length;
@@ -6349,12 +6364,12 @@ function renderVendConsult(){
     var m = map[n];
     var skuCount = m.skuMes!==undefined ? m.skuMes : Object.keys(m.skus).length;
     var ticket = m.qtd>0 ? m.fat/m.qtd : 0;
-    var metaVal = SELLER_META[n] ? SELLER_META[n]*metaFator(pr) : 0;
+    var mv = metaVendPeriodo(n, pr), metaVal = mv ? mv.venda : (SELLER_META[n] ? SELLER_META[n]*metaFator(pr) : 0);
     var metaPct = (metaVal>0) ? m.fat/metaVal*100 : 0;
     var margemPct = m.fat>0 ? m.lb/m.fat*100 : 0;
     var marcaHHI = hhi(m.marcas, sumOf(m.marcas));
     var catHHI = hhi(m.categorias, sumOf(m.categorias));
-    return {name:n, fat:m.fat, qtd:m.qtd, lb:m.lb, skuCount:skuCount, ticket:ticket, metaPct:metaPct,
+    return {name:n, fat:m.fat, qtd:m.qtd, lb:m.lb, skuCount:skuCount, ticket:ticket, metaPct:metaPct, metaVal: mv ? metaVal : null, metaLb: mv ? mv.lb : null,
       margemPct:margemPct, marcas:m.marcas, categorias:m.categorias, produtos:m.produtos, marcaHHI:marcaHHI, catHHI:catHHI,
       cli:m.cli||0, nfs:m.nfs||0, tkCli: m.cli>0 ? m.fat/m.cli : 0};
   }).sort(function(a,b){ return b.fat-a.fat; });
@@ -6401,6 +6416,8 @@ function renderVendConsult(){
 
   var kpisHtml = '<div class="kpi-grid" style="margin-bottom:16px;">' +
     vcKpi('Faturamento no período', fmtMoney(me.fat), 'Posição '+posicao+' de '+rows.length+' vendedores') +
+    (me.metaVal ? vcKpi('Meta de venda no período', fmtMoney(me.metaVal), 'atingido <b style="color:'+vhCorTend(me.metaPct)+'">'+me.metaPct.toFixed(1).replace('.',',')+'%</b>'+(me.metaLb!==null && me.metaLb!==undefined ? ' · meta de LB '+(me.metaLb*100).toFixed(1).replace('.',',')+'% (real '+me.margemPct.toFixed(1).replace('.',',')+'%)' : ''),
+      'Meta da planilha: valor por dia × dias úteis de cada mês do período (feriados da loja do vendedor). A meta de LB é % de margem e não se multiplica.') : '') +
     vcKpi('vs. média · mediana', '<span style="color:'+corPct(vsAvgPct)+'">'+fmtPct(vsAvgPct)+'</span> <span style="font-size:.62em; color:var(--text-muted); font-weight:500;">·</span> <span style="color:'+corPct(vsMedPct)+'">'+fmtPct(vsMedPct)+'</span>',
       'Pares: média '+fmtMoney(peerAvg)+' · mediana '+fmtMoney(peerMedian),
       'Compara o faturamento de '+selName+' com o dos outros '+others.length+' vendedores, nos mesmos filtros e período.\n\n' +
@@ -9146,9 +9163,9 @@ function vhDesenhar(){
 
   // quadros
   var pode = vhPodeObj();
-  function objHtml(chave, ob, editavel){
+  function objHtml(chave, ob, editavel, planilha){
     var txt = ob ? fmtMoney(ob) : (editavel ? 'definir' : '—');
-    return '<span class="vh-obj'+(editavel ? ' ed' : '')+'"'+(editavel ? ' data-obj="'+escapeHtml(chave)+'" title="Clique para alterar a meta do mês"' : '')+'>'+txt+'</span>';
+    return '<span class="vh-obj'+(editavel ? ' ed' : '')+'"'+(editavel ? ' data-obj="'+escapeHtml(chave)+'" title="Clique para alterar a meta do mês"' : (planilha ? ' title="Meta mensal da planilha (altere na planilha)"' : ''))+'>'+txt+'</span>';
   }
   function card(nome, tag, r, opt){
     var t = r.t, bar = '';
@@ -9165,7 +9182,7 @@ function vhDesenhar(){
         '<span class="r">Média diária</span><span class="n">'+(r.md!==null ? fmtMoney(r.md) : '—')+'</span><span class="b"></span></div>' + bar +
       (opt.seg && (t.sm.f > 0.5 || t.sh.f > 0.5) ? '<div class="vh-seg"><span class="tag">Seguradoras</span>hoje '+fmtMoney(t.sh.f)+' '+vhMgB(t.sh)+' · mês '+fmtMoney(t.sm.f)+' '+vhMgB(t.sm)+'</div>' : '') +
       (opt.chips ? '<div class="vh-chips">'+opt.chips+'</div>' : '') +
-      '<div class="vh-pe"><span>Meta <b>'+objHtml(opt.chave, r.ob, pode && opt.chave)+'</b></span><span>Faltam <b>'+(r.falta!==null ? fmtMoney(r.falta) : '—')+'</b></span>'+(r.porDia ? '<span>Por dia útil <b>'+fmtMoney(r.porDia)+'</b></span>' : '')+'</div></div>';
+      '<div class="vh-pe"><span>Meta <b>'+objHtml(opt.chave, r.ob, pode && opt.chave && (obj._planilha||[]).indexOf(opt.chave)<0, (obj._planilha||[]).indexOf(opt.chave)>=0)+'</b></span><span>Faltam <b>'+(r.falta!==null ? fmtMoney(r.falta) : '—')+'</b></span>'+(r.porDia ? '<span>Por dia útil <b>'+fmtMoney(r.porDia)+'</b></span>' : '')+'</div></div>';
   }
   var html = lojas.map(function(l){
     var r = calc(junta([l], ['ATACADO']), duLoja(l), +obj[l] || null);
@@ -9260,7 +9277,7 @@ function vhDesenhar(){
     linha('Acumulado '+dD.getFullYear(), '', function(c){ return ano[c]; });
   document.getElementById('vhMat').innerHTML = '<thead><tr><th>Canal</th>'+colsM.map(function(c){ return '<th title="'+escapeHtml(vhRegiao(c))+'">'+escapeHtml(c)+'</th>'; }).join('')+'<th>Grupo</th></tr></thead><tbody>'+body+'</tbody>';
   document.getElementById('vhNota').innerHTML = 'Média diária = vendas do mês até ontem ÷ dias úteis concluídos (feriados do município de cada loja; e-commerce por dias corridos). Tendência = média diária × dias úteis do mês. ▲▼ = venda do dia comparada com a média diária.' +
-    (pode ? ' Clique na meta de um quadro para alterar (vale para o mês todo).' : '');
+    ' Metas mensais da planilha (aba meta_lojas).' + (pode ? ' Loja sem meta na planilha: clique na meta do quadro para definir (vale para o mês todo).' : '');
   // resumo para o Painel (tela de acompanhamento)
   VH.sum = {E: eOk ? E : null, EL:EL, dia:dia, ehHoje:ehHoje, semana:semana, dD:dD, ontem:ontem, gTot:gTot, rG:rG, rAtc:rAtc, rEcm:rEcm, rAE:rAE, rotAE:rotAE, du:du, dc:dc, nObj:nObj, temObAtc:temObAtc,
     lojas: lojas.map(function(l){ return {nome:l, tag:vhRegiao(l), r:calc(junta([l], ['ATACADO']), duLoja(l), +obj[l] || null)}; }),
@@ -12172,17 +12189,20 @@ async function loadData(){
     fetchAll('bi_config', 'chave,valor', 'chave'),
     rpc('bi_meta_leve').catch(function(){ return rpc('bi_meta'); }), // banco ainda sem a função leve: versão completa
     null,
-    fetchAll('bi_meta_vendedor', 'vendedor,meta', 'vendedor').catch(function(){ return []; })
+    fetchAll('bi_meta_vendedor', 'vendedor,meta', 'vendedor').catch(function(){ return []; }),
+    rpc('bi_metas_vend').catch(function(){ return null; })   // metas da planilha (venda por dia e % de LB, por mês)
   ]);
   var cfg = {}; results[0].forEach(function(r){ cfg[r.chave] = r.valor; });
   var meta = results[1];
   if(!meta || !meta.dias || !meta.dias[0]) throw new Error('sem_dados');
   var sellerMeta = {}; results[3].forEach(function(r){ sellerMeta[r.vendedor] = Number(r.meta); });
+  var metaVend = {}; (results[4] || []).forEach(function(r){ (metaVend[r[0]] = metaVend[r[0]] || {})[r[1]] = {dia: r[2]===null ? null : +r[2], lb: r[3]===null ? null : +r[3], loja: r[4]}; });
   return {
     meta: meta,             // opções dos filtros, meses, dias e cadastro de produtos (no escopo do perfil)
     est: null,              // estoque loja x produto: carregado sob demanda
     lojaInfo: cfg.lojaInfo || {},
     sellerMeta: sellerMeta,
+    metaVend: metaVend,
     carga: cfg.carga || null,
     ia: cfg.ia || null      // agente de IA ligado/desligado pelo perfil BI
   };
