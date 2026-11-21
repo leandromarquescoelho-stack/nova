@@ -9687,21 +9687,29 @@ function vpAjustar(){
   var el = document.getElementById('vhModoPainel'); if(!el) return;
   el.style.zoom = '';
   if(window.innerWidth < 1001 || !vpVisivel()) return;
-  var cheia = document.fullscreenElement===el, topo = cheia ? 18 : el.getBoundingClientRect().top + (window.scrollY||0);
+  var cheia = document.fullscreenElement===el, topo = cheia ? 0 : el.getBoundingClientRect().top + (window.scrollY||0);
+  // altura do conteúdo (em tela cheia do painel a caixa ocupa a tela toda; vale o fim do último bloco)
+  var altura = function(){ var k = document.getElementById('vpBody'), r0 = el.getBoundingClientRect().top; return k ? k.getBoundingClientRect().bottom - r0 : el.getBoundingClientRect().height; };
   var mn = el.closest('.main'), abaixo = cheia || !mn ? 0 : parseFloat(getComputedStyle(mn).paddingBottom) || 0;
-  var disp = window.innerHeight - topo - abaixo - (cheia ? 18 : 6), alt = el.scrollHeight;
-  if(!(alt > disp && disp > 200)) return;
-  // com zoom os cards ficam mais largos e quebram menos linhas: refaz a conta até encaixar
-  var z = Math.max(0.55, disp/alt);
-  for(var i = 0; i < 5; i++){
+  var disp = window.innerHeight - topo - abaixo - (cheia ? 20 : 6), alt = altura();
+  if(disp < 200) return;
+  // tela cheia (do painel ou do navegador): também aumenta para ocupar a tela toda; fora dela, só reduz
+  var tela = !!(document.fullscreenElement || document.webkitFullscreenElement), zMax = tela ? 1.8 : 1;
+  if(alt <= disp && (!tela || alt > disp*0.98)) return;
+  // com zoom os cards mudam de largura e quebram linhas de outro jeito: refaz a conta até encaixar
+  var z = Math.min(zMax, Math.max(0.55, disp/alt)), ok = alt <= disp ? 1 : null;
+  for(var i = 0; i < 8; i++){
     el.style.zoom = String(z);
-    var h = el.getBoundingClientRect().height, nz = Math.min(1, z*disp/h);
-    if(h > disp){ z = Math.max(0.55, nz*0.995); continue; }
-    if(nz - z < 0.01) break;
-    z = nz*0.995;
+    var h = altura();
+    if(h > disp){ z = Math.max(0.55, z*disp/h*0.995); continue; }
+    ok = z;
+    var nz = Math.min(zMax, z*disp/h*0.995);
+    if(nz - z < 0.008) break;
+    z = nz;
   }
+  z = ok || z;
   el.style.zoom = String(Math.floor(z*1000)/1000);
-  if(el.getBoundingClientRect().height > disp) el.style.zoom = String(Math.max(0.55, Math.floor(z*disp/el.getBoundingClientRect().height*990)/1000));
+  if(altura() > disp) el.style.zoom = String(Math.max(0.55, Math.floor(z*disp/altura()*990)/1000));
 }
 window.addEventListener('resize', function(){ clearTimeout(vpAjustar.t); vpAjustar.t = setTimeout(vpAjustar, 150); });
 document.addEventListener('fullscreenchange', function(){ setTimeout(vpAjustar, 120); });
