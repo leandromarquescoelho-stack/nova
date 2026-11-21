@@ -548,6 +548,37 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vp-ti{display:inline-flex; align-items:center; gap:8px; padding:0 22px; font-size:13px; border-right:1px dashed var(--border);}
 .vp-ti em{font-style:normal; font-size:10px; font-weight:800; letter-spacing:.06em; color:#fff; padding:2px 7px; border-radius:99px;}
 .vp-ti span{color:var(--text-2); font-size:12px;}
+/* Visual 2 (Black Friday) */
+.vp-vis{display:inline-flex; border:1px solid var(--border-strong); border-radius:9px; overflow:hidden;} .vp-vis button{white-space:nowrap; border:0; background:transparent; color:var(--text-2); font:inherit; font-size:12px; font-weight:700; padding:5px 11px; cursor:pointer;}
+.vp-vis button[aria-pressed="true"]{background:var(--accent); color:#06121a;}
+.vp.bf{--surface:#141414; --surface-2:#1c1c1c; --surface-3:#2b2b2b; --border:rgba(245,180,0,.26); --border-strong:rgba(245,180,0,.45); --text:#fff; --text-2:#d6d6d6; --text-muted:#9b9b9b; --bf:#f5b400; --bf2:#ffd75a;
+  background:radial-gradient(1200px 380px at 50% -120px, rgba(245,180,0,.16), transparent 70%), #0b0b0b; color:var(--text); border-radius:16px; padding:14px 16px; border:1px solid var(--border);}
+.vp.bf:fullscreen{background:radial-gradient(1400px 420px at 50% -140px, rgba(245,180,0,.18), transparent 70%), #0b0b0b; border:0; border-radius:0;}
+.vp.bf .vp-vis button[aria-pressed="true"]{background:var(--bf); color:#111;} .vp.bf .tbtn{background:#1a1a1a; color:#fff; border-color:var(--border-strong);}
+.vp.bf .vp-tit{color:var(--bf2);}
+.bf-hero{display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:22px; align-items:center; background:linear-gradient(180deg,#171717,#101010); border:1px solid var(--border-strong); border-radius:16px; padding:12px 20px; margin-bottom:var(--vp-gap);}
+.bf-logo{height:118px; width:auto; display:block; filter:drop-shadow(0 4px 14px rgba(245,180,0,.18));}
+.bf-hm{min-width:0; container-type:inline-size;} .bf-hm .l{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-muted);}
+.bf-hm .v{font-family:'Sora',sans-serif; font-weight:800; font-size:clamp(28px,9cqi,64px); line-height:1.05; color:var(--bf2); white-space:nowrap;}
+.bf-hm .v small{font-size:.38em; color:var(--text-2); font-weight:700; margin-left:10px;}
+.bf-bar{position:relative; height:14px; border-radius:99px; background:#2b2b2b; margin:10px 0 7px; overflow:hidden;} .bf-bar i{position:absolute; left:0; top:0; bottom:0; border-radius:99px; background:linear-gradient(90deg,#c98a00,var(--bf),var(--bf2));}
+.bf-bar.ok i{background:linear-gradient(90deg,#16a34a,#4ade80);}
+.bf-hs{display:flex; flex-wrap:wrap; gap:6px 22px; font-size:13px; color:var(--text-2);} .bf-hs b{color:#fff; font-family:'JetBrains Mono',monospace;}
+.bf-gz{width:150px; height:108px; display:block;}
+.bf-uns{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--vp-gap); margin-bottom:var(--vp-gap);}
+.bf-u{background:linear-gradient(180deg,#1a1a1a,#121212); border:1.5px solid rgba(245,180,0,.55); border-radius:14px; padding:10px 14px; min-width:0; container-type:inline-size; position:relative;}
+.bf-u.ok{border-color:#4ade80; box-shadow:0 0 0 1px rgba(74,222,128,.25), 0 0 22px rgba(74,222,128,.12);}
+.bf-uh{display:flex; align-items:center; gap:8px; min-width:0;} .bf-uh b{font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.bf-rk{flex:0 0 auto; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:#111; background:var(--bf); border-radius:6px; padding:1px 6px;}
+.bf-ok{margin-left:auto; flex:0 0 auto; font-size:10px; font-weight:800; letter-spacing:.06em; color:#052e14; background:#4ade80; border-radius:99px; padding:2px 8px;}
+.bf-ub{display:flex; align-items:center; gap:10px; margin-top:4px;} .bf-ub .bf-gz{width:78px; height:56px; flex:0 0 auto;}
+.bf-uv{min-width:0;} .bf-uv .v{font-family:'Sora',sans-serif; font-weight:800; font-size:clamp(17px,10.5cqi,30px); line-height:1.1; white-space:nowrap;} .bf-uv .m{font-size:12px; color:var(--text-muted); white-space:nowrap;} .bf-uv .m b{color:var(--bf2);}
+.bf-u .bf-bar{height:8px; margin:7px 0 5px;}
+.bf-uf{display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--text-2); white-space:nowrap;} .bf-uf b{color:#fff;}
+.vp.bf .vp-d, .vp.bf .vp-tk{background:#141414;}
+@media (min-width:1001px){ .bf-hero{padding:10px 18px;} }
+@media (max-width:1100px){ .bf-uns{grid-template-columns:repeat(2,minmax(0,1fr));} .bf-hero{grid-template-columns:1fr; gap:10px;} .bf-hm{width:100%;} .bf-logo{height:84px;} .bf-hero > .bf-gz{justify-self:center;} }
+@media (max-width:520px){ .bf-uns{grid-template-columns:1fr;} }
 @keyframes vpTk{from{transform:translateX(0);} to{transform:translateX(-50%);}}
 @media (prefers-reduced-motion:reduce){ .vp-tk-w{overflow-x:auto;} .vp-tk-r{animation:none;} }
 .vp-dest{display:grid; grid-template-columns:repeat(auto-fit,minmax(255px,1fr)); gap:var(--vp-gap);}
@@ -2450,7 +2481,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <div id="vhModoPainel" class="vp">
           <div class="vp-top"><div class="vp-tt"><div class="vp-tit" id="vpTit">Vendas de hoje</div><div class="vp-sub" id="vpSub"></div></div>
             <div class="vp-rel"><b id="vpHora">--:--</b><span id="vpProx">atualiza sozinho</span></div>
-            <div class="vp-bts"><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
+            <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="1" aria-pressed="true" title="Painel geral do dia">Visual 1</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual 2</button></div><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
           <div id="vpBody"><p class="note-muted status-txt">Carregando o painel…</p></div>
         </div>
       </section>
@@ -9616,10 +9647,74 @@ function vpNovidades(E){
     (it.length ? '<div style="font-size:11px; color:var(--text-muted); margin:8px 0 2px; font-weight:700;">ZEROU OU BAIXOU</div>' : '') + it.map(function(o){ return lin(o, vhNovTxt(o), fmtMoney(o.fd)); }).join('');
   return '<div class="vp-d"><h4>Novidades em estoque<small>o que entrou e o que zerou</small></h4>'+(h || '<p class="note-muted" style="font-size:12px;">'+(E ? 'Nenhuma entrada ou ruptura de produto de boa venda hoje.' : 'Carregando…')+'</p>')+'</div>';
 }
+/* ---------- Visual 2: Black Friday (venda do dia × meta de cada unidade) ---------- */
+var BF_DIA = '2026-11-27';
+var BF_METAS = [['IPIRANGA','Ipiranga',700000],['JOAO DIAS','João Dias',150000],['TATUAPE','Tatuapé',100000],['SBC','S.B.Campo',100000],
+  ['CAMPINAS','Campinas',700000],['RIBEIRAO','Ribeirão Preto',350000],['RIO PRETO','S.J.Rio Preto',400000],['ECOMMERCE','E-commerce',100000]];
+// visual escolhido: fica guardado no navegador; no dia da Black Friday abre no Visual 2 até a pessoa trocar nesse dia
+function vpVis(){
+  if(VH.vis) return VH.vis;
+  var g = null; try{ g = JSON.parse(localStorage.getItem('nc_vp_vis') || 'null'); }catch(e){}
+  var hoje = isoDia(new Date());
+  VH.vis = hoje===BF_DIA && !(g && g.d===BF_DIA) ? 2 : ((g && +g.v) || 1);
+  return VH.vis;
+}
+function vpVisTrocar(v){
+  VH.vis = v; try{ localStorage.setItem('nc_vp_vis', JSON.stringify({v:v, d:isoDia(new Date())})); }catch(e){}
+  vpVisMarcar(); if(VH.sum) vhPainel();
+}
+function vpVisMarcar(){
+  var v = vpVis(), el = document.getElementById('vhModoPainel');
+  if(el) el.classList.toggle('bf', v===2);
+  document.querySelectorAll('#vpVis [data-vis]').forEach(function(b){ b.setAttribute('aria-pressed', String(+b.getAttribute('data-vis')===v)); });
+}
+function bfCor(p){ return p >= 100 ? '#4ade80' : (p >= 50 ? '#f5b400' : '#c98a00'); }
+// velocímetro dourado: 0 a 100% (passou da meta, fica verde e mostra o percentual real)
+function bfGauge(p, tit){
+  var f = Math.max(0, Math.min(1, (p||0)/100)), cor = bfCor(p||0), R = 40, cx = 50, cy = 50;
+  var pt = function(fr){ var a = Math.PI*(1-fr); return (cx + R*Math.cos(a)).toFixed(2)+' '+(cy - R*Math.sin(a)).toFixed(2); };
+  return '<svg class="bf-gz" viewBox="0 0 100 72" role="img" aria-label="'+escapeHtml(tit||'')+'"><title>'+escapeHtml(tit||'')+'</title>' +
+    '<path d="M10 50 A40 40 0 0 1 90 50" fill="none" stroke="#2b2b2b" stroke-width="11" stroke-linecap="round"/>' +
+    (f > 0.004 ? '<path d="M10 50 A40 40 0 0 1 '+pt(f)+'" fill="none" stroke="'+cor+'" stroke-width="11" stroke-linecap="round"/>' : '') +
+    '<text x="50" y="48" text-anchor="middle" font-size="19" font-weight="800" fill="'+cor+'" font-family="Sora,sans-serif">'+Math.round(p||0)+'%</text>' +
+    '<text x="50" y="66" text-anchor="middle" font-size="9" fill="#9b9b9b">da meta</text></svg>';
+}
+function bfPainel(S, RR, dest){
+  var lj = {}; S.lojas.forEach(function(o){ lj[o.nome] = o; });
+  var ecm = null; S.canais.forEach(function(x){ if(x.k==='ECOMMERCE') ecm = x; });
+  var U = [];
+  BF_METAS.forEach(function(m){
+    if(m[0]==='ECOMMERCE'){ if(ecm) U.push({nome:m[1], meta:m[2], v:ecm.t.h.f, md:ecm.md}); return; }
+    var o = lj[m[0]]; if(o) U.push({nome:m[1], meta:m[2], v:o.r.t.h.f, md:o.r.md});
+  });
+  if(!U.length) return '<p class="note-muted">Nenhuma das unidades da Black Friday está no seu acesso ou nos filtros do painel.</p>';
+  U.forEach(function(u){ u.p = u.v/u.meta*100; });
+  var ord = U.slice().sort(function(a, b){ return b.p - a.p; }); ord.forEach(function(u, i){ u.rk = i+1; });
+  var tv = 0, tm = 0, tmd = 0, mdOk = true, nOk = 0;
+  U.forEach(function(u){ tv += u.v; tm += u.meta; if(u.md > 0) tmd += u.md; else mdOk = false; if(u.p >= 100) nOk++; });
+  var tp = tm > 0 ? tv/tm*100 : 0, xN = function(x){ return (x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×'; };
+  var hero = '<div class="bf-hero"><img class="bf-logo" src="icons/black-friday.png" alt="Black Friday Nova">' +
+    '<div class="bf-hm"><div class="l">'+(S.ehHoje ? 'Vendido hoje' : 'Vendido no dia')+' · '+U.length+' unidade'+(U.length>1?'s':'')+'</div>' +
+    '<div class="v">'+fmtMoney(tv)+'<small>de '+fmtMoney(tm)+'</small></div>' +
+    '<div class="bf-bar'+(tp >= 100 ? ' ok' : '')+'"><i style="width:'+Math.min(100, tp).toFixed(1)+'%"></i></div>' +
+    '<div class="bf-hs"><span>Falta <b>'+(tv >= tm ? 'meta batida' : fmtMoney(tm - tv))+'</b></span><span>Metas batidas <b>'+nOk+' de '+U.length+'</b></span>' +
+      (mdOk && tmd > 0 ? '<span title="Venda do dia ÷ média diária do mês (atacado das lojas e e-commerce)">Hoje <b>'+xN(tv/tmd)+'</b> um dia normal</span><span title="Meta do dia ÷ média diária do mês">A meta pede <b>'+xN(tm/tmd)+'</b></span>' : '') + '</div></div>' +
+    bfGauge(tp, 'Venda do dia ÷ meta da Black Friday') + '</div>';
+  var cards = '<div class="bf-uns">'+U.map(function(u){
+    var ok = u.p >= 100;
+    return '<div class="bf-u'+(ok ? ' ok' : '')+'"><div class="bf-uh"><span class="bf-rk">#'+u.rk+'</span><b>'+escapeHtml(u.nome)+'</b>'+(ok ? '<span class="bf-ok">META BATIDA</span>' : '')+'</div>' +
+      '<div class="bf-ub">'+bfGauge(u.p, escapeHtml(u.nome)+': '+vhP(u.p)+' da meta')+'<div class="bf-uv"><div class="v">'+fmtMoney(u.v)+'</div><div class="m">meta <b>'+fmtMoney(u.meta)+'</b></div></div></div>' +
+      '<div class="bf-bar'+(ok ? ' ok' : '')+'"><i style="width:'+Math.min(100, u.p).toFixed(1)+'%"></i></div>' +
+      '<div class="bf-uf"><span>'+(ok ? 'Passou <b>'+fmtMoney(u.v - u.meta)+'</b>' : 'Falta <b>'+fmtMoney(u.meta - u.v)+'</b>')+'</span>' +
+      (u.md > 0 ? '<span title="Venda do dia ÷ média diária do mês">'+xN(u.v/u.md)+' dia normal</span>' : '')+'</div></div>';
+  }).join('')+'</div>';
+  return hero + cards + dest + vpTicker(RR, S.E);
+}
 function vhPainel(){
   var S = VH.sum, box = document.getElementById('vpBody'); if(!S || !box) return;
   var c = vhCarga();
-  document.getElementById('vpTit').textContent = (S.ehHoje ? 'Vendas de hoje' : 'Vendas do dia')+' · '+S.semana+', '+fmtDateFull(S.dD).slice(0,5);
+  var V2 = vpVis()===2; vpVisMarcar();
+  document.getElementById('vpTit').textContent = (V2 ? 'Black Friday' : (S.ehHoje ? 'Vendas de hoje' : 'Vendas do dia'))+' · '+S.semana+', '+fmtDateFull(S.dD).slice(0,5);
   document.getElementById('vpSub').textContent = (cargaLabel(c) || 'Sem informação de carga')+(VH.lido ? ' · lido às '+vpHora(new Date(VH.lido)) : '')+' · filtros do painel aplicados';
   function k(cor, l, v, sub, cls){ return '<div class="vp-k'+(cls?' '+cls:'')+'" style="--vh-c:'+cor+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div></div>'; }
   var g = S.gTot, rG = S.rG, rAE = S.rAE, rotAE = S.rotAE || 'atacado + e-com';
@@ -9679,7 +9774,11 @@ function vhPainel(){
   var ds = RR ? '<div class="vp-dest">' + lista('Vendedores em destaque', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) +
       lista('Clientes em destaque', 'compras do dia', RR.clientes, nm7) + lista('Produtos em destaque', 'faturamento do dia', RR.produtos, nm7) + vpNovidades(S.E) + '</div>'
     : (R && R.erro ? '' : '<p class="note-muted status-txt">Carregando os destaques do dia…</p>');
-  box.innerHTML = kp + cn + lj + ds + vpTicker(RR, S.E);
+  if(V2){
+    var dsB = RR ? '<div class="vp-dest">' + lista('Vendedores em destaque', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) +
+      lista('Clientes em destaque', 'compras do dia', RR.clientes, nm7) + lista('Produtos em destaque', 'faturamento do dia', RR.produtos, nm7) + '</div>' : '';
+    box.innerHTML = bfPainel(S, RR, dsB);
+  } else box.innerHTML = kp + cn + lj + ds + vpTicker(RR, S.E);
   vpAjustar(); clearTimeout(vhPainel.t); vhPainel.t = setTimeout(vpAjustar, 500);
 }
 // computador: reduz o painel proporcionalmente quando ele não cabe na altura da tela (sem barra de rolagem)
@@ -9923,6 +10022,8 @@ function vhLigar(){
     vhResumo();
   });
   document.getElementById('vpTela').addEventListener('click', vpTelaCheia);
+  document.querySelectorAll('#vpVis [data-vis]').forEach(function(b){ b.addEventListener('click', function(){ vpVisTrocar(+b.getAttribute('data-vis')); }); });
+  vpVisMarcar();
   document.getElementById('vpAgora').addEventListener('click', function(){ vpChecar(true); });
   var rc = document.getElementById('vhResCopiar'); rc.innerHTML = ICO_COPIA; rc.addEventListener('click', function(){ copiarCard(rc, document.getElementById('vhResCard'), 'vendas-hoje-resumo.png'); });
   document.getElementById('vhCopiarTudo').addEventListener('click', function(){ copiarCard(this, document.getElementById('vhCap'), 'vendas-hoje.png'); });
