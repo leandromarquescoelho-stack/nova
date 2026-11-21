@@ -801,9 +801,11 @@ def main():
 def main_infobi(a, conn, db_url, fonte, arquivos, mapa, loja_info):
     from carga_infobi import gravar_infobi, ler_abas, preparar, regras_infobi
     spec = mapa['infobi']
-    arq = escolher(arquivos, spec.get('arquivo', 'infobi'))
+    # o arquivo foi renomeado de infobi para data-bi: aceita os dois nomes (e o do mapa) e fica com o mais recente
+    cand = [x for x in (escolher(arquivos, n) for n in dict.fromkeys([spec.get('arquivo', 'infobi'), 'data-bi', 'infobi'])) if x]
+    arq = max(cand, key=lambda x: x['modificado']) if cand else None
     if arq is None:
-        raise SystemExit('arquivo infobi não encontrado.')
+        raise SystemExit('arquivo data-bi (ou infobi) não encontrado.')
     if conn is not None and not a.forcar and ja_carregado(conn.cursor(), arq):
         log('arquivo sem alteração desde a última carga; nada a fazer')
         return
