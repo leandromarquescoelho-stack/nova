@@ -992,7 +992,8 @@ table.data-table.rank-vend .vr-part .vr-bar{ flex:0 0 28px; }
 .rd-info{ grid-column:1/-1; font-size:11.5px; color:var(--text-muted); margin-top:4px; }
 .eixo-datas{ position:relative; height:16px; border-top:1px solid var(--border); margin-top:2px; }
 .eixo-datas span{ position:absolute; top:3px; font-size:9.5px; color:var(--text-muted); font-family:'JetBrains Mono', monospace; white-space:nowrap; }
-.proj-mini{ font-size:9px; font-style:italic; color:var(--text-muted); margin-top:1px; }
+.proj-mini{ font-size:9.5px; font-style:italic; font-weight:700; color:#fcd34d; margin-top:1px; text-shadow:0 1px 2px rgba(0,0,0,.35); }
+:root[data-theme="light"] .proj-mini{ color:#b45309; text-shadow:none; }
 .proj-sw{ background:transparent !important; border:1px dashed var(--text-muted); }
 .proj-leg{ color:var(--text-muted); font-style:italic; }
 .mtd-bar .mtd-falta{ position:absolute; right:0; top:0; bottom:0; border:1px dashed var(--text-muted); border-left:0; border-radius:0 6px 6px 0; opacity:.6; box-sizing:border-box; }
@@ -1288,6 +1289,14 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .cp-fgrid input,.cp-fgrid textarea,.cp-prod textarea,#cpDimV{font:inherit; font-size:13px; padding:7px 9px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text);}
 .cp-seg{display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,2.4fr) minmax(0,.8fr) minmax(0,.8fr) auto; gap:8px; align-items:end; margin-bottom:8px;}
 .cp-seg-x{grid-column:2 / span 2;}
+.cp-niv{margin-top:8px;} .cp-niv:empty{display:none;}
+.cp-nu{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:6px 12px;}
+.cp-nl{display:grid; grid-template-columns:auto minmax(0,1fr) 120px; gap:8px; align-items:center; font-size:12.5px; padding:4px 8px; border:1px solid var(--border); border-radius:8px;}
+.cp-nl.off{opacity:.5;} .cp-nl span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.cp-nl input[type=number],.cp-dv input{font:inherit; font-size:12.5px; padding:5px 7px; border:1px solid var(--border); border-radius:7px; background:var(--bg); color:var(--text); min-width:0;}
+.cp-dv{border:1px solid var(--border); border-radius:10px; padding:8px 10px; margin-bottom:8px;}
+.cp-dvh{display:grid; grid-template-columns:minmax(0,1fr) 160px auto; gap:8px; align-items:end;} .cp-dvh label{display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--text-muted); font-weight:700;}
+.cp-dv .u-abas{margin-top:6px;}
 .cp-seg label{display:flex; flex-direction:column; gap:4px; font-size:11.5px; color:var(--text-muted); font-weight:700;}
 .cp-seg input,.cp-seg textarea{font:inherit; font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text);} .cp-seg textarea{resize:vertical; min-height:32px;}
 @media (max-width:760px){ .cp-seg{grid-template-columns:1fr 1fr;} .cp-seg-c{grid-column:1 / -1;} }
@@ -2179,7 +2188,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <span class="ico">&#128178;</span><span class="label">Preços</span><span class="tip">Preços</span>
       </div>
       <div class="nav-item" data-view="gm">
-        <span class="ico">&#127942;</span><span class="label">GM</span><span class="tip">GM</span>
+        <span class="ico">&#127942;</span><span class="label">Campanhas</span><span class="tip">Campanhas</span>
       </div>
       <div class="nav-item" data-view="planejamento">
         <span class="ico">&#127919;</span><span class="label">Planejamento</span><span class="tip">Planejamento</span>
@@ -3007,13 +3016,15 @@ table.data-table.vp-tbl{min-width:720px;}
 
       <!-- ============ GM ============ -->
       <section class="view-panel" data-view-panel="gm" style="display:none;">
-        <div class="pl-guias" id="gmGuias" role="tablist"><button type="button" class="on" data-gm="campanhas" role="tab" aria-selected="true">Campanhas GM</button></div>
+        <div class="pl-guias" id="gmGuias" role="tablist"><button type="button" class="on" data-gm="campanhas" role="tab" aria-selected="true">Campanhas GM</button><button type="button" data-gm="nova" role="tab" aria-selected="false">Campanhas Nova</button></div>
         <div id="gmCampanhas">
           <div class="cp-top">
             <div class="cp-lista" id="cpLista"><p class="note-muted status-txt">Carregando campanhas…</p></div>
             <div class="cp-bts"><button type="button" class="tbtn primary" id="cpNova" hidden>+ Nova campanha</button></div>
           </div>
           <form id="cpForm" class="ra-form" hidden autocomplete="off">
+            <div class="ra-l" style="margin-top:0;">Campanha de</div>
+            <div class="seg" id="cpTipoC" style="margin-bottom:10px;"><button type="button" data-v="gm" aria-pressed="true">Campanhas GM</button><button type="button" data-v="nova" aria-pressed="false">Campanhas Nova</button></div>
             <div class="cp-fgrid">
               <label class="cp-w2">Nome da campanha<input type="text" id="cpNome" maxlength="120" placeholder="Ex.: Campanha Óleo ACDelco novembro"></label>
               <label>Início<input type="date" id="cpIni"></label>
@@ -3024,7 +3035,7 @@ table.data-table.vp-tbl{min-width:720px;}
             <div class="seg" id="cpMetrica"><button type="button" data-v="fat" aria-pressed="true">Faturamento (R$)</button><button type="button" data-v="qtd" aria-pressed="false">Quantidade (peças)</button><button type="button" data-v="lb" aria-pressed="false">Lucro bruto (R$)</button></div>
             <div class="ra-l">Meta</div>
             <div class="seg" id="cpTipo"><button type="button" data-v="fixa" aria-pressed="true">Número definido</button><button type="button" data-v="base" aria-pressed="false">Período anterior + crescimento</button></div>
-            <div class="cp-fgrid" id="cpFixa" style="margin-top:8px;"><label><span>Meta geral <span id="cpUn">(R$)</span></span><input type="number" id="cpValor" min="0" step="any" placeholder="soma das linhas"></label></div>
+            <div class="cp-fgrid" id="cpFixa" style="margin-top:8px;"><label><span>Meta geral <span id="cpUn">(R$)</span></span><input type="number" id="cpValor" min="0" step="any" placeholder="soma das linhas ou do nível"></label></div>
             <div class="cp-fgrid" id="cpBase" hidden style="margin-top:8px;">
               <label>Comparar de<input type="date" id="cpBIni"></label><label>Até<input type="date" id="cpBFim"></label>
               <label>Crescimento (%)<input type="number" id="cpCresc" step="any" placeholder="0"></label>
@@ -3037,6 +3048,17 @@ table.data-table.vp-tbl{min-width:720px;}
             <label class="cp-prod">Produtos participantes (códigos separados por espaço, vírgula ou linha)<textarea id="cpProd" rows="2" placeholder="98553888 98550168 …"></textarea></label>
             <div class="ra-add" style="margin-top:6px;"><button type="button" class="btn-sm" id="cpXlsBt" title="Lê o arquivo e traz os códigos que existem no cadastro; com coluna de linha, monta as linhas da campanha">Importar itens do Excel da campanha</button><input type="file" id="cpXls" accept=".xlsx,.xls,.xlsm,.csv" hidden></div>
             <div class="note-muted" id="cpProdMsg" style="font-size:12px;"></div>
+            <label class="cp-prod">Produtos bonificados (pagam bônus; em branco, todos os participantes pagam)<textarea id="cpBonif" rows="2" placeholder="98553888 98550168 …"></textarea></label>
+            <div class="ra-add" style="margin-top:6px;"><button type="button" class="btn-sm" id="cpBonifXlsBt" title="Lê o arquivo e traz os códigos que existem no cadastro">Importar itens do Excel da campanha</button><input type="file" id="cpBonifXls" accept=".xlsx,.xls,.xlsm,.csv" hidden>
+              <span class="note-muted" style="font-size:11.5px;">Os participantes que não estiverem aqui ajudam a bater a meta, mas não pagam bônus.</span></div>
+            <div class="note-muted" id="cpBonifMsg" style="font-size:12px;"></div>
+            <div class="cp-fgrid" style="margin-top:8px;"><label>Bônus R$ por peça bonificada<input type="number" id="cpBonus" min="0" step="any" placeholder="campanha sem linhas"></label></div>
+            <div class="ra-l">Nível de participação (as metas acompanham o nível)</div>
+            <div class="seg" id="cpNivel"><button type="button" data-v="todo" aria-pressed="true">Campanha toda</button><button type="button" data-v="canal" aria-pressed="false">Por canal</button><button type="button" data-v="loja" aria-pressed="false">Por loja</button><button type="button" data-v="divisao" aria-pressed="false">Por divisão</button></div>
+            <div id="cpNiv" class="cp-niv"></div>
+            <div class="ra-l">Bônus atrelado a</div>
+            <div class="seg" id="cpRegra"><button type="button" data-v="nivel" aria-pressed="false">Meta do nível</button><button type="button" data-v="todo" aria-pressed="true">Meta geral</button><button type="button" data-v="livre" aria-pressed="false">Independente da meta</button></div>
+            <div class="note-muted" id="cpRegraTxt" style="font-size:11.5px; margin-top:4px;"></div>
             <div class="ra-l">Linhas da campanha (opcional): cada linha com os próprios produtos, meta e bônus por unidade, apurada separadamente</div>
             <div id="cpSegs"></div>
             <div class="ra-add"><button type="button" class="btn-sm" id="cpSegAdd">+ Adicionar linha</button><span class="note-muted" style="font-size:11.5px;">O Excel da campanha com uma coluna de linha (ou família/segmento) e outra de código cria as linhas sozinho.</span></div>
@@ -11087,7 +11109,9 @@ function renderTudo(refreshing){
 /* ============================================================
    GM › CAMPANHAS GM: campanhas com filtros, métrica e meta próprias (bi_campanha*)
    ============================================================ */
-var CP = {lista:null, sel:null, dados:{}, pend:{}, ed:null, ligado:false};
+var CP = {lista:null, sel:null, dados:{}, pend:{}, ed:null, ligado:false, aba:'campanhas'};
+var CP_ABA_TIPO = {campanhas:'gm', nova:'nova'}, CP_TIPO_ABA = {gm:'campanhas', nova:'nova'}, CP_TIPO_NOME = {gm:'Campanhas GM', nova:'Campanhas Nova'};
+function cpTipo(c){ return (c && c.tipo) || 'gm'; }
 var CP_DIMS = [['marca','Marca'],['linha','Linha'],['categoria','Grupo'],['subcategoria','Subgrupo'],['montadora','Montadora'],['curva_gm','Curva GM'],
   ['grupo_peca','Grupo de peça'],['classificacao','Classificação'],['aplicacao','Aplicação'],['loja','Loja'],['canal','Canal'],['tipo_cliente','Tipo de cliente']];
 var CP_MET = {fat:'Faturamento', qtd:'Quantidade', lb:'Lucro bruto'};
@@ -11118,9 +11142,11 @@ function renderCampanhas(){
   }
   var box = document.getElementById('cpLista');
   if(CP.erro==='falta'){ box.innerHTML = '<p class="note-muted">O banco ainda não tem as campanhas (rode o SQL campanhas_gm.sql).</p>'; document.getElementById('cpNova').hidden = true; return; }
-  if(!CP.lista.length){ box.innerHTML = '<p class="note-muted">Nenhuma campanha cadastrada ainda.'+(cpPode() ? ' Clique em "Nova campanha" para criar a primeira.' : '')+'</p>'; document.getElementById('cpPainel').innerHTML = ''; return; }
-  if(!CP.sel || !CP.lista.some(function(c){ return c.id===CP.sel; })) CP.sel = CP.lista[0].id;
-  box.innerHTML = CP.lista.map(function(c){
+  Array.prototype.forEach.call(document.querySelectorAll('#gmGuias [data-gm]'), function(b){ var on = b.getAttribute('data-gm')===CP.aba; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+  var tp = CP_ABA_TIPO[CP.aba] || 'gm', L = CP.lista.filter(function(c){ return cpTipo(c)===tp; });
+  if(!L.length){ box.innerHTML = '<p class="note-muted">Nenhuma campanha em '+CP_TIPO_NOME[tp]+' ainda.'+(cpPode() ? ' Clique em "Nova campanha" para criar a primeira.' : '')+'</p>'; document.getElementById('cpPainel').innerHTML = ''; return; }
+  if(!CP.sel || !L.some(function(c){ return c.id===CP.sel; })) CP.sel = L[0].id;
+  box.innerHTML = L.map(function(c){
     return '<button type="button" class="cp-chip'+(c.id===CP.sel ? ' on' : '')+(c.ativo ? '' : ' off')+'" data-cp="'+c.id+'"><b>'+escapeHtml(c.nome)+'</b><span>'+cpDtBR(c.ini)+' a '+cpDtBR(c.fim)+(c.ativo ? '' : ' · encerrada')+'</span></button>';
   }).join('');
   cpPainel();
@@ -11150,7 +11176,8 @@ function cpPainel(){
   var ritmo = pConc > 0 ? vConc/pConc : null, proj = ult >= fim ? real : (ritmo!==null ? vConc + ritmo*pRest : null);
   var baseTot = c.meta_tipo==='base' ? cv((D.base||[])[ix-1]) : null;
   var segs = c.segs || [], metaSegs = segs.reduce(function(t, g){ return t + (+g.meta||0); }, 0);
-  var meta = c.meta_tipo==='base' ? (baseTot>0 ? baseTot*(1+(+c.cresc||0)/100) : null) : (+c.meta_valor || metaSegs || null);
+  var U = cpUnidades(c, D, cv, ix), metaUn = U && U.us.every(function(u){ return u.mt; }) ? U.us.reduce(function(t, u){ return t + u.mt; }, 0) : 0;
+  var meta = c.meta_tipo==='base' ? (+c.meta_valor || (U && U.us.some(function(u){ return u.meta; }) && metaUn) || (baseTot>0 ? baseTot*(1+(+c.cresc||0)/100) : null)) : (+c.meta_valor || metaSegs || metaUn || null);
   var at = meta ? real/meta*100 : null, pp = meta && proj!==null ? proj/meta*100 : null, falta = meta ? Math.max(0, meta-real) : null;
   var pAteHoje = dias.filter(function(x){ return x.feito; }).reduce(function(t, x){ return t + x.p; }, 0), ideal = meta ? meta*pAteHoje/pTot : null;
   var porDiaUtil = meta && pRest > 0 && ult < fim ? Math.max(0, meta - (corre ? vConc : real))/pRest : null;
@@ -11159,14 +11186,18 @@ function cpPainel(){
   var status = ult < ini ? 'ainda não começou' : (ult >= fim ? 'encerrada' : 'em andamento · dados até '+cpDtBR(D.ultimo));
   var h = '<div class="cp-head"><div><h2>'+escapeHtml(c.nome)+'</h2><div class="psub">'+cpDtBR(c.ini)+' a '+cpDtBR(c.fim)+' · '+status+' · '+CP_MET[m]+'</div></div>' +
     (cpPode() ? '<div class="cp-bts"><button type="button" class="btn-sm" data-cpa="ed">Editar</button><button type="button" class="btn-sm" data-cpa="ex">Excluir</button></div>' : '')+'</div>' +
-    '<div class="cp-filt"><b>Filtros:</b> '+escapeHtml(cpFiltrosTxt(c.f||{}))+'</div>' + (c.descricao ? '<div class="cp-desc">'+escapeHtml(c.descricao).replace(/\n/g,'<br>')+'</div>' : '');
+    '<div class="cp-filt"><b>Filtros:</b> '+escapeHtml(cpFiltrosTxt(c.f||{}))+((c.cfg||{}).bonif && c.cfg.bonif.length ? ' · <b>Bonificados:</b> '+c.cfg.bonif.length+' produto'+(c.cfg.bonif.length>1?'s':'') : '')+
+      ((c.cfg||{}).nivel && c.cfg.nivel!=='todo' ? ' · <b>Nível:</b> '+{canal:'por canal', loja:'por loja', divisao:'por divisão'}[c.cfg.nivel]+' · bônus pela '+{nivel:'meta do nível', todo:'meta geral', livre:'venda, independente da meta'}[c.cfg.regra||'todo'] : '')+'</div>' + (c.descricao ? '<div class="cp-desc">'+escapeHtml(c.descricao).replace(/\n/g,'<br>')+'</div>' : '');
   h += '<div class="cp-kpis">' +
     k('var(--vx-cy)', 'Realizado', cpVal(m, real), meta ? '<b style="color:'+cor(at)+'">'+vhP(at)+'</b> da meta' : 'sem meta', vpMetaInd(real, meta, 'Atingido', '', fu)) +
     k('var(--vx-pu)', 'Meta', meta ? cpVal(m, meta) : '—', c.meta_tipo==='base' ? (baseTot>0 ? 'base '+cpVal(m, baseTot)+' ('+cpDtBR(c.base_ini)+' a '+cpDtBR(c.base_fim)+') + '+String(+c.cresc||0).replace('.',',')+'%' : 'sem venda no período de comparação') : 'número definido') +
     k('#64748b', 'Meta até hoje', ideal!==null && ult < fim ? cpVal(m, ideal) : '—', ideal!==null && ult < fim ? (real >= ideal ? '<span class="vh-up">à frente '+cpCurto(m, real-ideal)+'</span>' : '<span class="vh-dn">atrás '+cpCurto(m, ideal-real)+'</span>') : (ult >= fim ? 'campanha encerrada' : '—'), ideal ? vpMetaInd(real, ideal, 'Ritmo', '', fu) : '') +
     k(pp!==null ? cor(pp) : 'var(--vx-am)', 'Projeção', proj!==null ? cpVal(m, proj) : '—', pp!==null ? '<b style="color:'+cor(pp)+'">'+vhP(pp)+'</b> da meta no fim' : 'mantendo o ritmo dos dias concluídos', meta && proj!==null ? vpMetaInd(proj, meta, 'Meta no fim', '', fu) : '') +
     k('var(--vx-am)', 'Falta', falta!==null ? cpVal(m, falta) : '—', porDiaUtil!==null ? cpVal(m, porDiaUtil)+' por dia útil restante' : (falta===0 ? '<span class="vh-up">meta batida</span>' : '—')) + '</div>';
-  if(segs.length) h += cpSegsTabela(c, D, segs, real, proj, ix, cv, m);
+  var P = cpPremio(c, D, U, real, proj, meta, cv, ix);
+  if(U) h += cpUnidTabela(c, U, P, m);
+  if(segs.length) h += cpSegsTabela(c, D, segs, real, proj, ix, cv, m, P);
+  else if(P.temBon) h += '<div class="cp-filt"><b>Prêmio:</b> '+fmtMoney2(+c.cfg.bonus)+' por peça bonificada · garantido <b class="vh-up">'+fmtMoney(P.T.gar)+'</b> · previsto no fim <b>'+fmtMoney(P.T.prev)+'</b></div>';
   h += '<div class="vx-card"><div class="vx-ct">Evolução acumulada</div><div class="vx-cs">Realizado (linha cheia) · meta acumulada pelos dias úteis (tracejado) · projeção (tracejado colorido)'+(c.meta_tipo==='base' ? ' · base anterior (cinza)' : '')+'</div>'+cpGrafico(dias, meta, pTot, proj, c, D, ix, cv)+'</div>';
   // lojas
   var lj = (D.lojas||[]).map(function(r){ return {nome: dimNome('loja', r[0]) || 'N/D', v: cv(r[ix]), b: c.meta_tipo==='base' ? cv(r[ix+3]) : null}; }).filter(function(o){ return o.v || o.b; });
@@ -11182,28 +11213,83 @@ function cpPainel(){
   h += '<p class="note-muted" style="font-size:11.5px;">Usa só os filtros da campanha (os filtros do painel não se aplicam aqui), dentro do acesso de cada usuário. Ritmo e projeção pelos dias úteis; sábado e domingo valem o peso definido em Dias úteis. O último dia com venda, se a campanha ainda corre, fica fora do ritmo por poder estar incompleto.</p>';
   box.innerHTML = h;
 }
-// linhas da campanha: cada uma apurada separadamente, com prêmio = unidades × bônus quando a linha bate a meta
-function cpSegsTabela(c, D, segs, real, proj, ix, cv, m){
+// nível de participação: realizado, base e meta de cada unidade (canal, loja ou divisão)
+function cpUnidades(c, D, cv, ix){
+  var cf = c.cfg || {}, nv = cf.nivel || 'todo'; if(nv==='todo') return null;
+  var us = (cf.unidades||[]).map(function(u){ return {nome:u.nome, ids:u.ids||[], meta:+u.meta||null, v:0, b:0}; }), por = {};
+  us.forEach(function(u, k){ u.ids.forEach(function(id){ por[id] = k; }); });
+  (D.lc||[]).forEach(function(r){ var k = por[nv==='canal' ? r[1] : r[0]]; if(k===undefined) return; us[k].v += cv(r[ix+1]); us[k].b += cv(r[ix+4]); });
+  var cr = 1+(+c.cresc||0)/100;
+  us.forEach(function(u){ u.mt = u.meta || (c.meta_tipo==='base' && u.b > 0 ? u.b*cr : null); });
+  return {nv:nv, us:us, chave:function(loja, canal){ var k = por[nv==='canal' ? canal : loja]; return k===undefined ? -1 : k; }};
+}
+// prêmio: peças bonificadas × bônus, pago conforme a regra (meta do nível, meta geral/da linha ou independente)
+function cpPremio(c, D, U, real, proj, meta, cv, ix){
+  var cf = c.cfg || {}, regra = cf.regra || 'todo', segs = c.segs || [], fat = real > 0 && proj!==null ? proj/real : null, B = +cf.bonus || 0;
+  if(regra==='nivel' && !U) regra = 'todo';
   var R = {}; (D.segs||[]).forEach(function(r){ R[r[0]] = r; });
-  var fat = real > 0 && proj!==null ? proj/real : null, cr = 1+(+c.cresc||0)/100, totG = 0, totP = 0, nOk = 0;
+  var cr = 1+(+c.cresc||0)/100;
+  var L = segs.map(function(g, i){ var r = R[i] || [], v = cv(r[ix]), b = c.meta_tipo==='base' ? cv(r[ix+3]) : null, mt = +g.meta || (c.meta_tipo==='base' && b > 0 ? b*cr : null);
+    return {v:v, b:b, mt:mt, ok: mt ? v >= mt : null, okP: mt && fat!==null ? v*fat >= mt : null, gar:0, prev:0}; });
+  var nU = U ? U.us.length : 0, PU = []; for(var k = 0; k < nU; k++) PU.push({gar:0, prev:0});
+  var geralOk = meta ? real >= meta : null, geralP = meta && proj!==null ? proj >= meta : null;
+  function paga(i, k, proj_){   // a linha i da unidade k paga?
+    if(regra==='livre') return true;
+    if(regra==='nivel'){ var u = k >= 0 ? U.us[k] : null; if(!u || !u.mt) return false; return proj_ ? (fat!==null && u.v*fat >= u.mt) : u.v >= u.mt; }
+    if(i >= 0 && L[i].mt) return proj_ ? !!L[i].okP : !!L[i].ok;
+    if(geralOk===null) return true;
+    return proj_ ? !!geralP : geralOk;
+  }
+  function soma(i, k, din){
+    if(!(din > 0)) return;
+    var g = paga(i, k, false) ? din : 0, p = g ? din*(fat!==null ? fat : 1) : (paga(i, k, true) && fat!==null ? din*fat : 0);
+    if(i >= 0){ L[i].gar += g; L[i].prev += p; } if(k >= 0 && PU[k]){ PU[k].gar += g; PU[k].prev += p; }
+    T.gar += g; T.prev += p;
+  }
+  var T = {gar:0, prev:0}, temBon = B > 0 || segs.some(function(g){ return +g.bonus > 0 || (g.extra && +g.extra.bonus > 0); });
+  var kOf = function(r0, r1){ return U ? U.chave(r0, r1) : -1; };
+  if(segs.length && !D.slc){   // consulta antiga (sem loja × canal): total de cada linha
+    (D.segs||[]).forEach(function(r){ var g = segs[r[0]]; if(!g) return; soma(r[0], -1, (+r[2]||0)*(+g.bonus||0) + (+r[7]||0)*(g.extra && +g.extra.bonus || 0)); });
+  } else if(segs.length){
+    (D.slc||[]).forEach(function(r){ var g = segs[r[0]]; if(!g) return; var xb = g.extra && +g.extra.bonus || 0;
+      soma(r[0], kOf(r[1], r[2]), (+r[6]||0)*(+g.bonus||0) + (+r[7]||0)*xb); });
+  } else if(B > 0){
+    (D.lc||[]).forEach(function(r){ soma(-1, kOf(r[0], r[1]), (+r[8]||0)*B); });
+  }
+  return {regra:regra, L:L, U:PU, T:T, temBon:temBon, fat:fat};
+}
+// linhas da campanha: cada uma apurada separadamente, com prêmio = unidades × bônus quando a linha bate a meta
+function cpSegsTabela(c, D, segs, real, proj, ix, cv, m, P){
+  var nOk = 0, RG = {nivel:'meta do nível', todo:'meta da linha', livre:'independente da meta'};
   var linhas = segs.map(function(g, i){
-    var r = R[i] || [], v = cv(r[ix]), b = c.meta_tipo==='base' ? cv(r[ix+3]) : null, q = +r[2] || 0, qp = fat!==null ? q*fat : null;
-    var mt = +g.meta || (c.meta_tipo==='base' && b > 0 ? b*cr : null), p = mt ? v/mt*100 : null, pj = mt && fat!==null ? v*fat/mt*100 : null, bon = +g.bonus || 0;
-    var xq = +r[7] || 0, xb = g.extra && +g.extra.bonus || 0, adic = xq*xb;   // itens com bônus adicional (ex.: amortecedor+5)
-    var ok = mt && v >= mt, garantido = ok && bon ? q*bon + adic : 0, previsto = !ok && bon && pj!==null && pj >= 100 ? (qp + 0)*bon + (fat!==null ? xq*fat*xb : 0) : 0;
-    totG += garantido; totP += garantido || previsto; if(ok) nOk++;
-    var pr = !bon ? '<span class="note-muted">—</span>' : (ok ? '<b class="vh-up">'+fmtMoney(garantido)+'</b><small>meta batida</small>' :
-      (previsto ? '<b style="color:var(--warning)">'+fmtMoney(previsto)+'</b><small>previsto, se mantiver o ritmo</small>' : '<b class="vh-dn">R$ 0</b><small>'+(mt ? 'faltam '+cpVal(m, Math.max(0, mt-v)) : 'sem meta')+'</small>'));
+    var l = P.L[i], v = l.v, b = l.b, mt = l.mt, p = mt ? v/mt*100 : null, pj = mt && P.fat!==null ? v*P.fat/mt*100 : null, bon = +g.bonus || 0, xb = g.extra && +g.extra.bonus || 0;
+    if(l.ok) nOk++;
+    var pr = !(bon || xb) ? '<span class="note-muted">—</span>' : (l.gar > 0 ? '<b class="vh-up">'+fmtMoney(l.gar)+'</b><small>'+(l.prev > l.gar + 0.5 ? 'previsto '+fmtMoney(l.prev) : 'garantido')+'</small>' :
+      (l.prev > 0 ? '<b style="color:var(--warning)">'+fmtMoney(l.prev)+'</b><small>previsto, se mantiver o ritmo</small>' : '<b class="vh-dn">R$ 0</b><small>'+(mt && v < mt ? 'faltam '+cpVal(m, Math.max(0, mt-v)) : 'nada a pagar ainda')+'</small>'));
     return '<tr><td><b>'+escapeHtml(g.nome)+'</b><small>'+(g.produtos||[]).length+' produto'+((g.produtos||[]).length>1?'s':'')+'</small></td>' +
       (c.meta_tipo==='base' ? '<td>'+cpVal(m, b||0)+'</td>' : '') + '<td>'+(mt ? cpVal(m, mt) : '—')+'</td><td>'+cpVal(m, v)+'</td>' +
       '<td>'+(p!==null ? '<b style="color:'+vhCorTend(p)+'">'+vhP(p)+'</b>' : '—')+'</td><td>'+(pj!==null ? '<span style="color:'+vhCorTend(pj)+'">'+vhP(pj)+'</span>' : '—')+'</td>' +
       '<td>'+(bon ? fmtMoney2(bon) : '—')+(xb ? '<small>+'+fmtMoney2(xb)+' em '+(g.extra.produtos||[]).length+' itens</small>' : '')+'</td><td class="cp-pr">'+pr+'</td></tr>';
   });
-  var temBon = segs.some(function(g){ return +g.bonus > 0; });
-  return '<div class="vx-card" style="margin-bottom:14px;"><div class="vx-ct">Linhas da campanha</div><div class="vx-cs">Cada linha é apurada separadamente: só paga o bônus a linha que bater a própria meta · '+nOk+' de '+segs.length+' batida'+(nOk===1?'':'s')+
-    (temBon ? ' · prêmio garantido <b class="vh-up">'+fmtMoney(totG)+'</b> · previsto no fim <b>'+fmtMoney(totP)+'</b>' : '')+'</div>' +
+  return '<div class="vx-card" style="margin-bottom:14px;"><div class="vx-ct">Linhas da campanha</div><div class="vx-cs">Cada linha é apurada separadamente · '+nOk+' de '+segs.length+' batida'+(nOk===1?'':'s')+
+    (P.temBon ? ' · bônus pela '+RG[P.regra]+' · prêmio garantido <b class="vh-up">'+fmtMoney(P.T.gar)+'</b> · previsto no fim <b>'+fmtMoney(P.T.prev)+'</b>' : '')+'</div>' +
     '<div class="vx-scroll"><table class="vx-tbl cp-tbl cp-segt"><thead><tr><th>Linha</th>'+(c.meta_tipo==='base' ? '<th>Base</th>' : '')+'<th>Meta</th><th>Realizado</th><th>Atingido</th><th>Projeção</th><th>Bônus/un.</th><th>Prêmio</th></tr></thead><tbody>'+linhas.join('')+'</tbody></table></div>' +
-    (temBon ? '<p class="note-muted" style="font-size:11px; margin:6px 0 0;">Prêmio = unidades vendidas × bônus por unidade. A GM limita o pagamento ao estoque informado no formulário dela, que não está no painel.</p>' : '')+'</div>';
+    (P.temBon ? '<p class="note-muted" style="font-size:11px; margin:6px 0 0;">Prêmio = peças bonificadas vendidas × bônus por peça. A GM limita o pagamento ao estoque informado no formulário dela, que não está no painel.</p>' : '')+'</div>';
+}
+// unidades do nível de participação
+function cpUnidTabela(c, U, P, m){
+  var NV = {canal:'Canal', loja:'Loja', divisao:'Divisão'}, nOk = 0;
+  var rows = U.us.map(function(u, k){
+    var p = u.mt ? u.v/u.mt*100 : null, pj = u.mt && P.fat!==null ? u.v*P.fat/u.mt*100 : null, pr = P.U[k] || {gar:0, prev:0};
+    if(p!==null && p >= 100) nOk++;
+    var lj = c.cfg.nivel==='divisao' ? '<small>'+u.ids.map(function(id){ return escapeHtml(dimNome('loja', id)); }).join(', ')+'</small>' : '';
+    return '<tr><td><b>'+escapeHtml(u.nome)+'</b>'+lj+'</td>'+(c.meta_tipo==='base' ? '<td>'+cpVal(m, u.b)+'</td>' : '')+'<td>'+(u.mt ? cpVal(m, u.mt) : '—')+'</td><td>'+cpVal(m, u.v)+'</td>' +
+      '<td>'+(p!==null ? '<b style="color:'+vhCorTend(p)+'">'+vhP(p)+'</b>' : '—')+'</td><td>'+(pj!==null ? '<span style="color:'+vhCorTend(pj)+'">'+vhP(pj)+'</span>' : '—')+'</td>' +
+      (P.temBon ? '<td class="cp-pr">'+(pr.gar > 0 ? '<b class="vh-up">'+fmtMoney(pr.gar)+'</b>'+(pr.prev > pr.gar + 0.5 ? '<small>previsto '+fmtMoney(pr.prev)+'</small>' : '') : (pr.prev > 0 ? '<b style="color:var(--warning)">'+fmtMoney(pr.prev)+'</b><small>previsto</small>' : '<b class="vh-dn">R$ 0</b>'))+'</td>' : '')+'</tr>';
+  }).join('');
+  var semMeta = U.us.some(function(u){ return !u.mt; });
+  return '<div class="vx-card" style="margin-bottom:14px;"><div class="vx-ct">Por '+NV[c.cfg.nivel].toLowerCase()+'</div><div class="vx-cs">'+nOk+' de '+U.us.length+' bateram a meta'+(P.temBon ? ' · prêmio garantido <b class="vh-up">'+fmtMoney(P.T.gar)+'</b> · previsto no fim <b>'+fmtMoney(P.T.prev)+'</b>' : '')+(semMeta && P.regra==='nivel' ? ' · sem meta, a unidade não recebe bônus' : '')+'</div>' +
+    '<div class="vx-scroll"><table class="vx-tbl cp-tbl cp-segt"><thead><tr><th>'+NV[c.cfg.nivel]+'</th>'+(c.meta_tipo==='base' ? '<th>Base</th>' : '')+'<th>Meta</th><th>Realizado</th><th>Atingido</th><th>Projeção</th>'+(P.temBon ? '<th>Prêmio</th>' : '')+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
 function cpGrafico(dias, meta, pTot, proj, c, D, ix, cv){
   var n = dias.length; if(!n) return '';
@@ -11232,11 +11318,15 @@ function cpGrafico(dias, meta, pTot, proj, c, D, ix, cv){
 /* ---------- cadastro ---------- */
 function cpNovaEd(c){
   var h = new Date(), i = new Date(h.getFullYear(), h.getMonth(), 1), f = new Date(h.getFullYear(), h.getMonth()+1, 0);
-  var e = c ? JSON.parse(JSON.stringify(c)) : {id:null, nome:'', descricao:'', ini:isoDia(i), fim:isoDia(f), f:{}, metrica:'fat', meta_tipo:'fixa', meta_valor:null, base_ini:null, base_fim:null, cresc:null, ativo:true, segs:[]};
-  e.f = e.f || {}; var pnL = function(l){ return (l||[]).map(function(id){ return (PRODINFO[id]||{}).pn || ''; }).filter(Boolean).join(' '); };
+  var e = c ? JSON.parse(JSON.stringify(c)) : {id:null, nome:'', descricao:'', ini:isoDia(i), fim:isoDia(f), f:{}, metrica:'fat', meta_tipo:'fixa', meta_valor:null, base_ini:null, base_fim:null, cresc:null, ativo:true, segs:[], tipo:CP_ABA_TIPO[CP.aba]||'gm'};
+  e.f = e.f || {}; e.tipo = e.tipo || 'gm';
+  var cf = e.cfg && typeof e.cfg==='object' ? e.cfg : {};
+  e.cfg = {bonif: Array.isArray(cf.bonif) ? cf.bonif : [], bonus: cf.bonus || null, nivel: cf.nivel || 'todo', regra: cf.regra || 'todo',
+    unidades: (Array.isArray(cf.unidades) ? cf.unidades : []).map(function(u){ return {nome:u.nome||'', ids:(u.ids||[]).slice(), meta:u.meta||null}; })}; var pnL = function(l){ return (l||[]).map(function(id){ return (PRODINFO[id]||{}).pn || ''; }).filter(Boolean).join(' '); };
   e.segs = (e.segs||[]).map(function(g){ return {nome:g.nome||'', txt:pnL(g.produtos), meta:g.meta, bonus:g.bonus, xtxt:pnL(g.extra && g.extra.produtos), xbonus:g.extra ? g.extra.bonus : null}; }); return e;
 }
 function cpAbrir(c){
+  document.getElementById('cpSegs').innerHTML = ''; var nb = document.getElementById('cpNiv'); nb.innerHTML = ''; nb.removeAttribute('data-nv');
   CP.ed = cpNovaEd(c); var e = CP.ed;
   document.getElementById('cpNome').value = e.nome || ''; document.getElementById('cpDesc').value = e.descricao || '';
   document.getElementById('cpIni').value = String(e.ini).slice(0,10); document.getElementById('cpFim').value = String(e.fim).slice(0,10);
@@ -11245,6 +11335,8 @@ function cpAbrir(c){
   document.getElementById('cpCresc').value = e.cresc!==null && e.cresc!==undefined ? e.cresc : '';
   document.getElementById('cpAtivo').checked = e.ativo!==false;
   document.getElementById('cpProd').value = (e.f.produto||[]).map(function(id){ return (PRODINFO[id]||{}).pn || ''; }).filter(Boolean).join(' ');
+  document.getElementById('cpBonif').value = (e.cfg.bonif||[]).map(function(id){ return (PRODINFO[id]||{}).pn || ''; }).filter(Boolean).join(' ');
+  document.getElementById('cpBonus').value = e.cfg.bonus || ''; document.getElementById('cpBonifMsg').textContent = '';
   document.getElementById('cpProdMsg').textContent = ''; document.getElementById('cpMsg').textContent = '';
   cpFormDesenhar();
   var fm = document.getElementById('cpForm'); fm.hidden = false; fm.scrollIntoView({block:'start', behavior:'smooth'});
@@ -11252,14 +11344,19 @@ function cpAbrir(c){
 }
 function cpFormDesenhar(){
   if(document.querySelector('#cpSegs .cp-seg')) cpSegsLer();
+  cpNivLer();
   var e = CP.ed;
-  [['cpMetrica', e.metrica], ['cpTipo', e.meta_tipo]].forEach(function(x){ Array.prototype.forEach.call(document.querySelectorAll('#'+x[0]+' [data-v]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-v')===x[1])); }); });
+  if(e.cfg.nivel==='todo' && e.cfg.regra==='nivel') e.cfg.regra = 'todo';
+  [['cpMetrica', e.metrica], ['cpTipo', e.meta_tipo], ['cpTipoC', e.tipo], ['cpNivel', e.cfg.nivel], ['cpRegra', e.cfg.regra]].forEach(function(x){ Array.prototype.forEach.call(document.querySelectorAll('#'+x[0]+' [data-v]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-v')===x[1])); }); });
   document.getElementById('cpFixa').hidden = e.meta_tipo!=='fixa'; document.getElementById('cpBase').hidden = e.meta_tipo!=='base';
   document.getElementById('cpUn').textContent = e.metrica==='qtd' ? '(peças)' : '(R$)';
   var ch = [];
   Object.keys(e.f).forEach(function(k){ if(k==='produto') return; (e.f[k]||[]).forEach(function(id){ var d = CP_DIMS.filter(function(x){ return x[0]===k; })[0];
     ch.push('<button type="button" class="u-aba" aria-pressed="true" data-k="'+k+'" data-id="'+id+'" title="Remover">'+escapeHtml((d ? d[1] : k)+': '+(d ? dimNome(k, id) : id))+'<span class="ra-x">×</span></button>'); }); });
-  cpSegsDesenhar();
+  cpSegsDesenhar(); cpNivDesenhar();
+  document.querySelector('#cpRegra [data-v="nivel"]').disabled = e.cfg.nivel==='todo';
+  document.getElementById('cpRegraTxt').textContent = {nivel:'Cada unidade do nível recebe o bônus das peças bonificadas que vendeu quando bate a própria meta.',
+    todo:'Paga quando a campanha bate a meta geral; com linhas, cada linha paga quando bate a própria meta.', livre:'Paga todas as peças bonificadas vendidas, mesmo sem bater a meta.'}[e.cfg.regra];
   document.getElementById('cpFiltros').innerHTML = ch.join('') || '<span class="note-muted" style="font-size:12px;">Nenhum filtro: a campanha mede todas as vendas.</span>';
 }
 function cpSegsLer(){ Array.prototype.forEach.call(document.querySelectorAll('#cpSegs .cp-seg'), function(el, i){ var g = CP.ed.segs[i]; if(!g) return;
@@ -11279,17 +11376,54 @@ function cpSegsDesenhar(){
       '<label>Adicional R$/un.<input type="number" data-s="xbonus" min="0" step="any" value="'+(g.xbonus!==null && g.xbonus!==undefined ? g.xbonus : '')+'" placeholder="0,00"></label></div>';
   }).join('');
 }
+// nível de participação: unidades (canais, lojas ou divisões = grupos de lojas) e a meta de cada uma
+function cpNivOpcoes(k){ return ((META.dims && META.dims[k]) || []).filter(function(x){ return x[1] && x[1]!=='N/D'; }); }
+function cpNivDesenhar(){
+  var e = CP.ed, nv = e.cfg.nivel, box = document.getElementById('cpNiv'), base = e.meta_tipo==='base', un = e.metrica==='qtd' ? 'peças' : 'R$';
+  var ph = base ? 'base + cresc.' : 'meta '+un;
+  box.setAttribute('data-nv', nv);
+  if(nv==='todo'){ box.innerHTML = ''; return; }
+  if(nv==='canal' || nv==='loja'){
+    var porId = {}; e.cfg.unidades.forEach(function(u){ if(u.ids && u.ids.length===1) porId[u.ids[0]] = u; });
+    var todos = !e.cfg.unidades.length && !e.cfg.lido;
+    box.innerHTML = '<div class="note-muted" style="font-size:11.5px; margin-bottom:6px;">Marque quem participa e informe a meta de cada '+(nv==='canal' ? 'canal' : 'loja')+(base ? ' (em branco = base + crescimento)' : '')+'. A meta geral, se ficar em branco, é a soma.</div><div class="cp-nu">' +
+      cpNivOpcoes(nv).map(function(x){ var u = porId[x[0]], on = todos || !!u;
+        return '<label class="cp-nl'+(on ? '' : ' off')+'" data-nid="'+x[0]+'"><input type="checkbox" data-n="on"'+(on ? ' checked' : '')+'><span title="'+escapeHtml(x[1])+'">'+escapeHtml(x[1])+'</span><input type="number" data-n="meta" min="0" step="any" placeholder="'+ph+'" value="'+(u && u.meta ? u.meta : '')+'"></label>'; }).join('') + '</div>';
+    return;
+  }
+  var lojas = cpNivOpcoes('loja');
+  if(!e.cfg.unidades.length) e.cfg.unidades.push({nome:'', ids:[], meta:null});
+  box.innerHTML = e.cfg.unidades.map(function(u, i){
+    return '<div class="cp-dv" data-dv="'+i+'"><div class="cp-dvh"><label>Divisão<input type="text" data-n="nome" maxlength="40" placeholder="Ex.: R1" value="'+escapeHtml(u.nome||'')+'"></label>' +
+      '<label>Meta<input type="number" data-n="meta" min="0" step="any" placeholder="'+ph+'" value="'+(u.meta||'')+'"></label><button type="button" class="btn-sm" data-dvx="'+i+'" title="Remover a divisão">×</button></div>' +
+      '<div class="u-abas">'+lojas.map(function(x){ return '<button type="button" class="u-aba" data-dl="'+x[0]+'" aria-pressed="'+((u.ids||[]).indexOf(x[0])>=0)+'">'+escapeHtml(x[1])+'</button>'; }).join('')+'</div></div>';
+  }).join('') + '<button type="button" class="btn-sm" id="cpDvAdd">+ Adicionar divisão</button>';
+}
+function cpNivLer(){
+  var e = CP.ed; if(!e) return; var nv = e.cfg.nivel, box = document.getElementById('cpNiv');
+  var lido = box.getAttribute('data-nv'); if(!lido || !box.innerHTML) return;
+  if(lido==='canal' || lido==='loja'){
+    var us = [];
+    Array.prototype.forEach.call(box.querySelectorAll('.cp-nl'), function(el){ if(!el.querySelector('[data-n="on"]').checked) return;
+      var id = +el.getAttribute('data-nid'), m = el.querySelector('[data-n="meta"]').value; us.push({nome:dimNome(lido, id), ids:[id], meta: m==='' ? null : +m}); });
+    e.cfg.unidades = us; e.cfg.lido = 1;
+  } else if(lido==='divisao'){
+    e.cfg.unidades = Array.prototype.map.call(box.querySelectorAll('.cp-dv'), function(el){ var m = el.querySelector('[data-n="meta"]').value;
+      return {nome: el.querySelector('[data-n="nome"]').value.trim(), meta: m==='' ? null : +m,
+        ids: Array.prototype.filter.call(el.querySelectorAll('[data-dl]'), function(b){ return b.getAttribute('aria-pressed')==='true'; }).map(function(b){ return +b.getAttribute('data-dl'); })}; });
+  }
+}
 function cpDimLista(){
   var k = document.getElementById('cpDim').value;
   document.getElementById('cpDimL').innerHTML = ((META.dims && META.dims[k]) || []).map(function(x){ return '<option value="'+escapeHtml(x[1])+'">'; }).join('');
   document.getElementById('cpDimV').value = '';
 }
 // Excel da campanha: procura em todas as abas e células os códigos que existem no cadastro de produtos
-function cpImportarXls(fl){
-  var msg = document.getElementById('cpProdMsg'); msg.textContent = 'Lendo '+fl.name+'…';
+function cpImportarXls(fl, alvo){
+  var bon = alvo==='bonif', msg = document.getElementById(bon ? 'cpBonifMsg' : 'cpProdMsg'); msg.textContent = 'Lendo '+fl.name+'…';
   Promise.all([carregarXlsx(), Promise.resolve(CP.cat || carregarCatalogo()).catch(function(){}), fl.arrayBuffer()]).then(function(r){
     CP.pn = null; var X = r[0], mp = cpPnMapa(), wb = X.read(r[2], {type:'array'}), achou = [], vistos = {}, abas = 0;
-    var atuais = cpLerProdutos().ok; atuais.forEach(function(id){ vistos[id] = 1; });
+    var atuais = cpLerProdutos(bon ? 'cpBonif' : 'cpProd').ok; atuais.forEach(function(id){ vistos[id] = 1; });
     var ach = function(v){ if(v===null || v==='') return null; var c = String(v).trim().toUpperCase(); return mp[c] || mp[c.replace(/^0+(?=\d{6,})/, '')] || mp[c.replace(/[.\-\s]/g,'')] || null; };
     // planilha com coluna de linha e de código: monta as linhas da campanha
     var grupos = {}, ordem = [], bonusG = {}, extraG = {}, naoG = [];
@@ -11298,7 +11432,7 @@ function cpImportarXls(fl){
       for(var r0 = 0; r0 < Math.min(20, L.length) && hi < 0; r0++){ var row = (L[r0]||[]).map(function(x){ return String(x).trim().toLowerCase(); });
         var c1 = row.findIndex(function(x){ return /^(c[oó]d|pn\b|part|item|refer|n[uú]mero da pe|pe[cç]a\b|pe[cç]a$)/.test(x); }), l1 = row.findIndex(function(x){ return /^(linha|segmento|fam[ií]lia|grupo|categoria)/.test(x); });
         if(c1 >= 0 && l1 >= 0){ hi = r0; ci = c1; li = l1; bi = row.findIndex(function(x){ return /b[oô]nus|pr[eê]mio/.test(x); }); oi = row.findIndex(function(x){ return /^(obs|observa)/.test(x); }); } }
-      if(hi < 0) return;
+      if(hi < 0 || bon) return;
       var atual = '';
       for(var k = hi+1; k < L.length; k++){ var rw = L[k]||[], g = String(rw[li]||'').trim() || atual; atual = g; var id = ach(rw[ci]);
         if(!id && g && String(rw[ci]||'').trim()){ naoG.push(String(rw[ci]).trim()); continue; }
@@ -11328,13 +11462,13 @@ function cpImportarXls(fl){
         t.split(/[\s,;\/]+/).forEach(function(c){ c = c.trim().toUpperCase(); var id = mp[c] || mp[c.replace(/^0+(?=\d{6,})/, '')] || mp[c.replace(/[.\-]/g,'')];
           if(id && !vistos[id]){ vistos[id] = 1; achou.push(id); } }); }); }); });
     if(!achou.length){ msg.innerHTML = '<span class="vh-dn">Nenhum código novo do cadastro encontrado em '+escapeHtml(fl.name)+'.</span>'; return; }
-    var ta = document.getElementById('cpProd'), pns = achou.map(function(id){ return PRODINFO[id].pn; });
+    var ta = document.getElementById(bon ? 'cpBonif' : 'cpProd'), pns = achou.map(function(id){ return PRODINFO[id].pn; });
     ta.value = (ta.value.trim() ? ta.value.trim()+' ' : '') + pns.join(' ');
     msg.innerHTML = '<span class="vh-up">'+achou.length+' produto'+(achou.length>1?'s':'')+' do cadastro encontrado'+(achou.length>1?'s':'')+' em '+escapeHtml(fl.name)+' ('+abas+' aba'+(abas>1?'s':'')+').</span> Confira a lista e salve.';
   }).catch(function(){ msg.innerHTML = '<span class="vh-dn">Não foi possível ler o arquivo.</span>'; });
 }
-function cpLerProdutos(){
-  var txt = document.getElementById('cpProd').value, mp = cpPnMapa(), ok = [], nao = [];
+function cpLerProdutos(campo){
+  var txt = document.getElementById(campo || 'cpProd').value, mp = cpPnMapa(), ok = [], nao = [];
   txt.split(/[\s,;]+/).filter(Boolean).forEach(function(c){ var id = mp[c.toUpperCase()]; if(id) { if(ok.indexOf(id)<0) ok.push(id); } else nao.push(c); });
   return {ok:ok, nao:nao};
 }
@@ -11353,6 +11487,9 @@ function cpSalvar2(){
   e.cresc = document.getElementById('cpCresc').value==='' ? 0 : +document.getElementById('cpCresc').value;
   e.ativo = document.getElementById('cpAtivo').checked;
   var pr = cpLerProdutos(); if(pr.ok.length) e.f.produto = pr.ok; else delete e.f.produto;
+  var pb = cpLerProdutos('cpBonif'); e.cfg.bonif = pb.ok;
+  e.cfg.bonus = document.getElementById('cpBonus').value==='' ? null : +document.getElementById('cpBonus').value;
+  cpNivLer();
   cpSegsLer();
   var mp = cpPnMapa(), naoS = [], segs = [];
   e.segs.forEach(function(g){ var ids = [];
@@ -11363,15 +11500,22 @@ function cpSalvar2(){
   if(naoS.length){ msg.textContent = 'Códigos não encontrados nas linhas: '+naoS.slice(0,12).join(', ')+(naoS.length>12 ? '…' : ''); return; }
   if(segs.some(function(g){ return !g.produtos.length; })){ msg.textContent = 'Cada linha precisa de pelo menos um código de produto.'; return; }
   if(pr.nao.length){ document.getElementById('cpProdMsg').innerHTML = '<span class="vh-dn">Códigos não encontrados no cadastro: '+escapeHtml(pr.nao.slice(0,20).join(', '))+(pr.nao.length>20 ? '…' : '')+'</span>'; msg.textContent = 'Corrija os códigos de produto.'; return; }
+  if(pb.nao.length){ document.getElementById('cpBonifMsg').innerHTML = '<span class="vh-dn">Códigos bonificados não encontrados no cadastro: '+escapeHtml(pb.nao.slice(0,20).join(', '))+(pb.nao.length>20 ? '…' : '')+'</span>'; msg.textContent = 'Corrija os códigos dos produtos bonificados.'; return; }
+  var nv = e.cfg.nivel, us = nv==='todo' ? [] : e.cfg.unidades.filter(function(u){ return u.ids && u.ids.length; });
+  if(nv!=='todo' && !us.length){ msg.textContent = nv==='divisao' ? 'Monte pelo menos uma divisão com lojas.' : 'Marque pelo menos um participante do nível.'; return; }
+  if(nv==='divisao' && us.some(function(u){ return !u.nome; })){ msg.textContent = 'Dê um nome a cada divisão (ex.: R1).'; return; }
+  if(nv==='divisao'){ var vist = {}, dup = null; us.forEach(function(u){ u.ids.forEach(function(id){ if(vist[id]) dup = dimNome('loja', id); vist[id] = 1; }); }); if(dup){ msg.textContent = 'A loja '+dup+' está em mais de uma divisão.'; return; } }
   if(!e.nome){ msg.textContent = 'Informe o nome da campanha.'; return; }
   if(!e.ini || !e.fim || e.fim < e.ini){ msg.textContent = 'Confira o período da campanha.'; return; }
-  if(e.meta_tipo==='fixa' && !(e.meta_valor > 0) && !segs.some(function(g){ return g.meta > 0; })){ msg.textContent = 'Informe a meta (geral ou das linhas).'; return; }
+  if(e.meta_tipo==='fixa' && !(e.meta_valor > 0) && !segs.some(function(g){ return g.meta > 0; }) && !us.some(function(u){ return u.meta > 0; })){ msg.textContent = 'Informe a meta (geral, das linhas ou das unidades do nível).'; return; }
   if(e.meta_tipo==='base' && (!e.base_ini || !e.base_fim || e.base_fim < e.base_ini)){ msg.textContent = 'Informe o período de comparação.'; return; }
   // R$ é gravado em reais; a consulta devolve centavos e o site converte
   msg.textContent = 'Salvando…';
   var envio = JSON.parse(JSON.stringify(e)); envio.segs = segs;
+  envio.cfg = {bonif:e.cfg.bonif, bonus: e.cfg.bonus > 0 ? e.cfg.bonus : null, nivel:nv, regra: nv==='todo' && e.cfg.regra==='nivel' ? 'todo' : e.cfg.regra,
+    unidades: us.map(function(u){ return {nome:u.nome || dimNome(nv==='canal' ? 'canal' : 'loja', u.ids[0]), ids:u.ids, meta: u.meta > 0 ? u.meta : null}; })};
   window.__NC_rpc('bi_campanha_gravar', {p:envio}).then(function(id){
-    msg.textContent = ''; document.getElementById('cpForm').hidden = true; CP.sel = id; CP.lista = null; CP.dados = {}; renderCampanhas(); toast('Campanha salva.');
+    msg.textContent = ''; document.getElementById('cpForm').hidden = true; CP.sel = id; CP.aba = CP_TIPO_ABA[e.tipo] || 'campanhas'; CP.lista = null; CP.dados = {}; renderCampanhas(); toast('Campanha salva.');
   }).catch(function(err){ msg.textContent = 'Não foi possível salvar: '+String(err && (err.message||err)).slice(0,160); });
 }
 function cpLigar(){
@@ -11406,6 +11550,19 @@ function cpLigar(){
   document.getElementById('cpSegAdd').addEventListener('click', function(){ cpSegsLer(); CP.ed.segs.push({nome:'', txt:'', meta:null, bonus:null}); cpSegsDesenhar(); });
   document.getElementById('cpSegs').addEventListener('click', function(ev){ var b = ev.target.closest('[data-sx]'); if(!b) return; cpSegsLer(); CP.ed.segs.splice(+b.getAttribute('data-sx'), 1); cpSegsDesenhar(); });
   document.getElementById('cpXlsBt').addEventListener('click', function(){ document.getElementById('cpXls').click(); });
+  document.getElementById('cpBonifXlsBt').addEventListener('click', function(){ document.getElementById('cpBonifXls').click(); });
+  document.getElementById('cpBonifXls').addEventListener('change', function(){ var fl = this.files && this.files[0]; this.value = ''; if(fl) cpImportarXls(fl, 'bonif'); });
+  document.getElementById('gmGuias').addEventListener('click', function(ev){ var b = ev.target.closest('[data-gm]'); if(!b) return; CP.aba = b.getAttribute('data-gm'); CP.sel = null; document.getElementById('cpForm').hidden = true; renderCampanhas(); });
+  document.getElementById('cpTipoC').addEventListener('click', function(ev){ var b = ev.target.closest('[data-v]'); if(b){ CP.ed.tipo = b.getAttribute('data-v'); cpFormDesenhar(); } });
+  document.getElementById('cpNivel').addEventListener('click', function(ev){ var b = ev.target.closest('[data-v]'); if(!b) return; var v = b.getAttribute('data-v');
+    if(v===CP.ed.cfg.nivel) return; cpSegsLer(); CP.ed.cfg.nivel = v; CP.ed.cfg.unidades = []; CP.ed.cfg.lido = 0; document.getElementById('cpNiv').innerHTML = '';
+    if(v!=='todo' && CP.ed.cfg.regra==='todo') CP.ed.cfg.regra = 'nivel'; cpFormDesenhar(); });
+  document.getElementById('cpRegra').addEventListener('click', function(ev){ var b = ev.target.closest('[data-v]'); if(b && !b.disabled){ CP.ed.cfg.regra = b.getAttribute('data-v'); cpFormDesenhar(); } });
+  document.getElementById('cpNiv').addEventListener('change', function(ev){ var el = ev.target.closest('.cp-nl'); if(el && ev.target.getAttribute('data-n')==='on') el.classList.toggle('off', !ev.target.checked); });
+  document.getElementById('cpNiv').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-dl]'); if(b){ b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed')!=='true')); return; }
+    if(ev.target.closest('#cpDvAdd')){ cpNivLer(); CP.ed.cfg.unidades.push({nome:'', ids:[], meta:null}); cpNivDesenhar(); return; }
+    var x = ev.target.closest('[data-dvx]'); if(x){ cpNivLer(); CP.ed.cfg.unidades.splice(+x.getAttribute('data-dvx'), 1); cpNivDesenhar(); } });
   document.getElementById('cpXls').addEventListener('change', function(){ var fl = this.files && this.files[0]; this.value = ''; if(fl) cpImportarXls(fl); });
   document.getElementById('cpPainel').addEventListener('click', function(ev){ var b = ev.target.closest('[data-cpa]'); if(!b) return;
     var c = CP.lista.filter(function(x){ return x.id===CP.sel; })[0]; if(!c) return;
@@ -11447,7 +11604,7 @@ function bindEvents(){
     diasuteis:{title:'Dias úteis', sub:'Calendário de dias úteis por loja, feriados e venda por tipo de dia'},
     precos:{title:'Preços', sub:'Simulador de preço de venda: margem pelo preço ou preço pela margem, por loja'},
     concorrencia:{title:'E-commerce', sub:'Concorrência de preços (VTEX e Peça Chevrolet) e sugestão de cadastro de produtos'},
-    gm:{title:'GM', sub:'Campanhas GM: evolução de cada campanha do boletim contra a meta'},
+    gm:{title:'Campanhas', sub:'Campanhas GM e campanhas da Nova: evolução de cada campanha contra a meta'},
     planejamento:{title:'Planejamento', sub:'Projeções e metas de vendas por ano, em formato de apresentação'},
     usuarios:{title:'Usuários', sub:'Gestão de acessos ao painel (somente BI)'},
     fontes:{title:'Configurações', sub:'Links das planilhas e origem dos dados da carga (somente BI)'}
@@ -12055,7 +12212,7 @@ var ABAS = [
   {k:'dashboard', t:'Dashboard'}, {k:'vendas', t:'Vendas'}, {k:'estoque', t:'Estoque'},
   {k:'vendedores', t:'Vendedores'}, {k:'clientes', t:'Clientes'}, {k:'diasuteis', t:'Dias úteis'},
   // restritas: só aparecem para quem as tiver marcadas no cadastro (o "todas as guias" antigo não as inclui)
-  {k:'concorrencia', t:'E-commerce', restrita:true}, {k:'precos', t:'Preços', restrita:true}, {k:'planejamento', t:'Planejamento', restrita:true}, {k:'gm', t:'GM', restrita:true}
+  {k:'concorrencia', t:'E-commerce', restrita:true}, {k:'precos', t:'Preços', restrita:true}, {k:'planejamento', t:'Planejamento', restrita:true}, {k:'gm', t:'Campanhas', restrita:true}
 ];
 var ABAS_TODAS = ABAS.map(function(a){ return a.k; });
 // abas dentro de cada guia: gravadas em profiles.abas como "guia.aba"; guia sem nenhuma = todas as abas dela
@@ -12065,7 +12222,7 @@ var SUBABAS = {
   vendedores: [{k:'consult', t:'Consultoria'}, {k:'planos', t:'Planos em andamento'}, {k:'maratona', t:'Maratona de Pontos'}],
   clientes: [{k:'analise', t:'Análise de clientes'}, {k:'disp', t:'Clientes Disponíveis'}, {k:'cidades', t:'Cidades que mais compram'}, {k:'cidmov', t:'Cidades que mais mudaram'}],
   concorrencia: [{k:'conc', t:'Concorrência'}, {k:'cad', t:'Sugestão Cadastro'}],
-  gm: [{k:'campanhas', t:'Campanhas GM'}]
+  gm: [{k:'campanhas', t:'Campanhas GM'}, {k:'nova', t:'Campanhas Nova'}]
 };
 var SUBABAS_UI = {vendas:{box:'#vxAbas', at:'data-vxaba'}, vendedores:{box:'#vdGuias', at:'data-vd'}, clientes:{box:'#cliAbas', at:'data-cliaba'}, concorrencia:{box:'#ecGuias', at:'data-ec'}, gm:{box:'#gmGuias', at:'data-gm'}};
 function subsDoPerfil(p, g){
