@@ -328,6 +328,17 @@ svg text{font-family:'Manrope', sans-serif;}
 .lo-txt i{ font-style:normal; animation:loPonto 1.2s infinite; } .lo-txt i:nth-child(2){ animation-delay:.2s; } .lo-txt i:nth-child(3){ animation-delay:.4s; }
 @keyframes loPonto{ 0%,60%,100%{ opacity:.2; } 30%{ opacity:1; } }
 @media (prefers-reduced-motion: reduce){ .lo-logo img{ animation:none; } }
+.badge-n{position:absolute; top:2px; right:1px; min-width:17px; height:17px; padding:0 4px; border-radius:99px; background:var(--critical); color:#fff; font-size:10px; font-weight:800; line-height:17px; text-align:center; border:1.5px solid var(--plane); font-family:'JetBrains Mono',monospace;}
+.badge-n[hidden]{display:none;}
+.al-pop{position:fixed; z-index:400; width:min(380px, calc(100vw - 24px)); max-height:min(520px, 75vh); display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--border-strong); border-radius:14px; box-shadow:0 18px 44px -12px rgba(0,0,0,.55);}
+.al-pop[hidden]{display:none;}
+.al-h{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:11px 14px; border-bottom:1px solid var(--border);} .al-h b{font-size:13.5px;}
+.al-l{overflow:auto; padding:4px 0;}
+.al-i{display:grid; grid-template-columns:10px minmax(0,1fr); gap:9px; padding:9px 14px; font-size:12.5px; line-height:1.4; cursor:pointer; border-bottom:1px dashed var(--border); color:var(--text-2);}
+.al-i:hover{background:var(--surface-2,var(--surface-3));} .al-i b{color:var(--text);}
+.al-i i{width:8px; height:8px; border-radius:50%; margin-top:5px; background:transparent;} .al-i.nv i{background:var(--critical);} .al-i.nv{color:var(--text);}
+.al-i small{display:block; color:var(--text-muted); font-size:11px;}
+.al-v{padding:18px 14px; font-size:12.5px; color:var(--text-muted);}
 .badge-dot{position:absolute; top:6px; right:6px; width:7px; height:7px; border-radius:50%; background:var(--critical); border:1.5px solid var(--plane);}
 
 select.tbtn{ appearance:none; -webkit-appearance:none; padding-right:28px;
@@ -2264,10 +2275,14 @@ table.data-table.vp-tbl{min-width:720px;}
           <svg class="tema-ico-escuro" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           <svg class="tema-ico-claro" viewBox="0 0 24 24" fill="none"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
         </button>
-        <button class="tbtn icon-only" id="notifBtn" aria-label="Notificações">
+        <button class="tbtn icon-only" id="notifBtn" aria-label="Alertas de metas atingidas" title="Alertas de metas atingidas">
           <svg viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <span class="badge-dot"></span>
+          <span class="badge-n" id="notifN" hidden></span>
         </button>
+        <div class="al-pop" id="alPop" hidden role="dialog" aria-label="Alertas de metas atingidas">
+          <div class="al-h"><b>Metas atingidas</b><button type="button" class="btn-sm" id="alTodas">Marcar todas como lidas</button></div>
+          <div class="al-l" id="alLista"></div>
+        </div>
         <div class="avatar" id="userAvatar" title="Perfil">RM</div>
         <button class="tbtn icon-only" id="changePassBtn" title="Trocar senha" aria-label="Trocar senha">
           <svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="15" r="4" stroke="currentColor" stroke-width="2"/><path d="M11 12l9-9M17 6l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -9504,6 +9519,7 @@ function vhDesenhar(){
   document.getElementById('vhMat').innerHTML = '<thead><tr><th>Canal</th>'+colsM.map(function(c){ return '<th title="'+escapeHtml(vhRegiao(c))+'">'+escapeHtml(c)+'</th>'; }).join('')+'<th>Grupo</th></tr></thead><tbody>'+body+'</tbody>';
   document.getElementById('vhNota').innerHTML = 'Média diária = vendas do mês até ontem ÷ dias úteis concluídos (feriados do município de cada loja; e-commerce por dias corridos). Tendência = média diária × dias úteis do mês. ▲▼ = venda do dia comparada com a média diária.' +
     ' Metas mensais da planilha (aba meta_lojas).' + (pode ? ' Loja sem meta na planilha: clique na meta do quadro para definir (vale para o mês todo).' : '');
+  try{ alGerar(d, obj, dia, lojas); }catch(e){}
   // resumo para o Painel (tela de acompanhamento)
   VH.sum = {E: eOk ? E : null, EL:EL, dia:dia, ehHoje:ehHoje, semana:semana, dD:dD, ontem:ontem, gTot:gTot, rG:rG, rAtc:rAtc, rEcm:rEcm, rAE:rAE, rotAE:rotAE, du:du, dc:dc, nObj:nObj, temObAtc:temObAtc,
     lojas: lojas.map(function(l){ return {nome:l, tag:vhRegiao(l), r:calc(junta([l], ['ATACADO']), duLoja(l), +obj[l] || null)}; }),
@@ -9511,6 +9527,73 @@ function vhDesenhar(){
     ser: vhSerie(d, dia, mes, dD, lojas), meta: {atc: rAE===rEcm ? null : rAtc.ob, ecm: rAE===rAtc ? null : rEcm.ob, ae: rAE.ob, du: du.mes, dc: dc.mes}};
   vhLigar();
   if(VH.modo==='painel') vhPainel(); else vhResumo();
+}
+/* ---------- Sino: alertas de metas atingidas (lojas no atacado, e-commerce e grupo), lidos por usuário ----------
+   Montados com as vendas do mês do Dashboard (sem filtros do painel), dentro do acesso de cada usuário. */
+var AL = {itens:[], lidos:{}, pedidos:{}, semRpc:false};
+function alChaveLocal(){ return 'nc_alertas_lidos_'+((CURRENT_USER && CURRENT_USER.id) || (CURRENT_PROFILE && CURRENT_PROFILE.id) || 'x'); }
+function alLocal(){ try{ return JSON.parse(localStorage.getItem(alChaveLocal()) || '{}') || {}; }catch(e){ return {}; } }
+function alGerar(d, obj, dia, lojas){
+  var f = painelFiltros(null); if(Object.keys(f).some(function(k){ return Array.isArray(f[k]) && f[k].length; })) return;   // filtros mudam os números: não gera
+  if(!obj || !Object.keys(obj).length) return;
+  var mes = dia.slice(0,7)+'-01', dD = vhDt(dia), ini = vhDt(mes), fimMes = new Date(dD.getFullYear(), dD.getMonth()+1, 0, 12), nDias = fimMes.getDate();
+  var dias = {}, V = {};   // V[chave][dia] = faturamento
+  (d.linhas||[]).forEach(function(r){ var ds = String(r[0]).slice(0,10); if(ds < mes || ds > dia) return; dias[ds] = 1;
+    var canal = String(dimNome('canal', r[3])||'').toUpperCase(), l = dimNome('loja', r[1]), f2 = c2(r[5]);
+    var k = canal==='ATACADO' ? l : (canal==='ECOMMERCE' ? 'ECOMMERCE' : null); if(!k) return;
+    (V[k] = V[k] || {})[ds] = (V[k][ds] || 0) + f2; });
+  var lista = Object.keys(dias).sort(), ult7 = lista.slice(-7), it = [], br = function(ds){ return fmtDateFull(vhDt(ds)).slice(0,5); };
+  var nome = function(k){ return k==='ECOMMERCE' ? 'E-commerce' : k; };
+  var temObAtc = lojas.length && lojas.every(function(l){ return +obj[l] > 0; });
+  var unid = lojas.filter(function(l){ return +obj[l] > 0; }).concat(+obj.ECOMMERCE > 0 ? ['ECOMMERCE'] : []);
+  unid.forEach(function(k){
+    var ob = +obj[k], ecm = k==='ECOMMERCE', du = ecm ? nDias : diasUteisLoja(k, ini, fimMes), md = du ? ob/du : 0, ac = 0, bateu = false;
+    lista.forEach(function(ds){ var v = (V[k] && V[k][ds]) || 0; ac += v;
+      var util = ecm || (LOJA_INFO[k] && !LOJA_INFO[k].fisica) || tipoDia(vhDt(ds), LOJA_MUNICIPIO[k]||null)==='util';
+      if(util && md > 0 && v >= md && ult7.indexOf(ds) >= 0)
+        it.push({k:'d|'+ds+'|'+k, dt:ds, o:1, t:'<b>'+escapeHtml(nome(k))+'</b> bateu a meta do dia '+br(ds), s:fmtMoney(v)+' de '+fmtMoney(md)+' ('+vhP(v/md*100)+')'});
+      if(!bateu && ac >= ob){ bateu = true; it.push({k:'m|'+mes.slice(0,7)+'|'+k, dt:ds, o:2, t:'<b>'+escapeHtml(nome(k))+'</b> atingiu a meta do mês em '+br(ds), s:fmtMoney(ac)+' de '+fmtMoney(ob)+' ('+vhP(ac/ob*100)+')'}); }
+    });
+  });
+  if(temObAtc && +obj.ECOMMERCE > 0){   // grupo: atacado das lojas + e-commerce
+    var obG = lojas.reduce(function(t, l){ return t + (+obj[l]); }, 0) + (+obj.ECOMMERCE), acG = 0;
+    for(var i = 0; i < lista.length; i++){ var ds = lista[i]; lojas.concat(['ECOMMERCE']).forEach(function(k){ acG += (V[k] && V[k][ds]) || 0; });
+      if(acG >= obG){ it.push({k:'m|'+mes.slice(0,7)+'|GRUPO', dt:ds, o:3, t:'<b>Grupo</b> (atacado + e-commerce) atingiu a meta do mês em '+br(ds), s:fmtMoney(acG)+' de '+fmtMoney(obG)+' ('+vhP(acG/obG*100)+')'}); break; } }
+  }
+  it.sort(function(a, b){ return a.dt < b.dt ? 1 : (a.dt > b.dt ? -1 : b.o - a.o); });
+  AL.itens = it.slice(0, 60);
+  var falta = AL.itens.map(function(x){ return x.k; }).filter(function(k){ return !(k in AL.lidos) && !AL.pedidos[k]; });
+  if(!falta.length){ alDesenhar(); return; }
+  falta.forEach(function(k){ AL.pedidos[k] = 1; });
+  var loc = alLocal(); falta.forEach(function(k){ if(loc[k]) AL.lidos[k] = 1; });
+  (AL.semRpc ? Promise.reject('semRpc') : window.__NC_rpc('bi_alertas_lidos', {p_chaves:falta})).then(function(lidos){
+    (lidos||[]).forEach(function(k){ AL.lidos[k] = 1; }); falta.forEach(function(k){ if(!(k in AL.lidos)) AL.lidos[k] = 0; });
+  }).catch(function(e){ if(/bi_alertas|schema cache|does not exist/i.test(String(e && (e.message||e)))) AL.semRpc = true; falta.forEach(function(k){ if(!(k in AL.lidos)) AL.lidos[k] = 0; }); })
+    .then(alDesenhar);
+}
+function alNaoLidos(){ return AL.itens.filter(function(x){ return AL.lidos[x.k]===0; }); }
+function alDesenhar(){
+  var n = alNaoLidos().length, b = document.getElementById('notifN');
+  if(b){ b.hidden = !n; b.textContent = n > 99 ? '99+' : String(n); }
+  var bt = document.getElementById('notifBtn'); if(bt) bt.setAttribute('aria-label', n ? n+' alerta'+(n>1?'s':'')+' de meta não lido'+(n>1?'s':'') : 'Alertas de metas atingidas');
+  var L = document.getElementById('alLista'); if(!L) return;
+  L.innerHTML = AL.itens.length ? AL.itens.map(function(x){ return '<div class="al-i'+(AL.lidos[x.k]===0 ? ' nv' : '')+'" data-al="'+escapeHtml(x.k)+'"><i></i><div>'+x.t+'<small>'+x.s+'</small></div></div>'; }).join('')
+    : '<div class="al-v">Nenhuma meta atingida nos últimos dias. Os alertas aparecem quando uma loja, o e-commerce ou o grupo bate a meta do dia ou do mês.</div>';
+  document.getElementById('alTodas').disabled = !n;
+}
+function alMarcar(ks){
+  ks = ks.filter(function(k){ return AL.lidos[k]===0; }); if(!ks.length) return;
+  ks.forEach(function(k){ AL.lidos[k] = 1; }); alDesenhar();
+  var loc = alLocal(); ks.forEach(function(k){ loc[k] = 1; }); try{ localStorage.setItem(alChaveLocal(), JSON.stringify(loc)); }catch(e){}
+  if(!AL.semRpc) window.__NC_rpc('bi_alertas_marcar', {p_chaves:ks}).catch(function(){});
+}
+function alAbrir(){
+  var pop = document.getElementById('alPop'), bt = document.getElementById('notifBtn');
+  if(!pop.hidden){ pop.hidden = true; return; }
+  if(pop.parentNode!==document.body) document.body.appendChild(pop);   // fora do cabeçalho (que cria outro contexto de posição)
+  alDesenhar(); pop.hidden = false;
+  var r = bt.getBoundingClientRect(), w = pop.offsetWidth;
+  pop.style.top = (r.bottom + 8)+'px'; pop.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.right - w))+'px';
 }
 function vhCarga(){ return VH.carga || REAL.carga; }
 /* ---------- séries diárias do mês para os minigráficos do Dashboard ---------- */
@@ -11691,10 +11774,13 @@ function bindEvents(){
     var mt = document.querySelector('meta[name="theme-color"]'); if(mt) mt.setAttribute('content', claro ? '#ffffff' : '#0b0f17');
     if(state.currentView==='vendas') renderVendasAbas();
   });
-  document.getElementById('notifBtn').addEventListener('click', function(){
-    var n = estoqueProducts().filter(function(p){ var st=stockStatus(p); return !p.isBucket && (st==='critico'||st==='zerado'); }).length;
-    toast(n ? n+' produto'+(n>1?'s':'')+' com estoque crítico ou zerado nos filtros atuais.' : 'Nenhum produto com estoque crítico nos filtros atuais.');
-  });
+  document.getElementById('notifBtn').addEventListener('click', function(ev){ ev.stopPropagation(); alAbrir(); });
+  document.getElementById('alPop').addEventListener('click', function(ev){ ev.stopPropagation(); });
+  document.getElementById('alLista').addEventListener('click', function(ev){ var it = ev.target.closest('[data-al]'); if(it) alMarcar([it.getAttribute('data-al')]); });
+  document.getElementById('alTodas').addEventListener('click', function(){ alMarcar(AL.itens.map(function(x){ return x.k; })); });
+  document.addEventListener('click', function(ev){ var pop = document.getElementById('alPop'); if(!pop.hidden && !ev.target.closest('#alPop') && !ev.target.closest('#notifBtn')) pop.hidden = true; });
+  document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') document.getElementById('alPop').hidden = true; });
+  alDesenhar();
   document.getElementById('userAvatar').addEventListener('click', function(){ if(CURRENT_USER) toast('Perfil: '+CURRENT_USER.nome+' · '+CURRENT_USER.perfil); });
 
   // refresh
