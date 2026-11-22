@@ -498,6 +498,10 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vp{--vp-gap:12px;} .vp:fullscreen{background:var(--bg); padding:18px 22px; overflow:auto;}
 .vp-top{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:var(--vp-gap);}
 .vp-tt{flex:1 1 280px; min-width:0;} .vp-tit{font-family:'Sora',sans-serif; font-size:22px; font-weight:800;} .vp-sub{font-size:12px; color:var(--text-muted); margin-top:2px;}
+.vp-tr{display:flex; align-items:center; gap:8px; min-width:0;}
+.vp-logo{flex:none; width:18px; height:18px; border-radius:5px; background:var(--pbi-grad); position:relative; opacity:.85;}
+.vp-logo::after{content:""; position:absolute; inset:17%; background:#151515; -webkit-mask:url(icons/nova-mark.png) center/contain no-repeat; mask:url(icons/nova-mark.png) center/contain no-repeat;}
+.vp.bf .vp-logo{background:transparent; opacity:1;} .vp.bf .vp-logo::after{inset:0; background:var(--bf2);}
 .vp-rel{display:flex; flex-direction:column; align-items:flex-end; line-height:1.15;} .vp-rel b{font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700;} .vp-rel span{font-size:11px; color:var(--text-muted);}
 .vp-rel span.novo{color:var(--good); font-weight:700;}
 .vp-bts{display:flex; gap:6px;}
@@ -2479,7 +2483,7 @@ table.data-table.vp-tbl{min-width:720px;}
       <!-- ============ VISÃO GERAL ============ -->
       <section class="view-panel" data-view-panel="dashboard">
         <div id="vhModoPainel" class="vp">
-          <div class="vp-top"><div class="vp-tt"><div class="vp-tit" id="vpTit">Vendas de hoje</div><div class="vp-sub" id="vpSub"></div></div>
+          <div class="vp-top"><div class="vp-tt"><div class="vp-tr"><span class="vp-logo" aria-hidden="true"></span><div class="vp-tit" id="vpTit">Vendas de hoje</div></div><div class="vp-sub" id="vpSub"></div></div>
             <div class="vp-rel"><b id="vpHora">--:--</b><span id="vpProx">atualiza sozinho</span></div>
             <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="1" aria-pressed="true" title="Painel geral do dia">Visual 1</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual 2</button></div><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
           <div id="vpBody"><p class="note-muted status-txt">Carregando o painel…</p></div>
