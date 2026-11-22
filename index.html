@@ -726,6 +726,7 @@ table.vh-mat{width:100%; border-collapse:collapse; font-size:12px; min-width:880
 .vx-ct{font-family:'Sora',sans-serif; font-size:13.5px; font-weight:700; margin-bottom:2px;}
 .vx-cs{font-size:11px; color:var(--text-muted); margin-bottom:10px;}
 .vx-cw{position:relative; height:300px;}
+.vx-le-h{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;} #vxLEmodo button{font-size:12px; padding:5px 12px;}
 .vx-cw .vx-vazio{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--text-muted);}
 .vx-leg{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-muted);}
 .vx-leg span{display:inline-flex; align-items:center; gap:5px;}
@@ -2533,6 +2534,9 @@ table.data-table.vp-tbl{min-width:720px;}
           <div class="vx-card"><div class="vx-ct">Faturamento por Loja</div><div class="vx-cs">Cor da barra = canal principal da loja &middot; clique na barra ou no canal da legenda para filtrar</div><div class="vx-cw"><canvas id="vxLF"></canvas></div><div class="vx-leg" id="vxLojaLeg"></div></div>
           <div class="vx-card"><div class="vx-ct">Margem % por Loja</div><div class="vx-cs">Rentabilidade &middot; verde/ciano acima de 15%, âmbar de 10% a 15%, vermelho abaixo de 10%</div><div class="vx-cw"><canvas id="vxLM"></canvas></div></div>
         </div>
+        <div class="vx-card"><div class="vx-le-h"><div><div class="vx-ct">Evolução por loja no período</div><div class="vx-cs" id="vxLEsub">Faturamento de cada loja ao longo do período escolhido &middot; clique no nome da loja para esconder ou mostrar a linha</div></div>
+          <div class="seg" id="vxLEmodo"><button type="button" data-v="per" aria-pressed="true">Por período</button><button type="button" data-v="acum" aria-pressed="false">Acumulado</button></div></div>
+          <div class="vx-cw" style="height:340px;"><canvas id="vxLE"></canvas></div></div>
         <div class="vx-card"><div class="vx-ct">Tabela &mdash; Lojas</div><div class="vx-cs">Dados filtrados &middot; clique no cabeçalho para ordenar e na linha para filtrar</div><div class="vx-scroll"><table class="vx-tbl" id="vxTL"></table></div></div>
       </div>
 
@@ -10176,6 +10180,47 @@ function vhLigar(){
   });
 }
 
+// evolução no período: uma linha por loja (bi_lojas_periodo; dia, semana ou mês conforme o tamanho do período)
+var VX_LE_COR = ['#22d3ee','#a78bfa','#f59e0b','#10b981','#f43f5e','#3b82f6','#eab308','#ec4899','#14b8a6','#f97316','#8b5cf6','#84cc16','#06b6d4','#e879f9','#94a3b8','#fb7185'];
+function vxLojasEvo(){
+  var el = document.getElementById('vxLE'); if(!el) return;
+  var f = painelFiltros(null), per = painelPeriodo(), key = JSON.stringify([f, per.ini, per.fim]);
+  VX.le = VX.le || {modo:'per'};
+  if(VX.le.key!==key){
+    if(VX.le.pend===key) return; VX.le.pend = key;
+    rpcMemo('bi_lojas_periodo', {f:f, per:{ini:per.ini, fim:per.fim}}).then(function(d){ VX.le.d = d || {}; VX.le.erro = null; })
+      .catch(function(e){ VX.le.d = null; VX.le.erro = /bi_lojas_periodo|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'; })
+      .then(function(){ if(VX.le.pend!==key) return; VX.le.pend = null; VX.le.key = key; if(state.currentView==='vendas' && VX.aba==='lojas') vxLojasEvo(); });
+    return;
+  }
+  vxDestruir('vxLE');
+  var wrap = el.parentNode, vz = wrap.querySelector('.vx-vazio'); if(vz) vz.remove();
+  var msg = function(t){ el.style.display = 'none'; var v = document.createElement('div'); v.className = 'vx-vazio'; v.textContent = t; wrap.appendChild(v); };
+  if(VX.le.erro) return msg(VX.le.erro==='falta' ? 'O banco ainda não tem a consulta deste gráfico (rode o SQL lojas_periodo.sql).' : 'Não foi possível carregar a evolução agora.');
+  var d = VX.le.d || {}, L = d.linhas || [];
+  if(!L.length) return msg('Sem vendas para os filtros atuais.');
+  if(!window.Chart){ vxChartLib().then(vxLojasEvo).catch(function(){}); return; }
+  el.style.display = '';
+  var pers = [], ip = {}, tot = {}, val = {};
+  L.forEach(function(r){ var p = String(r[0]).slice(0,10), l = dimNome('loja', r[1]) || 'N/D', v = c2(r[2]);
+    if(ip[p]===undefined){ ip[p] = pers.length; pers.push(p); } tot[l] = (tot[l]||0) + v; (val[l] = val[l] || {})[p] = v; });
+  pers.sort(); pers.forEach(function(p, i){ ip[p] = i; });
+  var lojas = Object.keys(tot).filter(function(l){ return tot[l] > 0.5; }).sort(function(a, b){ return tot[b] - tot[a]; });
+  var gran = d.gran || 'dia', MES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  var rot = pers.map(function(p){ var x = vhDt(p); return gran==='mes' ? MES[x.getMonth()]+'/'+String(x.getFullYear()).slice(2) : (gran==='semana' ? 'sem. ' : '')+fmtDateFull(x).slice(0,5); });
+  var acum = VX.le.modo==='acum';
+  document.getElementById('vxLEsub').innerHTML = 'Faturamento '+(acum ? 'acumulado' : 'por '+gran)+' de cada loja de '+fmtDateFull(vhDt(per.ini)).slice(0,5)+' a '+fmtDateFull(vhDt(per.fim)).slice(0,5)+' &middot; clique no nome da loja para esconder ou mostrar a linha';
+  var ds = lojas.map(function(l, i){ var a = 0, cor = VX_LE_COR[i % VX_LE_COR.length];
+    return {label:l, data: pers.map(function(p){ var v = (val[l] && val[l][p]) || 0; a += v; return acum ? a : v; }), borderColor:cor, backgroundColor:cor, borderWidth:2,
+      pointRadius: pers.length > 40 ? 0 : 2, pointHoverRadius:4, tension:.25, hidden: i >= 10}; });
+  var grid = vxVar('--vx-grid'), muted = vxVar('--text-muted'), tick = vxVar('--vx-tick');
+  VX.ch.vxLE = new Chart(el.getContext('2d'), {type:'line', data:{labels:rot, datasets:ds},
+    options:{responsive:true, maintainAspectRatio:false, animation:{duration:300}, interaction:{mode:'index', intersect:false},
+      plugins:{legend:{display:true, position:'bottom', labels:{color:tick, boxWidth:10, boxHeight:10, font:{family:'JetBrains Mono', size:10.5}, usePointStyle:true, pointStyle:'circle'}},
+        tooltip:{itemSort:function(a, b){ return b.parsed.y - a.parsed.y; }, callbacks:{label:function(c){ return ' '+c.dataset.label+': '+fmtMoney(c.parsed.y); }}}},
+      scales:{x:{grid:{display:false}, border:{display:false}, ticks:{color:tick, font:{family:'JetBrains Mono', size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:14}},
+        y:{grid:{color:grid}, border:{display:false}, beginAtZero:true, ticks:{color:muted, font:{family:'JetBrains Mono', size:10}, callback:function(v){ return vxM(v).replace('R$ ',''); }}}}}});
+}
 function vxLojas(){
   var rows = vxLinhas('loja'), cdl = vxCanalDaLoja();
   rows.forEach(function(r){ r.canal = cdl[r.k] || ''; r.mkt = LOJA_INFO[r.k] && !LOJA_INFO[r.k].fisica; });
@@ -10190,6 +10235,7 @@ function vxLojas(){
   vxTabela('vxTL', [VX_COL.rk, {k:'k', t:'Loja', td:function(r){ return '<td class="nm">'+(r.mkt?'🛒 ':'')+escapeHtml(r.k)+'</td>'; }},
     {k:'canal', t:'Canal', td:function(r){ return '<td>'+(r.canal ? canalBdg(r.canal) : '')+'</td>'; }},
     VX_COL.fat, VX_COL.lb, VX_COL.qtd, VX_COL.mg, VX_COL.sh, VX_COL.vr], rows, {fk:'regiao', barra:VX_PAL.cy});
+  vxLojasEvo();
 }
 function vxDimensao(t, rot, idF, idM, idT, corF, corBarra){
   var rows = vxLinhas(t).filter(function(r){ return r.k!=='N/D' || r.fat>0.5; });
@@ -11077,6 +11123,8 @@ function vxAoTrocarTela(){
   setTimeout(function(){ if(VX.map) VX.map.invalidateSize(); }, 150);
 }
 function vxLigar(){
+  document.getElementById('vxLEmodo').addEventListener('click', function(ev){ var b = ev.target.closest('[data-v]'); if(!b) return; VX.le = VX.le || {}; VX.le.modo = b.getAttribute('data-v');
+    Array.prototype.forEach.call(this.querySelectorAll('[data-v]'), function(x){ x.setAttribute('aria-pressed', String(x===b)); }); vxLojasEvo(); });
   document.getElementById('vxMapFull').addEventListener('click', vxTelaCheia);
   document.getElementById('vxMapSair2').addEventListener('click', vxTelaCheia);
   document.getElementById('vxMapBarra').addEventListener('click', function(){
