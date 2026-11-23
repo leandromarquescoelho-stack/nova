@@ -9302,7 +9302,7 @@ function vhMgB(o){ var m = vhMg(o); return m===null ? '' : '<span class="vh-mg" 
 function vhPodeObj(){ return !!(CURRENT_PROFILE && ['bi','diretoria'].indexOf(CURRENT_PROFILE.role)>=0); }
 function vhCorTend(p){ return p===null ? 'var(--vx-cy)' : (p>=100 ? 'var(--good)' : (p>=85 ? '#22d3ee' : (p>=70 ? '#f59e0b' : 'var(--critical)'))); }
 function vxHoje(){
-  var f = painelFiltros(null), dia = VH.diaAuto ? null : isoDia(DAYS[N_DAYS-1]), key = JSON.stringify([f, dia]);
+  var f = painelFiltros(null), dia = isoDia(new Date()), key = JSON.stringify([f, dia]);   // sempre o dia de hoje, mesmo sem carga do dia
   vhModoAplicar();
   if(VH.key!==key){
     if(VH.pend===key) return;
@@ -9352,8 +9352,11 @@ function vhDesenhar(){
   var lojas = Object.keys(cols).filter(function(c){ return A[c].ATACADO && A[c].ATACADO.m.f > 0.5; })
     .sort(function(a, b){ var ia = VH_ORDEM.indexOf(a), ib = VH_ORDEM.indexOf(b); return (ia<0?99:ia) - (ib<0?99:ib) || a.localeCompare(b, 'pt-BR'); });
   var todas = Object.keys(cols).sort(function(a, b){ var ia = VH_ORDEM.indexOf(a), ib = VH_ORDEM.indexOf(b); return (ia<0?99:ia) - (ib<0?99:ib) || a.localeCompare(b, 'pt-BR'); });
-  var conc = dD.getDate() > 1, du = {mes: contarDias(ini, fimMes, null).uteis, conc: conc ? contarDias(ini, ontemCal, null).uteis : 0};
-  var dc = {mes: fimMes.getDate(), conc: dD.getDate()-1};
+  // dias concluídos: até ontem, ou até o último dia que já veio na carga (carga atrasada não derruba a média diária)
+  if(ontem && ontem >= mes && vhDt(ontem) < ontemCal) ontemCal = vhDt(ontem);
+  else if(!ontem || ontem < mes) ontemCal = new Date(ini.getFullYear(), ini.getMonth(), 0, 12);
+  var conc = ontemCal >= ini, du = {mes: contarDias(ini, fimMes, null).uteis, conc: conc ? contarDias(ini, ontemCal, null).uteis : 0};
+  var dc = {mes: fimMes.getDate(), conc: conc ? ontemCal.getDate() : 0};
   function duLoja(l){ return {mes: diasUteisLoja(l, ini, fimMes), conc: conc ? diasUteisLoja(l, ini, ontemCal) : 0}; }
   // indicadores de um conjunto: média diária, tendência, meta
   function calc(t, dd, ob){
@@ -9367,7 +9370,7 @@ function vhDesenhar(){
   }
   var ehHoje = dia===isoDia(new Date());
   var semana = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][dD.getDay()];
-  document.getElementById('vhTit').textContent = (ehHoje ? 'Vendas de hoje' : 'Vendas do dia')+' · '+semana+', '+fmtDateFull(dD).slice(0,5);
+  document.getElementById('vhTit').textContent = 'Vendas do dia · '+semana+', '+fmtDateFull(dD).slice(0,5);
   document.getElementById('vhSub').innerHTML = 'Mês de '+fmtDateFull(ini).slice(0,5)+' a '+fmtDateFull(dD).slice(0,5)+(ontem ? ' · "ontem" = '+fmtDateFull(vhDt(ontem)).slice(0,5) : '')+' · '+escapeHtml(cargaLabel(vhCarga()))+' · filtros do painel aplicados, exceto o período';
   document.getElementById('vhDias').innerHTML = '<span>Dias úteis <b>'+du.mes+'</b></span><span>Concluídos <b>'+du.conc+'</b></span><span>Faltam <b>'+(du.mes-du.conc)+'</b></span><span>E-commerce <b>'+dc.conc+'</b> de <b>'+dc.mes+'</b> dias</span>';
 
@@ -9726,6 +9729,8 @@ setInterval(function(){
     px.textContent = (novo ? 'carga nova recebida às '+vpHora(VH.novaEm)+' · ' : 'atualiza sozinho · ')+'próxima busca em '+Math.floor(falta/60)+':'+String(falta%60).padStart(2,'0');
   }
   if(falta<=0) vpChecar(false);
+  // passou da meia-noite com a tela aberta: busca o novo dia
+  if(VH.d && VH.d.dia && !VH.pend && String(VH.d.dia).slice(0,10)!==isoDia(agora)){ VH.key = null; vxHoje(); }
 }, 1000);
 function vpTelaCheia(){
   var el = document.getElementById('vhModoPainel');
@@ -9827,8 +9832,8 @@ function vhPainel(){
   var S = VH.sum, box = document.getElementById('vpBody'); if(!S || !box) return;
   var c = vhCarga();
   var V2 = vpVis()===2; vpVisMarcar();
-  document.getElementById('vpTit').textContent = (V2 ? 'Black Friday' : (S.ehHoje ? 'Vendas de hoje' : 'Vendas do dia'))+' · '+S.semana+', '+fmtDateFull(S.dD).slice(0,5);
-  document.getElementById('vpSub').textContent = (cargaLabel(c) || 'Sem informação de carga')+(VH.lido ? ' · lido às '+vpHora(new Date(VH.lido)) : '')+' · filtros do painel aplicados';
+  document.getElementById('vpTit').textContent = (V2 ? 'Black Friday' : 'Vendas do dia')+' · '+S.semana+', '+fmtDateFull(S.dD).slice(0,5);
+  document.getElementById('vpSub').textContent = (S.gTot.h.f > 0.5 ? '' : 'Ainda sem vendas de hoje na carga · ')+(cargaLabel(c) || 'Sem informação de carga')+(VH.lido ? ' · lido às '+vpHora(new Date(VH.lido)) : '')+' · filtros do painel aplicados';
   function k(cor, l, v, sub, cls){ return '<div class="vp-k'+(cls?' '+cls:'')+'" style="--vh-c:'+cor+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div></div>'; }
   var g = S.gTot, rG = S.rG, rAE = S.rAE, rotAE = S.rotAE || 'atacado + e-com';
   var SE = S.ser, M = S.meta, nD = SE.dias.length, iO = S.ontem ? SE.dias.map(function(x){ return x.iso; }).indexOf(S.ontem) : -1;
