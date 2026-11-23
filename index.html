@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html><head><meta charset=utf8><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://mybwouhzicdlxnapdeul.supabase.co wss://mybwouhzicdlxnapdeul.supabase.co https://overpass-api.de https://overpass.private.coffee https://maps.mail.ru https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"><meta name="referrer" content="strict-origin-when-cross-origin"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* ---------- agente de IA: botão flutuante e painel de conversa ---------- */
 /* balão pequeno e meio transparente com o logo; ao passar o mouse fica inteiro e mostra "Pergunte aos dados" */
 #iaFab{ position:fixed; right:22px; bottom:22px; z-index:800; display:none; align-items:center; gap:8px; height:40px; min-width:40px; padding:0 10px 0 7px;
@@ -88,7 +88,7 @@
 <meta name="theme-color" content="#0b0f17">
 <script>try{ if(localStorage.getItem('nc_tema')==='light'){ document.documentElement.setAttribute('data-theme','light'); document.querySelector('meta[name="theme-color"]').setAttribute('content','#ffffff'); } }catch(e){}</script>
 </head><body data-view="dashboard">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O" crossorigin="anonymous"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
@@ -5550,7 +5550,7 @@ function carregarH2I(){
   if(H2I_PR) return H2I_PR;
   H2I_PR = new Promise(function(ok, falha){
     var s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js';
+    s.src = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js'; cdnSri(s, s.src);
     s.onload = function(){ window.htmlToImage ? ok(window.htmlToImage) : falha(); };
     s.onerror = function(){ H2I_PR = null; falha(); };
     document.head.appendChild(s);
@@ -7710,7 +7710,7 @@ function renderABC(){
     var idx = Math.round((relX-padL)/innerW*(rows.length-1));
     idx = Math.max(0, Math.min(rows.length-1, idx));
     var r = rows[idx]; if(!r) return;
-    tip.innerHTML = '<div class="tt-date">'+r.p.nome+'</div>' +
+    tip.innerHTML = '<div class="tt-date">'+escapeHtml(r.p.nome)+'</div>' +
       '<div class="tt-row"><span>Classe</span><b>'+r.cls+'</b></div>' +
       '<div class="tt-row"><span>Acumulado</span><b>'+r.cumPct.toFixed(1)+'%</b></div>';
     tip.style.left = (x(idx)/W*100)+'%'; tip.style.top = (y(r.cumPct)/H*100)+'%';
@@ -8666,7 +8666,7 @@ function renderDataQuality(){
   var porNome = resumoAgg(rows.filter(function(r){ return r.vendedor!==SEM_VENDEDOR && NAO_PESSOA_RE.test(r.vendedor); }), function(r){ return r.vendedor; }, pr.start, pr.end);
   var nomes = Object.keys(porNome).map(function(k){ return {k:k, v:porNome[k].fat}; }).filter(function(o){ return Math.abs(o.v)>0.5; }).sort(function(a,b){ return b.v-a.v; });
   document.getElementById('dqNomes').innerHTML = nomes.length ?
-    nomes.slice(0,12).map(function(o){ return '<div class="dq-row"><span class="n" title="'+o.k+'">'+o.k+'</span><span class="v">'+fmtMoney(o.v)+'</span></div>'; }).join('') +
+    nomes.slice(0,12).map(function(o){ return '<div class="dq-row"><span class="n" title="'+escapeHtml(o.k)+'">'+escapeHtml(o.k)+'</span><span class="v">'+fmtMoney(o.v)+'</span></div>'; }).join('') +
     '<p class="note-muted">Lançamentos em caixas, e-commerce, empresas ou ajustes aparecem como “vendedor” na planilha. Vale revisar o cadastro na origem.</p>'
     : '<p class="note-muted">Nenhum nome suspeito no período.</p>';
 }
@@ -9083,7 +9083,7 @@ function carregarXlsx(){
   if(window.XLSX) return Promise.resolve(window.XLSX);
   return new Promise(function(ok, falha){
     var sc = document.createElement('script');
-    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    sc.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'; cdnSri(sc, sc.src);
     sc.onload = function(){ window.XLSX ? ok(window.XLSX) : falha(new Error('xlsx')); };
     sc.onerror = function(){ falha(new Error('xlsx')); };
     document.head.appendChild(sc);
@@ -9125,24 +9125,33 @@ function passaEstoque(p){ return matchesFilters(p); }
 var VX = {aba:'lojas', sort:{}, ch:{}, map:null, tiles:null, tilesTema:null, camada:null, pinos:null, geo:{}, geoPr:{}, munMemo:{}, mapSeq:0, mapFit:null};
 var VX_PAL = {cy:'#00e5ff', pu:'#7c3aed', am:'#f59e0b', gr:'#10b981', re:'#ef4444'};
 var VX_LIBS = {};
+// bibliotecas externas com versão fixa e hash (SRI): se o arquivo no CDN for alterado, o navegador recusa
+var CDN_SRI = {
+  'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js': 'sha384-UbfRVKN3/elS1r7JcK2FhmPP+KlJ4CvYwbyYD7tH+uTkbT9bNJr9eJeQ0FoFbAgz',
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js': 'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw',
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js': 'sha384-dug+JxfBvklEQdJ4AYuBBAIScUz0bVN73xpy273gcAwHjb3qI0fXmuYNaNfdyYJG',
+  'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js': 'sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH',
+  'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css': 'sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H'
+};
+function cdnSri(el, url){ if(CDN_SRI[url]){ el.integrity = CDN_SRI[url]; el.crossOrigin = 'anonymous'; } return el; }
 function vxScript(url, glob){
   if(window[glob]) return Promise.resolve(window[glob]);
   if(VX_LIBS[url]) return VX_LIBS[url];
   VX_LIBS[url] = new Promise(function(ok, falha){
-    var sc = document.createElement('script'); sc.src = url;
+    var sc = cdnSri(document.createElement('script'), url); sc.src = url;
     sc.onload = function(){ window[glob] ? ok(window[glob]) : falha(new Error(glob)); };
     sc.onerror = function(){ VX_LIBS[url] = null; falha(new Error(glob)); };
     document.head.appendChild(sc);
   });
   return VX_LIBS[url];
 }
-function vxChartLib(){ return vxScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js', 'Chart'); }
+function vxChartLib(){ return vxScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js', 'Chart'); }
 function vxLeafletLib(){
   if(!document.getElementById('vxLeafletCss')){
     var l = document.createElement('link'); l.id = 'vxLeafletCss'; l.rel = 'stylesheet';
-    l.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(l);
+    l.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'; cdnSri(l, l.href); document.head.appendChild(l);
   }
-  return vxScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js', 'L');
+  return vxScript('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js', 'L');
 }
 function vxClaro(){ return document.documentElement.getAttribute('data-theme')==='light'; }
 function vxVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
