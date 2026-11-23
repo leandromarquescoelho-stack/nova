@@ -2342,9 +2342,10 @@ table.data-table.vp-tbl{min-width:720px;}
           <div class="frp-per" id="perInfo"></div>
           <label class="frp-label" style="margin-top:10px;">Dias da semana</label>
           <div class="fgroup" id="semanaChips">
-            <button class="period-chip dia-chip" data-s="" aria-pressed="true">Todos os dias</button>
-            <button class="period-chip dia-chip" data-s="util">Segunda a sexta</button>
-            <button class="period-chip dia-chip" data-s="fds" title="Sábado e domingo">Fim de semana</button>
+            <button class="period-chip dia-chip" data-s="" aria-pressed="true">Todos</button>
+            <button class="period-chip dia-chip" data-s="util" title="Segunda a sexta, sem os feriados">Seg-Sex</button>
+            <button class="period-chip dia-chip" data-s="fds" title="Sábado e domingo">Final de Semana</button>
+            <button class="period-chip dia-chip" data-s="feriado" title="Feriados nacionais e do estado de SP, em qualquer dia da semana">Feriados</button>
           </div>
         </div>
 
@@ -3441,7 +3442,7 @@ function painelFiltros(restrito){
     f[col] = ids.length ? ids.sort(function(a,b){ return a-b; }) : [-1];
   });
   FILTRO_ID.forEach(function(k){ if(state[k] && state[k].length) f[k] = state[k].map(Number).sort(function(a,b){ return a-b; }); });
-  if(state.diaSemana) f.semana = [state.diaSemana];
+  if(state.diaSemana){ f.semana = [state.diaSemana]; if(state.diaSemana!=='fds') f.feriados = feriadosFiltro(); }
   if(restrito){
     var ids = Object.keys(restrito).map(Number);
     if(f.produto){ var r = toSet(f.produto); ids = ids.filter(function(id){ return r[id]; }); }
@@ -3449,8 +3450,17 @@ function painelFiltros(restrito){
   }
   return f;
 }
-var DIA_SEMANA_ROT = {util:'Segunda a sexta', fds:'Fim de semana'};
-function diaSemanaOk(dt){ var w = dt.getDay(); return state.diaSemana==='fds' ? (w===0||w===6) : (state.diaSemana==='util' ? (w>0&&w<6) : true); }
+var DIA_SEMANA_ROT = {util:'Seg-Sex', fds:'Final de Semana', feriado:'Feriados'};
+// datas dos feriados nacionais e do estado (sem municipais e facultativos) de 2020 até o ano que vem, para o filtro do banco
+var FERIADOS_FILTRO = null;
+function feriadosFiltro(){
+  if(FERIADOS_FILTRO) return FERIADOS_FILTRO;
+  var out = [], y1 = new Date().getFullYear() + 1;
+  for(var y = 2020; y <= y1; y++) Object.keys(feriadosAno(y).porDia).forEach(function(k){ var o = feriadosAno(y).porDia[k]; if(o.tipo!=='municipal' && o.tipo!=='facultativo') out.push(k); });
+  return (FERIADOS_FILTRO = out.sort());
+}
+function diaSemanaOk(dt){ var w = dt.getDay(), fer = state.diaSemana==='util' || state.diaSemana==='feriado' ? !!feriadoDe(dt, null) : false;
+  return state.diaSemana==='fds' ? (w===0||w===6) : (state.diaSemana==='util' ? (w>0&&w<6&&!fer) : (state.diaSemana==='feriado' ? fer : true)); }
 function estoqueFiltrosAtivos(){ return !!(state.status.length || state.soParados || state.diasMin!==null); }
 function painelPeriodo(){
   var pr = periodRange(state.globalPeriod);
@@ -3721,7 +3731,7 @@ var state = {
   paresModo:'grupo', paresEquipes:[], // comparativo dos pares: todo o grupo ou só as equipes escolhidas
   vendSortCol:'fat', vendSortDir:'desc', vendRankTodos:false, vendRankPct:false, vendDispNomes:false, vendDiarioUtil:false,
   soParados:false,
-  diaSemana:'',   // filtro: '' todos os dias, 'util' segunda a sexta, 'fds' sábado e domingo
+  diaSemana:'',   // filtro: '' todos, 'util' seg-sex sem feriados, 'fds' sábado e domingo, 'feriado' feriados nacionais e de SP
   diasMin:null,   // filtro: sem venda há pelo menos N dias
   simDias:90      // corte do simulador de estoque
 };
