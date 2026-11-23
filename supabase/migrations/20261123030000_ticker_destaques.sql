@@ -9,12 +9,13 @@
 --     notas: [[nf, cliente, loja, vendedor, fat, itens]]    maiores vendas (notas) do dia
 --     novos: {n, fat, top:[[cliente, loja, fat]]}           clientes que compraram no dia sem compra nos 365 dias anteriores
 --     cli: [[cliente, fat, notas]]}                         clientes que mais compraram no dia
+--    O vendedor genérico do e-commerce (nome com ECOMMERCE) fica fora dos rankings de vendedores.
 -- 2) bi_config 'ticker' = {"itens": {"estoque": true, ...}}: o que o ticker mostra; só o perfil BI grava.
 create or replace function public.bi_ticker(f jsonb, dia date)
  returns json language plpgsql volatile security definer set search_path to '' set work_mem to '64MB'
 as $function$
 declare w text; res json; ck text; d0 date; m0 date; a0 date; p0 date; p1 date;
-  vend json; cres json; prod json; notas json; novos json; cli json;
+  tm numeric; tp numeric; vend json; cres json; prod json; notas json; novos json; cli json;
 begin
   f := coalesce(f, '{}'::jsonb) - 'produto';
   w := private.bi_where(f);
@@ -37,15 +38,17 @@ begin
            count(distinct produto) filter (where dia between $4 and $5) xp
       from public.bi_venda where %s and dia between least($3, $4) and $1 and vendedor is not null
      group by vendedor$q$, w) using d0, m0, a0, p0, p1;
+  -- participação sobre o total de todos os vendedores; depois o vendedor genérico do e-commerce sai dos rankings
+  select sum(fm), sum(fp) into tm, tp from pg_temp.tk_v;
+  delete from pg_temp.tk_v v using public.bi_dim d where d.tipo = 'vendedor' and d.id = v.vendedor and d.valor ilike '%ECOMMERCE%';
   select json_build_object(
     'd', (select coalesce(json_agg(json_build_array(vendedor, fd, ld) order by fd desc), '[]') from (select * from pg_temp.tk_v where fd > 0 order by fd desc limit 3) x),
     'm', (select coalesce(json_agg(json_build_array(vendedor, fm, lm) order by fm desc), '[]') from (select * from pg_temp.tk_v where fm > 0 order by fm desc limit 3) x),
     'a', (select coalesce(json_agg(json_build_array(vendedor, fa, la) order by fa desc), '[]') from (select * from pg_temp.tk_v where fa > 0 order by fa desc limit 3) x))
   into vend;
-  with t as (select sum(fm) tm, sum(fp) tp from pg_temp.tk_v),
-       c as (select v.vendedor, v.fm, v.fp, v.xm, v.xp, v.lm::numeric / v.fm mgm, v.lp::numeric / v.fp mgp,
-                    v.fm::numeric / nullif(t.tm, 0) pm, v.fp::numeric / nullif(t.tp, 0) pp
-               from pg_temp.tk_v v, t where v.fm >= 500000 and v.fp >= 500000)
+  with c as (select v.vendedor, v.fm, v.fp, v.xm, v.xp, v.lm::numeric / v.fm mgm, v.lp::numeric / v.fp mgp,
+                    v.fm::numeric / nullif(tm, 0) pm, v.fp::numeric / nullif(tp, 0) pp
+               from pg_temp.tk_v v where v.fm >= 500000 and v.fp >= 500000)
   select json_build_object(
     'fat',  (select json_build_array(vendedor, fm, fp) from c where fm > fp order by fm::numeric / fp desc limit 1),
     'mix',  (select json_build_array(vendedor, xm, xp) from c where xm > xp order by xm - xp desc, fm desc limit 1),
