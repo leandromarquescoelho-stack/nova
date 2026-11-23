@@ -9811,9 +9811,13 @@ function vhNovEst(E){
 }
 var VH_NOV_SEC = [['novos', '🆕 Produtos novos no estoque'], ['cmel', '💲 Custo melhor'], ['grandes', '📦 Grandes entradas']];
 function vpNovidades(E){
-  var N = vhNovEst(E), i = 0, h = '';
+  var N = vhNovEst(E), i = 0, h = '', qt = {}, tot = 0, mudou = true;
+  // top 10 no total, repartido entre as três listas (uma de cada vez até completar)
+  VH_NOV_SEC.forEach(function(sec){ qt[sec[0]] = 0; });
+  while(tot < 10 && mudou){ mudou = false;
+    VH_NOV_SEC.forEach(function(sec){ if(tot < 10 && qt[sec[0]] < N[sec[0]].length){ qt[sec[0]]++; tot++; mudou = true; } }); }
   VH_NOV_SEC.forEach(function(sec){
-    var L = N[sec[0]].slice(0, 3); if(!L.length) return;
+    var L = N[sec[0]].slice(0, qt[sec[0]]); if(!L.length) return;
     h += '<div style="font-size:11px; color:var(--text-muted); margin:8px 0 2px; font-weight:700;">'+sec[1].toUpperCase()+'</div>' + L.map(function(o){ i++;
       return '<div class="vp-dl"><span class="n">'+i+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.loja)+' · '+escapeHtml(o.nome)+'<small>'+o.txt+'</small></span><b>'+o.v+'</b></div>'; }).join('');
   });
@@ -9936,7 +9940,7 @@ function vhPainel(){
   else if(!R.erro) VH.vpUlt = R;
   var RR = R && !R.erro ? R : VH.vpUlt;
   function lista(tit, sub, rows, nome, dim){
-    var it = (rows||[]).map(function(r){ return {nome:nome(r), h:c2(r[1]), m:c2(r[4])/(RR.nd||1)}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 5);
+    var it = (rows||[]).map(function(r){ return {nome:nome(r), h:c2(r[1]), m:c2(r[4])/(RR.nd||1)}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 10);
     return '<div class="vp-d"><h4>'+tit+'<small>'+sub+'</small></h4>'+(it.length ? it.map(function(o, i){
       var x = o.m > 0.5 ? o.h/o.m : null;
       return '<div class="vp-dl"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+'</small></span><b>'+fmtMoney(o.h)+'</b></div>';
