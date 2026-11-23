@@ -9794,12 +9794,30 @@ function vhEntTxt(o){
   if(o.entrou===null) return '<b class="vh-up">comprado em '+fmtDateFull(vhDt(o.dc)).slice(0,5)+'</b> · agora '+fmtUn(Math.round(o.est))+' un'+cob;
   return '<b class="vh-up">entrou +'+fmtUn(Math.round(o.entrou))+' un</b> · '+(o.zerado ? '<b>estava zerado</b>' : 'antes '+fmtUn(Math.round(o.ant))+(o.baixo ? ' (baixo)' : ''))+(o.foto ? ' em '+fmtDateFull(vhDt(o.foto)).slice(0,5) : '')+(o.qd ? ' · vendeu '+fmtUn(Math.round(o.qd))+' desde então' : '')+' · agora '+fmtUn(Math.round(o.est))+cob;
 }
+/* Novidades em Estoque: produtos novos, custo melhor e grandes entradas (bi_vendas_hoje_estoque: novos, cmel, grandes) */
+function vhNomeP(t, id){ return String(t||'#'+id).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); }
+function vhNovEst(E){
+  var L = function(k){ return (E && E[k]) || []; };
+  return {
+    novos: L('novos').map(function(r){ return {loja:dimNome('loja', r[0])||'', id:r[1], nome:vhNomeP(r[2], r[1]), v:'+'+fmtUn(Math.round(+r[3]||0))+' un',
+      txt:'chegou '+fmtUn(Math.round(+r[3]||0))+' un · custo '+fmtMoney2(+r[4]||0)+'/un · '+fmtMoney(+r[7]||0)+' em estoque'+(r[6] ? ' · <b>nunca vendido</b>' : '')+(r[5] ? ' · compra '+fmtDateFull(vhDt(r[5])).slice(0,5) : '')}; }),
+    cmel: L('cmel').map(function(r){ var cu = +r[4]||0, ca = +r[5]||0, pc = ca > 0 ? (1 - cu/ca)*100 : 0;
+      return {loja:dimNome('loja', r[0])||'', id:r[1], nome:vhNomeP(r[2], r[1]), v:'<span class="vh-up">−'+tkPct(pc)+'</span>',
+      txt:'custo '+fmtMoney2(cu)+'/un, antes '+fmtMoney2(ca)+' · '+fmtUn(Math.round(+r[3]||0))+' un em estoque · economia '+fmtMoney(+r[6]||0)}; }),
+    grandes: L('grandes').map(function(r){ var q90 = +r[7]||0, ent = +r[5]||0, dias = q90 > 0 ? ent/(q90/90) : null;
+      return {loja:dimNome('loja', r[0])||'', id:r[1], nome:vhNomeP(r[2], r[1]), v:'<span class="vh-up">+'+fmtUn(Math.round(ent))+' un</span>',
+      txt:'entrou '+fmtMoney(+r[6]||0)+' · antes '+fmtUn(Math.round(+r[4]||0))+', agora '+fmtUn(Math.round(+r[3]||0))+(dias!==null ? ' · ≈'+fmtUn(Math.max(1, Math.round(dias)))+' dias de venda' : ' · sem venda nos 90 dias')}; })
+  };
+}
+var VH_NOV_SEC = [['novos', '🆕 Produtos novos no estoque'], ['cmel', '💲 Custo melhor'], ['grandes', '📦 Grandes entradas']];
 function vpNovidades(E){
-  var en = vhEntItens(E).slice(0, 3), it = vhNovItens(E).slice(0, en.length ? 2 : 5), i = 0;
-  var lin = function(o, txt, v){ i++; return '<div class="vp-dl"><span class="n">'+i+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.loja)+' · '+escapeHtml(o.nome)+'<small>'+txt+'</small></span><b>'+v+'</b></div>'; };
-  var h = en.map(function(o){ return lin(o, vhEntTxt(o), '<span class="vh-up">'+(o.entrou!==null ? '+'+fmtUn(Math.round(o.entrou)) : fmtUn(Math.round(o.est)))+' un</span>'); }).join('') +
-    (it.length ? '<div style="font-size:11px; color:var(--text-muted); margin:8px 0 2px; font-weight:700;">ZEROU OU BAIXOU</div>' : '') + it.map(function(o){ return lin(o, vhNovTxt(o), fmtMoney(o.fd)); }).join('');
-  return '<div class="vp-d"><h4>Novidades em estoque<small>o que entrou e o que zerou</small></h4>'+(h || '<p class="note-muted" style="font-size:12px;">'+(E ? 'Nenhuma entrada ou ruptura de produto de boa venda hoje.' : 'Carregando…')+'</p>')+'</div>';
+  var N = vhNovEst(E), i = 0, h = '';
+  VH_NOV_SEC.forEach(function(sec){
+    var L = N[sec[0]].slice(0, 3); if(!L.length) return;
+    h += '<div style="font-size:11px; color:var(--text-muted); margin:8px 0 2px; font-weight:700;">'+sec[1].toUpperCase()+'</div>' + L.map(function(o){ i++;
+      return '<div class="vp-dl"><span class="n">'+i+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.loja)+' · '+escapeHtml(o.nome)+'<small>'+o.txt+'</small></span><b>'+o.v+'</b></div>'; }).join('');
+  });
+  return '<div class="vp-d"><h4>Novidades em Estoque</h4>'+(h || '<p class="note-muted" style="font-size:12px;">'+(E ? (E.foto ? 'Nenhum produto novo, custo melhor ou entrada grande desde a foto anterior.' : 'Ainda sem foto anterior do estoque para comparar.') : 'Carregando…')+'</p>')+'</div>';
 }
 /* ---------- Visual 2: Black Friday (venda do dia × meta de cada unidade) ---------- */
 var BF_DIA = '2026-11-27';
@@ -10177,20 +10195,16 @@ function vhResumoDia(R, qual, NOV){
     bloco('📦', 'Quantidades', 'produtos vendidos bem acima do normal', bQtd) +
     bloco('🤝', 'Clientes', 'compras bem acima da média do cliente', bCli) +
     bloco('🏆', 'Vendedores', 'acima da média do próprio vendedor', bVen) +
-    (NOV ? bloco('📦', 'Novidades em estoque', 'produtos que vendem bem: o que entrou no estoque e o que zerou ou baixou', NOV==='carregando' ? '<p class="note-muted" style="font-size:11.5px;">Carregando o estoque…</p>' :
+    (NOV ? bloco('📦', 'Novidades em Estoque', 'produtos novos, custo melhor e grandes entradas', NOV==='carregando' ? '<p class="note-muted" style="font-size:11.5px;">Carregando o estoque…</p>' :
       (NOV.erro ? '<p class="note-muted" style="font-size:11.5px;">'+(NOV.erro==='falta' ? 'Rode o SQL vendas_hoje_estoque.sql para ver este quadro.' : 'Não foi possível ler o estoque.')+'</p>' :
-      (function(){ var en = vhEntItens(NOV).slice(0, 8);
-        return en.length ? '<div class="vh-sec ent">✅ Entrou no estoque</div>' + en.map(function(o){
-          var on = VH.resF.produto && String(VH.resF.produto.id)===String(o.id);
-          return '<div class="vh-rl bem" data-fd="produto" data-fi="'+escapeHtml(o.id)+'" data-fn="'+escapeHtml(o.nome)+'" title="'+(on ? 'Clique para tirar o filtro' : 'Clique para filtrar os demais quadros por este produto')+'"><div class="vh-rn"><span class="vh-rt">'+escapeHtml(o.loja)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</span></div>' +
-            '<div class="vh-rv"><b class="vh-up">'+(o.entrou!==null ? '+'+fmtUn(Math.round(o.entrou)) : fmtUn(Math.round(o.est)))+' un</b><small>'+vhEntTxt(o)+'</small></div></div>';
-        }).join('') : ''; })() + (vhNovItens(NOV).length ? '<div class="vh-sec sai">⚠️ Zerou ou baixou</div>' : '') +
-      vhNovItens(NOV).slice(0, 6).map(function(o){
-        var on = VH.resF.produto && String(VH.resF.produto.id)===String(o.id);
-        return '<div class="vh-rl" data-fd="produto" data-fi="'+escapeHtml(o.id)+'" data-fn="'+escapeHtml(o.nome)+'" title="'+(on ? 'Clique para tirar o filtro' : 'Clique para filtrar os demais quadros por este produto')+'"><div class="vh-rn"><span class="vh-rt">'+escapeHtml(o.loja)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</span></div>' +
-          '<div class="vh-rv"><b>'+fmtMoney(o.fd)+'</b><small>'+vhNovTxt(o)+'</small></div></div>';
-      }).join(''))) : '') + '</div>' +
-    (NOV ? '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">Novidades em estoque: produtos que venderam em 8 dias ou mais nos 90 dias anteriores. Entrou = estoque atual − estoque da foto anterior + vendido depois da foto'+(NOV.foto ? ' (foto de '+fmtDateFull(vhDt(NOV.foto)).slice(0,5)+')' : ' (ainda sem a foto do dia anterior: mostra os comprados no dia ou na véspera)')+'. Zerou ou baixou = sem estoque ou com menos de 7 dias de cobertura.</p>' : '') +
+      (function(){ var N = vhNovEst(NOV), h = '';
+        VH_NOV_SEC.forEach(function(sec){ var L = N[sec[0]].slice(0, 6); if(!L.length) return;
+          h += '<div class="vh-sec ent">'+sec[1]+'</div>' + L.map(function(o){
+            var on = VH.resF.produto && String(VH.resF.produto.id)===String(o.id);
+            return '<div class="vh-rl bem" data-fd="produto" data-fi="'+escapeHtml(o.id)+'" data-fn="'+escapeHtml(o.nome)+'" title="'+(on ? 'Clique para tirar o filtro' : 'Clique para filtrar os demais quadros por este produto')+'"><div class="vh-rn"><span class="vh-rt">'+escapeHtml(o.loja)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</span></div>' +
+              '<div class="vh-rv"><b>'+o.v+'</b><small>'+o.txt+'</small></div></div>'; }).join(''); });
+        return h || '<p class="note-muted" style="font-size:11.5px;">'+(NOV.foto ? 'Nenhum produto novo, custo melhor ou entrada grande desde a foto anterior.' : 'Ainda sem foto anterior do estoque para comparar.')+'</p>'; })())) : '') + '</div>' +
+    (NOV ? '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">Novidades em Estoque: produtos novos = com estoque agora e sem estoque nas fotos dos 30 dias anteriores. Custo melhor = custo unitário atual pelo menos 3% menor que o custo médio das vendas da loja nos 90 dias anteriores. Grandes entradas = estoque atual − foto anterior + vendido depois da foto'+(NOV.foto ? ' (foto de '+fmtDateFull(vhDt(NOV.foto)).slice(0,5)+')' : '')+', em valor de custo.</p>' : '') +
     '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">'+(MES ? 'Média = mesmo período (dia 1 a '+ddmm.slice(0,2)+') dos '+nd+' meses anteriores com venda ÷ '+nd+', com os mesmos filtros. Projeção = no ritmo de fechamento do grupo (média diária × dias úteis do mês).' : 'Média = total dos '+nd+' dias com venda nos 60 dias anteriores ÷ '+nd+', com os mesmos filtros.')+' × = quantas vezes a média; em verde, 1,5× ou mais.</p>';
 }
 // resumo do dia: hoje, ontem ou os dois (lembrado no navegador)
