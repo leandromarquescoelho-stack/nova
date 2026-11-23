@@ -12442,10 +12442,11 @@ function bindBuscas(){
    ============================================================ */
 function cargaLabel(c){
   if(!c || !(c.arquivo_salvo_em || c.carregado_em)) return '';
-  var d = new Date(c.arquivo_salvo_em || c.carregado_em);
+  function dh(x){ var d = new Date(x); return fmtDateFull(d)+' às '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+  // "Dados até" = última alteração da planilha; "carga de" = quando o banco foi atualizado
   var p = (c.dados_ate||'').split('-');
-  var ate = p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : '';
-  return (ate ? 'Dados até '+ate+' · ' : '') + (c.arquivo_salvo_em ? 'planilha modificada em ' : 'carga de ')+fmtDateFull(d)+' às '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  var ate = c.arquivo_salvo_em ? dh(c.arquivo_salvo_em) : (p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : '');
+  return (ate ? 'Dados até '+ate : '') + (c.carregado_em ? (ate ? ' · ' : '')+'carga de '+dh(c.carregado_em) : '');
 }
 var novaCargaPendente = false;
 async function checarNovaCarga(){

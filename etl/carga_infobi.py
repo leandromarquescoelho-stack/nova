@@ -710,7 +710,8 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         if metas is not None:
             cur.execute('delete from public.bi_meta_vendedor')
             cur.executemany('insert into public.bi_meta_vendedor (vendedor, meta) values (%s, %s)', metas)
-        config['carga'] = {'carregado_em': agora, 'dados_ate': config.pop('_dados_ate'), 'origem': arq['nome']}
+        config['carga'] = {'carregado_em': agora, 'dados_ate': config.pop('_dados_ate'), 'origem': arq['nome'],
+                           'arquivo_salvo_em': arq.get('modificado')}   # última alteração da planilha
         for chave, valor in config.items():
             cur.execute("""insert into public.bi_config (chave, valor) values (%s, %s::jsonb)
                            on conflict (chave) do update set valor = excluded.valor""",
