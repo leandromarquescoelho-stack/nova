@@ -9940,10 +9940,12 @@ function vhPainel(){
   else if(!R.erro) VH.vpUlt = R;
   var RR = R && !R.erro ? R : VH.vpUlt;
   function lista(tit, sub, rows, nome, dim){
-    var it = (rows||[]).map(function(r){ return {nome:nome(r), h:c2(r[1]), m:c2(r[4])/(RR.nd||1)}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 10);
+    var cv = rows===RR.clientes ? (RR.cli_vend || {}) : null;   // clientes: vendedor que mais vendeu para ele no dia
+    var it = (rows||[]).map(function(r){ var vd = cv && cv[r[0]]!=null ? dimNome('vendedor', cv[r[0]]) : '';
+      return {nome:nome(r), h:c2(r[1]), m:c2(r[4])/(RR.nd||1), vd: vd ? nomeCurtoVend(vd) : ''}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 10);
     return '<div class="vp-d"><h4>'+tit+'<small>'+sub+'</small></h4>'+(it.length ? it.map(function(o, i){
       var x = o.m > 0.5 ? o.h/o.m : null;
-      return '<div class="vp-dl"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+'</small></span><b>'+fmtMoney(o.h)+'</b></div>';
+      return '<div class="vp-dl"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+(o.vd ? ' · <i>'+escapeHtml(o.vd)+'</i>' : '')+'</small></span><b>'+fmtMoney(o.h)+'</b></div>';
     }).join('') : '<p class="note-muted" style="font-size:12px;">Sem vendas ainda.</p>')+'</div>';
   }
   var nm7 = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
