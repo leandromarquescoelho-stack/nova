@@ -49,7 +49,7 @@ def main():
                 log('limite de tempo; o restante fica para o primeiro acesso')
                 break
             try:
-                cur.execute("select set_config('request.jwt.claims', %s, false)", (json.dumps({'sub': uid, 'role': 'authenticated'}),))
+                cur.execute("select set_config('request.jwt.claims', %s, false)", (json.dumps({'sub': uid, 'role': 'authenticated', 'aal': 'aal2'}),))
                 try:
                     cur.execute("select private.bi_where('{}'::jsonb) || '|' || coalesce((select role from public.profiles where id = %s), '')", (uid,))
                     escopo = cur.fetchone()[0]

@@ -1933,6 +1933,8 @@ table.data-table.vp-tbl{min-width:720px;}
 .vp-ptit .vp-sub{margin:0;}
 .vp-pst{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
 .vp-pst .vp-sub{margin:0;}
+/* linha de "Dados até · carga de" mais visível (claro e escuro) */
+#vpSub, #vhSub{color:color-mix(in srgb, var(--text) 85%, transparent); font-size:12px; font-weight:500;}
 .vp-stpill{font-size:11px; padding:2px 9px;}
 .vp-vend{font:inherit; font-size:13.5px; font-weight:800; padding:0; border:0; background:none; color:var(--accent); cursor:pointer;}
 .vp-vend:hover{text-decoration:underline;}
@@ -2149,6 +2151,19 @@ table.data-table.vp-tbl{min-width:720px;}
     <button class="login-btn" type="submit">Salvar e entrar</button>
     <div class="login-error" id="setPassError"></div>
     <button class="login-voltar" type="button" id="setPassVoltar" style="display:none;">&larr; Voltar à página anterior</button>
+  </form>
+  <form class="login-card" id="mfaForm" autocomplete="off" style="display:none;">
+    <h1 id="mfaTitulo">Código de verificação</h1>
+    <p class="login-sub" id="mfaTexto">Abra o aplicativo autenticador no celular e digite o código de 6 dígitos.</p>
+    <div id="mfaQr" style="display:none;text-align:center;margin:6px 0 10px;">
+      <img id="mfaQrImg" alt="QR code para o aplicativo autenticador" style="width:180px;height:180px;background:#fff;border-radius:10px;padding:8px;">
+      <div class="login-sub" style="margin-top:6px;">Sem câmera? Digite esta chave no aplicativo:<br><code id="mfaChave" style="user-select:all;word-break:break-all;"></code></div>
+    </div>
+    <label class="login-label">Código</label>
+    <input class="login-input" id="mfaCodigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000">
+    <button class="login-btn" type="submit">Confirmar</button>
+    <div class="login-error" id="mfaErro"></div>
+    <button class="login-help-btn" type="button" id="mfaSair">Sair</button>
   </form>
 </div>
 <script>
@@ -13574,6 +13589,60 @@ async function loadData(){
 }
 
 var started = false;
+/* ---------- verificação em duas etapas (MFA por aplicativo autenticador) ----------
+   Obrigatória para o perfil BI: na primeira vez cadastra o celular (QR code); depois pede o código a cada login.
+   Quem já cadastrou (qualquer perfil) também passa a ser pedido. O banco recusa as funções do BI sem a sessão verificada. */
+function mfaTela(o){
+  return new Promise(function(ok){
+    var f = document.getElementById('mfaForm');
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('setPassForm').style.display = 'none';
+    f.style.display = '';
+    document.getElementById('mfaTitulo').textContent = o.qr ? 'Proteja seu acesso' : 'Código de verificação';
+    document.getElementById('mfaTexto').textContent = o.qr
+      ? 'O perfil BI exige verificação em duas etapas. Leia o QR code com um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou similar) e digite o código de 6 dígitos que aparecer.'
+      : 'Abra o aplicativo autenticador no celular e digite o código de 6 dígitos do Info BI.';
+    document.getElementById('mfaQr').style.display = o.qr ? '' : 'none';
+    if(o.qr){ document.getElementById('mfaQrImg').src = o.qr; document.getElementById('mfaChave').textContent = o.chave || ''; }
+    var cod = document.getElementById('mfaCodigo'), er = document.getElementById('mfaErro'), bt = f.querySelector('.login-btn');
+    cod.value = ''; er.textContent = ''; setTimeout(function(){ try{ cod.focus(); }catch(e){} }, 50);
+    f.onsubmit = async function(ev){
+      ev.preventDefault();
+      var c = cod.value.replace(/\D/g, '');
+      if(c.length !== 6){ er.textContent = 'Digite os 6 dígitos.'; return; }
+      bt.disabled = true; bt.textContent = 'Conferindo…'; er.textContent = '';
+      var r = await supa.auth.mfa.challengeAndVerify({factorId: o.fator, code: c});
+      bt.disabled = false; bt.textContent = 'Confirmar';
+      if(r.error){ er.textContent = 'Código inválido ou vencido. Confira o horário do celular e tente o próximo código.'; cod.select(); return; }
+      f.style.display = 'none'; document.getElementById('loginForm').style.display = '';
+      ok(true);
+    };
+    document.getElementById('mfaSair').onclick = async function(){ try{ await supa.auth.signOut(); }catch(e){} try{ window.location.reload(); }catch(e){} };
+  });
+}
+async function mfaGarantir(perfil){
+  if(!supa || !supa.auth || !supa.auth.mfa) return true;
+  try{
+    var n = await supa.auth.mfa.getAuthenticatorAssuranceLevel();
+    if(n.data && n.data.currentLevel === 'aal2') return true;
+    var l = await supa.auth.mfa.listFactors();
+    var todos = (l.data && l.data.all) || [], ok = todos.filter(function(x){ return x.factor_type === 'totp' && x.status === 'verified'; });
+    if(ok.length){ busy(null); return await mfaTela({fator: ok[0].id}); }
+    if(perfil.role !== 'bi') return true;
+    // BI sem celular cadastrado: limpa cadastros pela metade e cadastra agora
+    for(var i = 0; i < todos.length; i++) if(todos[i].status !== 'verified') { try{ await supa.auth.mfa.unenroll({factorId: todos[i].id}); }catch(e){} }
+    var en = await supa.auth.mfa.enroll({factorType: 'totp', friendlyName: 'Info BI', issuer: 'Info BI'});
+    if(en.error) throw en.error;
+    busy(null);
+    return await mfaTela({fator: en.data.id, qr: en.data.totp.qr_code, chave: en.data.totp.secret});
+  } catch(ex){
+    console.error('mfa', ex);
+    errEl.textContent = 'Não foi possível iniciar a verificação em duas etapas. Tente novamente ou contate o BI.';
+    try{ await supa.auth.signOut(); }catch(e){}
+    busy(null); return false;
+  }
+}
 async function enter(authUser){
   var pr = await supa.from('profiles').select('*').eq('id', authUser.id).single();
   if(pr.error || !pr.data){
@@ -13584,6 +13653,7 @@ async function enter(authUser){
     errEl.textContent = 'Sua conta ainda não foi liberada. Contate o BI.';
     await supa.auth.signOut(); return;
   }
+  if(!(await mfaGarantir(pr.data))) return;
   busy('Carregando dados…');
   var real;
   try{
