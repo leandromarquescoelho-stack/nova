@@ -1339,6 +1339,11 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .ra-filt span{flex:1 1 220px;}
 .ra-add{display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
 .ra-chk{display:flex; gap:8px; align-items:center; font-size:12.5px; margin:8px 0;}
+.tk-op{display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:4px 18px; margin:6px 0 4px;}
+.tk-op h5{grid-column:1/-1; margin:10px 0 2px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted);}
+.tk-op label{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:4px 0; cursor:pointer;}
+.tk-op label small{display:block; color:var(--text-muted); font-size:11px;}
+.tk-op input{margin-top:2px;}
 .ra-acts{display:flex; gap:8px; align-items:center; margin-top:12px;}
 .ra-msg{font-size:12px;}
 .btn-sm{border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:8px; padding:6px 10px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit;}
@@ -3239,6 +3244,13 @@ table.data-table.vp-tbl{min-width:720px;}
         </form>
         <div id="raLista"></div>
         <div class="psub" style="margin-top:10px;">O e-mail sai com os números do último dia com vendas, no acesso de quem criou o agendamento. Sem domínio próprio verificado no Resend, só o e-mail dono da conta Resend recebe.</div>
+      </div>
+      <div class="panel" style="margin-bottom:14px;" id="tkPanel">
+        <div class="panel-head">
+          <div><h2>Ticker do Dashboard</h2><div class="psub">Escolha o que passa na faixa de destaques do Dashboard (Visual 1 e 2). Vale para todos os usuários, cada um no seu acesso.</div></div>
+        </div>
+        <div id="tkOpcoes" class="tk-op"></div>
+        <div class="ra-acts"><button type="button" class="tbtn" id="tkSalvar">Salvar</button><button type="button" class="btn-sm" id="tkTodos">Marcar todos</button><span id="tkMsg" class="ra-msg"></span></div>
       </div>
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
@@ -9399,6 +9411,7 @@ function vhDesenhar(){
 
   // estoque a custo (posição da última carga), com os filtros do painel
   var E = vhEst(painelFiltros(null), dia, vhDesenhar), EL = vhEstLojas(E), eOk = E && !E.erro && E.est;
+  if(vpVisivel()){ tkCfgCarregar(vhDesenhar); VH.tkAtual = vhTk(painelFiltros(null), dia, vhDesenhar); }
   // KPIs
   function k(c, l, v, s, dest){ return '<div class="vh-k'+(dest?' dest':'')+'" style="--vh-c:'+c+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>'; }
   var sgH = junta(lojas, ['ATACADO']).sh, sgM = junta(lojas, ['ATACADO']).sm;
@@ -9713,7 +9726,7 @@ function vpChecar(manual){
     var vista = vhCarga();
     if(c && (!vista || c.carregado_em !== vista.carregado_em)){
       VH.carga = c; VH.novaEm = new Date(); VH.diaAuto = true;
-      VH.key = null; VH.res = {}; VH.resPend = {}; VH.obj = {}; VH.objPend = {}; VH.est = {}; VH.estPend = {};
+      VH.key = null; VH.res = {}; VH.resPend = {}; VH.obj = {}; VH.objPend = {}; VH.est = {}; VH.estPend = {}; VH.tk = {}; VH.tkPend = {};
       if(vpVisivel()) vxHoje();
       if(manual) toast('Nova carga recebida. Atualizando o painel…');
     } else if(manual) toast('O painel já está com a carga mais recente.');
@@ -9932,17 +9945,81 @@ function vpAjustar(){
 }
 window.addEventListener('resize', function(){ clearTimeout(vpAjustar.t); vpAjustar.t = setTimeout(vpAjustar, 150); });
 document.addEventListener('fullscreenchange', function(){ setTimeout(vpAjustar, 120); });
-/* ticker: produtos vendendo bem que pedem atenção (acima da própria média e/ou com estoque acabando) */
+/* ---------- ticker: o que aparece é escolhido em Configurações (bi_config 'ticker'); dados de bi_ticker ---------- */
+var TK_OPCOES = [
+  ['Estoque e produtos', 'estoque', 'Estoque zerou ou baixo', 'produtos que vendem bem e acabaram hoje'],
+  ['Estoque e produtos', 'alta', 'Produtos em alta', 'vendendo bem acima da própria média dos 60 dias'],
+  ['Estoque e produtos', 'mais_vendidos', 'Mais vendidos do dia', 'os 3 produtos de maior faturamento hoje'],
+  ['Vendedores', 'vend_dia', 'Melhor vendedor do dia', 'o 1º do dia, com o 2º e o 3º'],
+  ['Vendedores', 'vend_mes', 'Melhor vendedor do mês', 'o 1º do mês até hoje, com o 2º e o 3º'],
+  ['Vendedores', 'vend_ano', 'Melhor vendedor do ano', 'o 1º do ano até hoje, com o 2º e o 3º'],
+  ['Vendedores', 'cres_fat', 'Mais cresceu em faturamento', 'mês até hoje contra os mesmos dias do mês anterior'],
+  ['Vendedores', 'cres_mix', 'Mais cresceu em mix', 'mais produtos diferentes vendidos no mês'],
+  ['Vendedores', 'cres_part', 'Mais cresceu em participação', 'fatia do faturamento do grupo no mês'],
+  ['Vendedores', 'cres_mg', 'Mais cresceu em margem', 'margem bruta do mês contra o mês anterior'],
+  ['Clientes e vendas', 'notas', 'Vendas altas do dia', 'as 3 maiores notas de hoje'],
+  ['Clientes e vendas', 'cli_novos', 'Clientes novos', 'compraram hoje sem compra nos 365 dias anteriores'],
+  ['Clientes e vendas', 'cli_top', 'Clientes que mais compraram hoje', 'os 3 maiores clientes do dia']
+];
+var TK_CFG = null;   // {chave: true/false}; sem configuração salva, tudo ligado
+function tkLigado(k){ return !TK_CFG || TK_CFG[k] !== false; }
+function tkCfgCarregar(depois){
+  if(TK_CFG !== null || tkCfgCarregar.pend) return; tkCfgCarregar.pend = 1;
+  (window.__NC_supa || supa).from('bi_config').select('valor').eq('chave', 'ticker').maybeSingle().then(function(r){
+    TK_CFG = (r && r.data && r.data.valor && r.data.valor.itens) || false;
+  }, function(){ TK_CFG = false; }).then(function(){ tkCfgCarregar.pend = 0; if(depois) depois(); });
+}
+VH.tk = {}; VH.tkPend = {};
+function vhTk(f, d, depois){
+  var key = JSON.stringify([f, d]); if(VH.tk[key]) return VH.tk[key];
+  if(!VH.tkPend[key]){
+    VH.tkPend[key] = 1;
+    window.__NC_rpc('bi_ticker', {f:f, dia:d}).then(function(r){ VH.tk[key] = r || {}; }, function(){ VH.tk[key] = {erro:1}; })
+      .then(function(){ delete VH.tkPend[key]; if(vpVisivel()) depois(); });
+  }
+  return null;
+}
+function tkVend(id){ return nomeCurtoVend(dimNome('vendedor', id) || ('#'+id)); }
+function tkNome(t){ var x = String(t||'').replace(/\s+[A-Z]\d{4,6}$/, '').trim(); return x.length > 38 ? x.slice(0, 36)+'…' : x; }
+function tkPct(x){ return (Math.round(x*10)/10).toFixed(1).replace('.',',')+'%'; }
+/* destaques: vendedores, clientes, vendas altas e mais vendidos */
+function vpTickerExtra(T){
+  if(!T || T.erro) return [];
+  var g = [], ouro = '#d4a017', prata = 'var(--vx-pu)', azul = 'var(--accent, #3b82f6)';
+  var V = T.vend || {};
+  [['vend_dia', 'd', 'MELHOR DO DIA'], ['vend_mes', 'm', 'MELHOR DO MÊS'], ['vend_ano', 'a', 'MELHOR DO ANO']].forEach(function(x){
+    var L = V[x[1]] || []; if(!tkLigado(x[0]) || !L.length) return;
+    var r = L[0], mg = r[1] > 0 ? r[2]/r[1]*100 : 0;
+    g.push({t:x[2], c:ouro, n:'🥇 '+tkVend(r[0]), d:fmtMoney(c2(r[1]))+' · margem '+tkPct(mg)+L.slice(1).map(function(o, i){ return ' · '+(i+2)+'º '+tkVend(o[0])+' '+fmtMoney(c2(o[1])); }).join('')});
+  });
+  var C = T.cres || {};
+  if(tkLigado('cres_fat') && C.fat) g.push({t:'MAIS CRESCEU', c:'var(--good)', n:tkVend(C.fat[0]), d:'faturamento do mês +'+Math.round((C.fat[1]/C.fat[2]-1)*100).toLocaleString('pt-BR')+'% ('+fmtMoney(c2(C.fat[2]))+' → '+fmtMoney(c2(C.fat[1]))+') contra os mesmos dias do mês anterior'});
+  if(tkLigado('cres_mix') && C.mix) g.push({t:'MAIS CRESCEU EM MIX', c:'var(--good)', n:tkVend(C.mix[0]), d:fmtUn(C.mix[2])+' → '+fmtUn(C.mix[1])+' produtos diferentes no mês'});
+  if(tkLigado('cres_part') && C.part) g.push({t:'MAIS GANHOU PARTICIPAÇÃO', c:'var(--good)', n:tkVend(C.part[0]), d:tkPct(+C.part[2])+' → '+tkPct(+C.part[1])+' do faturamento no mês'});
+  if(tkLigado('cres_mg') && C.mg) g.push({t:'MAIS CRESCEU EM MARGEM', c:'var(--good)', n:tkVend(C.mg[0]), d:'margem '+tkPct(+C.mg[2])+' → '+tkPct(+C.mg[1])+' no mês'});
+  if(tkLigado('mais_vendidos')) (T.prod || []).slice(0, 3).forEach(function(r, i){
+    g.push({t:'MAIS VENDIDO HOJE', c:azul, n:(i+1)+'º '+String(r[1]||'#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), d:fmtMoney(c2(r[3]))+' · '+fmtUn(r[2])+' un'}); });
+  if(tkLigado('notas')) (T.notas || []).slice(0, 3).forEach(function(r){
+    g.push({t:'VENDA ALTA', c:prata, n:tkNome(r[1]), d:fmtMoney(c2(r[4]))+' · '+(dimNome('loja', r[2])||'')+' · '+tkVend(r[3])+' · '+fmtUn(r[5])+' ite'+(r[5]>1?'ns':'m')}); });
+  var N = T.novos || {};
+  if(tkLigado('cli_novos') && N.n > 0){
+    g.push({t:'CLIENTES NOVOS', c:'var(--good)', n:fmtUn(N.n)+' cliente'+(N.n>1?'s':'')+' novo'+(N.n>1?'s':'')+' hoje', d:fmtMoney(c2(N.fat))+' · sem compra nos 365 dias anteriores'});
+    (N.top || []).slice(0, 2).forEach(function(r){ g.push({t:'CLIENTE NOVO', c:'var(--good)', n:tkNome(r[0]), d:fmtMoney(c2(r[2]))+' · '+(dimNome('loja', r[1])||'')}); });
+  }
+  if(tkLigado('cli_top')) (T.cli || []).forEach(function(r, i){
+    g.push({t:'TOP CLIENTE DO DIA', c:azul, n:(i+1)+'º '+tkNome(r[0]), d:fmtMoney(c2(r[1]))+' · '+fmtUn(r[2])+' nota'+(r[2]>1?'s':'')}); });
+  return g;
+}
 function vpTicker(RR, E){
   var it = [], alta = [], vistos = {};
   var nome = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
   // 1) vendeu bem e o estoque zerou ou está acabando
-  vhNovItens(E).forEach(function(o){ if(vistos[o.id]) return; vistos[o.id] = 1;
+  if(tkLigado('estoque')) vhNovItens(E).forEach(function(o){ if(vistos[o.id]) return; vistos[o.id] = 1;
     it.push({t: o.zerou ? 'ZEROU' : 'ESTOQUE BAIXO', c: o.zerou ? 'var(--critical)' : 'var(--warning)', n: o.loja+' · '+o.nome,
       d: 'vendeu '+fmtUn(o.qd)+' un hoje · '+(o.zerou ? 'sem estoque' : 'restam '+fmtUn(Math.round(o.est))+' un'+(o.dias!==null ? ' (≈'+Math.max(1, Math.round(o.dias))+' dia'+(Math.round(o.dias)>1?'s':'')+')' : ''))}); });
   // 2) vendendo bem acima da própria média dos 60 dias anteriores
   var nd = (RR && RR.nd) || 1;
-  ((RR && RR.produtos) || []).concat((RR && RR.produtos_q) || []).forEach(function(r){
+  if(tkLigado('alta')) ((RR && RR.produtos) || []).concat((RR && RR.produtos_q) || []).forEach(function(r){
     var id = r[0]; if(vistos[id]) return;
     var h = c2(r[1]), m = c2(r[4])/nd, q = +r[3] || 0, qm = (+r[5] || 0)/nd, x = m > 0.5 ? h/m : null;
     if(x!==null && x < 1.8) return;
@@ -9953,10 +10030,13 @@ function vpTicker(RR, E){
   // intercala estoque e em alta, até 8 de cada
   var mix = []; it = it.slice(0, 8); alta = alta.slice(0, 8);
   for(var i = 0; i < Math.max(it.length, alta.length); i++){ if(alta[i]) mix.push(alta[i]); if(it[i]) mix.push(it[i]); }
-  it = mix;
+  // destaques (vendedores, clientes, vendas altas, mais vendidos) intercalados com os de produto
+  var ex = vpTickerExtra(VH.tkAtual), fin = [];
+  for(var j = 0; j < Math.max(ex.length, mix.length); j++){ if(ex[j]) fin.push(ex[j]); if(mix[j]) fin.push(mix[j]); }
+  it = fin;
   if(!it.length) return '';
   var h = it.map(function(o){ return '<span class="vp-ti"><em style="background:'+o.c+'">'+o.t+'</em><b>'+escapeHtml(o.n)+'</b><span>'+o.d+'</span></span>'; }).join('');
-  return '<div class="vp-tk" title="Passe o mouse para pausar"><div class="vp-tk-h">Atenção na venda</div><div class="vp-tk-w"><div class="vp-tk-r" style="--vp-tk-s:'+Math.max(30, it.length*7)+'s">'+h+h+'</div></div></div>';
+  return '<div class="vp-tk" title="Passe o mouse para pausar"><div class="vp-tk-h">Destaques</div><div class="vp-tk-w"><div class="vp-tk-r" style="--vp-tk-s:'+Math.max(30, it.length*7)+'s">'+h+h+'</div></div></div>';
 }
 /* ---------- Vendas Hoje: resumo do dia (o que ficou bem acima da média dos 60 dias anteriores) ---------- */
 VH.res = {}; VH.resPend = {}; VH.resF = {};
@@ -12888,8 +12968,32 @@ async function raCarregar(){
       '<div class="ra-acts"><button type="button" class="btn-sm" data-ra="ed">Editar</button><button type="button" class="btn-sm" data-ra="env">Enviar agora</button><button type="button" class="btn-sm" data-ra="del">Excluir</button><span class="ra-msg"></span></div></div>';
   }).join('');
 }
+function tkRenderCfg(){
+  var box = document.getElementById('tkOpcoes'); if(!box) return;
+  if(TK_CFG === null){ box.innerHTML = '<span class="note-muted">Carregando…</span>'; tkCfgCarregar(tkRenderCfg); return; }
+  var grp = '';
+  box.innerHTML = TK_OPCOES.map(function(o){
+    var h = o[0]!==grp ? '<h5>'+o[0]+'</h5>' : ''; grp = o[0];
+    return h+'<label><input type="checkbox" data-tk="'+o[1]+'"'+(tkLigado(o[1]) ? ' checked' : '')+'><span>'+o[2]+'<small>'+o[3]+'</small></span></label>';
+  }).join('');
+  if(!tkRenderCfg.ligado){
+    tkRenderCfg.ligado = 1;
+    document.getElementById('tkTodos').addEventListener('click', function(){ Array.prototype.forEach.call(document.querySelectorAll('#tkOpcoes [data-tk]'), function(c){ c.checked = true; }); });
+    document.getElementById('tkSalvar').addEventListener('click', function(){
+      var it = {}, msg = document.getElementById('tkMsg');
+      Array.prototype.forEach.call(document.querySelectorAll('#tkOpcoes [data-tk]'), function(c){ it[c.getAttribute('data-tk')] = c.checked; });
+      msg.textContent = 'Salvando…'; msg.style.color = '';
+      window.__NC_rpc('bi_config_ticker_gravar', {p:{itens:it}}).then(function(){
+        TK_CFG = it; msg.textContent = 'Salvo. O ticker do Dashboard já usa estas opções.'; msg.style.color = 'var(--good)';
+      }, function(e){
+        msg.textContent = /bi_config_ticker_gravar|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'Falta rodar o SQL do ticker no banco.' : 'Não foi possível salvar: '+String(e && (e.message||e));
+        msg.style.color = 'var(--critical)';
+      });
+    });
+  }
+}
 async function renderFontesAdmin(){
-  raCarregar();
+  raCarregar(); tkRenderCfg();
   var wrap = document.getElementById('fontesWrap');
   var cw = document.getElementById('cargasWrap');
   if(!wrap) return;
