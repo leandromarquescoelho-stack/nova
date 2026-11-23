@@ -9331,7 +9331,9 @@ function vhDesenhar(){
   var dia = String(d.dia).slice(0,10), dD = vhDt(dia), mes = dia.slice(0,7)+'-01', ini = vhDt(mes);
   var fimMes = new Date(dD.getFullYear(), dD.getMonth()+1, 0, 12), ontemCal = new Date(dD.getFullYear(), dD.getMonth(), dD.getDate()-1, 12);
   var obj = VH.obj[mes] || {}, ontem = null;
-  (d.linhas||[]).forEach(function(r){ var ds = String(r[0]).slice(0,10); if(ds < dia && (!ontem || ds > ontem)) ontem = ds; });
+  // "ontem" = hoje - 1 dia (calendário), mesmo sem venda; ultCarga = último dia anterior a hoje que já veio na carga
+  var ultCarga = null; (d.linhas||[]).forEach(function(r){ var ds = String(r[0]).slice(0,10); if(ds < dia && (!ultCarga || ds > ultCarga)) ultCarga = ds; });
+  ontem = isoDia(new Date(dD.getFullYear(), dD.getMonth(), dD.getDate()-1, 12));
   VH.ontem = ontem;
   // A[coluna][canal] = {h, o, m, sh, sm}: hoje, ontem, mês, seguradoras hoje e no mês
   var A = {}, cols = {};
@@ -9353,8 +9355,8 @@ function vhDesenhar(){
     .sort(function(a, b){ var ia = VH_ORDEM.indexOf(a), ib = VH_ORDEM.indexOf(b); return (ia<0?99:ia) - (ib<0?99:ib) || a.localeCompare(b, 'pt-BR'); });
   var todas = Object.keys(cols).sort(function(a, b){ var ia = VH_ORDEM.indexOf(a), ib = VH_ORDEM.indexOf(b); return (ia<0?99:ia) - (ib<0?99:ib) || a.localeCompare(b, 'pt-BR'); });
   // dias concluídos: até ontem, ou até o último dia que já veio na carga (carga atrasada não derruba a média diária)
-  if(ontem && ontem >= mes && vhDt(ontem) < ontemCal) ontemCal = vhDt(ontem);
-  else if(!ontem || ontem < mes) ontemCal = new Date(ini.getFullYear(), ini.getMonth(), 0, 12);
+  if(ultCarga && ultCarga >= mes && vhDt(ultCarga) < ontemCal) ontemCal = vhDt(ultCarga);
+  else if(!ultCarga || ultCarga < mes) ontemCal = new Date(ini.getFullYear(), ini.getMonth(), 0, 12);
   var conc = ontemCal >= ini, du = {mes: contarDias(ini, fimMes, null).uteis, conc: conc ? contarDias(ini, ontemCal, null).uteis : 0};
   var dc = {mes: fimMes.getDate(), conc: conc ? ontemCal.getDate() : 0};
   function duLoja(l){ return {mes: diasUteisLoja(l, ini, fimMes), conc: conc ? diasUteisLoja(l, ini, ontemCal) : 0}; }
@@ -9402,7 +9404,7 @@ function vhDesenhar(){
   var sgH = junta(lojas, ['ATACADO']).sh, sgM = junta(lojas, ['ATACADO']).sm;
   document.getElementById('vhKpis').innerHTML =
     k('var(--vx-cy)', ehHoje ? 'Vendas hoje · grupo' : 'Vendas do dia · grupo', fmtMoney(gTot.h.f), vhMgB(gTot.h)+' '+vhVs(rG.vsH)+' vs. média diária', true) +
-    k('#64748b', 'Vendas ontem', fmtMoney(gTot.o.f), vhMgB(gTot.o)+' '+vhVs(rG.vsO)+' vs. média diária') +
+    k('#64748b', 'Vendas ontem · '+fmtDateFull(vhDt(ontem)).slice(0,5), fmtMoney(gTot.o.f), vhMgB(gTot.o)+' '+vhVs(rG.vsO)+' vs. média diária') +
     k('var(--vx-pu)', 'Mês até agora', fmtMoney(gTot.m.f), vhMgB(gTot.m)+' · média diária '+(rG.md!==null ? fmtMoney(rG.md) : '—')) +
     k(vhCorTend(rAE.tp), 'Tendência '+rotAE, rAE.tend!==null ? fmtMoney(rAE.tend) : '—', rAE.tp!==null ? '<b style="color:'+vhCorTend(rAE.tp)+'">'+vhP(rAE.tp)+'</b> da meta' : (nObj && !temObAtc ? 'meta em '+nObj+' de '+lojas.length+' lojas: cadastre todas' : 'cadastre as metas nos quadros das lojas')) +
     k('var(--vx-am)', 'Meta '+rotAE, rAE.ob ? fmtMoney(rAE.ob) : '—', rAE.ob ? 'atingido <b>'+vhP(rAE.at)+'</b> · faltam '+fmtMoney(rAE.falta)+(rAE.porDia ? '<br>precisa de '+fmtMoney(rAE.porDia)+' por dia útil' : '') : 'sem meta no mês') +
@@ -9844,7 +9846,7 @@ function vhPainel(){
   var kp = '<div class="vp-kpis">' +
     k('var(--vx-cy)', S.ehHoje ? 'Hoje · grupo' : 'No dia · grupo', fmtMoney(g.h.f), vhMgB(g.h)+' '+vhVs(rG.vsH)+' vs. média diária ('+(rG.md!==null ? fmtMoney(rG.md) : '—')+')' +
       vpMetaInd(rAE.t.h.f, mdH, 'Meta do dia', 'Meta e venda de '+rotAE)+vpSpark(SE.g), 'g') +
-    k('#64748b', 'Ontem', fmtMoney(g.o.f), vhMgB(g.o)+' '+vhVs(rG.vsO) +
+    k('#64748b', 'Ontem · '+fmtDateFull(vhDt(S.ontem)).slice(0,5), fmtMoney(g.o.f), vhMgB(g.o)+' '+vhVs(rG.vsO) +
       vpMetaInd(rAE.t.o.f, mdO, 'Meta do dia', 'Meta e venda de '+rotAE)+(iO >= 0 ? '<div class="vp-so">'+vpSpark(SE.g, {dest:iO, cor:'#94a3b8'})+'</div>' : '')) +
     k('var(--vx-pu)', 'Mês até agora', fmtMoney(g.m.f), vhMgB(g.m)+' · '+S.du.conc+' de '+S.du.mes+' dias úteis' +
       vpMetaInd(rAE.t.m.f, idealHoje, 'Meta até hoje', 'Meta acumulada do dia 1 até hoje e venda de '+rotAE)+vpSparkAcum(SE.ae, fimM, metaAc, null)) +
