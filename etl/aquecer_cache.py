@@ -1,8 +1,8 @@
 """Deixa prontas no banco as respostas da abertura do painel (login, dashboard e aba Vendedores) de cada usuário ativo.
 
 A carga limpa a memória de respostas (bi_cache); sem isto, o primeiro acesso de cada perfil depois da carga
-espera o banco calcular tudo. Aqui cada consulta roda uma vez com o escopo de cada usuário, do mesmo jeito que o
-site pede, e fica guardada. Usuários com o mesmo escopo aproveitam a mesma resposta.
+espera o banco calcular tudo. Aqui cada consulta roda uma vez por escopo (usuários com o mesmo acesso usam a mesma resposta guardada),
+do mesmo jeito que o site pede, e fica guardada.
 O log é público: mostra só contagens e tempos.
 
 Variáveis: SUPABASE_DB_URL. Uso: python etl/aquecer_cache.py [--minutos 6]
@@ -41,14 +41,24 @@ def main():
         cur.execute('select id from public.profiles where active order by id')
         usuarios = [str(x[0]) for x in cur.fetchall()]
         log(f'{len(usuarios)} usuários ativos')
-        ok = falhas = 0
+        ok = falhas = iguais = 0
         produtos = False
+        vistos = set()   # usuários com o mesmo acesso usam as mesmas respostas guardadas: aquece um só por acesso
         for uid in usuarios:
             if time.time() > limite:
                 log('limite de tempo; o restante fica para o primeiro acesso')
                 break
             try:
                 cur.execute("select set_config('request.jwt.claims', %s, false)", (json.dumps({'sub': uid, 'role': 'authenticated'}),))
+                try:
+                    cur.execute("select private.bi_where('{}'::jsonb) || '|' || coalesce((select role from public.profiles where id = %s), '')", (uid,))
+                    escopo = cur.fetchone()[0]
+                except Exception:  # noqa: BLE001  (sem a função: aquece todos, como antes)
+                    escopo = uid
+                if escopo in vistos:
+                    iguais += 1
+                    continue
+                vistos.add(escopo)
                 cur.execute('select public.bi_meta_leve()::jsonb -> %s ->> 1', ('dias',))
                 fim = cur.fetchone()[0]
                 if not fim:
@@ -69,7 +79,7 @@ def main():
             except Exception as ex:  # noqa: BLE001  (perfil sem acesso, função ausente etc.: segue para o próximo)
                 falhas += 1
                 log(f'um usuário não aqueceu ({type(ex).__name__})')
-        log(f'pronto: {ok} usuários aquecidos, {falhas} com falha, {time.time() - t0:.0f} s')
+        log(f'pronto: {ok} acessos aquecidos ({iguais} usuários com acesso igual a outro), {falhas} com falha, {time.time() - t0:.0f} s')
 
 
 if __name__ == '__main__':

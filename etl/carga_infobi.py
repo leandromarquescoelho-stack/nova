@@ -420,6 +420,32 @@ def gravar_metas(cur, dfs):
         log(f'maratona: pesos de {t["mes"].nunique()} meses, linha do mês em {len(lin)}')
 
 
+def gravar_estoque(cur, est):
+    """Troca o estoque gravando só o que mudou (loja x produto): apaga o que saiu, atualiza o que mudou e insere o novo.
+    Com loja x produto repetido no arquivo, volta para a troca inteira."""
+    if est.duplicated(['loja', 'produto']).any():
+        cur.execute('delete from public.bi_estoque')
+        copiar(cur, 'bi_estoque', est)
+        log('estoque: trocado inteiro (loja x produto repetido no arquivo)')
+        return
+    cols = list(est.columns)
+    val = [c for c in cols if c not in ('loja', 'produto')]
+    cur.execute('create temp table _e (like public.bi_estoque) on commit drop')
+    copiar_tab(cur, '_e', est)
+    cur.execute('create index on _e (loja, produto)')
+    cur.execute('analyze _e')
+    cur.execute("""delete from public.bi_estoque b
+                   where not exists (select 1 from _e t where t.loja = b.loja and t.produto = b.produto)""")
+    apagados = cur.rowcount
+    cur.execute(f"""update public.bi_estoque b set {', '.join(f'{c} = t.{c}' for c in val)}
+                    from _e t where t.loja = b.loja and t.produto = b.produto
+                     and ({', '.join(f'b.{c}' for c in val)}) is distinct from ({', '.join(f't.{c}' for c in val)})""")
+    mudados = cur.rowcount
+    cur.execute(f"""insert into public.bi_estoque ({', '.join(cols)}) select {', '.join(cols)} from _e t
+                    where not exists (select 1 from public.bi_estoque b where b.loja = t.loja and b.produto = t.produto)""")
+    log(f'estoque: {mudados} itens mudaram, {cur.rowcount} novos, {apagados} saíram (de {len(est)})')
+
+
 def assinatura_dias(df):
     """Assinatura de cada dia: somas de qtd, fat, custo e lb e uma soma ponderada pelos códigos (produto, cliente,
     vendedor, loja), que muda se uma venda trocar de produto, cliente, vendedor ou loja mesmo com o total igual.
@@ -513,8 +539,11 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
             p[c] = prod[c].map(dims[c]).astype('int64')
         cur.execute('create temp table _p (like public.bi_produto) on commit drop')
         copiar_tab(cur, '_p', p)
+        # só os produtos que mudaram (regravar todos a cada carga gerava escrita em disco à toa)
         cur.execute(f"""update public.bi_produto b set nome = coalesce(t.nome, b.nome), {', '.join(f'{c} = t.{c}' for c in ATRIB)}
-                        from _p t where b.id = t.id""")
+                        from _p t where b.id = t.id
+                         and (b.nome, {', '.join(f'b.{c}' for c in ATRIB)}) is distinct from
+                             (coalesce(t.nome, b.nome), {', '.join(f't.{c}' for c in ATRIB)})""")
         cur.execute(f"""insert into public.bi_produto (id, pn, nome, {', '.join(ATRIB)})
                         select id, pn, coalesce(nome, pn), {', '.join(ATRIB)} from _p t
                         where not exists (select 1 from public.bi_produto b where b.id = t.id)""")
@@ -535,8 +564,13 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         cur.execute('create temp table _c (like public.bi_cliente) on commit drop')
         copiar_tab(cur, '_c', c)
         z = (', zona = t.zona' if usar_zona else '') + (', cep = coalesce(t.cep, b.cep)' if usar_cep else '')
+        za = (', b.zona' if usar_zona else '') + (', b.cep' if usar_cep else '')
+        zn = (', t.zona' if usar_zona else '') + (', coalesce(t.cep, b.cep)' if usar_cep else '')
+        # só os clientes que mudaram
         cur.execute(f"""update public.bi_cliente b set razao = coalesce(t.razao, b.razao), tipo_cliente = t.tipo_cliente,
-                        cidade = t.cidade{z} from _c t where b.id = t.id""")
+                        cidade = t.cidade{z} from _c t where b.id = t.id
+                         and (b.razao, b.tipo_cliente, b.cidade{za}) is distinct from
+                             (coalesce(t.razao, b.razao), t.tipo_cliente, t.cidade{zn})""")
         zc = (', zona' if usar_zona else '') + (', cep' if usar_cep else '')
         cur.execute(f"""insert into public.bi_cliente (id, codcli, razao, tipo_cliente, cidade{zc})
                         select id, codcli, razao, tipo_cliente, cidade{zc} from _c t
@@ -585,8 +619,6 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         if not trocar_estoque:
             log('arquivo de período anterior: estoque atual mantido')
             e = e.iloc[0:0]
-        else:
-            cur.execute('delete from public.bi_estoque')
         est = pd.DataFrame({'loja': e['loja'].map(dims['loja']).astype('int64'), 'produto': e['sku'].map(pid).astype('int64'),
                             'est_fis': e['est_fis'].round(3), 'custo': e['est_custo'].round(2),
                             'dt_ult_vend': e['dt_ult_vend'].dt.strftime('%Y-%m-%d'),
@@ -602,7 +634,7 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         if 'preco_tab' in novas:
             est['preco_tab'] = pd.to_numeric(e['preco_tab'], errors='coerce').round(4)
         if trocar_estoque:
-            copiar(cur, 'bi_estoque', est)
+            gravar_estoque(cur, est)
             # foto do estoque do dia (comparação com o dia anterior em Vendas Hoje); banco sem a função: segue sem ela
             cur.execute("select to_regprocedure('private.bi_estoque_foto()') is not null")
             if cur.fetchone()[0]:
