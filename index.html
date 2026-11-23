@@ -9753,12 +9753,12 @@ function vhNovTxt(o){ return (o.zerou ? '<b class="vh-dn">zerou</b>' : '<b style
   ' · vendeu '+fmtUn(o.qd)+' hoje · média '+(o.md < 10 ? o.md.toFixed(1).replace('.',',') : fmtUn(Math.round(o.md)))+'/dia'; }
 // entradas: produtos que vendem bem e entraram no estoque (comparado com a foto do dia anterior)
 function vhEntItens(E){ return ((E && E.ent) || []).map(function(r){ var est = +r[3] || 0, ant = r[4]===null ? null : +r[4], md = (+r[7] || 0)/90;
-  return {loja: dimNome('loja', r[0]) || '', id:r[1], nome: String(r[2]||'#'+r[1]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), est:est, ant:ant, entrou: r[5]===null ? null : +r[5], dc:r[6], md:md,
+  return {loja: dimNome('loja', r[0]) || '', id:r[1], nome: String(r[2]||'#'+r[1]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), est:est, ant:ant, entrou: r[5]===null ? null : +r[5], dc:r[6], md:md, qd:+r[10]||0, foto:(E && E.foto) || null,
     dias: md > 0 ? est/md : null, baixo: ant!==null && ant <= md*7, zerado: ant!==null && ant <= 0}; }); }
 function vhEntTxt(o){
   var cob = o.dias!==null ? ' (≈'+Math.max(1, Math.round(o.dias))+' dia'+(Math.round(o.dias)>1?'s':'')+' de venda)' : '';
   if(o.entrou===null) return '<b class="vh-up">comprado em '+fmtDateFull(vhDt(o.dc)).slice(0,5)+'</b> · agora '+fmtUn(Math.round(o.est))+' un'+cob;
-  return '<b class="vh-up">entrou +'+fmtUn(Math.round(o.entrou))+' un</b> · '+(o.zerado ? '<b>estava zerado</b>' : 'antes '+fmtUn(Math.round(o.ant))+(o.baixo ? ' (baixo)' : ''))+' · agora '+fmtUn(Math.round(o.est))+cob;
+  return '<b class="vh-up">entrou +'+fmtUn(Math.round(o.entrou))+' un</b> · '+(o.zerado ? '<b>estava zerado</b>' : 'antes '+fmtUn(Math.round(o.ant))+(o.baixo ? ' (baixo)' : ''))+(o.foto ? ' em '+fmtDateFull(vhDt(o.foto)).slice(0,5) : '')+(o.qd ? ' · vendeu '+fmtUn(Math.round(o.qd))+' desde então' : '')+' · agora '+fmtUn(Math.round(o.est))+cob;
 }
 function vpNovidades(E){
   var en = vhEntItens(E).slice(0, 3), it = vhNovItens(E).slice(0, en.length ? 2 : 5), i = 0;
@@ -10089,7 +10089,7 @@ function vhResumoDia(R, qual, NOV){
         return '<div class="vh-rl" data-fd="produto" data-fi="'+escapeHtml(o.id)+'" data-fn="'+escapeHtml(o.nome)+'" title="'+(on ? 'Clique para tirar o filtro' : 'Clique para filtrar os demais quadros por este produto')+'"><div class="vh-rn"><span class="vh-rt">'+escapeHtml(o.loja)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</span></div>' +
           '<div class="vh-rv"><b>'+fmtMoney(o.fd)+'</b><small>'+vhNovTxt(o)+'</small></div></div>';
       }).join(''))) : '') + '</div>' +
-    (NOV ? '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">Novidades em estoque: produtos que venderam em 8 dias ou mais nos 90 dias anteriores. Entrou = estoque atual − estoque do dia anterior + vendido no dia'+(NOV.foto ? ' (foto de '+fmtDateFull(vhDt(NOV.foto)).slice(0,5)+')' : ' (ainda sem a foto do dia anterior: mostra os comprados no dia ou na véspera)')+'. Zerou ou baixou = sem estoque ou com menos de 7 dias de cobertura.</p>' : '') +
+    (NOV ? '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">Novidades em estoque: produtos que venderam em 8 dias ou mais nos 90 dias anteriores. Entrou = estoque atual − estoque da foto anterior + vendido depois da foto'+(NOV.foto ? ' (foto de '+fmtDateFull(vhDt(NOV.foto)).slice(0,5)+')' : ' (ainda sem a foto do dia anterior: mostra os comprados no dia ou na véspera)')+'. Zerou ou baixou = sem estoque ou com menos de 7 dias de cobertura.</p>' : '') +
     '<p class="note-muted" style="font-size:11px; margin:8px 0 0;">'+(MES ? 'Média = mesmo período (dia 1 a '+ddmm.slice(0,2)+') dos '+nd+' meses anteriores com venda ÷ '+nd+', com os mesmos filtros. Projeção = no ritmo de fechamento do grupo (média diária × dias úteis do mês).' : 'Média = total dos '+nd+' dias com venda nos 60 dias anteriores ÷ '+nd+', com os mesmos filtros.')+' × = quantas vezes a média; em verde, 1,5× ou mais.</p>';
 }
 // resumo do dia: hoje, ontem ou os dois (lembrado no navegador)

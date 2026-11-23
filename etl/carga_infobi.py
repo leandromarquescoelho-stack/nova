@@ -1,6 +1,7 @@
 """Carga do arquivo único (infobi): abas de vendas, vendedores, estoque, catálogo e marcas.
 
-- Vendas: substitui no banco só o período (primeira a última data) presente no arquivo; o resto do histórico fica.
+- Vendas: regrava só os dias que mudaram: os últimos JANELA_DIAS (7) dias do arquivo sempre e os mais antigos quando
+  o total do dia no arquivo difere do banco. O resto do histórico fica como está (menos escrita em disco).
   Datas antes de CORTE vão resumidas para bi_venda_hist (dia x dimensões x produto x cliente, sem NF).
 - Estoque: substituído inteiro a cada carga. Peça parada = tem saldo e a última venda e a última compra
   são mais antigas que regras.dias_parado (padrão 270 dias, o mesmo critério da planilha antiga).
@@ -29,6 +30,9 @@ def copiar_tab(cur, tabela, df):
         cp.write(buf.getvalue())
 
 CORTE = date(2026, 1, 1)  # mesmo limite das constraints de bi_venda_det / bi_venda_hist
+# carga incremental: os últimos JANELA_DIAS dias do arquivo são sempre regravados; os mais antigos só quando o total
+# do dia no arquivo difere do banco (devolução ou correção lançada com data antiga). Pode mudar em regras.janela_dias.
+JANELA_DIAS = 7
 # dimensões da venda no arquivo infobi: as da base + condição de pagamento, grupo de cliente, pessoa (F/J) e grupo de peça
 DIMS_I = DIMS + ['condicao', 'grupo_cliente', 'pessoa', 'grupo_peca', 'aplicacao', 'curva_gm']
 COLS_DET = ['dia', 'mes'] + DIMS_I + ['produto', 'cliente', 'nf', 'qtd', 'fat', 'custo', 'lb']
@@ -416,6 +420,60 @@ def gravar_metas(cur, dfs):
         log(f'maratona: pesos de {t["mes"].nunique()} meses, linha do mês em {len(lin)}')
 
 
+def assinatura_dias(df):
+    """Assinatura de cada dia: somas de qtd, fat, custo e lb e uma soma ponderada pelos códigos (produto, cliente,
+    vendedor, loja), que muda se uma venda trocar de produto, cliente, vendedor ou loja mesmo com o total igual.
+    Não depende de como as linhas estão agrupadas (bi_venda_hist guarda o dia resumido). Inteiros exatos do Python."""
+    if not len(df):
+        return {}
+    o = lambda c: df[c].astype(object)
+    peso = o('fat') * o('produto') + o('qtd') * o('cliente') + o('lb') * o('vendedor') + o('custo') * o('loja')
+    t = pd.DataFrame({'dia': df['dia'], 'q': o('qtd'), 'f': o('fat'), 'c': o('custo'), 'l': o('lb'), 'p': peso})
+    return {d: tuple(int(x) for x in r) for d, *r in t.groupby('dia', sort=False)[['q', 'f', 'c', 'l', 'p']].sum().itertuples()}
+
+
+def assinatura_banco(cur, ini, fim):
+    """A mesma assinatura de assinatura_dias(), calculada no banco para os dias de ini a fim (uma leitura só)."""
+    cur.execute("""select dia, sum(qtd), sum(fat), sum(custo), sum(lb),
+                          sum(fat::numeric * produto + qtd::numeric * cliente + lb::numeric * vendedor + custo::numeric * loja)
+                   from public.bi_venda where dia between %s and %s group by dia""", (ini, fim))
+    return {d: tuple(int(x) for x in r) for d, *r in cur.fetchall()}
+
+
+def dias_para_regravar(cur, out, ini, fim, janela):
+    """Dias do período do arquivo que precisam ser regravados: os últimos `janela` dias, os que só existem de um lado
+    e os que têm total diferente entre o arquivo e o banco."""
+    corte = fim - pd.Timedelta(days=janela - 1).to_pytimedelta()
+    arq = assinatura_dias(out)
+    ban = assinatura_banco(cur, ini, corte - pd.Timedelta(days=1).to_pytimedelta()) if corte > ini else {}
+    dias = {d for d in arq if d >= corte}
+    for d in set(arq) | set(ban):
+        if d < corte and arq.get(d) != ban.get(d):
+            dias.add(d)
+    # dias recentes que estão no banco mas sumiram do arquivo também saem
+    cur.execute('select distinct dia from public.bi_venda_det where dia between %s and %s', (max(corte, ini), fim))
+    dias |= {d for (d,) in cur.fetchall()}
+    return sorted(dias), sum(1 for d in dias if d < corte)
+
+
+def usos_venda(cur):
+    """Uma leitura só de bi_venda com tudo o que a limpeza precisa: códigos usados de cada dimensão, produtos,
+    clientes e os pares vendedor x loja. Fica na tabela temporária _uso (tipo, id, id2)."""
+    sets = ', '.join(f'({c})' for c in DIMS_I + ['produto', 'cliente']) + ', (vendedor, loja)'
+    cols = DIMS_I + ['produto', 'cliente']
+    tipo = ' '.join(f"when grouping({c}) = 0 then '{c}'" for c in cols)
+    idc = ' '.join(f'when grouping({c}) = 0 then {c}' for c in cols)
+    cur.execute("set local work_mem = '64MB'")
+    cur.execute('create temp table _uso (tipo text, id int, id2 int) on commit drop')
+    cur.execute(f"""insert into _uso
+                    select case when grouping(vendedor) = 0 and grouping(loja) = 0 then 'vendedor_loja' {tipo} end,
+                           case when grouping(vendedor) = 0 and grouping(loja) = 0 then vendedor {idc} end,
+                           case when grouping(vendedor) = 0 and grouping(loja) = 0 then loja end
+                    from public.bi_venda group by grouping sets ({sets})""")
+    cur.execute('create index on _uso (tipo, id)')
+    cur.execute('analyze _uso')
+
+
 def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
     agora = datetime.now(timezone.utc).isoformat()
     v, e, prod, cli = preparar(dfs, regras)
@@ -501,8 +559,14 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
         out['qtd'] = v['qtd'].round().astype('int64')
         for col in ('fat', 'custo', 'lb'):
             out[col] = centavos(v[col])
-        cur.execute('delete from public.bi_venda_det where dia between %s and %s', (ini, fim))
-        cur.execute('delete from public.bi_venda_hist where dia between %s and %s', (ini, fim))
+        # incremental: só os dias que mudaram (os últimos JANELA_DIAS sempre); o resto do banco fica como está
+        janela = int(regras.get('janela_dias') or JANELA_DIAS)
+        dias, antigos = dias_para_regravar(cur, out, ini, fim, janela)
+        log(f'dias regravados: {len(dias)} de {(fim - ini).days + 1} (últimos {janela} dias + {antigos} dias antigos com diferença)')
+        if dias:
+            cur.execute('delete from public.bi_venda_det where dia = any(%s)', (dias,))
+            cur.execute('delete from public.bi_venda_hist where dia = any(%s)', (dias,))
+        out = out[out['dia'].isin(set(dias))]
         det = out[out['dia'] >= CORTE]
         hist = out[out['dia'] < CORTE].groupby(COLS_HIST[:-4], as_index=False)[['qtd', 'fat', 'custo', 'lb']].sum()
         for df, nome in ((det, 'det'), (hist, 'hist')):
@@ -567,10 +631,12 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
             gravar_metas(cur, dfs)
 
         # limpeza: o que nenhuma linha usa mais
-        cur.execute("""delete from public.bi_produto p where not exists (select 1 from public.bi_venda v where v.produto = p.id)
+        # (uma leitura só de bi_venda para todas as limpezas, em vez de uma por dimensão)
+        usos_venda(cur)
+        cur.execute("""delete from public.bi_produto p where not exists (select 1 from _uso u where u.tipo = 'produto' and u.id = p.id)
                        and not exists (select 1 from public.bi_estoque e where e.produto = p.id)""")
-        cur.execute('delete from public.bi_cliente c where not exists (select 1 from public.bi_venda v where v.cliente = c.id)')
-        usos = {t: [f'select distinct {t} from public.bi_venda'] for t in DIMS_I}
+        cur.execute("delete from public.bi_cliente c where not exists (select 1 from _uso u where u.tipo = 'cliente' and u.id = c.id)")
+        usos = {t: [f"select id from _uso where tipo = '{t}'"] for t in DIMS_I}
         for t in ATRIB:
             usos[t].append(f'select distinct {t} from public.bi_produto')
         usos['loja'].append('select distinct loja from public.bi_estoque')
@@ -604,7 +670,7 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
 
         cur.execute('delete from public.bi_vendedor_loja')
         cur.execute("""insert into public.bi_vendedor_loja (vendedor, loja)
-                       select distinct dv.valor, dl.valor from (select distinct vendedor, loja from public.bi_venda) v
+                       select distinct dv.valor, dl.valor from (select id vendedor, id2 loja from _uso where tipo = 'vendedor_loja') v
                        join public.bi_dim dv on dv.tipo = 'vendedor' and dv.id = v.vendedor
                        join public.bi_dim dl on dl.tipo = 'loja' and dl.id = v.loja""")
 
