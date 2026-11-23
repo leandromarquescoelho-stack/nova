@@ -11750,6 +11750,7 @@ function bindEvents(){
   window.__NC_switchView = function(v){ switchView(v); };
   function switchView(view){
     state.currentView = view; document.body.setAttribute('data-view', view);
+    if(novaCargaPendente && view!=='dashboard') setTimeout(autoCargaTentar, 0);
     setTimeout(function(){ if(state.currentView===view) subabasCorrigir(view); }, 0);
     Array.prototype.forEach.call(document.querySelectorAll('.nav-item'), function(n){
       if(n.getAttribute('data-view')===view) n.setAttribute('aria-current','page');
@@ -12311,7 +12312,45 @@ async function checarNovaCarga(){
   var c = await window.__NC_cargaAtual();
   novaCargaPendente = !!(c && REAL.carga && c.carregado_em !== REAL.carga.carregado_em);
   updateLiveLabel();
+  if(novaCargaPendente) autoCargaTentar();
   return c;
+}
+/* ---------- Carga nova: o site se atualiza sozinho ----------
+   Recarrega guardando a guia, a subguia, os filtros e a rolagem, e volta para o mesmo lugar.
+   Espera se a pessoa estiver digitando, com formulário ou janela aberta, ou mexeu na tela há menos de 45 s.
+   No Dashboard o painel já se atualiza sem recarregar (vpChecar); o recarregamento fica para quando sair dele. */
+var AUTO_ULT_ACAO = 0, AUTO_ESPERA = null;
+['keydown','input','pointerdown','wheel'].forEach(function(ev){ document.addEventListener(ev, function(){ AUTO_ULT_ACAO = Date.now(); }, {capture:true, passive:true}); });
+function autoOcupado(){
+  var a = document.activeElement;
+  if(a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return true;
+  if(Array.prototype.some.call(document.querySelectorAll('form.ra-form, [aria-modal="true"], #alPop, #iaPainel'), function(el){ return !el.hidden && el.offsetParent!==null; })) return true;
+  if(document.fullscreenElement) return true;
+  return !document.hidden && Date.now() - AUTO_ULT_ACAO < 45000;
+}
+function autoCargaTentar(){
+  if(!novaCargaPendente || typeof state==='undefined') return;
+  if(state.currentView==='dashboard') return;
+  if(autoOcupado()){ if(!AUTO_ESPERA) AUTO_ESPERA = setTimeout(function(){ AUTO_ESPERA = null; autoCargaTentar(); }, 15000); return; }
+  try{
+    sessionStorage.setItem('nc_recarga', JSON.stringify({v:state.currentView, aba:(typeof VX!=='undefined' ? VX.aba : null), fs:FS.ativo||null, f:fsCapturar(), y:window.scrollY||0, t:Date.now()}));
+  }catch(e){}
+  toast('Nova carga recebida. Atualizando…');
+  setTimeout(function(){ window.location.reload(); }, 800);
+}
+// depois do login: volta para onde a pessoa estava antes do recarregamento automático
+function autoCargaRestaurar(){
+  var x = null; try{ x = JSON.parse(sessionStorage.getItem('nc_recarga')||'null'); sessionStorage.removeItem('nc_recarga'); }catch(e){}
+  if(!x || Date.now() - (x.t||0) > 5*60*1000) return;
+  try{
+    var temF = x.f && (Object.keys(x.f.f||{}).length || (x.f.per && x.f.per.p!==state.globalPeriod) || x.f.dia || x.f.parado || x.f.dias!==null);
+    if(x.fs && fsAchar(x.fs)) fsAplicar(x.fs);
+    else if(temF){ var tmp = Object.assign({id:'__auto', nome:''}, x.f); FS.lista.push(tmp); try{ fsAplicar('__auto'); } finally { FS.lista = FS.lista.filter(function(y){ return y.id!=='__auto'; }); FS.ativo = null; fsRender(); } }
+    if(x.v && x.v!==state.currentView){ var nav = document.querySelector('.nav-item[data-view="'+x.v+'"]'); if(nav && nav.style.display!=='none') window.__NC_switchView(x.v); }
+    if(x.v==='vendas' && x.aba){ var b = document.querySelector('[data-vxaba="'+x.aba+'"]'); if(b) b.click(); }
+    if(x.y) setTimeout(function(){ window.scrollTo(0, x.y); }, 1500);
+    toast('Site atualizado com a nova carga.');
+  }catch(e){}
 }
 async function doRefresh(){
   var btn = document.getElementById('refreshBtn');
@@ -12324,11 +12363,13 @@ async function doRefresh(){
   finally { btn.classList.remove('spinning'); }
 }
 function updateLiveLabel(){
-  var txt = novaCargaPendente ? 'Nova carga disponível · clique em Atualizar' : (cargaLabel(REAL.carga) || 'Sem informação de carga');
+  var txt = novaCargaPendente ? (state.currentView==='dashboard' ? 'Nova carga disponível · o site atualiza ao sair do Dashboard' : 'Nova carga recebida · atualizando sozinho') : (cargaLabel(REAL.carga) || 'Sem informação de carga');
   document.getElementById('updatedText').textContent = txt;
   document.getElementById('liveDot').title = cargaLabel(REAL.carga);
 }
-setInterval(function(){ checarNovaCarga().catch(function(){}); }, 5*60*1000);
+window.__NC_checarCarga = checarNovaCarga;
+setInterval(function(){ checarNovaCarga().catch(function(){}); }, 2*60*1000);
+document.addEventListener('visibilitychange', function(){ if(!document.hidden) checarNovaCarga().catch(function(){}); });
 
 /* ============================================================
    ADMINISTRAÇÃO DE USUÁRIOS (somente papel BI)
@@ -13061,7 +13102,7 @@ function doLogin(u){
     });
   }
   // a tela de login sai só quando os primeiros números chegam
-  return Promise.resolve(pronto).then(function(){ document.getElementById('loginScreen').style.display = 'none'; });
+  return Promise.resolve(pronto).then(function(){ document.getElementById('loginScreen').style.display = 'none'; autoCargaRestaurar(); });
 }
 function setLoginBusy(busy){
   var btn = document.querySelector('#loginForm .login-btn');
