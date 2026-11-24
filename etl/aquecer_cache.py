@@ -5,7 +5,7 @@ espera o banco calcular tudo. Aqui cada consulta roda uma vez por escopo (usuár
 do mesmo jeito que o site pede, e fica guardada.
 O log é público: mostra só contagens e tempos.
 
-Variáveis: SUPABASE_DB_URL. Uso: python etl/aquecer_cache.py [--minutos 6]
+Variáveis: SUPABASE_DB_URL. Uso: python etl/aquecer_cache.py [--minutos 6] [--paralelo 1]
 """
 import json
 import os
@@ -38,41 +38,50 @@ def conectar(url, uid):
     return conn, cur
 
 
-def aquecer_escopo(url, uid, hoje, canais, limite, com_produtos):
-    """Uma conexão por escopo. Primeiro a tela de entrada (Vendas de hoje, ticker, destaques), depois o painel geral."""
+def entrada_sql(hoje, canais):
+    """O que o site pede logo depois do login (mesmos parâmetros, para usar a mesma resposta guardada)."""
+    f, d = '{}', hoje.isoformat()
+    entrada = [('select public.bi_metas_vend()', ()),
+               ('select public.bi_vendas_hoje(%s::jsonb, %s::date)', (f, d)),
+               ('select public.bi_vendas_hoje_estoque(%s::jsonb, %s::date)', (f, d)),
+               ('select public.bi_ticker(%s::jsonb, %s::date)', (f, d)),
+               ('select public.bi_vendas_destaques(%s::jsonb, %s::date)', (f, d)),
+               ("select public.bi_painel(%s::jsonb, '{}'::jsonb, 'a')", (f,))]
+    if canais[0]:
+        entrada.append(("select public.bi_painel(%s::jsonb, '{}'::jsonb, 'a')", (json.dumps({'canal': canais[0]}),)))
+    if canais[1]:
+        entrada.append(("select public.bi_painel(%s::jsonb, '{}'::jsonb, 'a')", (json.dumps({'canal': canais[1]}),)))
+    return entrada
+
+
+def aquecer_escopo(url, uid, hoje, canais, limite, com_produtos, fase):
+    """Uma conexão por escopo. Fase 1: tela de entrada (Vendas de hoje, ticker, destaques, metas).
+    Fase 2: painel geral e aba Vendedores, enquanto houver tempo."""
     conn, cur = conectar(url, uid)
     try:
-        f, d = '{}', hoje.isoformat()
+        f = '{}'
         cur.execute('select public.bi_meta_leve()::jsonb -> %s ->> 1', ('dias',))
         fim = cur.fetchone()[0]
         if not fim:
             return False
-        # tela de entrada: o que o site pede logo depois do login (mesmos parâmetros, para usar a mesma resposta guardada)
-        entrada = [('select public.bi_metas_vend()', ()),
-                   ('select public.bi_vendas_hoje(%s::jsonb, %s::date)', (f, d)),
-                   ('select public.bi_vendas_hoje_estoque(%s::jsonb, %s::date)', (f, d)),
-                   ('select public.bi_ticker(%s::jsonb, %s::date)', (f, d)),
-                   ('select public.bi_vendas_destaques(%s::jsonb, %s::date)', (f, d)),
-                   ("select public.bi_painel(%s::jsonb, '{}'::jsonb, 'a')", (f,))]
-        if canais[0]:
-            entrada.append(("select public.bi_painel(%s::jsonb, '{}'::jsonb, 'a')", (json.dumps({'canal': canais[0]}),)))
-        if canais[1]:
-            entrada.append(("select public.bi_painel(%s::jsonb, '{}'::jsonb, 'a')", (json.dumps({'canal': canais[1]}),)))
-        for sql, par in entrada:
-            try:
-                cur.execute(sql, par)
-            except psycopg.Error:   # função ausente ou sem permissão ainda: segue com as outras
-                pass
-        if time.time() > limite:
+        if fase == 1:
+            for sql, par in entrada_sql(hoje, canais):
+                try:
+                    cur.execute(sql, par)
+                except psycopg.Error:   # função ausente ou sem permissão ainda: segue com as outras
+                    pass
             return True
         per = periodo(date.fromisoformat(fim[:10]))
         curto = {'ini': per['ini'], 'fim': per['fim']}
-        cur.execute("select public.bi_painel(%s::jsonb, %s::jsonb, 'c')", (f, json.dumps(per)))
-        cur.execute('select public.bi_kpis(%s::jsonb, %s::jsonb)', (f, json.dumps(per)))
-        cur.execute('select public.bi_hoje(%s::jsonb, %s::date)', (f, per['fim']))
-        cur.execute('select public.bi_loja_mes(%s::jsonb)', (f,))
-        cur.execute('select public.bi_vendedores(%s::jsonb, %s::jsonb)', (f, json.dumps(curto)))
-        if com_produtos:
+        for sql, par in (("select public.bi_painel(%s::jsonb, %s::jsonb, 'c')", (f, json.dumps(per))),
+                         ('select public.bi_kpis(%s::jsonb, %s::jsonb)', (f, json.dumps(per))),
+                         ('select public.bi_hoje(%s::jsonb, %s::date)', (f, per['fim'])),
+                         ('select public.bi_loja_mes(%s::jsonb)', (f,)),
+                         ('select public.bi_vendedores(%s::jsonb, %s::jsonb)', (f, json.dumps(curto)))):
+            if time.time() > limite:
+                return True
+            cur.execute(sql, par)
+        if com_produtos and time.time() <= limite:
             cur.execute('select public.bi_produtos()')
         return True
     finally:
@@ -82,7 +91,7 @@ def aquecer_escopo(url, uid, hoje, canais, limite, com_produtos):
 def main():
     args = sys.argv[1:]
     minutos = float(args[args.index('--minutos') + 1]) if '--minutos' in args else 6.0
-    paralelo = int(args[args.index('--paralelo') + 1]) if '--paralelo' in args else 3
+    paralelo = int(args[args.index('--paralelo') + 1]) if '--paralelo' in args else 1
     limite = time.time() + minutos * 60
     url = os.environ.get('SUPABASE_DB_URL')
     if not url:
@@ -111,14 +120,18 @@ def main():
                 escolhidos.append(uid)
     log(f'{len(usuarios)} usuários ativos, {len(escolhidos)} acessos diferentes')
     ok = falhas = 0
-    with ThreadPoolExecutor(max_workers=max(1, paralelo)) as ex:
-        tarefas = [ex.submit(aquecer_escopo, url, uid, hoje, canais, limite, i == 0) for i, uid in enumerate(escolhidos)]
-        for t in tarefas:
-            try:
-                ok += 1 if t.result() else 0
-            except Exception as e:  # noqa: BLE001  (perfil sem acesso, tempo esgotado etc.: segue)
-                falhas += 1
-                log(f'um acesso não aqueceu ({type(e).__name__})')
+    # uma consulta pesada por vez (o banco é pequeno e os usuários continuam usando o site durante o aquecimento);
+    # primeiro a tela de entrada de todos os acessos, depois o resto enquanto houver tempo
+    for fase in (1, 2):
+        with ThreadPoolExecutor(max_workers=max(1, paralelo)) as ex:
+            tarefas = [ex.submit(aquecer_escopo, url, uid, hoje, canais, limite, i == 0, fase) for i, uid in enumerate(escolhidos)]
+            for t in tarefas:
+                try:
+                    ok += 1 if (t.result() and fase == 1) else 0
+                except Exception as e:  # noqa: BLE001  (perfil sem acesso, tempo esgotado etc.: segue)
+                    falhas += 1
+                    log(f'um acesso não aqueceu na fase {fase} ({type(e).__name__})')
+        log(f'fase {fase} ({"tela de entrada" if fase == 1 else "painel geral"}): {time.time() - t0:.0f} s')
     log(f'pronto: {ok} acessos aquecidos, {falhas} com falha, {time.time() - t0:.0f} s')
 
 
