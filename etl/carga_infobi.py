@@ -602,8 +602,12 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
             cur.execute('delete from public.bi_venda_det where dia = any(%s)', (dias,))
             cur.execute('delete from public.bi_venda_hist where dia = any(%s)', (dias,))
         out = out[out['dia'].isin(set(dias))]
-        det = out[out['dia'] >= CORTE]
-        hist = out[out['dia'] < CORTE].groupby(COLS_HIST[:-4], as_index=False)[['qtd', 'fat', 'custo', 'lb']].sum()
+        # meses arquivados (private.bi_arquivar_vendas) ficam só no histórico: o limite anda com o arquivamento
+        cur.execute("select (valor->>'corte')::date from public.bi_config where chave = 'arquivo'")
+        ca = cur.fetchone()
+        corte = max(CORTE, ca[0]) if ca and ca[0] else CORTE
+        det = out[out['dia'] >= corte]
+        hist = out[out['dia'] < corte].groupby(COLS_HIST[:-4], as_index=False)[['qtd', 'fat', 'custo', 'lb']].sum()
         for df, nome in ((det, 'det'), (hist, 'hist')):
             if len(df) and df[['fat', 'custo', 'lb', 'qtd']].abs().max().max() >= 2**31:
                 raise ValueError(f'valor acima do limite da base ({nome})')
@@ -611,7 +615,7 @@ def gravar_infobi(conn, dfs, regras, loja_info_atual, arq):
             copiar(cur, 'bi_venda_det', det[COLS_DET])
         if len(hist):
             copiar(cur, 'bi_venda_hist', hist[COLS_HIST])
-        log(f'vendas gravadas: {len(det)} detalhadas, {len(hist)} resumidas (de {int((out["dia"] < CORTE).sum())} linhas)')
+        log(f'vendas gravadas: {len(det)} detalhadas, {len(hist)} resumidas (de {int((out["dia"] < corte).sum())} linhas)')
 
         # estoque inteiro, só quando o arquivo é o mais recente (um arquivo de anos anteriores não mexe no estoque atual)
         cur.execute('select max(dia) from public.bi_venda')
