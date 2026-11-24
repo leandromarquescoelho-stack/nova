@@ -1863,6 +1863,11 @@ table.users-table .u-save{font-size:11.5px; padding:6px 12px;}
 .pares-ctl .pc-l{font-size:12px; color:var(--text-muted); font-weight:600;}
 .pares-ctl .pc-eq{display:flex; flex-wrap:wrap; gap:6px;}
 .est-dest{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px;}
+.en-sec{font-size:11px; color:var(--text-muted); font-weight:700; letter-spacing:.03em; margin:10px 0 2px;} .en-sec:first-child{margin-top:0;}
+.en-l{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; padding:6px 0; border-top:1px dashed var(--border); font-size:13px;}
+.en-l .nm{min-width:0;} .en-l .nm b{font-weight:600;} .en-l small{display:block; color:var(--text-muted); font-size:11.5px; line-height:1.35; margin-top:1px;}
+.en-l .v{font-weight:700; white-space:nowrap; text-align:right;} .en-l .v small{font-weight:500;}
+.en-rota{font-weight:700; color:var(--text);} .en-rota i{font-style:normal; color:var(--text-muted); margin:0 4px;}
 .est-dest .ed{border:1px solid var(--border); border-radius:12px; padding:12px 14px; background:var(--surface-2, rgba(127,127,127,.06));}
 .est-dest .ed.big{grid-column:span 2;}
 .est-dest .ed .l{font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;}
@@ -2743,6 +2748,20 @@ table.data-table.vp-tbl{min-width:720px;}
           <div><h2>Valor do Estoque e Giro</h2><div class="psub" id="estDestSub">Estoque atual a custo, com os filtros aplicados</div></div>
         </div>
         <div class="est-dest" id="estDestaque"></div>
+      </div>
+      <div class="grid-2" style="margin-bottom:14px;">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Novidades no Estoque</h2><div class="psub" id="estNovSub">O que mudou desde a foto anterior do estoque</div></div>
+          </div>
+          <div id="estNovList" class="scroll-limit scroll-5"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Sugestões de Transferência</h2><div class="psub" id="estTrfSub">Entre filiais, só quando uma tem sobra e a outra está sem cobertura</div></div>
+          </div>
+          <div id="estTrfList" class="scroll-limit scroll-5"></div>
+        </div>
       </div>
       <div class="grid-2" style="margin-bottom:14px;">
         <div class="panel">
@@ -7608,6 +7627,50 @@ function renderEstoqueDestaque(){
   var sub = document.getElementById('estDestSub');
   if(sub) sub.textContent = 'Estoque atual a custo, com os filtros do bloco Estoque · '+fmtUn(crit)+' itens críticos e '+fmtUn(zer)+' sem estoque (veja os alertas abaixo)';
 }
+// aba Estoque: novidades (mesma consulta de Vendas do dia) e sugestões de transferência entre filiais (bi_estoque_transferencias)
+var EST_NT = {k:null, nov:null, trf:null};
+function renderEstoqueNovTrf(){
+  var bn = document.getElementById('estNovList'), bt = document.getElementById('estTrfList'); if(!bn || !bt) return;
+  var f = painelFiltros(null), dia = isoDia(new Date()), k = JSON.stringify([f, dia, (vhCarga()||{}).carregado_em||'']);
+  if(EST_NT.k !== k){
+    EST_NT.k = k; EST_NT.nov = EST_NT.trf = 'carregando';
+    window.__NC_rpc('bi_vendas_hoje_estoque', {f:f, dia:dia}).then(function(E){ if(EST_NT.k===k){ EST_NT.nov = E || {}; estNovDesenhar(); } })
+      .catch(function(){ if(EST_NT.k===k){ EST_NT.nov = 'erro'; estNovDesenhar(); } });
+    window.__NC_rpc('bi_estoque_transferencias', {f:f}).then(function(T){ if(EST_NT.k===k){ EST_NT.trf = T || {}; estTrfDesenhar(); } })
+      .catch(function(e){ if(EST_NT.k===k){ EST_NT.trf = /bi_estoque_transferencias|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'; estTrfDesenhar(); } });
+  }
+  estNovDesenhar(); estTrfDesenhar();
+}
+function estMsg(t){ return '<p class="note-muted" style="font-size:12.5px;">'+t+'</p>'; }
+function estNovDesenhar(){
+  var box = document.getElementById('estNovList'), E = EST_NT.nov; if(!box) return;
+  if(E==='carregando'){ box.innerHTML = estMsg('Carregando o estoque…'); return; }
+  if(E==='erro' || !E){ box.innerHTML = estMsg('Não foi possível ler as novidades agora.'); return; }
+  var N = vhNovEst(E), Z = vhNovItens(E).sort(function(a, b){ return (a.zerou===b.zerou ? 0 : a.zerou ? -1 : 1) || b.md - a.md; }), h = '', n = 0;
+  var sec = function(tit, L, lin){ if(!L.length) return; n += L.length; h += '<div class="en-sec">'+tit.toUpperCase()+' · '+L.length+'</div>' + L.map(lin).join(''); };
+  sec('⚠️ Zerou ou acabando (vende bem)', Z, function(o){ return '<div class="en-l"><span class="nm"><b>'+escapeHtml(o.loja)+'</b> · '+escapeHtml(o.nome)+'<small>'+vhNovTxt(o)+'</small></span><span class="v">'+(o.zerou ? '<span class="vh-dn">0 un</span>' : fmtUn(Math.round(o.est))+' un')+'</span></div>'; });
+  VH_NOV_SEC.forEach(function(s){ sec(s[1], N[s[0]], function(o){ return '<div class="en-l"><span class="nm"><b>'+escapeHtml(o.loja)+'</b> · '+escapeHtml(o.nome)+'<small>'+o.txt+'</small></span><span class="v">'+o.v+'</span></div>'; }); });
+  var sub = document.getElementById('estNovSub');
+  if(sub) sub.textContent = E.foto ? 'Comparado com a foto do estoque de '+fmtDateFull(vhDt(E.foto)).slice(0,5)+' · '+fmtUn(n)+' itens' : 'Ainda sem foto anterior do estoque para comparar';
+  box.innerHTML = h || estMsg(E.foto ? 'Nenhuma novidade desde a foto anterior.' : 'Ainda sem foto anterior do estoque para comparar.');
+}
+function estTrfDesenhar(){
+  var box = document.getElementById('estTrfList'), T = EST_NT.trf; if(!box) return;
+  if(T==='carregando'){ box.innerHTML = estMsg('Calculando as sugestões…'); return; }
+  if(T==='falta'){ box.innerHTML = estMsg('As sugestões aparecem depois que o banco for atualizado.'); return; }
+  if(T==='erro' || !T){ box.innerHTML = estMsg('Não foi possível calcular as sugestões agora.'); return; }
+  var L = T.itens || [], sub = document.getElementById('estTrfSub');
+  if(sub) sub.textContent = (T.n ? fmtUn(T.n)+' sugest'+(T.n>1?'ões':'ão')+' · '+fmtMoney(+T.valor||0)+' a custo' : 'Nenhuma sugestão')+' · maiores valores primeiro';
+  if(!L.length){ box.innerHTML = estMsg('Nenhuma transferência faz sentido agora: nenhuma filial tem sobra de um item que outra esteja precisando.'); return; }
+  box.innerHTML = L.map(function(r){
+    var de = dimNome('loja', r[2])||'', para = dimNome('loja', r[3])||'', qt = +r[4]||0, cu = +r[5]||0, cob = r[7]===null ? null : +r[7];
+    var mdP = (+r[9]||0)/90, cobP = mdP > 0 ? (+r[8]||0)/mdP : 0;
+    var motDe = r[11] ? 'parado em '+de : (cob===null ? 'sem venda em '+de+' nos 90 dias' : de+' tem '+fmtUn(Math.round(+r[6]||0))+' un (≈'+fmtUn(cob)+' dias)');
+    var motPara = para+' vendeu '+fmtUn(+r[9]||0)+' em 90 dias ('+fmtUn(+r[10]||0)+' dias com venda) e tem '+fmtUn(Math.round(+r[8]||0))+' un'+(cobP >= 1 ? ' (≈'+fmtUn(Math.round(cobP))+' dias)' : '');
+    return '<div class="en-l"><span class="nm"><span class="en-rota">'+escapeHtml(de)+'<i>→</i>'+escapeHtml(para)+'</span> · '+escapeHtml(vhNomeP(r[1], r[0]))+
+      '<small>'+escapeHtml(motDe)+' · '+escapeHtml(motPara)+'</small></span><span class="v">'+fmtUn(qt)+' un<small>'+fmtMoney(qt*cu)+'</small></span></div>';
+  }).join('') + estMsg('<br>Quem recebe: vendeu o item em 2 dias ou mais nos últimos 90 e o estoque cobre menos de 15 dias; a sugestão completa 45 dias de venda. Quem cede: estoque parado ou acima de 120 dias de venda, guardando 60 dias para si. Venda pela loja que fatura (inclui o e-commerce faturado pela filial). Só valores a partir de R$ 150.');
+}
 function renderAlerts(){
   var prods = estoqueProducts().filter(function(p){ var s=stockStatus(p); return !p.isBucket && (s==='critico'||s==='zerado'||s==='atencao'); });
   var SEV = {zerado:0, critico:1, atencao:2};
@@ -9794,6 +9857,7 @@ function vpChecar(manual){
     var vista = vhCarga();
     if(c && (!vista || c.carregado_em !== vista.carregado_em)){
       VH.carga = c; VH.novaEm = new Date(); VH.diaAuto = true;
+      VH.atuAte = Date.now() + 8000; clearTimeout(VH.atuT); VH.atuT = setTimeout(vpAjustar, 8100);   // tamanho da fonte fica parado durante a atualização
       VH.key = null; VH.res = {}; VH.resPend = {}; VH.obj = {}; VH.objPend = {}; VH.est = {}; VH.estPend = {}; VH.tk = {}; VH.tkPend = {};
       if(vpVisivel()) vxHoje();
       if(manual) toast('Nova carga recebida. Atualizando o painel…');
@@ -10010,16 +10074,23 @@ function vhPainel(){
 // computador: reduz o painel proporcionalmente quando ele não cabe na altura da tela (sem barra de rolagem)
 function vpAjustar(){
   var el = document.getElementById('vhModoPainel'); if(!el) return;
-  el.style.zoom = '';
-  if(window.innerWidth < 1001 || !vpVisivel()) return;
+  if(window.innerWidth < 1001){ el.style.zoom = ''; return; }
+  if(!vpVisivel()) return;
   var cheia = document.fullscreenElement===el, topo = cheia ? 0 : el.getBoundingClientRect().top + (window.scrollY||0);
   // altura do conteúdo (em tela cheia do painel a caixa ocupa a tela toda; vale o fim do último bloco)
   var altura = function(){ var k = document.getElementById('vpBody'), r0 = el.getBoundingClientRect().top; return k ? k.getBoundingClientRect().bottom - r0 : el.getBoundingClientRect().height; };
   var mn = el.closest('.main'), abaixo = cheia || !mn ? 0 : parseFloat(getComputedStyle(mn).paddingBottom) || 0;
-  var disp = window.innerHeight - topo - abaixo - (cheia ? 20 : 6), alt = altura();
+  var disp = window.innerHeight - topo - abaixo - (cheia ? 20 : 6);
   if(disp < 200) return;
   // tela cheia (do painel ou do navegador): também aumenta para ocupar a tela toda; fora dela, só reduz
   var tela = !!(document.fullscreenElement || document.webkitFullscreenElement), zMax = tela ? 3.2 : 1;   // TV 4K: até 3,2x
+  // atualização discreta: se o tamanho atual ainda serve (cabe e não sobra muito), não mexe (evita a fonte crescer e diminuir)
+  var zAt = parseFloat(el.style.zoom) || 1, hAt = altura();
+  // carga nova chegando: os quadros recarregam um a um; enquanto isso só reduz se algo não couber (a conta final vem depois)
+  if(VH.atuAte > Date.now() && hAt <= disp && zAt <= zMax) return;
+  if(zAt <= zMax && hAt <= disp && (tela ? hAt >= disp*0.93 : (zAt >= 1 || hAt >= disp*0.93))) return;
+  el.style.zoom = '';
+  var alt = altura();
   if(alt <= disp && (!tela || alt > disp*0.98)) return;
   // com zoom os cards mudam de largura e quebram linhas de outro jeito: refaz a conta até encaixar
   var z = Math.min(zMax, Math.max(0.55, disp/alt)), ok = alt <= disp ? 1 : null;
@@ -11392,6 +11463,7 @@ function renderTudo(refreshing){
   renderCategoryList();
   if(PRODUTOS_NO_PAINEL){
     renderEstoqueDestaque();
+    renderEstoqueNovTrf();
     renderStockHealth();
     renderSimulador();
     renderAlerts();
