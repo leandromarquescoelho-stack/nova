@@ -10018,7 +10018,7 @@ function vpAjustar(){
   var disp = window.innerHeight - topo - abaixo - (cheia ? 20 : 6), alt = altura();
   if(disp < 200) return;
   // tela cheia (do painel ou do navegador): também aumenta para ocupar a tela toda; fora dela, só reduz
-  var tela = !!(document.fullscreenElement || document.webkitFullscreenElement), zMax = tela ? 1.8 : 1;
+  var tela = !!(document.fullscreenElement || document.webkitFullscreenElement), zMax = tela ? 3.2 : 1;   // TV 4K: até 3,2x
   if(alt <= disp && (!tela || alt > disp*0.98)) return;
   // com zoom os cards mudam de largura e quebram linhas de outro jeito: refaz a conta até encaixar
   var z = Math.min(zMax, Math.max(0.55, disp/alt)), ok = alt <= disp ? 1 : null;
