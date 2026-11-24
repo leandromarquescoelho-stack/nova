@@ -9361,11 +9361,12 @@ function vpMetaDiaVend(nome, dia){
   var x = M[dia.getFullYear()+'-'+String(dia.getMonth()+1).padStart(2,'0')]; if(!x || !(x.dia > 0)) return null;
   return tipoDia(dia, LOJA_MUNICIPIO[x.loja]||null)==='util' ? x.dia : null;
 }
-function vpMetaDiaHtml(v, md){
+function vpMetaDiaHtml(v, md, sg){
   if(!(md > 0)) return '';
-  var p = v/md*100, c = vhCorTend(p);
+  sg = sg > 0 ? sg : 0;   // vendas para seguradoras não contam para a meta do vendedor
+  var p = Math.max(0, v - sg)/md*100, c = vhCorTend(p);
   var ico = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>';
-  return '<small class="vp-mt" style="color:'+c+'" title="Venda do dia ÷ meta do dia ('+fmtMoney(md)+')">'+ico+' '+vhP(p)+'</small>';
+  return '<small class="vp-mt" style="color:'+c+'" title="Venda do dia'+(sg > 0.5 ? ' sem seguradoras ('+fmtMoney(Math.max(0, v - sg))+'; seguradoras '+fmtMoney(sg)+')' : '')+' ÷ meta do dia ('+fmtMoney(md)+')">'+ico+' '+vhP(p)+'</small>';
 }
 function vhP(v){ return v===null || v===undefined || !isFinite(v) ? '—' : v.toFixed(1).replace('.',',')+'%'; }
 function vhVs(v){ if(v===null || !isFinite(v)) return '<span class="note-muted">—</span>'; return '<span class="'+(v>=0?'vh-up':'vh-dn')+'">'+(v>=0?'▲ +':'▼ ')+v.toFixed(1).replace('.',',')+'%</span>'; }
@@ -9989,10 +9990,10 @@ function vhPainel(){
     var cv = rows===RR.clientes ? (RR.cli_vend || {}) : null;   // clientes: vendedor que mais vendeu para ele no dia
     var ehVend = rows===RR.vendedores;
     var it = (rows||[]).map(function(r){ var vd = cv && cv[r[0]]!=null ? dimNome('vendedor', cv[r[0]]) : '', nm = nome(r);
-      return {nome:nm, h:c2(r[1]), m:c2(r[4])/(RR.nd||1), vd: vd ? nomeCurtoVend(vd) : '', md: ehVend ? vpMetaDiaVend(nm, S.dD) : null}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 10);
+      return {nome:nm, h:c2(r[1]), m:c2(r[4])/(RR.nd||1), vd: vd ? nomeCurtoVend(vd) : '', md: ehVend ? vpMetaDiaVend(nm, S.dD) : null, sg: ehVend ? c2((RR.vend_seg||{})[r[0]]||0) : 0}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 10);
     return '<div class="vp-d"><h4>'+tit+'<small>'+sub+'</small></h4>'+(it.length ? it.map(function(o, i){
       var x = o.m > 0.5 ? o.h/o.m : null;
-      return '<div class="vp-dl"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+(o.vd ? ' · <i>'+escapeHtml(o.vd)+'</i>' : '')+'</small></span><b>'+fmtMoney(o.h)+vpMetaDiaHtml(o.h, o.md)+'</b></div>';
+      return '<div class="vp-dl"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+(o.vd ? ' · <i>'+escapeHtml(o.vd)+'</i>' : '')+'</small></span><b>'+fmtMoney(o.h)+vpMetaDiaHtml(o.h, o.md, o.sg)+'</b></div>';
     }).join('') : '<p class="note-muted" style="font-size:12px;">Sem vendas ainda.</p>')+'</div>';
   }
   var nm7 = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
