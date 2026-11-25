@@ -1057,6 +1057,7 @@ tr.vend-row:hover td{ background:var(--surface-2); }
 .stock-donut-wrap{display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
 .stock-stats{display:grid; grid-template-columns:1fr 1fr; gap:10px; flex:1; min-width:200px;}
 .stock-stat{padding:10px 12px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border);}
+button.stock-stat{font:inherit; color:inherit; text-align:left; cursor:pointer; width:100%;} button.stock-stat:hover{border-color:var(--border-strong);} button.stock-stat[aria-pressed="true"]{background:var(--surface-3); border-color:var(--accent);}
 .stock-stat .n{font-family:'Sora',sans-serif; font-size:18px; font-weight:700;}
 .stock-stat .l{font-size:10.5px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em; margin-top:2px; display:flex; align-items:center; gap:5px;}
 .dotb{width:7px; height:7px; border-radius:50%; flex:none;}
@@ -1104,6 +1105,7 @@ tr.vend-row:hover td{ background:var(--surface-2); }
 .abc-chip .ac-top{display:flex; align-items:center; gap:6px; font-size:11px; font-weight:800; letter-spacing:.03em;}
 .abc-chip .ac-dot{width:8px; height:8px; border-radius:50%;}
 .abc-chip .ac-n{font-family:'Sora',sans-serif; font-size:15px; font-weight:700; margin-top:4px;}
+.abc-chip .ac-fat{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; margin-top:2px; color:var(--text);}
 .abc-chip .ac-sub{font-size:10.5px; color:var(--text-muted);}
 
 /* sellers */
@@ -3602,7 +3604,32 @@ function montarProdutosEstoque(b){
   });
   return out.sort(function(a,b){ return b.fat - a.fat; });
 }
-function estoqueProducts(){ return EST_BASE.filter(matchesFilters); }
+// aba Estoque: cliques na curva ABC (classe) e na saúde do estoque (situação) filtram todos os quadros da aba
+var ABC_MEMO = {k:null, m:null};
+function abcMapa(){   // id do produto -> classe A/B/C (curva de faturamento do período, com os filtros do painel)
+  var k = PRODUCTS.length+'|'+JSON.stringify(Object.keys(state).filter(function(x){ return ['page','search','sortKey','sortDir','abcFilter','estStatus','simDias','giroSortDesc','currentView'].indexOf(x)<0; }).map(function(x){ return state[x]; }));
+  if(ABC_MEMO.k===k && ABC_MEMO.p===PRODUCTS) return ABC_MEMO.m;
+  var m = {}; computeABC().forEach(function(r){ m[r.p.id] = r.cls; });
+  ABC_MEMO = {k:k, m:m, p:PRODUCTS}; return m;
+}
+function estLocalOk(sem){   // sem: 'abc' ou 'status' para ignorar o próprio filtro (o quadro que filtra mostra todas as opções)
+  var a = sem!=='abc' && state.abcFilter, st = sem!=='status' && state.estStatus;
+  if(!a && !st) return null;
+  var m = a ? abcMapa() : null;
+  return function(p){ return (!a || m[p.id]===a) && (!st || stockStatus(p)===st); };
+}
+function estoqueProducts(sem){ var L = EST_BASE.filter(matchesFilters), ok = estLocalOk(sem); return ok ? L.filter(ok) : L; }
+// itens das listas que vêm do banco (novidades, transferências): mesmo filtro, pelo id do produto
+function estLocalIdOk(){
+  var ok = estLocalOk(); if(!ok) return null;
+  var byId = {}; EST_BASE.forEach(function(p){ byId[p.id] = p; });
+  return function(id){ var p = byId[String(id)]; return !!p && ok(p); };
+}
+function estFiltroTxt(){
+  var L = [], ST = {normal:'estoque saudável', atencao:'estoque baixo', critico:'estoque crítico', zerado:'sem estoque'};
+  if(state.abcFilter) L.push('classe '+state.abcFilter); if(state.estStatus) L.push(ST[state.estStatus]);
+  return L.length ? 'Filtrado por '+L.join(' e ')+' (clique de novo para tirar)' : '';
+}
 function montarProdutos(b, restrito){
   var lset = estLset();
   var vistos = {}, out = [];
@@ -3778,7 +3805,7 @@ var state = {
   chartMetric:'fat',
   catSort:'fat',
   giroSortDesc:true,
-  abcFilter:null,
+  abcFilter:null, estStatus:null,
   search:'',
   sortKey:'fatPeriodo', sortDir:'desc',
   page:1, pageSize:8,
@@ -7548,7 +7575,7 @@ function radarChartSVG(axes, w, h){
    ESTOQUE — saúde / alertas
    ============================================================ */
 function renderStockHealth(){
-  var prods = estoqueProducts().filter(function(p){ return !p.isBucket; });
+  var prods = estoqueProducts('status').filter(function(p){ return !p.isBucket; });
   var counts = {normal:0,atencao:0,critico:0,zerado:0};
   prods.forEach(function(p){ counts[stockStatus(p)]++; });
   var total = prods.length || 1;
@@ -7574,8 +7601,11 @@ function renderStockHealth(){
 
   var labels = {normal:'Estoque saudável', atencao:'Estoque baixo', critico:'Estoque crítico', zerado:'Sem estoque'};
   document.getElementById('stockStats').innerHTML = order.map(function(k){
-    return '<div class="stock-stat"><div class="n">'+fmtUn(counts[k])+'</div><div class="l"><span class="dotb" style="background:'+STATUS_COLOR[k]+'"></span>'+labels[k]+'</div></div>';
+    return '<button type="button" class="stock-stat" data-st="'+k+'" aria-pressed="'+(state.estStatus===k)+'" title="Clique para filtrar a aba Estoque"><div class="n">'+fmtUn(counts[k])+'</div><div class="l"><span class="dotb" style="background:'+STATUS_COLOR[k]+'"></span>'+labels[k]+'</div></button>';
   }).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('#stockStats [data-st]'), function(b){
+    b.addEventListener('click', function(){ var k = b.getAttribute('data-st'); state.estStatus = state.estStatus===k ? null : k; state.page = 1; renderAll(false); });
+  });
 }
 
 /* ---------- simulador: estoque sem venda há N dias ou mais ---------- */
@@ -7584,7 +7614,7 @@ function simItens(){
   // usa os filtros do painel, exceto o próprio corte de dias (o simulador mostra todas as faixas)
   // (parte da lista completa do recorte, antes do filtro de estoque restringir os produtos)
   var dm = state.diasMin; state.diasMin = null;
-  var prods = EST_BASE.filter(matchesFilters).filter(function(p){ return !p.isBucket && p.estCusto>0 && p.diasSemGiro!==null && p.diasSemGiro!==undefined; });
+  var lok = estLocalOk(), prods = EST_BASE.filter(matchesFilters).filter(function(p){ return !p.isBucket && p.estCusto>0 && p.diasSemGiro!==null && p.diasSemGiro!==undefined && (!lok || lok(p)); });
   state.diasMin = dm;
   return prods;
 }
@@ -7647,7 +7677,8 @@ function renderEstoqueDestaque(){
     ed('CMV do mês', fmtMoney(k.cmvMes), 'custo das vendas dos últimos 30 dias'+(k.cmvExato ? '' : ' (estimado: faturamento − lucro bruto)')) +
     ed('Estoque parado', fmtMoney(parado), (k.estValor>0 ? (parado/k.estValor*100).toFixed(1).replace('.',',') : '0')+'% do valor · sem venda ou compra');
   var sub = document.getElementById('estDestSub');
-  if(sub) sub.textContent = 'Estoque atual a custo, com os filtros do bloco Estoque · '+fmtUn(crit)+' itens críticos e '+fmtUn(zer)+' sem estoque (veja os alertas abaixo)';
+  var ft = estFiltroTxt();
+  if(sub) sub.textContent = (ft ? ft+' · ' : 'Estoque atual a custo, com os filtros do bloco Estoque · ')+fmtUn(crit)+' itens críticos e '+fmtUn(zer)+' sem estoque (veja os alertas abaixo)';
 }
 // aba Estoque: novidades (mesma consulta de Vendas do dia) e sugestões de transferência entre filiais (bi_estoque_transferencias)
 var EST_NT = {k:null, nov:null, trf:null};
@@ -7668,7 +7699,9 @@ function estNovDesenhar(){
   var box = document.getElementById('estNovList'), E = EST_NT.nov; if(!box) return;
   if(E==='carregando'){ box.innerHTML = estMsg('Carregando o estoque…'); return; }
   if(E==='erro' || !E){ box.innerHTML = estMsg('Não foi possível ler as novidades agora.'); return; }
-  var N = vhNovEst(E), Z = vhNovItens(E).sort(function(a, b){ return (a.zerou===b.zerou ? 0 : a.zerou ? -1 : 1) || b.md - a.md; }), h = '', n = 0;
+  var idOk = estLocalIdOk(), fl = function(L){ return idOk ? L.filter(function(o){ return idOk(o.id); }) : L; };
+  var N = vhNovEst(E); Object.keys(N).forEach(function(k){ N[k] = fl(N[k]); });
+  var Z = fl(vhNovItens(E)).sort(function(a, b){ return (a.zerou===b.zerou ? 0 : a.zerou ? -1 : 1) || b.md - a.md; }), h = '', n = 0;
   var sec = function(tit, L, lin){ if(!L.length) return; n += L.length; h += '<div class="en-sec">'+tit.toUpperCase()+' · '+L.length+'</div>' + L.map(lin).join(''); };
   sec('⚠️ Zerou ou acabando (vende bem)', Z, function(o){ return '<div class="en-l"><span class="nm"><b>'+escapeHtml(o.loja)+'</b> · '+escapeHtml(o.nome)+'<small>'+vhNovTxt(o)+'</small></span><span class="v">'+(o.zerou ? '<span class="vh-dn">0 un</span>' : fmtUn(Math.round(o.est))+' un')+'</span></div>'; });
   VH_NOV_SEC.forEach(function(s){ sec(s[1], N[s[0]], function(o){ return '<div class="en-l"><span class="nm"><b>'+escapeHtml(o.loja)+'</b> · '+escapeHtml(o.nome)+'<small>'+o.txt+'</small></span><span class="v">'+o.v+'</span></div>'; }); });
@@ -7681,8 +7714,9 @@ function estTrfDesenhar(){
   if(T==='carregando'){ box.innerHTML = estMsg('Calculando as sugestões…'); return; }
   if(T==='falta'){ box.innerHTML = estMsg('As sugestões aparecem depois que o banco for atualizado.'); return; }
   if(T==='erro' || !T){ box.innerHTML = estMsg('Não foi possível calcular as sugestões agora.'); return; }
-  var L = T.itens || [], sub = document.getElementById('estTrfSub');
-  if(sub) sub.textContent = (T.n ? fmtUn(T.n)+' sugest'+(T.n>1?'ões':'ão')+' · '+fmtMoney(+T.valor||0)+' a custo' : 'Nenhuma sugestão')+' · maiores valores primeiro';
+  var idOk = estLocalIdOk(), L = (T.itens || []).filter(function(r){ return !idOk || idOk(r[0]); }), sub = document.getElementById('estTrfSub');
+  if(idOk && sub){ var vf = L.reduce(function(a, r){ return a + (+r[4]||0)*(+r[5]||0); }, 0); sub.textContent = fmtUn(L.length)+' sugest'+(L.length!==1?'ões':'ão')+' no filtro · '+fmtMoney(vf)+' a custo · '+estFiltroTxt(); }
+  else if(sub) sub.textContent = (T.n ? fmtUn(T.n)+' sugest'+(T.n>1?'ões':'ão')+' · '+fmtMoney(+T.valor||0)+' a custo' : 'Nenhuma sugestão')+' · maiores valores primeiro';
   if(!L.length){ box.innerHTML = estMsg('Nenhuma transferência faz sentido agora: nenhuma filial tem sobra de um item que outra esteja precisando.'); return; }
   box.innerHTML = L.map(function(r){
     var de = dimNome('loja', r[2])||'', para = dimNome('loja', r[3])||'', qt = +r[4]||0, cu = +r[5]||0, cob = r[7]===null ? null : +r[7];
@@ -7756,8 +7790,11 @@ function computeABC(){
 }
 function renderABC(){
   var rows = computeABC();
-  var counts = {A:0,B:0,C:0}, fatSum={A:0,B:0,C:0};
-  rows.forEach(function(r){ counts[r.cls]++; fatSum[r.cls]+=r.fat; });
+  var counts = {A:0,B:0,C:0}, fatSum={A:0,B:0,C:0}, estSum={A:0,B:0,C:0};
+  // com a situação do estoque filtrada, a contagem e o faturamento de cada classe são só desses itens (a classe continua a da curva inteira)
+  var stOk = state.estStatus ? function(p){ return stockStatus(p)===state.estStatus; } : null;
+  var estPorId = {}; EST_BASE.forEach(function(p){ estPorId[p.id] = p; });
+  rows.forEach(function(r){ var pe = estPorId[r.p.id] || r.p; if(stOk && !stOk(pe)) return; counts[r.cls]++; fatSum[r.cls]+=r.fat; estSum[r.cls]+=pe.estCusto||0; });
   var totalFat = rows.reduce(function(s,r){return s+r.fat;},0)||1;
 
   var chips = document.getElementById('abcChips');
@@ -7766,7 +7803,8 @@ function renderABC(){
     return '<button class="abc-chip" data-cls="'+d.c+'" aria-pressed="'+(state.abcFilter===d.c)+'">' +
       '<div class="ac-top"><span class="ac-dot" style="background:'+d.color+'"></span>Classe '+d.c+'</div>' +
       '<div class="ac-n">'+counts[d.c]+' itens</div>' +
-      '<div class="ac-sub">'+(fatSum[d.c]/totalFat*100).toFixed(0)+'% do faturamento</div>' +
+      '<div class="ac-fat">'+fmtMoney(fatSum[d.c])+' faturado</div>' +
+      '<div class="ac-sub">'+(fatSum[d.c]/totalFat*100).toFixed(0)+'% do faturamento · '+fmtMoney(estSum[d.c])+' em estoque</div>' +
     '</button>';
   }).join('');
   Array.prototype.forEach.call(chips.querySelectorAll('.abc-chip'), function(btn){
