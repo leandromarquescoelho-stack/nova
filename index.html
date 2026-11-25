@@ -592,6 +592,7 @@ body.vp-full-on{overflow:hidden;}
 .bf2-rk.t1{background:#f5b400; color:#111;} .bf2-rk.t2{background:#c9c9c9; color:#111;} .bf2-rk.t3{background:#b8743a; color:#111;}
 .bf2-nm{font-size:17px; font-weight:700; color:#f1f1f1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .bf2-bar{height:10px; background:#262626; border-radius:6px; overflow:hidden;} .bf2-bar i{display:block; height:100%; background:linear-gradient(90deg,#c98a00,#f5b400); border-radius:6px;}
+.bf2-bar.ok i{background:linear-gradient(90deg,#16a34a,#4ade80);}
 .bf2-l b{font-family:'Sora',sans-serif; font-size:19px; font-weight:800; color:#fff; white-space:nowrap; text-align:right;}
 .bf2-l em{grid-column:2/5; font-style:normal; font-size:12px; font-weight:700;} .bf2-l em:empty{display:none;}
 @media(max-width:1000px){ .bf2-l{grid-template-columns:1fr; grid-auto-flow:row; grid-template-rows:none;} }
@@ -10148,13 +10149,13 @@ function vpVisMarcar(){
 function bfCor(p){ return p >= 100 ? '#4ade80' : (p >= 50 ? '#f5b400' : '#c98a00'); }
 // velocímetro dourado: 0 a 100% (passou da meta, fica verde e mostra o percentual real)
 function bfGauge(p, tit){
-  var f = Math.max(0, Math.min(1, (p||0)/100)), cor = bfCor(p||0), R = 40, cx = 50, cy = 50;
+  var f = Math.max(0, Math.min(1, (p||0)/100)), ok = (p||0) >= 100, cor = bfCor(p||0), R = 40, cx = 50, cy = 50;
   var pt = function(fr){ var a = Math.PI*(1-fr); return (cx + R*Math.cos(a)).toFixed(2)+' '+(cy - R*Math.sin(a)).toFixed(2); };
   return '<svg class="bf-gz" viewBox="0 0 100 72" role="img" aria-label="'+escapeHtml(tit||'')+'"><title>'+escapeHtml(tit||'')+'</title>' +
-    '<path d="M10 50 A40 40 0 0 1 90 50" fill="none" stroke="#2b2b2b" stroke-width="11" stroke-linecap="round"/>' +
-    (f > 0.004 ? '<path d="M10 50 A40 40 0 0 1 '+pt(f)+'" fill="none" stroke="'+cor+'" stroke-width="11" stroke-linecap="round"/>' : '') +
-    '<text x="50" y="48" text-anchor="middle" font-size="19" font-weight="800" fill="'+cor+'" font-family="Sora,sans-serif">'+Math.round(p||0)+'%</text>' +
-    '<text x="50" y="66" text-anchor="middle" font-size="9" fill="#9b9b9b">da meta</text></svg>';
+    '<path d="M10 50 A40 40 0 0 1 90 50" fill="none" stroke="'+(ok ? '#14532d' : '#2b2b2b')+'" stroke-width="11" stroke-linecap="round"/>' +
+    (ok ? '<path d="M10 50 A40 40 0 0 1 90 50" fill="none" stroke="#4ade80" stroke-width="11" stroke-linecap="round" style="filter:drop-shadow(0 0 4px rgba(74,222,128,.75))"/>' : f > 0.004 ? '<path d="M10 50 A40 40 0 0 1 '+pt(f)+'" fill="none" stroke="'+cor+'" stroke-width="11" stroke-linecap="round"/>' : '') +
+    '<text x="50" y="48" text-anchor="middle" font-size="19" font-weight="800" fill="'+cor+'" font-family="Sora,sans-serif">'+(ok ? Math.round(p) : Math.min(99, Math.round(p||0)))+'%</text>' +
+    (ok ? '<text x="50" y="66" text-anchor="middle" font-size="8.5" font-weight="800" fill="#4ade80" letter-spacing=".04em">META BATIDA</text>' : '<text x="50" y="66" text-anchor="middle" font-size="9" fill="#9b9b9b">da meta</text>')+'</svg>';
 }
 function bfPainel(S, RR, dest){
   var lj = {}; S.lojas.forEach(function(o){ lj[o.nome] = o; });
@@ -10199,7 +10200,7 @@ function bf2Painel(S, RR, grupos){
     var corpo = !L ? '<p class="note-muted">Carregando…</p>' : (!L.length ? '<p class="note-muted">Sem vendas ainda.</p>' : '<ol class="bf2-l">'+L.map(function(o, j){
       var pm = o.meta ? o.v/o.meta*100 : null;
       return '<li style="--d:'+(j*60)+'ms"><span class="bf2-rk'+(j<3 ? ' t'+(j+1) : '')+'">'+(j+1)+'</span><span class="bf2-nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</span>' +
-        '<span class="bf2-bar"><i style="width:'+Math.max(1.5, o.v/mx*100).toFixed(1)+'%"></i></span><b>'+fmtMoney(o.v)+'</b>' +
+        '<span class="bf2-bar'+(pm!==null && pm >= 100 ? ' ok' : '')+'"><i style="width:'+Math.max(1.5, o.v/mx*100).toFixed(1)+'%"></i></span><b>'+fmtMoney(o.v)+'</b>' +
         (pm!==null ? '<em style="color:'+bfCor(pm)+'">'+Math.round(pm)+'% da meta</em>' : '<em></em>')+'</li>';
     }).join('')+'</ol>');
     return '<section class="bf2-s'+(i===i0 ? ' on' : '')+'" data-i="'+i+'"><h3>Top 10 <b>'+g[0]+'</b><small>'+(S.ehHoje ? 'venda de hoje' : 'venda do dia')+'</small></h3>'+corpo+'</section>';
