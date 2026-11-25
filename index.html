@@ -2555,7 +2555,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <div id="vhModoPainel" class="vp">
           <div class="vp-top"><div class="vp-tt"><div class="vp-tr"><span class="vp-logo" aria-hidden="true"></span><div class="vp-tit" id="vpTit">Vendas de hoje</div></div><div class="vp-sub" id="vpSub"></div></div>
             <div class="vp-rel"><b id="vpHora">--:--</b><span id="vpProx">atualiza sozinho</span></div>
-            <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="1" aria-pressed="true" title="Painel geral do dia">Visual 1</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual 2</button><button type="button" data-vis="3" aria-pressed="false" title="Painel geral sem os destaques, com os cards maiores (para TV)">Visual 3</button></div><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
+            <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="3" aria-pressed="false" title="Painel do dia com os cards maiores, sem os destaques (para TV)">Visual 1</button><button type="button" data-vis="1" aria-pressed="false" title="Painel geral do dia, com os destaques">Visual 2</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual BF</button></div><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
           <div id="vpBody"><p class="note-muted status-txt">Carregando o painel…</p></div>
         </div>
       </section>
@@ -9954,12 +9954,13 @@ function vpNovidades(E){
 var BF_DIA = '2026-11-27';
 var BF_METAS = [['IPIRANGA','Ipiranga',700000],['JOAO DIAS','João Dias',150000],['TATUAPE','Tatuapé',100000],['SBC','S.B.Campo',100000],
   ['CAMPINAS','Campinas',700000],['RIBEIRAO','Ribeirão Preto',350000],['RIO PRETO','S.J.Rio Preto',400000],['ECOMMERCE','E-commerce',100000]];
-// visual escolhido: fica guardado no navegador; no dia da Black Friday abre no Visual 2 até a pessoa trocar nesse dia
+// visual escolhido: fica guardado no navegador (padrão: o de cards maiores); no dia da Black Friday abre no Visual BF até a pessoa trocar nesse dia
+// (números internos: 3 = botão Visual 1, 1 = botão Visual 2, 2 = botão Visual BF)
 function vpVis(){
   if(VH.vis) return VH.vis;
   var g = null; try{ g = JSON.parse(localStorage.getItem('nc_vp_vis') || 'null'); }catch(e){}
   var hoje = isoDia(new Date());
-  VH.vis = hoje===BF_DIA && !(g && g.d===BF_DIA) ? 2 : ((g && [1,2,3].indexOf(+g.v) >= 0 && +g.v) || 1);
+  VH.vis = hoje===BF_DIA && !(g && g.d===BF_DIA) ? 2 : ((g && [1,2,3].indexOf(+g.v) >= 0 && +g.v) || 3);
   return VH.vis;
 }
 function vpVisTrocar(v){
