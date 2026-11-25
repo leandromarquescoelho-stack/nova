@@ -595,6 +595,22 @@ tbody.vd-fech tr.vd-det{display:none;}
 @media (max-width:1100px){ .bf-uns{grid-template-columns:repeat(2,minmax(0,1fr));} .bf-hero{grid-template-columns:1fr; gap:10px;} .bf-hm{width:100%;} .bf-logo{height:84px;} .bf-hero > .bf-gz{justify-self:center;} }
 @media (max-width:520px){ .bf-uns{grid-template-columns:1fr;} }
 @keyframes vpTk{from{transform:translateX(0);} to{transform:translateX(-50%);}}
+/* Visual 3 (TV): o Visual 1 sem os destaques, com os cards maiores; em tela cheia o painel ainda aumenta até ocupar a tela */
+@media (min-width:1001px){
+  .vp.v3{--vp-gap:14px;}
+  .vp.v3 .vp-k{padding:16px 18px; border-radius:14px;} .vp.v3 .vp-k .l{font-size:13px;}
+  .vp.v3 .vp-k .v{font-size:clamp(22px,13cqi,46px); margin-top:4px;} .vp.v3 .vp-k.g .v{font-size:clamp(30px,16cqi,68px);}
+  .vp.v3 .vp-k .s{font-size:14px; line-height:1.4; margin-top:4px;}
+  .vp.v3 .vp-mi{margin-top:9px;} .vp.v3 .vp-mi .t{font-size:13.5px; margin-bottom:5px;} .vp.v3 .vp-mi .t b{font-size:14px;} .vp.v3 .vp-mi .d{font-size:12.5px; margin-top:4px;}
+  .vp.v3 .vp-sp{height:42px; margin-top:9px;} .vp.v3 .vp-k.g .vp-sp{height:56px;} .vp.v3 .vp-so{display:block;}
+  .vp.v3 .vp-cn{padding:14px 18px; border-radius:14px;} .vp.v3 .vp-cn .h{font-size:14px;} .vp.v3 .vp-cn .v{font-size:clamp(22px,9cqi,38px); margin:2px 0 6px;}
+  .vp.v3 .vp-cn .vp-cn-s{font-size:13.5px !important;} .vp.v3 .vp-cn-l{font-size:14px; margin-top:6px;} .vp.v3 .vp-cn-l > span:first-child{min-width:80px;}
+  .vp.v3 .vp-cn-t{gap:14px;} .vp.v3 .vp-cn-t .vp-gz{width:96px; height:70px;}
+  .vp.v3 .vp-lojas{gap:12px;} .vp.v3 .vp-l{gap:6px; padding:13px 14px !important;}
+  .vp.v3 .vp-l .hn b{font-size:16px;} .vp.v3 .vp-l .hn span{font-size:12px;} .vp.v3 .vp-l .vp-gz{width:72px; height:52px;}
+  .vp.v3 .vp-l .v{font-size:clamp(20px,14cqi,38px);} .vp.v3 .vp-l .x{font-size:13.5px;} .vp.v3 .vp-l .vp-sp{height:32px; margin-top:4px;}
+  .vp.v3 .vp-tk{font-size:15px;} .vp.v3 .vp-tk-r{padding:11px 0;} .vp.v3 .vp-tk-h{font-size:12.5px;}
+}
 @media (prefers-reduced-motion:reduce){ .vp-tk-w{overflow-x:auto;} .vp-tk-r{animation:none;} }
 .vp-dest{display:grid; grid-template-columns:repeat(auto-fit,minmax(255px,1fr)); gap:var(--vp-gap);}
 .vp-d{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; min-width:0;}
@@ -2539,7 +2555,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <div id="vhModoPainel" class="vp">
           <div class="vp-top"><div class="vp-tt"><div class="vp-tr"><span class="vp-logo" aria-hidden="true"></span><div class="vp-tit" id="vpTit">Vendas de hoje</div></div><div class="vp-sub" id="vpSub"></div></div>
             <div class="vp-rel"><b id="vpHora">--:--</b><span id="vpProx">atualiza sozinho</span></div>
-            <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="1" aria-pressed="true" title="Painel geral do dia">Visual 1</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual 2</button></div><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
+            <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="1" aria-pressed="true" title="Painel geral do dia">Visual 1</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual 2</button><button type="button" data-vis="3" aria-pressed="false" title="Painel geral sem os destaques, com os cards maiores (para TV)">Visual 3</button></div><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
           <div id="vpBody"><p class="note-muted status-txt">Carregando o painel…</p></div>
         </div>
       </section>
@@ -9943,7 +9959,7 @@ function vpVis(){
   if(VH.vis) return VH.vis;
   var g = null; try{ g = JSON.parse(localStorage.getItem('nc_vp_vis') || 'null'); }catch(e){}
   var hoje = isoDia(new Date());
-  VH.vis = hoje===BF_DIA && !(g && g.d===BF_DIA) ? 2 : ((g && +g.v) || 1);
+  VH.vis = hoje===BF_DIA && !(g && g.d===BF_DIA) ? 2 : ((g && [1,2,3].indexOf(+g.v) >= 0 && +g.v) || 1);
   return VH.vis;
 }
 function vpVisTrocar(v){
@@ -9952,7 +9968,7 @@ function vpVisTrocar(v){
 }
 function vpVisMarcar(){
   var v = vpVis(), el = document.getElementById('vhModoPainel');
-  if(el) el.classList.toggle('bf', v===2);
+  if(el){ el.classList.toggle('bf', v===2); el.classList.toggle('v3', v===3); }
   document.querySelectorAll('#vpVis [data-vis]').forEach(function(b){ b.setAttribute('aria-pressed', String(+b.getAttribute('data-vis')===v)); });
 }
 function bfCor(p){ return p >= 100 ? '#4ade80' : (p >= 50 ? '#f5b400' : '#c98a00'); }
@@ -10068,7 +10084,7 @@ function vhPainel(){
     var dsB = RR ? '<div class="vp-dest">' + lista('Vendedores em destaque', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) +
       lista('Clientes em destaque', 'compras do dia', RR.clientes, nm7) + lista('Produtos em destaque', 'faturamento do dia', RR.produtos, nm7) + '</div>' : '';
     box.innerHTML = bfPainel(S, RR, dsB);
-  } else box.innerHTML = kp + cn + lj + ds + vpTicker(RR, S.E);
+  } else box.innerHTML = kp + cn + lj + (vpVis()===3 ? '' : ds) + vpTicker(RR, S.E);   // Visual 3: sem os destaques, cards maiores
   vpAjustar(); clearTimeout(vhPainel.t); vhPainel.t = setTimeout(vpAjustar, 500);
 }
 // computador: reduz o painel proporcionalmente quando ele não cabe na altura da tela (sem barra de rolagem)
@@ -10083,7 +10099,7 @@ function vpAjustar(){
   var disp = window.innerHeight - topo - abaixo - (cheia ? 20 : 6);
   if(disp < 200) return;
   // tela cheia (do painel ou do navegador): também aumenta para ocupar a tela toda; fora dela, só reduz
-  var tela = !!(document.fullscreenElement || document.webkitFullscreenElement), zMax = tela ? 3.2 : 1;   // TV 4K: até 3,2x
+  var tela = !!(document.fullscreenElement || document.webkitFullscreenElement), zMax = tela ? 4 : 1;   // TV 4K sem ampliação do Windows: até 4x
   // atualização discreta: se o tamanho atual ainda serve (cabe e não sobra muito), não mexe (evita a fonte crescer e diminuir)
   var zAt = parseFloat(el.style.zoom) || 1, hAt = altura();
   // carga nova chegando: os quadros recarregam um a um; enquanto isso só reduz se algo não couber (a conta final vem depois)
