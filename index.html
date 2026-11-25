@@ -1105,6 +1105,8 @@ button.stock-stat{font:inherit; color:inherit; text-align:left; cursor:pointer; 
 .abc-chip .ac-top{display:flex; align-items:center; gap:6px; font-size:11px; font-weight:800; letter-spacing:.03em;}
 .abc-chip .ac-dot{width:8px; height:8px; border-radius:50%;}
 .abc-chip .ac-n{font-family:'Sora',sans-serif; font-size:15px; font-weight:700; margin-top:4px;}
+#productsTable .col-loja{display:none;} #productsTable.por-loja .col-loja{display:table-cell; white-space:nowrap;}
+#tabPorLoja[aria-pressed="true"]{border-color:var(--accent); background:rgba(34,211,238,.1); color:var(--text);}
 .abc-chip .ac-fat{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; margin-top:2px; color:var(--text);}
 .abc-chip .ac-sub{font-size:10.5px; color:var(--text-muted);}
 
@@ -2856,6 +2858,7 @@ table.data-table.vp-tbl{min-width:720px;}
           </div>
           <div class="spacer"></div>
           <div class="export-btns">
+            <button class="tbtn" id="tabPorLoja" aria-pressed="false" title="Uma linha por produto em cada loja: estoque, mínimo, vendas e faturamento da loja">Por loja</button>
             <button class="tbtn" id="exportXlsx">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Exportar Excel
@@ -2872,6 +2875,7 @@ table.data-table.vp-tbl{min-width:720px;}
               <tr>
                 <th data-k="codigo">Código <span class="sort-ico">&#9650;</span></th>
                 <th data-k="nome">Produto <span class="sort-ico">&#9650;</span></th>
+                <th data-k="loja" class="col-loja">Loja <span class="sort-ico">&#9650;</span></th>
                 <th data-k="marca">Marca <span class="sort-ico">&#9650;</span></th>
                 <th data-k="categoria">Categoria <span class="sort-ico">&#9650;</span></th>
                 <th data-k="modelo">Aplicação <span class="sort-ico">&#9650;</span></th>
@@ -7905,8 +7909,39 @@ function renderSellers(){
 /* ============================================================
    TABELA DETALHADA
    ============================================================ */
+/* detalhamento por loja: uma linha por produto em cada loja (estoque da loja e vendas da loja no período; mesma consulta do filtro de loja do estoque) */
+var TAB_LOJA = {on:false, k:null, rows:null, erro:false};
+function tabLojaIds(){
+  var lset = estLset(), ids = {};
+  (EST.loja||[]).forEach(function(l){ var nm = dimNome('loja', l); if(nm && (!lset || lset[nm])) ids[l] = nm; });
+  return ids;
+}
+function tabLojaCarregar(){
+  var per = painelPeriodo(), ids = tabLojaIds(), k = JSON.stringify([painelChave, per, Object.keys(ids)]);
+  if(TAB_LOJA.k===k) return;
+  TAB_LOJA.k = k; TAB_LOJA.rows = null; TAB_LOJA.erro = false;
+  var L = Object.keys(ids);
+  Promise.all(L.map(function(id){ return rpcMemo('bi_painel', {f:{loja:[+id]}, per:per, parte:'b'}); })).then(function(res){
+    if(TAB_LOJA.k!==k) return;
+    var out = [];
+    res.forEach(function(b, j){
+      var nm = ids[L[j]], lset = {}; lset[nm] = true; var vistos = {};
+      ((b && b.p)||[]).forEach(function(r){ vistos[r[0]] = true; var p = novoProduto(r[0], r, lset); p.loja = nm; out.push(p); });
+      Object.keys(EST_POR_PROD).forEach(function(kp){
+        var id = +kp; if(vistos[id] || !PRODINFO[id]) return;
+        if(!(EST_POR_PROD[kp]||[]).some(function(i){ return String(EST.loja[i])===String(L[j]) && n0(EST.est[i])>0; })) return;
+        var p = novoProduto(id, null, lset); p.loja = nm; out.push(p);
+      });
+    });
+    TAB_LOJA.rows = out; if(TAB_LOJA.on) renderTable();
+  }).catch(function(){ if(TAB_LOJA.k===k){ TAB_LOJA.erro = true; if(TAB_LOJA.on) renderTable(); } });
+}
 function tableRows(){
   var prods = estoqueProducts();
+  if(TAB_LOJA.on){
+    tabLojaCarregar();
+    var ok = estLocalOk(); prods = (TAB_LOJA.rows||[]).filter(matchesFilters); if(ok) prods = prods.filter(ok);
+  }
   var abcMap = {};
   if(state.abcFilter){ computeABC().forEach(function(r){ abcMap[r.p.id]=r.cls; }); }
   var rows = prods.map(function(p){
@@ -7914,7 +7949,7 @@ function tableRows(){
     return {
       id:p.id, codigo:p.codigo, nome:p.nome, marca:p.marca, categoria:p.categoria,
       modelo: p.modelo+(p.modelo2?' / '+p.modelo2:''), estoqueAtual:p.estoqueAtual, estoqueMin:p.estoqueMin,
-      qtdPeriodo:qtdPeriodo, fatPeriodo:fatPeriodo, giro:p.giro, status:stockStatus(p), abc:abcMap[p.id]
+      qtdPeriodo:qtdPeriodo, fatPeriodo:fatPeriodo, giro:p.giro, status:stockStatus(p), abc:abcMap[p.id], loja:p.loja||''
     };
   });
   if(state.abcFilter){ rows = rows.filter(function(r){ return r.abc===state.abcFilter; }); }
@@ -7938,13 +7973,20 @@ function renderTable(){
   var pageRows = rows.slice(startI, startI+state.pageSize);
 
   var tbody = document.getElementById('productsTbody');
+  document.getElementById('productsTable').classList.toggle('por-loja', TAB_LOJA.on);
+  document.getElementById('tabPorLoja').setAttribute('aria-pressed', String(TAB_LOJA.on));
+  if(TAB_LOJA.on && !TAB_LOJA.rows){
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:var(--text-muted); padding:26px;">'+(TAB_LOJA.erro ? 'Não foi possível carregar os números por loja. Tente de novo.' : 'Carregando os números de cada loja…')+'</td></tr>';
+    document.getElementById('pagination').innerHTML = ''; return;
+  }
   if(!pageRows.length){
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:var(--text-muted); padding:26px;">Nenhum produto encontrado para os filtros e busca atuais.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:var(--text-muted); padding:26px;">Nenhum produto encontrado para os filtros e busca atuais.</td></tr>';
   } else {
     tbody.innerHTML = pageRows.map(function(r){
       return '<tr data-id="'+r.id+'">' +
         '<td class="mono">'+r.codigo+'</td>' +
         '<td class="prodcell">'+r.nome+'</td>' +
+        '<td class="col-loja">'+escapeHtml(r.loja)+'</td>' +
         '<td>'+r.marca+'</td>' +
         '<td>'+r.categoria+'</td>' +
         '<td>'+r.modelo+'</td>' +
@@ -7965,7 +8007,7 @@ function renderTable(){
   startP = Math.max(1, endP-maxBtns+1);
   for(var i=startP;i<=endP;i++){ pageBtns += '<button data-pg="'+i+'" aria-current="'+(i===state.page)+'">'+i+'</button>'; }
   pag.innerHTML =
-    '<div class="pg-info">'+rows.length+' produto(s) · página '+state.page+' de '+totalPages+'</div>' +
+    '<div class="pg-info">'+rows.length+(TAB_LOJA.on ? ' linha(s) produto × loja' : ' produto(s)')+' · página '+state.page+' de '+totalPages+'</div>' +
     '<div class="pg-btns">' +
     '<button data-pg="prev" '+(state.page<=1?'disabled':'')+'>‹</button>' +
     pageBtns +
@@ -12407,11 +12449,12 @@ function bindEvents(){
   document.getElementById('drawerClose').addEventListener('click', closeDrawer);
 
   // export
+  document.getElementById('tabPorLoja').addEventListener('click', function(){ TAB_LOJA.on = !TAB_LOJA.on; state.page = 1; renderTable(); });
   document.getElementById('exportXlsx').addEventListener('click', function(){
     var rows = tableRows();
-    var header = ['Código','Produto','Marca','Categoria','Aplicação','Estoque Atual','Estoque Mínimo','Vendas','Faturamento','Giro (dias)','Status'];
+    var header = ['Código','Produto'].concat(TAB_LOJA.on ? ['Loja'] : []).concat(['Marca','Categoria','Aplicação','Estoque Atual','Estoque Mínimo','Vendas','Faturamento','Giro (dias)','Status']);
     var lines = [header.join(';')].concat(rows.map(function(r){
-      return [r.codigo,r.nome,r.marca,r.categoria,r.modelo,r.estoqueAtual,r.estoqueMin,Math.round(r.qtdPeriodo),Math.round(r.fatPeriodo),giroTxt(r.giro),STATUS_LABEL[r.status]].join(';');
+      return [r.codigo,r.nome].concat(TAB_LOJA.on ? [r.loja] : []).concat([r.marca,r.categoria,r.modelo,r.estoqueAtual,r.estoqueMin,Math.round(r.qtdPeriodo),Math.round(r.fatPeriodo),giroTxt(r.giro),STATUS_LABEL[r.status]]).join(';');
     }));
     var csv = lines.join('\n');
     function done(){ toast('CSV copiado (' + rows.length + ' linhas) — cole em uma planilha do Excel.'); }
