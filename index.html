@@ -10219,9 +10219,27 @@ function vhPainel(){
   vpAjustar(); clearTimeout(vhPainel.t); vhPainel.t = setTimeout(vpAjustar, 500);
 }
 // computador: reduz o painel proporcionalmente quando ele não cabe na altura da tela (sem barra de rolagem)
+// zoom do painel: navegadores sem suporte à propriedade zoom (Firefox antigo, alguns navegadores de TV) usam escala (transform)
+var VP_ZOOM_OK = !!(window.CSS && CSS.supports && CSS.supports('zoom', '1.5'));
+function vpZGet(el){ return parseFloat(el.dataset.vpz || el.style.zoom) || 1; }
+function vpZSet(el, z){
+  if(VP_ZOOM_OK){ el.style.zoom = z ? String(z) : ''; return; }
+  el.dataset.vpz = z ? String(z) : '';
+  // a escala vai numa caixa interna (o elemento em tela cheia tem o tamanho travado pelo navegador)
+  var w = el.querySelector(':scope > .vp-zbox');
+  if(!w){ w = document.createElement('div'); w.className = 'vp-zbox'; while(el.firstChild) w.appendChild(el.firstChild); el.appendChild(w); }
+  if(!z || +z===1){ w.style.transform = ''; w.style.width = ''; return; }
+  w.style.transformOrigin = '0 0'; w.style.transform = 'scale('+z+')'; w.style.width = (100/z)+'%';
+}
+// tela cheia: a do botão do painel (API do navegador) ou a do próprio navegador/TV (F11, modo quiosque): a janela ocupa a tela inteira
+function vpTelaCheia(){
+  if(document.fullscreenElement || document.webkitFullscreenElement) return true;
+  var sw = (screen && screen.width) || 0, sh = (screen && screen.height) || 0;
+  return sw > 0 && window.innerWidth >= sw - 4 && window.innerHeight >= sh - 4 && window.outerHeight - window.innerHeight < 8;
+}
 function vpAjustar(){
   var el = document.getElementById('vhModoPainel'); if(!el) return;
-  if(window.innerWidth < 1001){ el.style.zoom = ''; return; }
+  if(window.innerWidth < 1001){ vpZSet(el, ''); return; }
   if(!vpVisivel()) return;
   var cheia = document.fullscreenElement===el, topo = cheia ? 0 : el.getBoundingClientRect().top + (window.scrollY||0);
   // altura do conteúdo (em tela cheia do painel a caixa ocupa a tela toda; vale o fim do último bloco)
@@ -10230,19 +10248,19 @@ function vpAjustar(){
   var disp = window.innerHeight - topo - abaixo - (cheia ? 20 : 6);
   if(disp < 200) return;
   // tela cheia (do painel ou do navegador): também aumenta para ocupar a tela toda; fora dela, só reduz
-  var tela = !!(document.fullscreenElement || document.webkitFullscreenElement), zMax = tela ? 4 : 1;   // TV 4K sem ampliação do Windows: até 4x
+  var tela = vpTelaCheia(), zMax = tela ? 4 : 1;   // TV 4K sem ampliação do Windows: até 4x
   // atualização discreta: se o tamanho atual ainda serve (cabe e não sobra muito), não mexe (evita a fonte crescer e diminuir)
-  var zAt = parseFloat(el.style.zoom) || 1, hAt = altura();
+  var zAt = vpZGet(el), hAt = altura();
   // carga nova chegando: os quadros recarregam um a um; enquanto isso só reduz se algo não couber (a conta final vem depois)
   if(VH.atuAte > Date.now() && hAt <= disp && zAt <= zMax) return;
   if(zAt <= zMax && hAt <= disp && (tela ? hAt >= disp*0.93 : (zAt >= 1 || hAt >= disp*0.93))) return;
-  el.style.zoom = '';
+  vpZSet(el, '');
   var alt = altura();
   if(alt <= disp && (!tela || alt > disp*0.98)) return;
   // com zoom os cards mudam de largura e quebram linhas de outro jeito: refaz a conta até encaixar
   var z = Math.min(zMax, Math.max(0.55, disp/alt)), ok = alt <= disp ? 1 : null;
   for(var i = 0; i < 8; i++){
-    el.style.zoom = String(z);
+    vpZSet(el, z);
     var h = altura();
     if(h > disp){ z = Math.max(0.55, z*disp/h*0.995); continue; }
     ok = z;
@@ -10251,8 +10269,8 @@ function vpAjustar(){
     z = nz;
   }
   z = ok || z;
-  el.style.zoom = String(Math.floor(z*1000)/1000);
-  if(altura() > disp) el.style.zoom = String(Math.max(0.55, Math.floor(z*disp/altura()*990)/1000));
+  vpZSet(el, Math.floor(z*1000)/1000);
+  if(altura() > disp) vpZSet(el, Math.max(0.55, Math.floor(z*disp/altura()*990)/1000));
 }
 window.addEventListener('resize', function(){ clearTimeout(vpAjustar.t); vpAjustar.t = setTimeout(vpAjustar, 150); });
 document.addEventListener('fullscreenchange', function(){ setTimeout(vpAjustar, 120); });
