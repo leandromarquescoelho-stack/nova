@@ -555,6 +555,10 @@ tbody.vd-fech tr.vd-det{display:none;}
   .vp-tk-r{padding:7px 0;} .vp-so{display:none;}
   body[data-view="dashboard"] .main{padding-bottom:8px;}
 }
+.vp-abc{display:flex; align-items:center; gap:12px; margin-top:10px;} .vp-abc svg{flex:none; width:72px; height:72px; transform:none;}
+.vp-abc-l{display:grid; grid-template-columns:1fr; gap:2px; font-size:12px; color:var(--text-2); min-width:0;} .vp-abc-l em{grid-column:1 / -1; font-style:normal; font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em;}
+.vp-abc-l span{white-space:nowrap;} .vp-abc-l i{display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:5px;} .vp-abc-l b{font-family:'JetBrains Mono',monospace;}
+.vp.v3 .vp-abc svg{width:76px; height:76px;} .vp.v3 .vp-abc{gap:8px;} .vp.v3 .vp-abc-l{font-size:13px; gap:3px;} .vp.v3 .vp-abc-l em{font-size:12px;}
 .vp-tk{display:flex; align-items:stretch; margin-top:var(--vp-gap); background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden;}
 .vp-tk-h{flex:0 0 auto; display:flex; align-items:center; padding:0 14px; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; background:var(--surface-2,var(--surface-3)); color:var(--text); border-right:1px solid var(--border);}
 .vp-tk-w{flex:1 1 auto; overflow:hidden; mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);}
@@ -1198,6 +1202,8 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
   display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:11px; font-weight:700;
   border:1px solid var(--border);
 }
+.drawer-photo{text-decoration:none; overflow:hidden; padding:0 12px; text-align:center;} .drawer-photo.ok{background:#fff; height:180px; padding:6px;} .drawer-photo.ok:hover{border-color:var(--accent);}
+.drawer-photo img{max-width:100%; max-height:100%; object-fit:contain;}
 .drawer-tags{display:flex; gap:6px; flex-wrap:wrap; margin-top:12px;}
 .dtag{font-size:10.5px; font-weight:700; padding:4px 9px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); color:var(--text-2);}
 .drawer-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;}
@@ -3345,7 +3351,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
       </button>
     </div>
-    <div class="drawer-photo" id="drawerPhoto">Foto do produto</div>
+    <a class="drawer-photo" id="drawerPhoto" target="_blank" rel="noopener">Foto do produto</a>
     <div class="drawer-tags" id="drawerTags"></div>
     <div class="drawer-grid" id="drawerStats"></div>
     <h3 class="dh">Histórico de vendas (12 períodos)</h3>
@@ -7938,7 +7944,7 @@ function openDrawer(productId){
   drawerAtual = p.id;
   document.getElementById('drawerCode').textContent = p.codigo;
   document.getElementById('drawerName').textContent = p.nome;
-  document.getElementById('drawerPhoto').textContent = 'Foto do produto · '+p.categoria;
+  drawerFoto(p.codigo, p.categoria);
   document.getElementById('drawerTags').innerHTML = [['marca',p.marca],['categoria',p.categoria],['subcategoria',p.subcategoria],['modelo',p.modelo],['linha',p.linha],['classificacao',p.classificacao]]
     .filter(function(t){ return t[1] && t[1]!=='N/D'; })
     .map(function(t){ return '<span class="dtag"'+fkAttr(t[0], t[1])+'>'+escapeHtml(t[1])+'</span>'; }).join('') +
@@ -7983,6 +7989,27 @@ function openDrawer(productId){
   document.getElementById('overlay').classList.add('show');
 }
 var drawerAtual = null;
+// foto do produto no detalhe: mesma busca na loja virtual da tela de Preços (bi_foto_loja); enquanto não acha, mostra a categoria
+var DR_FOTO = {pn:null, t:null};
+function drawerFoto(pn, cat){
+  var el = document.getElementById('drawerPhoto'); clearTimeout(DR_FOTO.t); DR_FOTO.pn = pn;
+  var vazio = function(txt){ el.className = 'drawer-photo'; el.removeAttribute('href'); el.removeAttribute('title'); el.textContent = txt; };
+  vazio('Buscando a foto na loja virtual…');
+  if(!pn || !window.__NC_rpc){ vazio('Foto do produto · '+(cat||'')); return; }
+  var tent = 0;
+  (function perguntar(){
+    window.__NC_rpc('bi_foto_loja', {p_pn:String(pn)}).then(function(r){
+      if(DR_FOTO.pn!==pn) return;
+      r = r || {};
+      if(r.status==='pendente' && ++tent < 15){ DR_FOTO.t = setTimeout(perguntar, 700); return; }
+      if(r.status==='ok' && r.foto){
+        el.className = 'drawer-photo ok'; el.href = r.link || 'https://loja.chevroletnova.com.br/'; el.title = (r.titulo ? r.titulo+' · ' : '')+'abrir na loja virtual';
+        el.innerHTML = '<img alt="Foto do produto na loja virtual" src="'+escapeHtml(r.foto)+'">';
+        el.querySelector('img').onerror = function(){ if(DR_FOTO.pn===pn) vazio('Foto indisponível na loja virtual · '+(cat||'')); };
+      } else vazio((r.status==='sem' ? 'Produto sem foto na loja virtual' : (r.status==='pendente' ? 'A loja virtual não respondeu' : 'Foto do produto'))+' · '+(cat||''));
+    }).catch(function(){ if(DR_FOTO.pn===pn) vazio('Foto do produto · '+(cat||'')); });
+  })();
+}
 function closeDrawer(){
   drawerAtual = null;
   document.getElementById('drawer').classList.remove('open');
@@ -9844,6 +9871,28 @@ function vhEst(f, d, depois){
   }
   return null;
 }
+// curva ABC do estoque (bi_estoque_abc): estoque a custo por classe da curva de venda dos últimos 90 dias
+VH.abc = {}; VH.abcPend = {};
+function vhAbc(f, depois){
+  var key = JSON.stringify(f); if(VH.abc[key]) return VH.abc[key];
+  if(!VH.abcPend[key]){
+    VH.abcPend[key] = 1;
+    window.__NC_rpc('bi_estoque_abc', {f:f}).then(function(r){ VH.abc[key] = r || {}; })
+      .catch(function(){ VH.abc[key] = {erro:1}; })
+      .then(function(){ delete VH.abcPend[key]; depois(); });
+  }
+  return null;
+}
+var VP_ABC = [['A','var(--cat-a)','#3987e5'],['B','var(--cat-b)','#d9772e'],['C','var(--cat-c)','#1fb08a'],['S/ venda','#64748b','#64748b']];
+function vpAbcPizza(A){
+  if(!A || A.erro || !A.c) return '';
+  var c = A.c.map(function(x){ return +x || 0; }), n = A.n || [], tot = c.reduce(function(a, b){ return a + b; }, 0); if(tot <= 0) return '';
+  var R = 15.915, ang = 0, fat = '';
+  var arcos = c.map(function(v, i){ var p = v/tot*100, o = '<circle r="'+R+'" cx="20" cy="20" fill="none" stroke="'+VP_ABC[i][2]+'" stroke-width="8" stroke-dasharray="'+p.toFixed(2)+' '+(100-p).toFixed(2)+'" stroke-dashoffset="'+(25-ang).toFixed(2)+'"><title>'+VP_ABC[i][0]+': '+fmtMoney(v)+' ('+vhP(p)+') em '+fmtUn(+n[i]||0)+' itens</title></circle>'; ang += p; return o; }).join('');
+  var leg = c.map(function(v, i){ return '<span title="'+fmtMoney(v)+' em '+fmtUn(+n[i]||0)+' itens"><i style="background:'+VP_ABC[i][1]+'"></i>'+VP_ABC[i][0]+' <b>'+vhP(v/tot*100)+'</b></span>'; }).join('');
+  return '<div class="vp-abc" title="Estoque a custo pela curva ABC de venda dos últimos 90 dias (A = 80% do faturamento, B = 15%, C = 5%; sem venda = sem venda em 90 dias)">' +
+    '<svg viewBox="0 0 40 40" role="img" aria-label="Curva ABC do estoque">'+arcos+'</svg><div class="vp-abc-l"><em>Curva ABC</em>'+leg+'</div></div>';
+}
 // estoque por nome da loja
 function vhEstLojas(E){ var o = {}; ((E && E.lojas) || []).forEach(function(r){ o[dimNome('loja', r[0]) || ''] = +r[1] || 0; }); return o; }
 /* ---------- Vendas Hoje: Cards (guia Vendas) ou Painel (Dashboard), conforme a guia aberta ---------- */
@@ -9874,7 +9923,7 @@ function vpChecar(manual){
     if(c && (!vista || c.carregado_em !== vista.carregado_em)){
       VH.carga = c; VH.novaEm = new Date(); VH.diaAuto = true;
       VH.atuAte = Date.now() + 8000; clearTimeout(VH.atuT); VH.atuT = setTimeout(vpAjustar, 8100);   // tamanho da fonte fica parado durante a atualização
-      VH.key = null; VH.res = {}; VH.resPend = {}; VH.obj = {}; VH.objPend = {}; VH.est = {}; VH.estPend = {}; VH.tk = {}; VH.tkPend = {};
+      VH.key = null; VH.res = {}; VH.resPend = {}; VH.obj = {}; VH.objPend = {}; VH.est = {}; VH.estPend = {}; VH.abc = {}; VH.abcPend = {}; VH.tk = {}; VH.tkPend = {};
       if(vpVisivel()) vxHoje();
       if(manual) toast('Nova carga recebida. Atualizando o painel…');
     } else if(manual) toast('O painel já está com a carga mais recente.');
@@ -10038,7 +10087,8 @@ function vhPainel(){
       vpMetaInd(rAE.tend||0, rAE.ob, 'Meta do mês', 'Projeção ÷ meta do mês de '+rotAE)+vpSparkAcum(SE.ae, fimM, metaAc, rAE.tend)) +
     k('var(--vx-am)', 'Falta para a meta', rAE.ob ? fmtMoney(rAE.falta) : '—', rAE.ob ? (rAE.porDia ? fmtMoney(rAE.porDia)+' por dia útil restante' : 'meta do mês') +
       vpMetaInd(rAE.t.m.f, rAE.ob, 'Atingido', 'Vendido no mês ÷ meta do mês de '+rotAE) : 'meta '+rotAE+' não cadastrada') +
-    k('#14b8a6', 'Estoque a custo', S.E ? fmtMoney(+S.E.est[0]) : '—', S.E ? fmtUn(Math.round(+S.E.est[1]))+' peças · parado '+fmtMoney(+S.E.est[3]) : 'carregando') + '</div>';
+    k('#14b8a6', 'Estoque a custo', S.E ? fmtMoney(+S.E.est[0]) : '—', (S.E ? fmtUn(Math.round(+S.E.est[1]))+' peças · parado '+fmtMoney(+S.E.est[3]) : 'carregando') +
+      vpAbcPizza(vhAbc(painelFiltros(null), function(){ if(vpVisivel()) vhPainel(); }))) + '</div>';
   var NOME_C = {ATACADO:'Atacado', ECOMMERCE:'E-commerce', OFICINA:'Oficina', ACESSORIOS:'Acessórios'}, CORES = ['var(--vx-cy)','var(--vx-pu)','var(--vx-am)','var(--vx-gr)'];
   var umaLoja = S.lojas.length===1 && S.canais.some(function(x){ return x.k==='ATACADO'; });
   var nC = S.canais.length, cn = '<div class="vp-canais" style="--vp-n:'+Math.max(1, nC)+'; --vp-nm:'+Math.max(1, Math.min(2, nC))+'">'+S.canais.map(function(x, i){
