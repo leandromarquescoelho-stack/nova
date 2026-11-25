@@ -576,6 +576,26 @@ body.vp-full-on{overflow:hidden;}
 .vp-vis button[aria-pressed="true"]{background:var(--accent); color:#06121a;}
 .vp.bf{--surface:#141414; --surface-2:#1c1c1c; --surface-3:#2b2b2b; --border:rgba(245,180,0,.26); --border-strong:rgba(245,180,0,.45); --text:#fff; --text-2:#d6d6d6; --text-muted:#9b9b9b; --bf:#f5b400; --bf2:#ffd75a;
   background:radial-gradient(1200px 380px at 50% -120px, rgba(245,180,0,.16), transparent 70%), #0b0b0b; color:var(--text); border-radius:16px; padding:14px 16px; border:1px solid var(--border);}
+/* Visual BF2: top 10 alternando */
+.bf2{margin-top:var(--vp-gap); background:#121212; border:1px solid #2a2a2a; border-radius:14px; padding:14px 18px 16px; position:relative; overflow:hidden;}
+.bf2-dots{display:flex; gap:8px; flex-wrap:wrap;} .bf2-dots button{background:#1d1d1d; color:#bdbdbd; border:1px solid #333; border-radius:999px; padding:5px 14px; font-size:13px; font-weight:700; cursor:pointer;}
+.bf2-dots button.on{background:#f5b400; color:#111; border-color:#f5b400;}
+.bf2-prog{height:3px; background:#262626; border-radius:3px; margin:10px 0 6px; overflow:hidden;} .bf2-prog i{display:block; height:100%; width:100%; background:#f5b400; transform-origin:0 50%; animation:bf2p 15s linear forwards;}
+@keyframes bf2p{from{transform:scaleX(0);} to{transform:scaleX(1);}}
+.bf2-sl{display:grid;} .bf2-s{grid-area:1/1; opacity:0; visibility:hidden; transform:translateX(40px); transition:opacity .6s ease, transform .6s ease, visibility 0s .6s;}
+.bf2-s.on{opacity:1; visibility:visible; transform:none; transition:opacity .6s ease, transform .6s ease;}
+.bf2-s h3{margin:4px 0 8px; font-family:'Sora',sans-serif; font-size:22px; font-weight:700; color:#e8e8e8;} .bf2-s h3 b{color:#f5b400;} .bf2-s h3 small{font-size:13px; color:#9b9b9b; font-weight:500; margin-left:10px;}
+.bf2-l{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(5, auto); column-gap:28px; row-gap:6px;}
+.bf2-l li{display:grid; grid-template-columns:36px minmax(0,1.3fr) minmax(60px,1fr) auto; grid-template-rows:auto auto; column-gap:12px; align-items:center; padding:7px 0; border-bottom:1px solid #222;}
+.bf2-s.on .bf2-l li{animation:bf2in .5s ease both; animation-delay:var(--d);} @keyframes bf2in{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+.bf2-rk{grid-row:1/3; width:32px; height:32px; border-radius:50%; background:#262626; color:#cfcfcf; display:flex; align-items:center; justify-content:center; font-weight:800; font-family:'Sora',sans-serif;}
+.bf2-rk.t1{background:#f5b400; color:#111;} .bf2-rk.t2{background:#c9c9c9; color:#111;} .bf2-rk.t3{background:#b8743a; color:#111;}
+.bf2-nm{font-size:17px; font-weight:700; color:#f1f1f1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.bf2-bar{height:10px; background:#262626; border-radius:6px; overflow:hidden;} .bf2-bar i{display:block; height:100%; background:linear-gradient(90deg,#c98a00,#f5b400); border-radius:6px;}
+.bf2-l b{font-family:'Sora',sans-serif; font-size:19px; font-weight:800; color:#fff; white-space:nowrap; text-align:right;}
+.bf2-l em{grid-column:2/5; font-style:normal; font-size:12px; font-weight:700;} .bf2-l em:empty{display:none;}
+@media(max-width:1000px){ .bf2-l{grid-template-columns:1fr; grid-auto-flow:row; grid-template-rows:none;} }
+@media(prefers-reduced-motion:reduce){ .bf2-s, .bf2-s.on, .bf2-s.on .bf2-l li{transition:none; animation:none;} }
 .vp.bf.vp-full, .vp.bf:fullscreen{background:radial-gradient(1400px 420px at 50% -140px, rgba(245,180,0,.18), transparent 70%), #0b0b0b; border:0; border-radius:0;}
 .vp.bf .vp-vis button[aria-pressed="true"]{background:var(--bf); color:#111;} .vp.bf .tbtn{background:#1a1a1a; color:#fff; border-color:var(--border-strong);}
 .vp.bf .vp-tit{color:var(--bf2);}
@@ -2569,7 +2589,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <div id="vhModoPainel" class="vp">
           <div class="vp-top"><div class="vp-tt"><div class="vp-tr"><span class="vp-logo" aria-hidden="true"></span><div class="vp-tit" id="vpTit">Vendas de hoje</div></div><div class="vp-sub" id="vpSub"></div></div>
             <div class="vp-rel"><b id="vpHora">--:--</b><span id="vpProx">atualiza sozinho</span></div>
-            <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="3" aria-pressed="false" title="Painel do dia com os cards maiores, sem os destaques (para TV)">Visual 1</button><button type="button" data-vis="1" aria-pressed="false" title="Painel geral do dia, com os destaques">Visual 2</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual BF</button></div><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
+            <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="3" aria-pressed="false" title="Painel do dia com os cards maiores, sem os destaques (para TV)">Visual 1</button><button type="button" data-vis="1" aria-pressed="false" title="Painel geral do dia, com os destaques">Visual 2</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual BF</button><button type="button" data-vis="4" aria-pressed="false" title="Black Friday com o top 10 de lojas, vendedores, clientes e produtos, alternando a cada 15 segundos">Visual BF2</button></div><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
           <div id="vpBody"><p class="note-muted status-txt">Carregando o painel…</p></div>
         </div>
       </section>
@@ -10110,7 +10130,8 @@ function vpVis(){
   if(VH.vis) return VH.vis;
   var g = null; try{ g = JSON.parse(localStorage.getItem('nc_vp_vis') || 'null'); }catch(e){}
   var hoje = isoDia(new Date());
-  VH.vis = hoje===BF_DIA && !(g && g.d===BF_DIA) ? 2 : ((g && [1,2,3].indexOf(+g.v) >= 0 && +g.v) || 3);
+  var ok = visNums(), pref = hoje===BF_DIA && !(g && g.d===BF_DIA) ? 2 : ((g && +g.v) || 3);
+  VH.vis = ok.indexOf(pref) >= 0 ? pref : (ok.indexOf(3) >= 0 ? 3 : (ok[0] || 0));
   return VH.vis;
 }
 function vpVisTrocar(v){
@@ -10119,8 +10140,10 @@ function vpVisTrocar(v){
 }
 function vpVisMarcar(){
   var v = vpVis(), el = document.getElementById('vhModoPainel');
-  if(el){ el.classList.toggle('bf', v===2); el.classList.toggle('v3', v===3); }
-  document.querySelectorAll('#vpVis [data-vis]').forEach(function(b){ b.setAttribute('aria-pressed', String(+b.getAttribute('data-vis')===v)); });
+  if(el){ el.classList.toggle('bf', v===2 || v===4); el.classList.toggle('bf2', v===4); el.classList.toggle('v3', v===3); }
+  var ok = visNums(), vb = document.getElementById('vpVis');
+  document.querySelectorAll('#vpVis [data-vis]').forEach(function(b){ var n = +b.getAttribute('data-vis'); b.style.display = ok.indexOf(n) < 0 ? 'none' : ''; b.setAttribute('aria-pressed', String(n===v)); });
+  if(vb) vb.style.display = ok.length < 2 ? 'none' : '';
 }
 function bfCor(p){ return p >= 100 ? '#4ade80' : (p >= 50 ? '#f5b400' : '#c98a00'); }
 // velocímetro dourado: 0 a 100% (passou da meta, fica verde e mostra o percentual real)
@@ -10164,10 +10187,43 @@ function bfPainel(S, RR, dest){
   }).join('')+'</div>';
   return hero + cards + dest + vpTicker(RR, S.E);
 }
+/* ---------- Visual BF2: cabeçalho da Black Friday + top 10 que alterna a cada 15 s (lojas, vendedores, clientes, produtos) ---------- */
+var BF2_SEG = 15;
+function bf2Painel(S, RR, grupos){
+  var hero = bfPainel(S, RR, '').split('<div class="bf-uns">')[0];   // só o cabeçalho (total × meta) do Visual BF
+  var i0 = (VH.bf2i || 0) % grupos.length;
+  if(!VH.bf2t) VH.bf2t = Date.now();
+  var dots = '<div class="bf2-dots">'+grupos.map(function(g, i){ return '<button type="button" data-bf2="'+i+'" class="'+(i===i0 ? 'on' : '')+'">'+g[0]+'</button>'; }).join('')+'</div>';
+  var sl = grupos.map(function(g, i){
+    var L = g[1], mx = L && L.length ? Math.max(1, L[0].v) : 1;
+    var corpo = !L ? '<p class="note-muted">Carregando…</p>' : (!L.length ? '<p class="note-muted">Sem vendas ainda.</p>' : '<ol class="bf2-l">'+L.map(function(o, j){
+      var pm = o.meta ? o.v/o.meta*100 : null;
+      return '<li style="--d:'+(j*60)+'ms"><span class="bf2-rk'+(j<3 ? ' t'+(j+1) : '')+'">'+(j+1)+'</span><span class="bf2-nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</span>' +
+        '<span class="bf2-bar"><i style="width:'+Math.max(1.5, o.v/mx*100).toFixed(1)+'%"></i></span><b>'+fmtMoney(o.v)+'</b>' +
+        (pm!==null ? '<em style="color:'+bfCor(pm)+'">'+Math.round(pm)+'% da meta</em>' : '<em></em>')+'</li>';
+    }).join('')+'</ol>');
+    return '<section class="bf2-s'+(i===i0 ? ' on' : '')+'" data-i="'+i+'"><h3>Top 10 <b>'+g[0]+'</b><small>'+(S.ehHoje ? 'venda de hoje' : 'venda do dia')+'</small></h3>'+corpo+'</section>';
+  }).join('');
+  return hero + '<div class="bf2">'+dots+'<div class="bf2-prog"><i style="animation-delay:-'+Math.min(BF2_SEG, (Date.now() - VH.bf2t)/1000).toFixed(1)+'s"></i></div><div class="bf2-sl">'+sl+'</div></div>' + vpTicker(RR, S.E);
+}
+function bf2Mostrar(i){
+  var box = document.querySelector('#vpBody .bf2'); if(!box) return;
+  var n = box.querySelectorAll('.bf2-s').length; if(!n) return;
+  VH.bf2i = ((i % n) + n) % n; VH.bf2t = Date.now();
+  box.querySelectorAll('.bf2-s').forEach(function(s){ s.classList.toggle('on', +s.getAttribute('data-i')===VH.bf2i); });
+  box.querySelectorAll('.bf2-dots button').forEach(function(b){ b.classList.toggle('on', +b.getAttribute('data-bf2')===VH.bf2i); });
+  var pr = box.querySelector('.bf2-prog i'); if(pr){ pr.style.animation = 'none'; pr.style.animationDelay = '0s'; void pr.offsetWidth; pr.style.animation = ''; }
+}
+setInterval(function(){
+  if(vpVis()!==4 || !vpVisivel() || document.hidden) return;
+  if(Date.now() - (VH.bf2t || 0) >= BF2_SEG*1000 - 300) bf2Mostrar((VH.bf2i || 0) + 1);
+}, 1000);
+document.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('[data-bf2]'); if(b) bf2Mostrar(+b.getAttribute('data-bf2')); });
 function vhPainel(){
   var S = VH.sum, box = document.getElementById('vpBody'); if(!S || !box) return;
   var c = vhCarga();
-  var V2 = vpVis()===2; vpVisMarcar();
+  var VV = vpVis(), V2 = VV===2 || VV===4; vpVisMarcar();
+  if(!VV){ box.innerHTML = '<p class="note-muted">Nenhum visual do painel está liberado para o seu usuário. Peça ao BI para liberar no cadastro de usuários.</p>'; return; }
   document.getElementById('vpTit').textContent = (V2 ? 'Black Friday' : 'Vendas do dia')+' · '+S.semana+', '+fmtDateFull(S.dD).slice(0,5);
   document.getElementById('vpSub').textContent = (S.gTot.h.f > 0.5 ? '' : 'Ainda sem vendas de hoje na carga · ')+(cargaLabel(c) || 'Sem informação de carga')+(VH.lido ? ' · lido às '+vpHora(new Date(VH.lido)) : '')+' · filtros do painel aplicados';
   function k(cor, l, v, sub, cls){ return '<div class="vp-k'+(cls?' '+cls:'')+'" style="--vh-c:'+cor+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div></div>'; }
@@ -10232,7 +10288,15 @@ function vhPainel(){
   var ds = RR ? '<div class="vp-dest">' + lista('Vendedores em destaque', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) +
       lista('Clientes em destaque', 'compras do dia', RR.clientes, nm7) + lista('Produtos em destaque', 'faturamento do dia', RR.produtos, nm7) + vpNovidades(S.E) + '</div>'
     : (R && R.erro ? '' : '<p class="note-muted status-txt">Carregando os destaques do dia…</p>');
-  if(V2){
+  if(VV===4){
+    var top = function(rows, nome){ return (rows||[]).map(function(r){ return {nome:nome(r), v:c2(r[1])}; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 10); };
+    var nmB = {}; BF_METAS.forEach(function(m){ nmB[m[0]] = m; });
+    var tL = S.lojas.map(function(o){ var m = nmB[o.nome]; return {nome: m ? m[1] : o.nome, v:o.r.t.h.f, meta: m ? m[2] : 0}; });
+    S.canais.forEach(function(x){ if(x.k==='ECOMMERCE') tL.push({nome:'E-commerce', v:x.t.h.f, meta:(nmB.ECOMMERCE||[])[2]||0}); });
+    tL = tL.sort(function(a, b){ return b.v - a.v; }).slice(0, 10);
+    box.innerHTML = bf2Painel(S, RR, [['Lojas', tL], ['Vendedores', RR ? top(RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) : null],
+      ['Clientes', RR ? top(RR.clientes, nm7) : null], ['Produtos', RR ? top(RR.produtos, nm7) : null]]);
+  } else if(V2){
     var dsB = RR ? '<div class="vp-dest">' + lista('Vendedores em destaque', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) +
       lista('Clientes em destaque', 'compras do dia', RR.clientes, nm7) + lista('Produtos em destaque', 'faturamento do dia', RR.produtos, nm7) + '</div>' : '';
     box.innerHTML = bfPainel(S, RR, dsB);
@@ -10306,7 +10370,7 @@ function vpAjustar(){
   vpZSet(el, Math.floor(z*1000)/1000);
   if(altura() > disp) vpZSet(el, Math.max(0.55, Math.floor(z*disp/altura()*990)/1000));
   // em tela cheia não pode sobrar barra de rolagem (a margem de baixo também cresce com o zoom): confere pela rolagem real
-  if(cheia) for(var j = 0; j < 4 && el.scrollHeight > el.clientHeight + 1 && vpZGet(el) > 0.55; j++)
+  if(cheia) for(var j = 0; j < 4 && el.scrollHeight > el.clientHeight && vpZGet(el) > 0.55; j++)
     vpZSet(el, Math.max(0.55, Math.floor(vpZGet(el)*el.clientHeight/el.scrollHeight*985)/1000));
 }
 window.addEventListener('resize', function(){ clearTimeout(vpAjustar.t); vpAjustar.t = setTimeout(vpAjustar, 150); });
@@ -12859,6 +12923,22 @@ function subsDoPerfil(p, g){
   return sel.length ? todos.filter(function(x){ return sel.indexOf(x)!==-1; }) : todos;
 }
 function subOk(g, k){ return subsDoPerfil(CURRENT_PROFILE, g).indexOf(k)!==-1; }
+// visuais do painel: gravados em profiles.abas como "visual.<k>" (ou "visual.nenhum"); o BI sempre vê todos
+// perfil sem nenhum "visual." = só os visuais que existiam antes deste controle; visual novo nasce só para o BI até ser liberado aqui
+var VISUAIS = [{k:'v1', t:'Visual 1', n:3}, {k:'v2', t:'Visual 2', n:1}, {k:'bf', t:'Visual BF', n:2}, {k:'bf2', t:'Visual BF2', n:4}];
+var VIS_LEGADO = ['v1', 'v2', 'bf'];
+function visDoPerfil(p){
+  var todos = VISUAIS.map(function(a){ return a.k; });
+  if(p && p.role==='bi') return todos;
+  var a = p && Array.isArray(p.abas) ? p.abas.filter(function(x){ return String(x).indexOf('visual.')===0; }).map(function(x){ return String(x).slice(7); }) : [];
+  if(!a.length) return VIS_LEGADO.slice();
+  return todos.filter(function(k){ return a.indexOf(k)!==-1; });
+}
+// números internos dos visuais liberados ao usuário logado, na ordem dos botões
+function visNums(){ var ok = visDoPerfil(CURRENT_PROFILE); return VISUAIS.filter(function(a){ return ok.indexOf(a.k)!==-1; }).map(function(a){ return a.n; }); }
+function visChipsHtml(p, disabled){
+  return '<div class="u-sub" data-sg="dashboard"><span class="u-sub-g">Visuais do painel</span><div class="u-abas" data-grp="vis">'+chipsHtml(VISUAIS, visDoPerfil(p), disabled)+'</div></div>';
+}
 function subBotaoOk(g, k){ return subOk(g, k); }
 function subabasAplicar(){
   Object.keys(SUBABAS_UI).forEach(function(g){
@@ -12896,7 +12976,12 @@ function abasComSubs(role, ab, root){
     var sel = grpSel(root, 'sub-'+g);
     if(sel.length && sel.length < SUBABAS[g].length) sel.forEach(function(k){ subs.push(g+'.'+k); });
   });
-  return subs.length ? ab.concat(subs) : abasPayload(role, ab);
+  var base = subs.length ? ab.concat(subs) : abasPayload(role, ab);
+  // visuais: igual ao padrão antigo não grava nada; qualquer outra escolha grava a lista (nenhum = "visual.nenhum")
+  var vb = root.querySelector('.u-abas[data-grp="vis"]'); if(!vb) return base;
+  var vis = grpSel(root, 'vis'), leg = vis.length===VIS_LEGADO.length && VIS_LEGADO.every(function(k){ return vis.indexOf(k)!==-1; });
+  if(leg) return base;
+  return (base || ABAS_PADRAO.slice()).concat(vis.length ? vis.map(function(k){ return 'visual.'+k; }) : ['visual.nenhum']);
 }
 var ABAS_PADRAO = ABAS.filter(function(a){ return !a.restrita; }).map(function(a){ return a.k; });
 // nulo no banco = guias padrão (sem as restritas); qualquer outra combinação vai como lista
@@ -13016,7 +13101,7 @@ function userCard(p){
       '<label class="u-vend-w">Vendedor nos dados<input type="text" class="u-vendedor" list="uVendList" value="'+escapeHtml(p.vendedor_nome||'')+'" placeholder="comece a digitar"></label>' +
     '</div>' +
     (USERS_TEM_ABAS ? '<div class="u-abas-label">Guias liberadas</div><div class="u-abas" data-grp="abas">'+abasChips(abas, p.role==='bi')+'</div>' +
-      '<div class="u-abas-label">Abas liberadas em cada guia</div>'+subChipsHtml(p, p.role==='bi') : '') +
+      '<div class="u-abas-label">Abas liberadas em cada guia</div>'+subChipsHtml(p, p.role==='bi')+'<div class="u-subs" style="margin-top:8px">'+visChipsHtml(p, p.role==='bi')+'</div>' : '') +
     (USERS_TEM_ESCOPO ? escopoChips(p.role==='bi' ? uniaoOrd(lojasUniverso(), listaPerfil(p.lojas)) : lojasDoPerfil(p), p.role==='bi' ? canaisUniverso() : canaisDoPerfil(p), p.role==='bi') : '') +
     equipesChips(p.role==='bi' ? EQUIPES.slice() : equipesDoPerfil(p), p.role==='bi') +
     paresHtml(p) +
@@ -13181,7 +13266,7 @@ async function renderUsersAdmin(){
   var uiL = document.getElementById('uiLoja'); if(uiL && !uiL.options.length) uiL.innerHTML = lojaOptions('');
   var uiA = document.getElementById('uiAbas');
   if(uiA && !uiA.dataset.built){ uiA.innerHTML = abasChips(ABAS_PADRAO, false); bindAbas(uiA); uiA.dataset.built='1';
-    var uiS = document.getElementById('uiSubs'); uiS.innerHTML = subChipsHtml(null, false); bindAbas(uiS);
+    var uiS = document.getElementById('uiSubs'); uiS.innerHTML = subChipsHtml(null, false)+'<div class="u-subs" style="margin-top:8px">'+visChipsHtml(null, false)+'</div>'; bindAbas(uiS);
     var fm = document.getElementById('userInviteForm'); subAjustar(fm);
     uiA.addEventListener('click', function(){ subAjustar(fm); }); }
   if(uiA) uiA.style.display = USERS_TEM_ABAS ? '' : 'none';
