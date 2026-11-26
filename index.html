@@ -8108,11 +8108,26 @@ function fzCarregar(){
   fzDb(function(st){ var g = st.get('atual'); g.onsuccess = function(){ var v = g.result; if(v && Array.isArray(v.rows)){ FZ = v; TAB_LOJA.on = !!v.loja; fzUi(); renderTable(); } }; });
 }
 
+// em tela cheia só o quadro aparece: a ficha do produto, o fundo escuro e os avisos passam para dentro dele (e voltam ao sair)
+var TF_LUGAR = null;
+function tabFullHospedar(pn, on){
+  var ids = ['overlay', 'drawer', 'toastStack'];
+  if(on){
+    if(TF_LUGAR) return;
+    TF_LUGAR = ids.map(function(id){ var el = document.getElementById(id); return el ? {el:el, pai:el.parentNode, prox:el.nextSibling} : null; });
+    TF_LUGAR.forEach(function(x){ if(x) pn.appendChild(x.el); });
+  } else if(TF_LUGAR){
+    TF_LUGAR.forEach(function(x){ if(x) x.pai.insertBefore(x.el, x.prox && x.prox.parentNode===x.pai ? x.prox : null); });
+    TF_LUGAR = null;
+  }
+}
+
 /* tela cheia só do quadro Detalhamento de Produtos: tela cheia do navegador quando houver; senão o quadro cobre a janela */
 function tabFull(on){
   var pn = document.getElementById('tabPanel'), bt = document.getElementById('tabFull');
   if(on===undefined) on = !pn.classList.contains('tab-full');
   pn.classList.toggle('tab-full', on); document.body.classList.toggle('tab-full-on', on);
+  tabFullHospedar(pn, on);
   bt.innerHTML = on ? '&#x2715; Sair da tela cheia' : '&#x26F6; Tela cheia';
   var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
   if(on && !fsEl){ var rq = pn.requestFullscreen || pn.webkitRequestFullscreen; if(rq){ try{ var r = rq.call(pn); if(r && r.catch) r.catch(function(){}); }catch(e){} } }
@@ -8158,7 +8173,6 @@ function rpLigar(){
     var tr = e.target.closest('tr[data-id]'), td = e.target.closest('td'); if(!tr) return;
     RP_VOLTA = td.getAttribute('data-rp');
     e.target.blur();
-    if(document.getElementById('tabPanel').classList.contains('tab-full')) tabFull(false);
     openDrawer(tr.getAttribute('data-id'));
   });
   document.addEventListener('keydown', function(e){
@@ -12939,7 +12953,6 @@ function bindEvents(){
   document.getElementById('productsTbody').addEventListener('click', function(ev){
     if(ev.target.closest('td.rp')) return;
     var tr = ev.target.closest('tr[data-id]'); if(!tr) return;
-    if(document.getElementById('tabPanel').classList.contains('tab-full')) tabFull(false);   // a ficha do produto abre fora do quadro
     openDrawer(tr.getAttribute('data-id'));
   });
   document.getElementById('alertsList').addEventListener('click', function(ev){
@@ -12955,7 +12968,7 @@ function bindEvents(){
   document.getElementById('fzBtn').addEventListener('click', fzAlternar);
   document.getElementById('tabFull').addEventListener('click', function(){ tabFull(); });
   ['fullscreenchange', 'webkitfullscreenchange'].forEach(function(ev){ document.addEventListener(ev, function(){ var pn = document.getElementById('tabPanel'); if(!(document.fullscreenElement || document.webkitFullscreenElement) && pn.classList.contains('tab-full')) tabFull(false); }); });
-  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && document.getElementById('tabPanel').classList.contains('tab-full') && !document.getElementById('tcPick').open && !document.getElementById('tmPick').open) tabFull(false); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && document.getElementById('tabPanel').classList.contains('tab-full') && !document.getElementById('drawer').classList.contains('open') && !document.getElementById('tcPick').open && !document.getElementById('tmPick').open) tabFull(false); });
   document.getElementById('tcMenu').addEventListener('change', function(e){ var k = e.target.getAttribute('data-tc'); if(!k) return; TC_OFF = TC_OFF.filter(function(x){ return x!==k; }); if(!e.target.checked) TC_OFF.push(k); tcSalvar(); });
   document.getElementById('tcMenu').addEventListener('click', function(e){ e.stopPropagation(); var b = e.target.closest('[data-tca]'); if(!b) return; TC_OFF = b.getAttribute('data-tca')==='min' ? TC_COLS.filter(function(c){ return !c.obr; }).map(function(c){ return c.k; }) : []; tcSalvar(); });
   document.addEventListener('click', function(e){ ['tcPick', 'tmPick'].forEach(function(id){ var d = document.getElementById(id); if(d && d.open && !d.contains(e.target)) d.open = false; }); });
