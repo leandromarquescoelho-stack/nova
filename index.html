@@ -512,14 +512,11 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vp.vp-full{position:fixed; inset:0; z-index:9000; margin:0; border-radius:0; background:var(--bg); padding:18px 22px; overflow:auto; overflow-x:hidden;}
 body.vp-full-on{overflow:hidden;}
 .vp.vp-fill{display:flex; flex-direction:column;}
-.vp.vp-semdest #vpBody > .vp-dest{display:none;}
-.vp.vp-fill.vp-fill-dest #vpBody > *{flex:0 0 auto;} .vp.vp-fill.vp-fill-dest #vpBody > .vp-dest{flex:1 1 0; min-height:0; overflow:hidden;}
-.vp.vp-fill.vp-fill-dest .vp-dest > .vp-d{overflow:hidden; min-height:0; justify-content:flex-start;}
 .vp.vp-fill > .vp-zbox{display:flex; flex-direction:column; flex:1 1 auto; min-height:0;}
 .vp.vp-fill #vpBody{flex:1 1 auto; display:flex; flex-direction:column; min-height:0;}
 .vp.vp-fill #vpBody > *{flex:1 1 auto;} .vp.vp-fill #vpBody > .vp-tk, .vp.vp-fill #vpBody > .bf-hero, .vp.vp-fill #vpBody > p{flex:0 0 auto;}
 .vp.vp-fill .vp-k, .vp.vp-fill .vp-cn, .vp.vp-fill .vp-l, .vp.vp-fill .bf-u{display:flex; flex-direction:column; justify-content:space-between;}
-.vp.vp-fill .vp-dest > *{display:flex; flex-direction:column; justify-content:space-around;}
+.vp.vp-fill .vp-dest .vp-d{display:flex; flex-direction:column; justify-content:space-around;}
 .vp.vp-fill .bf2{display:flex; flex-direction:column;} .vp.vp-fill .bf2-sl{flex:1 1 auto;} .vp.vp-fill .bf2-s{display:flex; flex-direction:column;}
 .vp.vp-fill .bf2-l{flex:1 1 auto; grid-template-rows:repeat(5, 1fr);} .vp.vp-fill .bf2-l li{align-content:center;}
 .bf2-metas .bf-uns{margin:0;} .vp.vp-fill .bf2-metas .bf-uns{flex:1 1 auto; grid-auto-rows:1fr;}
@@ -654,12 +651,17 @@ body.vp-full-on{overflow:hidden;}
 }
 @media (prefers-reduced-motion:reduce){ .vp-tk-w{overflow-x:auto;} .vp-tk-r{animation:none;} }
 .vp-dest{display:grid; grid-template-columns:repeat(auto-fit,minmax(255px,1fr)); gap:var(--vp-gap);}
+.vp-dest.vp-dest2{grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr);}
+.vp-dpg{grid-area:1/1; min-height:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:minmax(0,1fr); gap:var(--vp-gap); opacity:0; visibility:hidden; transform:translateY(10px); transition:opacity .6s ease, transform .6s ease, visibility 0s .6s;}
+.vp-dpg.on{opacity:1; visibility:visible; transform:none; transition:opacity .6s ease, transform .6s ease;}
+.vp-dest2 .vp-d h4{font-size:17px;} .vp-dest2 .vp-dl{font-size:18px; padding:5px 0;} .vp-dest2 .vp-dl small{font-size:13.5px;} .vp-dest2 .vp-dl .n{font-size:13px;}
+@media(prefers-reduced-motion:reduce){ .vp-dpg, .vp-dpg.on{transition:none;} }
 .vp-d{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; min-width:0;}
 .vp-d h4{margin:0 0 4px; font-size:14.5px;} .vp-d h4 small{font-weight:500; color:var(--text-muted); margin-left:6px;}
 .vp-dl{display:grid; grid-template-columns:20px minmax(0,1fr) auto; gap:8px; align-items:center; padding:2px 0; border-top:1px dashed var(--border); font-size:15.5px; line-height:1.18;}
 .vp-dl .n{color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:11px;} .vp-dl .nm{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .vp-dl b{white-space:nowrap; text-align:right;} .vp-dl b .vp-mt{display:flex; align-items:center; justify-content:flex-end; gap:3px; font-weight:700; font-size:12px; margin-top:1px;}
 .vp-dl small{display:block; font-size:12.5px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-@media (max-width:1100px){ .vp-kpis{grid-template-columns:repeat(3,1fr);} .vp-k.g{grid-column:1 / -1;} .vp-dest{grid-template-columns:1fr;} }
+@media (max-width:1100px){ .vp-kpis{grid-template-columns:repeat(3,1fr);} .vp-k.g{grid-column:1 / -1;} .vp-dest{grid-template-columns:1fr;} .vp-dpg{grid-template-columns:1fr;} }
 @media (max-width:700px){ .vp-lojas{grid-template-columns:repeat(2,minmax(0,1fr));} .vp-l .v{font-size:20px;} .vp-kpis{grid-template-columns:repeat(2,1fr);} .vp-canais{grid-template-columns:repeat(var(--vp-nm,2),1fr);} .vp-rel{align-items:flex-start;} .vp-tit{font-size:18px;} }
 .u-subs{display:flex; flex-direction:column; gap:8px;} .u-sub{display:flex; gap:8px; align-items:flex-start;} .u-sub-g{flex:0 0 96px; font-size:11.5px; font-weight:700; color:var(--text-2); padding-top:6px;}
 .u-sub.off{opacity:.4;}
@@ -10120,12 +10122,12 @@ function vhNovEst(E){
   };
 }
 var VH_NOV_SEC = [['novos', '🆕 Produtos novos no estoque'], ['cmel', '💲 Custo melhor'], ['grandes', '📦 Grandes entradas']];
-function vpNovidades(E){
-  var N = vhNovEst(E), i = 0, h = '', qt = {}, tot = 0, mudou = true;
+function vpNovidades(E, nMax){
+  var N = vhNovEst(E), i = 0, h = '', qt = {}, tot = 0, mudou = true, LIM = nMax || 10;
   // top 10 no total, repartido entre as três listas (uma de cada vez até completar)
   VH_NOV_SEC.forEach(function(sec){ qt[sec[0]] = 0; });
-  while(tot < 10 && mudou){ mudou = false;
-    VH_NOV_SEC.forEach(function(sec){ if(tot < 10 && qt[sec[0]] < N[sec[0]].length){ qt[sec[0]]++; tot++; mudou = true; } }); }
+  while(tot < LIM && mudou){ mudou = false;
+    VH_NOV_SEC.forEach(function(sec){ if(tot < LIM && qt[sec[0]] < N[sec[0]].length){ qt[sec[0]]++; tot++; mudou = true; } }); }
   VH_NOV_SEC.forEach(function(sec){
     var L = N[sec[0]].slice(0, qt[sec[0]]); if(!L.length) return;
     h += '<div class="vp-dsec" style="font-size:11px; color:var(--text-muted); margin:8px 0 2px; font-weight:700;">'+sec[1].toUpperCase()+'</div>' + L.map(function(o){ i++;
@@ -10223,6 +10225,15 @@ function bf2Painel(S, RR, grupos){
   var dur = bf2Dur(i0)/1000, pass = Math.min(dur, (Date.now() - VH.bf2t)/1000);
   return P.hero + '<div class="bf2">'+dots+'<div class="bf2-prog"><i style="animation-duration:'+dur+'s; animation-delay:-'+pass.toFixed(1)+'s"></i></div><div class="bf2-sl">'+sl+'</div></div>' + vpTicker(RR, S.E);
 }
+function vpDestPag(p){
+  var box = document.querySelector('#vpBody .vp-dest2'); if(!box) return;
+  VH.dpg = p % 2; VH.dpgT = Date.now();
+  box.querySelectorAll('.vp-dpg').forEach(function(d){ d.classList.toggle('on', +d.getAttribute('data-p')===VH.dpg); });
+}
+setInterval(function(){
+  if(vpVis()!==1 || !vpVisivel() || document.hidden) return;
+  if(Date.now() - (VH.dpgT || 0) >= 9700) vpDestPag((VH.dpg || 0) + 1);
+}, 500);
 function bf2Mostrar(i){
   var box = document.querySelector('#vpBody .bf2'); if(!box) return;
   var n = box.querySelectorAll('.bf2-s').length; if(!n) return;
@@ -10291,19 +10302,21 @@ function vhPainel(){
   if(!R) vhResBuscar(f, S.dia, false, function(){ if(vpVisivel()) vhPainel(); });
   else if(!R.erro) VH.vpUlt = R;
   var RR = R && !R.erro ? R : VH.vpUlt;
-  function lista(tit, sub, rows, nome, dim){
+  function lista(tit, sub, rows, nome, dim, nMax){
     var cv = rows===RR.clientes ? (RR.cli_vend || {}) : null;   // clientes: vendedor que mais vendeu para ele no dia
     var ehVend = rows===RR.vendedores;
     var it = (rows||[]).map(function(r){ var vd = cv && cv[r[0]]!=null ? dimNome('vendedor', cv[r[0]]) : '', nm = nome(r);
-      return {nome:nm, h:c2(r[1]), m:c2(r[4])/(RR.nd||1), vd: vd ? nomeCurtoVend(vd) : '', md: ehVend ? vpMetaDiaVend(nm, S.dD) : null, sg: ehVend ? c2((RR.vend_seg||{})[r[0]]||0) : 0}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, 10);
+      return {nome:nm, h:c2(r[1]), m:c2(r[4])/(RR.nd||1), vd: vd ? nomeCurtoVend(vd) : '', md: ehVend ? vpMetaDiaVend(nm, S.dD) : null, sg: ehVend ? c2((RR.vend_seg||{})[r[0]]||0) : 0}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, nMax || 10);
     return '<div class="vp-d"><h4>'+tit+'<small>'+sub+'</small></h4>'+(it.length ? it.map(function(o, i){
       var x = o.m > 0.5 ? o.h/o.m : null;
       return '<div class="vp-dl"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+(o.vd ? ' · <i>'+escapeHtml(o.vd)+'</i>' : '')+'</small></span><b>'+fmtMoney(o.h)+vpMetaDiaHtml(o.h, o.md, o.sg)+'</b></div>';
     }).join('') : '<p class="note-muted" style="font-size:12px;">Sem vendas ainda.</p>')+'</div>';
   }
   var nm7 = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
-  var ds = RR ? '<div class="vp-dest">' + lista('Vendedores em destaque', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) +
-      lista('Clientes em destaque', 'compras do dia', RR.clientes, nm7) + lista('Produtos em destaque', 'faturamento do dia', RR.produtos, nm7) + vpNovidades(S.E) + '</div>'
+  // Visual 2: top 5 de cada lista, dois quadros largos por vez, trocando a cada 10 s
+  var pg0 = (VH.dpg || 0) % 2; if(!VH.dpgT) VH.dpgT = Date.now();
+  var ds = RR ? '<div class="vp-dest vp-dest2"><div class="vp-dpg'+(pg0===0 ? ' on' : '')+'" data-p="0">' + lista('Top 5 vendedores', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }, null, 5) +
+      lista('Top 5 clientes', 'compras do dia', RR.clientes, nm7, null, 5) + '</div><div class="vp-dpg'+(pg0===1 ? ' on' : '')+'" data-p="1">' + lista('Top 5 produtos', 'faturamento do dia', RR.produtos, nm7, null, 5) + vpNovidades(S.E, 5) + '</div></div>'
     : (R && R.erro ? '' : '<p class="note-muted status-txt">Carregando os destaques do dia…</p>');
   if(VV===4){
     var top = function(rows, nome){ return (rows||[]).map(function(r){ return {nome:nome(r), v:c2(r[1])}; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 10); };
@@ -10314,8 +10327,8 @@ function vhPainel(){
     box.innerHTML = bf2Painel(S, RR, [['Lojas', tL], ['Vendedores', RR ? top(RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) : null],
       ['Clientes', RR ? top(RR.clientes, nm7) : null], ['Produtos', RR ? top(RR.produtos, nm7) : null]]);
   } else if(V2){
-    var dsB = RR ? '<div class="vp-dest">' + lista('Vendedores em destaque', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) +
-      lista('Clientes em destaque', 'compras do dia', RR.clientes, nm7) + lista('Produtos em destaque', 'faturamento do dia', RR.produtos, nm7) + '</div>' : '';
+    var dsB = RR ? '<div class="vp-dest">' + lista('Top 5 vendedores', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }, null, 5) +
+      lista('Top 5 clientes', 'compras do dia', RR.clientes, nm7, null, 5) + lista('Top 5 produtos', 'faturamento do dia', RR.produtos, nm7, null, 5) + '</div>' : '';
     box.innerHTML = bfPainel(S, RR, dsB);
   } else box.innerHTML = kp + cn + lj + (vpVis()===3 ? '' : ds) + vpTicker(RR, S.E);   // Visual 3: sem os destaques, cards maiores
   vpAjustar(); vpCaber(box); clearTimeout(vhPainel.t); vhPainel.t = setTimeout(function(){ vpAjustar(); vpCaber(box); }, 500);
@@ -10355,31 +10368,21 @@ function vpTelaCheia(){
 function vpAjustar(){
   var el = document.getElementById('vhModoPainel'); if(!el) return;
   var w = el.querySelector(':scope > .vp-zbox');
-  el.classList.remove('vp-fill', 'vp-fill-dest', 'vp-semdest'); if(w){ w.style.height = ''; w.style.flex = ''; }
+  el.classList.remove('vp-fill'); if(w){ w.style.height = ''; w.style.flex = ''; }
   if(w && w.dataset.mb) { w.style.marginBottom = w.dataset.mb; delete w.dataset.mb; }
   var cheia = vpFsEl()===el || el.classList.contains('vp-full');
-  // Visual 2 e BF em tela cheia: o tamanho da letra é calculado sem as listas de destaques (senão as listas longas encolhem tudo);
-  // as listas ficam com a altura que sobra e mostram as linhas que couberem
-  var dest = cheia && window.innerWidth >= 1001 && vpVisivel() && !!el.querySelector('#vpBody > .vp-dest');
-  if(dest) el.classList.add('vp-semdest');
-  vpAjustar0(el, dest ? 0.64 : 1);
-  el.classList.remove('vp-semdest');
-  el.querySelectorAll('.vp-dest .vp-dl, .vp-dest .vp-dsec').forEach(function(x){ x.style.display = ''; });
+  // Visual 2 e BF: as listas de destaques são top 5 e entram inteiras na conta do tamanho da letra
+  vpAjustar0(el);
   if(!cheia || window.innerWidth < 1001 || !vpVisivel()) return;
-  el.classList.add('vp-fill'); el.classList.toggle('vp-fill-dest', dest);
+  el.classList.add('vp-fill');
   w = el.querySelector(':scope > .vp-zbox');
   if(w && w.style.transform){   // navegador sem zoom: a caixa com escala precisa da altura certa
     var z = vpZGet(el), cs = getComputedStyle(el), H = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
     w.dataset.mb = w.style.marginBottom; w.style.flex = '0 0 auto'; w.style.height = (H/z)+'px'; w.style.marginBottom = z < 1 ? (-(H/z - H))+'px' : '';
   }
   vpCaber(el);
-  if(dest) el.querySelectorAll('.vp-dest .vp-d').forEach(function(d){   // esconde as linhas que não couberem (sem cortar no meio)
-    var fim = d.getBoundingClientRect().bottom - 6;
-    Array.prototype.slice.call(d.querySelectorAll('.vp-dl, .vp-dsec')).reverse().forEach(function(x){ if(x.getBoundingClientRect().bottom > fim) x.style.display = 'none'; });
-    d.querySelectorAll('.vp-dsec').forEach(function(h){ var nx = h.nextElementSibling; if(!nx || nx.style.display==='none' || nx.classList.contains('vp-dsec')) h.style.display = 'none'; });
-  });
 }
-function vpAjustar0(el, fator){
+function vpAjustar0(el){
   if(vpVisivel()) vpCaber(el);
   if(window.innerWidth < 1001){ vpZSet(el, ''); return; }
   if(!vpVisivel()) return;
@@ -10387,8 +10390,8 @@ function vpAjustar0(el, fator){
   // altura do conteúdo (em tela cheia do painel a caixa ocupa a tela toda; vale o fim do último bloco)
   var altura = function(){ var k = document.getElementById('vpBody'), r0 = el.getBoundingClientRect().top; return k ? k.getBoundingClientRect().bottom - r0 : el.getBoundingClientRect().height; };
   var mn = el.closest('.main'), abaixo = cheia || !mn ? 0 : parseFloat(getComputedStyle(mn).paddingBottom) || 0;
-  var disp = (window.innerHeight - topo - abaixo - (cheia ? 20 : 6)) * (fator || 1);
-  if(disp < 120) return;
+  var disp = window.innerHeight - topo - abaixo - (cheia ? 20 : 6);
+  if(disp < 200) return;
   // tela cheia (do painel ou do navegador): também aumenta para ocupar a tela toda; fora dela, só reduz
   var tela = vpTelaCheia(), zMax = tela ? 4 : 1;   // TV 4K sem ampliação do Windows: até 4x
   // atualização discreta: se o tamanho atual ainda serve (cabe e não sobra muito), não mexe (evita a fonte crescer e diminuir)
