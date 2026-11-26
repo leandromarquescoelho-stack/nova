@@ -10539,7 +10539,7 @@ function vpTickerAE(S, RR0){
   var T = vhTk(f, S.dia, redraw); if(T) U.T = T;
   VH.aeUlt = {}; VH.aeUlt[k] = U;
   if(!U.R && !U.E && !U.T) return '';
-  return vpTicker(U.R || null, U.E || null, U.T || null);
+  return vpTicker(U.R || null, U.E || null, U.T || null, true);
 }
 function bfPainel(S, RR, dest, partes){
   var lj = {}; S.lojas.forEach(function(o){ lj[o.nome] = o; });
@@ -10837,16 +10837,16 @@ function tkVend(id){ return nomeCurtoVend(dimNome('vendedor', id) || ('#'+id)); 
 function tkNome(t){ var x = String(t||'').replace(/\s+[A-Z]\d{4,6}$/, '').trim(); return x.length > 38 ? x.slice(0, 36)+'…' : x; }
 function tkPct(x){ return (Math.round(x*10)/10).toFixed(1).replace('.',',')+'%'; }
 /* destaques: vendedores, clientes, vendas altas e mais vendidos */
-function vpTickerExtra(T){
+function vpTickerExtra(T, soDia){
   if(!T || T.erro) return [];
   var g = [], ouro = '#d4a017', prata = 'var(--vx-pu)', azul = 'var(--accent, #3b82f6)';
   var V = T.vend || {};
-  [['vend_dia', 'd', 'MELHOR DO DIA'], ['vend_mes', 'm', 'MELHOR DO MÊS'], ['vend_ano', 'a', 'MELHOR DO ANO']].forEach(function(x){
+  [['vend_dia', 'd', 'MELHOR DO DIA'], ['vend_mes', 'm', 'MELHOR DO MÊS'], ['vend_ano', 'a', 'MELHOR DO ANO']].filter(function(x){ return !soDia || x[1]==='d'; }).forEach(function(x){
     var L = V[x[1]] || []; if(!tkLigado(x[0]) || !L.length) return;
     var r = L[0], mg = r[1] > 0 ? r[2]/r[1]*100 : 0;
     g.push({t:x[2], c:ouro, n:'🥇 '+tkVend(r[0]), d:fmtMoney(c2(r[1]))+' · margem '+tkPct(mg)+L.slice(1).map(function(o, i){ return ' · '+(i+2)+'º '+tkVend(o[0])+' '+fmtMoney(c2(o[1])); }).join('')});
   });
-  var C = T.cres || {};
+  var C = soDia ? {} : (T.cres || {});   // visuais BF e BF2: só a venda do dia (sem mês, ano e crescimentos do mês)
   if(tkLigado('cres_fat') && C.fat) g.push({t:'MAIS CRESCEU', c:'var(--good)', n:tkVend(C.fat[0]), d:'faturamento do mês +'+Math.round((C.fat[1]/C.fat[2]-1)*100).toLocaleString('pt-BR')+'% ('+fmtMoney(c2(C.fat[2]))+' → '+fmtMoney(c2(C.fat[1]))+') contra os mesmos dias do mês anterior'});
   if(tkLigado('cres_mix') && C.mix) g.push({t:'MAIS CRESCEU EM MIX', c:'var(--good)', n:tkVend(C.mix[0]), d:fmtUn(C.mix[2])+' → '+fmtUn(C.mix[1])+' produtos diferentes no mês'});
   if(tkLigado('cres_part') && C.part) g.push({t:'MAIS GANHOU PARTICIPAÇÃO', c:'var(--good)', n:tkVend(C.part[0]), d:tkPct(+C.part[2])+' → '+tkPct(+C.part[1])+' do faturamento no mês'});
@@ -10864,7 +10864,7 @@ function vpTickerExtra(T){
     g.push({t:'TOP CLIENTE DO DIA', c:azul, n:(i+1)+'º '+tkNome(r[0]), d:fmtMoney(c2(r[1]))+' · '+fmtUn(r[2])+' nota'+(r[2]>1?'s':'')}); });
   return g;
 }
-function vpTicker(RR, E, TK){
+function vpTicker(RR, E, TK, soDia){
   var it = [], alta = [], vistos = {};
   var nome = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
   // 1) vendeu bem e o estoque zerou ou está acabando
@@ -10885,7 +10885,7 @@ function vpTicker(RR, E, TK){
   var mix = []; it = it.slice(0, 8); alta = alta.slice(0, 8);
   for(var i = 0; i < Math.max(it.length, alta.length); i++){ if(alta[i]) mix.push(alta[i]); if(it[i]) mix.push(it[i]); }
   // destaques (vendedores, clientes, vendas altas, mais vendidos) intercalados com os de produto
-  var ex = vpTickerExtra(TK!==undefined ? TK : VH.tkAtual), fin = [];
+  var ex = vpTickerExtra(TK!==undefined ? TK : VH.tkAtual, soDia), fin = [];
   for(var j = 0; j < Math.max(ex.length, mix.length); j++){ if(ex[j]) fin.push(ex[j]); if(mix[j]) fin.push(mix[j]); }
   it = fin;
   if(!it.length) return '';
