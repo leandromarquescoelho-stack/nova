@@ -1117,6 +1117,8 @@ tr.vend-row:hover td{ background:var(--surface-2); }
 .stock-stat{padding:10px 12px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border);}
 button.stock-stat{font:inherit; color:inherit; text-align:left; cursor:pointer; width:100%;} button.stock-stat:hover{border-color:var(--border-strong);} button.stock-stat[aria-pressed="true"]{background:var(--surface-3); border-color:var(--accent);}
 .stock-stat .n{font-family:'Sora',sans-serif; font-size:18px; font-weight:700;}
+.stock-stats-sm{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:14px; min-width:0;} .stock-stats-sm .stock-stat{padding:7px 11px;} .stock-stats-sm .stock-stat .n{font-size:15px;} .stock-stats-sm .stock-stat .l{font-size:9.5px;}
+@media (max-width:700px){ .stock-stats-sm{grid-template-columns:1fr 1fr;} }
 .stock-stat .l{font-size:10.5px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em; margin-top:2px; display:flex; align-items:center; gap:5px;}
 .dotb{width:7px; height:7px; border-radius:50%; flex:none;}
 
@@ -1164,7 +1166,6 @@ button.stock-stat{font:inherit; color:inherit; text-align:left; cursor:pointer; 
 .abc-chip .ac-dot{width:8px; height:8px; border-radius:50%;}
 .abc-chip .ac-n{font-family:'Sora',sans-serif; font-size:15px; font-weight:700; margin-top:4px;}
 #productsTable .col-loja{white-space:nowrap;}
-#tabPorLoja[aria-pressed="true"]{border-color:var(--accent); background:rgba(34,211,238,.1); color:var(--text);}
 .abc-chip .ac-fat{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; margin-top:2px; color:var(--text);}
 .abc-chip .ac-sub{font-size:10.5px; color:var(--text-muted);}
 
@@ -2900,6 +2901,7 @@ table.data-table.vp-tbl{min-width:720px;}
       </div>
       </div>
       <div class="es-aba" data-esaba="produtos" hidden>
+      <div class="stock-stats stock-stats-sm" id="stockStats2"></div>
       <!-- ---- produtos (antiga aba Produtos) ---- -->
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
@@ -2924,7 +2926,7 @@ table.data-table.vp-tbl{min-width:720px;}
           </div>
           <div class="spacer"></div>
           <div class="export-btns">
-            <button class="tbtn" id="tabPorLoja" aria-pressed="false" title="Uma linha por produto em cada loja: estoque, mínimo, vendas e faturamento da loja">Por loja</button>
+            <div class="seg" id="tabModo" title="Por produto: uma linha por produto, com a quantidade de lojas · Por loja: o produto repetido em cada loja, com o nome da loja"><button type="button" data-tm="prod" aria-pressed="true">Por produto</button><button type="button" data-tm="loja" aria-pressed="false">Por loja</button></div>
             <button class="tbtn" id="exportXlsx">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Exportar Excel
@@ -7671,10 +7673,11 @@ function renderStockHealth(){
     '</div>';
 
   var labels = {normal:'Estoque saudável', atencao:'Estoque baixo', critico:'Estoque crítico', zerado:'Sem estoque'};
-  document.getElementById('stockStats').innerHTML = order.map(function(k){
+  var cardsSt = order.map(function(k){
     return '<button type="button" class="stock-stat" data-st="'+k+'" aria-pressed="'+(state.estStatus===k)+'" title="Clique para filtrar a aba Estoque"><div class="n">'+fmtUn(counts[k])+'</div><div class="l"><span class="dotb" style="background:'+STATUS_COLOR[k]+'"></span>'+labels[k]+'</div></button>';
   }).join('');
-  Array.prototype.forEach.call(document.querySelectorAll('#stockStats [data-st]'), function(b){
+  document.getElementById('stockStats').innerHTML = cardsSt; document.getElementById('stockStats2').innerHTML = cardsSt;
+  Array.prototype.forEach.call(document.querySelectorAll('#stockStats [data-st], #stockStats2 [data-st]'), function(b){
     b.addEventListener('click', function(){ var k = b.getAttribute('data-st'); state.estStatus = state.estStatus===k ? null : k; state.page = 1; renderAll(false); });
   });
 }
@@ -7887,7 +7890,7 @@ function renderABC(){
     });
   });
 
-  var W=900,H=230, padL=40,padR=14,padT=14,padB=24;
+  var abcBox = document.getElementById('abcChart'), W = Math.max(420, Math.round((abcBox && abcBox.clientWidth) || 900)), H = 150, padL=40,padR=14,padT=20,padB=10;
   var innerW=W-padL-padR, innerH=H-padT-padB;
   function x(i){ return rows.length<=1?padL:padL+innerW*(i/(rows.length-1)); }
   function y(v){ return padT+innerH-innerH*(v/100); }
@@ -7912,9 +7915,9 @@ function renderABC(){
   var guide80 = y(80), guide95=y(95);
   var svg = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Curva ABC">' +
     '<line x1="'+padL+'" y1="'+guide80+'" x2="'+(W-padR)+'" y2="'+guide80+'" stroke="var(--border-strong)" stroke-dasharray="3 3" stroke-width="1"/>' +
-    '<text x="'+(W-padR)+'" y="'+(guide80-4)+'" text-anchor="end" font-size="9" fill="var(--text-muted)">80%</text>' +
+    '<text x="'+(W-padR)+'" y="'+(guide80-4)+'" text-anchor="end" font-size="11" fill="var(--text-muted)">80%</text>' +
     '<line x1="'+padL+'" y1="'+guide95+'" x2="'+(W-padR)+'" y2="'+guide95+'" stroke="var(--border-strong)" stroke-dasharray="3 3" stroke-width="1"/>' +
-    '<text x="'+(W-padR)+'" y="'+(guide95-4)+'" text-anchor="end" font-size="9" fill="var(--text-muted)">95%</text>' +
+    '<text x="'+(W-padR)+'" y="'+(guide95-4)+'" text-anchor="end" font-size="11" fill="var(--text-muted)">95%</text>' +
     '<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(padT+innerH)+'" stroke="var(--border)" stroke-width="1"/>' +
     segPaths +
     rows.map(function(r,i){ return '<circle data-i="'+i+'" cx="'+x(i)+'" cy="'+y(r.cumPct)+'" r="7" fill="transparent"/>'; }).join('') +
@@ -8070,7 +8073,7 @@ function renderTable(){
 
   var tbody = document.getElementById('productsTbody');
   document.getElementById('productsTable').classList.toggle('por-loja', TAB_LOJA.on);
-  document.getElementById('tabPorLoja').setAttribute('aria-pressed', String(TAB_LOJA.on));
+  Array.prototype.forEach.call(document.querySelectorAll('#tabModo [data-tm]'), function(b){ b.setAttribute('aria-pressed', String((b.getAttribute('data-tm')==='loja')===TAB_LOJA.on)); });
   if(TAB_LOJA.on && !TAB_LOJA.rows){
     tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:var(--text-muted); padding:26px;">'+(TAB_LOJA.erro ? 'Não foi possível carregar os números por loja. Tente de novo.' : 'Carregando os números de cada loja…')+'</td></tr>';
     document.getElementById('pagination').innerHTML = ''; return;
@@ -12679,7 +12682,7 @@ function bindEvents(){
   // export
   document.getElementById('esGuias').addEventListener('click', function(ev){ var b = ev.target.closest('[data-es]'); if(!b) return; esAba(b.getAttribute('data-es')); });
   (function(){ var k = null; try{ k = localStorage.getItem('nc_es_aba'); }catch(e){} if(k && document.querySelector('#esGuias [data-es="'+k+'"]')) esAba(k, true); })();
-  document.getElementById('tabPorLoja').addEventListener('click', function(){ TAB_LOJA.on = !TAB_LOJA.on; state.page = 1; renderTable(); });
+  document.getElementById('tabModo').addEventListener('click', function(ev){ var b = ev.target.closest('[data-tm]'); if(!b) return; var on = b.getAttribute('data-tm')==='loja'; if(on===TAB_LOJA.on) return; TAB_LOJA.on = on; state.page = 1; renderTable(); });
   document.getElementById('exportXlsx').addEventListener('click', function(){
     var rows = tableRows();
     var header = ['Código','Produto','Loja'].concat(['Marca','Categoria','Aplicação','Estoque Atual','Estoque Mínimo','Vendas','Faturamento','Giro (dias)','Status']);
