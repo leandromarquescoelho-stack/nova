@@ -8047,7 +8047,13 @@ function rpLigar(){
     var todos = Array.prototype.slice.call(tb.querySelectorAll('.rp-in')), i = todos.indexOf(e.target);
     e.target.blur();
     var prox = tb.querySelectorAll('.rp-in')[i + (e.shiftKey ? -1 : 1)];
-    if(prox){ prox.focus({preventScroll:true}); prox.select(); }
+    if(prox){ prox.focus({preventScroll:true}); prox.select(); return; }
+    // último item da página: Enter vai para a próxima página (Shift+Enter no primeiro volta para a anterior)
+    var tot = Math.max(1, Math.ceil(tableRows().length/state.pageSize)), pg = state.page + (e.shiftKey ? -1 : 1);
+    if(pg < 1 || pg > tot) return;
+    state.page = pg; renderTable();
+    var lista = tb.querySelectorAll('.rp-in'), alvo = e.shiftKey ? lista[lista.length-1] : lista[0];
+    if(alvo){ alvo.focus({preventScroll:true}); alvo.select(); }
   });
   tb.addEventListener('focusin', function(e){ if(e.target.classList.contains('rp-in')){ e.target.select(); var tr = e.target.closest('tr'); if(tr) tr.scrollIntoView({block:'center', behavior:'smooth'}); } });
   tb.addEventListener('click', function(e){
