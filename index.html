@@ -511,6 +511,15 @@ tbody.vd-fech tr.vd-det{display:none;}
 /* tela cheia sem a API do navegador (TV Samsung/Tizen, LG/webOS): o painel cobre a janela */
 .vp.vp-full{position:fixed; inset:0; z-index:9000; margin:0; border-radius:0; background:var(--bg); padding:18px 22px; overflow:auto; overflow-x:hidden;}
 body.vp-full-on{overflow:hidden;}
+.vp.vp-fill{display:flex; flex-direction:column;}
+.vp.vp-fill > .vp-zbox{display:flex; flex-direction:column; flex:1 1 auto; min-height:0;}
+.vp.vp-fill #vpBody{flex:1 1 auto; display:flex; flex-direction:column; min-height:0;}
+.vp.vp-fill #vpBody > *{flex:1 1 auto;} .vp.vp-fill #vpBody > .vp-tk, .vp.vp-fill #vpBody > .bf-hero, .vp.vp-fill #vpBody > p{flex:0 0 auto;}
+.vp.vp-fill .vp-k, .vp.vp-fill .vp-cn, .vp.vp-fill .vp-l, .vp.vp-fill .bf-u{display:flex; flex-direction:column; justify-content:space-between;}
+.vp.vp-fill .vp-dest > *{display:flex; flex-direction:column; justify-content:space-around;}
+.vp.vp-fill .bf2{display:flex; flex-direction:column;} .vp.vp-fill .bf2-sl{flex:1 1 auto;} .vp.vp-fill .bf2-s{display:flex; flex-direction:column;}
+.vp.vp-fill .bf2-l{flex:1 1 auto; grid-template-rows:repeat(5, 1fr);} .vp.vp-fill .bf2-l li{align-content:center;}
+.bf2-metas .bf-uns{margin:0;} .vp.vp-fill .bf2-metas .bf-uns{flex:1 1 auto; grid-auto-rows:1fr;}
 .vp-top{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:var(--vp-gap);}
 .vp-tt{flex:1 1 280px; min-width:0;} .vp-tit{font-family:'Sora',sans-serif; font-size:22px; font-weight:800;} .vp-sub{font-size:12px; color:var(--text-muted); margin-top:2px;}
 .vp-tr{display:flex; align-items:center; gap:8px; min-width:0;}
@@ -580,7 +589,7 @@ body.vp-full-on{overflow:hidden;}
 .bf2{margin-top:var(--vp-gap); background:#121212; border:1px solid #2a2a2a; border-radius:14px; padding:14px 18px 16px; position:relative; overflow:hidden;}
 .bf2-dots{display:flex; gap:8px; flex-wrap:wrap;} .bf2-dots button{background:#1d1d1d; color:#bdbdbd; border:1px solid #333; border-radius:999px; padding:5px 14px; font-size:13px; font-weight:700; cursor:pointer;}
 .bf2-dots button.on{background:#f5b400; color:#111; border-color:#f5b400;}
-.bf2-prog{height:3px; background:#262626; border-radius:3px; margin:10px 0 6px; overflow:hidden;} .bf2-prog i{display:block; height:100%; width:100%; background:#f5b400; transform-origin:0 50%; animation:bf2p 15s linear forwards;}
+.bf2-prog{height:3px; background:#262626; border-radius:3px; margin:10px 0 6px; overflow:hidden;} .bf2-prog i{display:block; height:100%; width:100%; background:#f5b400; transform-origin:0 50%; animation:bf2p 10s linear forwards;}
 @keyframes bf2p{from{transform:scaleX(0);} to{transform:scaleX(1);}}
 .bf2-sl{display:grid;} .bf2-s{grid-area:1/1; opacity:0; visibility:hidden; transform:translateX(40px); transition:opacity .6s ease, transform .6s ease, visibility 0s .6s;}
 .bf2-s.on{opacity:1; visibility:visible; transform:none; transition:opacity .6s ease, transform .6s ease;}
@@ -2590,7 +2599,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <div id="vhModoPainel" class="vp">
           <div class="vp-top"><div class="vp-tt"><div class="vp-tr"><span class="vp-logo" aria-hidden="true"></span><div class="vp-tit" id="vpTit">Vendas de hoje</div></div><div class="vp-sub" id="vpSub"></div></div>
             <div class="vp-rel"><b id="vpHora">--:--</b><span id="vpProx">atualiza sozinho</span></div>
-            <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="3" aria-pressed="false" title="Painel do dia com os cards maiores, sem os destaques (para TV)">Visual 1</button><button type="button" data-vis="1" aria-pressed="false" title="Painel geral do dia, com os destaques">Visual 2</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual BF</button><button type="button" data-vis="4" aria-pressed="false" title="Black Friday com o top 10 de lojas, vendedores, clientes e produtos, alternando a cada 15 segundos">Visual BF2</button></div><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
+            <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="3" aria-pressed="false" title="Painel do dia com os cards maiores, sem os destaques (para TV)">Visual 1</button><button type="button" data-vis="1" aria-pressed="false" title="Painel geral do dia, com os destaques">Visual 2</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual BF</button><button type="button" data-vis="4" aria-pressed="false" title="Black Friday com o top 10 de lojas, vendedores, clientes e produtos, 10 segundos cada, e as metas por unidade por 20 segundos">Visual BF2</button></div><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
           <div id="vpBody"><p class="note-muted status-txt">Carregando o painel…</p></div>
         </div>
       </section>
@@ -10157,7 +10166,7 @@ function bfGauge(p, tit){
     '<text x="50" y="48" text-anchor="middle" font-size="19" font-weight="800" fill="'+cor+'" font-family="Sora,sans-serif">'+(ok ? Math.round(p) : Math.min(99, Math.round(p||0)))+'%</text>' +
     (ok ? '<text x="50" y="66" text-anchor="middle" font-size="8.5" font-weight="800" fill="#4ade80" letter-spacing=".04em">META BATIDA</text>' : '<text x="50" y="66" text-anchor="middle" font-size="9" fill="#9b9b9b">da meta</text>')+'</svg>';
 }
-function bfPainel(S, RR, dest){
+function bfPainel(S, RR, dest, partes){
   var lj = {}; S.lojas.forEach(function(o){ lj[o.nome] = o; });
   var ecm = null; S.canais.forEach(function(x){ if(x.k==='ECOMMERCE') ecm = x; });
   var U = [];
@@ -10186,15 +10195,18 @@ function bfPainel(S, RR, dest){
       '<div class="bf-uf"><span>'+(ok ? 'Passou <b>'+fmtMoney(u.v - u.meta)+'</b>' : 'Falta <b>'+fmtMoney(u.meta - u.v)+'</b>')+'</span>' +
       (u.md > 0 ? '<span title="Venda do dia ÷ média diária do mês">'+xN(u.v/u.md)+' dia normal</span>' : '')+'</div></div>';
   }).join('')+'</div>';
+  if(partes) return {hero:hero, cards:cards};
   return hero + cards + dest + vpTicker(RR, S.E);
 }
-/* ---------- Visual BF2: cabeçalho da Black Friday + top 10 que alterna a cada 15 s (lojas, vendedores, clientes, produtos) ---------- */
-var BF2_SEG = 15;
+/* ---------- Visual BF2: cabeçalho da Black Friday + top 10 que alterna (lojas, vendedores, clientes, produtos: 10 s cada) e as metas por unidade como no Visual BF (20 s) ---------- */
+var BF2_SEG = [10, 10, 10, 10, 20];
+function bf2Dur(i){ return (BF2_SEG[i] || 10)*1000; }
 function bf2Painel(S, RR, grupos){
-  var hero = bfPainel(S, RR, '').split('<div class="bf-uns">')[0];   // só o cabeçalho (total × meta) do Visual BF
-  var i0 = (VH.bf2i || 0) % grupos.length;
+  var P = bfPainel(S, RR, '', true);
+  if(typeof P==='string') return P;
+  var n = grupos.length + 1, i0 = (VH.bf2i || 0) % n;
   if(!VH.bf2t) VH.bf2t = Date.now();
-  var dots = '<div class="bf2-dots">'+grupos.map(function(g, i){ return '<button type="button" data-bf2="'+i+'" class="'+(i===i0 ? 'on' : '')+'">'+g[0]+'</button>'; }).join('')+'</div>';
+  var dots = '<div class="bf2-dots">'+grupos.map(function(g){ return g[0]; }).concat(['Metas']).map(function(t, i){ return '<button type="button" data-bf2="'+i+'" class="'+(i===i0 ? 'on' : '')+'">'+t+'</button>'; }).join('')+'</div>';
   var sl = grupos.map(function(g, i){
     var L = g[1], mx = L && L.length ? Math.max(1, L[0].v) : 1;
     var corpo = !L ? '<p class="note-muted">Carregando…</p>' : (!L.length ? '<p class="note-muted">Sem vendas ainda.</p>' : '<ol class="bf2-l">'+L.map(function(o, j){
@@ -10204,8 +10216,9 @@ function bf2Painel(S, RR, grupos){
         (pm!==null ? '<em style="color:'+bfCor(pm)+'">'+Math.round(pm)+'% da meta</em>' : '<em></em>')+'</li>';
     }).join('')+'</ol>');
     return '<section class="bf2-s'+(i===i0 ? ' on' : '')+'" data-i="'+i+'"><h3>Top 10 <b>'+g[0]+'</b><small>'+(S.ehHoje ? 'venda de hoje' : 'venda do dia')+'</small></h3>'+corpo+'</section>';
-  }).join('');
-  return hero + '<div class="bf2">'+dots+'<div class="bf2-prog"><i style="animation-delay:-'+Math.min(BF2_SEG, (Date.now() - VH.bf2t)/1000).toFixed(1)+'s"></i></div><div class="bf2-sl">'+sl+'</div></div>' + vpTicker(RR, S.E);
+  }).join('') + '<section class="bf2-s bf2-metas'+(i0===n-1 ? ' on' : '')+'" data-i="'+(n-1)+'"><h3>Metas da <b>Black Friday</b><small>venda do dia × meta de cada unidade</small></h3>'+P.cards+'</section>';
+  var dur = bf2Dur(i0)/1000, pass = Math.min(dur, (Date.now() - VH.bf2t)/1000);
+  return P.hero + '<div class="bf2">'+dots+'<div class="bf2-prog"><i style="animation-duration:'+dur+'s; animation-delay:-'+pass.toFixed(1)+'s"></i></div><div class="bf2-sl">'+sl+'</div></div>' + vpTicker(RR, S.E);
 }
 function bf2Mostrar(i){
   var box = document.querySelector('#vpBody .bf2'); if(!box) return;
@@ -10213,12 +10226,12 @@ function bf2Mostrar(i){
   VH.bf2i = ((i % n) + n) % n; VH.bf2t = Date.now();
   box.querySelectorAll('.bf2-s').forEach(function(s){ s.classList.toggle('on', +s.getAttribute('data-i')===VH.bf2i); });
   box.querySelectorAll('.bf2-dots button').forEach(function(b){ b.classList.toggle('on', +b.getAttribute('data-bf2')===VH.bf2i); });
-  var pr = box.querySelector('.bf2-prog i'); if(pr){ pr.style.animation = 'none'; pr.style.animationDelay = '0s'; void pr.offsetWidth; pr.style.animation = ''; }
+  var pr = box.querySelector('.bf2-prog i'); if(pr){ pr.style.animation = 'none'; void pr.offsetWidth; pr.style.animation = ''; pr.style.animationDuration = (bf2Dur(VH.bf2i)/1000)+'s'; pr.style.animationDelay = '0s'; }
 }
 setInterval(function(){
   if(vpVis()!==4 || !vpVisivel() || document.hidden) return;
-  if(Date.now() - (VH.bf2t || 0) >= BF2_SEG*1000 - 300) bf2Mostrar((VH.bf2i || 0) + 1);
-}, 1000);
+  if(Date.now() - (VH.bf2t || 0) >= bf2Dur(VH.bf2i || 0) - 300) bf2Mostrar((VH.bf2i || 0) + 1);
+}, 500);
 document.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('[data-bf2]'); if(b) bf2Mostrar(+b.getAttribute('data-bf2')); });
 function vhPainel(){
   var S = VH.sum, box = document.getElementById('vpBody'); if(!S || !box) return;
@@ -10335,8 +10348,24 @@ function vpTelaCheia(){
   var sw = (screen && screen.width) || 0, sh = (screen && screen.height) || 0;
   return sw > 0 && window.innerWidth >= sw - 4 && window.innerHeight >= sh - 4 && window.outerHeight - window.innerHeight < 8;
 }
+// tela cheia: depois do zoom, os blocos esticam para ocupar a altura que sobra (qualquer TV, qualquer proporção)
 function vpAjustar(){
   var el = document.getElementById('vhModoPainel'); if(!el) return;
+  var w = el.querySelector(':scope > .vp-zbox');
+  el.classList.remove('vp-fill'); if(w){ w.style.height = ''; w.style.flex = ''; }
+  if(w && w.dataset.mb) { w.style.marginBottom = w.dataset.mb; delete w.dataset.mb; }
+  vpAjustar0(el);
+  var cheia = vpFsEl()===el || el.classList.contains('vp-full');
+  if(!cheia || window.innerWidth < 1001 || !vpVisivel()) return;
+  el.classList.add('vp-fill');
+  w = el.querySelector(':scope > .vp-zbox');
+  if(w && w.style.transform){   // navegador sem zoom: a caixa com escala precisa da altura certa
+    var z = vpZGet(el), cs = getComputedStyle(el), H = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    w.dataset.mb = w.style.marginBottom; w.style.flex = '0 0 auto'; w.style.height = (H/z)+'px'; w.style.marginBottom = z < 1 ? (-(H/z - H))+'px' : '';
+  }
+  vpCaber(el);
+}
+function vpAjustar0(el){
   if(vpVisivel()) vpCaber(el);
   if(window.innerWidth < 1001){ vpZSet(el, ''); return; }
   if(!vpVisivel()) return;
