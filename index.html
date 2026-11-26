@@ -1163,7 +1163,7 @@ button.stock-stat{font:inherit; color:inherit; text-align:left; cursor:pointer; 
 .abc-chip .ac-top{display:flex; align-items:center; gap:6px; font-size:11px; font-weight:800; letter-spacing:.03em;}
 .abc-chip .ac-dot{width:8px; height:8px; border-radius:50%;}
 .abc-chip .ac-n{font-family:'Sora',sans-serif; font-size:15px; font-weight:700; margin-top:4px;}
-#productsTable .col-loja{display:none;} #productsTable.por-loja .col-loja{display:table-cell; white-space:nowrap;}
+#productsTable .col-loja{white-space:nowrap;}
 #tabPorLoja[aria-pressed="true"]{border-color:var(--accent); background:rgba(34,211,238,.1); color:var(--text);}
 .abc-chip .ac-fat{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; margin-top:2px; color:var(--text);}
 .abc-chip .ac-sub{font-size:10.5px; color:var(--text-muted);}
@@ -2827,25 +2827,13 @@ table.data-table.vp-tbl{min-width:720px;}
 
       <!-- ============ ESTOQUE ============ -->
       <section class="view-panel" data-view-panel="estoque" style="display:none;">
+      <div class="pl-guias ec-guias" id="esGuias" role="tablist"><button type="button" class="on" data-es="geral" role="tab" aria-selected="true">Visão geral</button><button type="button" data-es="mov" role="tab" aria-selected="false">Movimentação</button><button type="button" data-es="parado" role="tab" aria-selected="false">Estoque parado</button><button type="button" data-es="produtos" role="tab" aria-selected="false">Produtos</button></div>
+      <div class="es-aba" data-esaba="geral">
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
           <div><h2>Valor do Estoque e Giro</h2><div class="psub" id="estDestSub">Estoque atual a custo, com os filtros aplicados</div></div>
         </div>
         <div class="est-dest" id="estDestaque"></div>
-      </div>
-      <div class="grid-2" style="margin-bottom:14px;">
-        <div class="panel">
-          <div class="panel-head">
-            <div><h2>Novidades no Estoque</h2><div class="psub" id="estNovSub">O que mudou desde a foto anterior do estoque</div></div>
-          </div>
-          <div id="estNovList" class="scroll-limit scroll-5"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-head">
-            <div><h2>Sugestões de Transferência</h2><div class="psub" id="estTrfSub">Entre filiais, só quando uma tem sobra e a outra está sem cobertura</div></div>
-          </div>
-          <div id="estTrfList" class="scroll-limit scroll-5"></div>
-        </div>
       </div>
       <div class="grid-2" style="margin-bottom:14px;">
         <div class="panel">
@@ -2873,6 +2861,24 @@ table.data-table.vp-tbl{min-width:720px;}
         </div>
         <div class="barlist scroll-limit" id="giroList"></div>
       </div>
+      </div>
+      <div class="es-aba" data-esaba="mov" hidden>
+      <div class="grid-2" style="margin-bottom:14px;">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Novidades no Estoque</h2><div class="psub" id="estNovSub">O que mudou desde a foto anterior do estoque</div></div>
+          </div>
+          <div id="estNovList" class="scroll-limit scroll-5"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>Sugestões de Transferência</h2><div class="psub" id="estTrfSub">Entre filiais, só quando uma tem sobra e a outra está sem cobertura</div></div>
+          </div>
+          <div id="estTrfList" class="scroll-limit scroll-5"></div>
+        </div>
+      </div>
+      </div>
+      <div class="es-aba" data-esaba="parado" hidden>
       <div class="panel" style="margin-bottom:14px;" id="simPanel">
         <div class="panel-head">
           <div><h2>Simulador de estoque sem movimento</h2><div class="psub" id="simSub">Quanto do estoque está há X dias ou mais sem vender</div></div>
@@ -2892,6 +2898,8 @@ table.data-table.vp-tbl{min-width:720px;}
         </div>
         <div class="note-muted" id="simNota" style="margin-top:8px;"></div>
       </div>
+      </div>
+      <div class="es-aba" data-esaba="produtos" hidden>
       <!-- ---- produtos (antiga aba Produtos) ---- -->
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
@@ -2949,6 +2957,7 @@ table.data-table.vp-tbl{min-width:720px;}
           </table>
         </div>
         <div class="pagination" id="pagination"></div>
+      </div>
       </div>
       </section>
 
@@ -7964,6 +7973,21 @@ function renderSellers(){
   }
 }
 
+/* abas da guia Estoque: Visão geral · Movimentação · Estoque parado · Produtos */
+var ES_ABA = 'geral';
+function esAba(k, semRender){
+  if(!subOk('estoque', k)) return;
+  ES_ABA = k; try{ localStorage.setItem('nc_es_aba', k); }catch(e){}
+  Array.prototype.forEach.call(document.querySelectorAll('#esGuias [data-es]'), function(b){ var on = b.getAttribute('data-es')===k; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-esaba]'), function(d){ d.hidden = d.getAttribute('data-esaba')!==k; });
+  // gráficos desenhados com a aba escondida ficam sem largura: redesenha os da aba aberta
+  if(semRender || !PRODUTOS_NO_PAINEL || painelChave===null) return;
+  if(k==='geral'){ renderEstoqueDestaque(); renderStockHealth(); renderAlerts(); renderGiroList(); }
+  else if(k==='mov') renderEstoqueNovTrf();
+  else if(k==='parado') renderSimulador();
+  else if(k==='produtos'){ renderABC(); renderTable(); }
+}
+
 /* ============================================================
    TABELA DETALHADA
    ============================================================ */
@@ -7994,6 +8018,19 @@ function tabLojaCarregar(){
     TAB_LOJA.rows = out; if(TAB_LOJA.on) renderTable();
   }).catch(function(){ if(TAB_LOJA.k===k){ TAB_LOJA.erro = true; if(TAB_LOJA.on) renderTable(); } });
 }
+// descrição sem o código na frente ("98550168 - OLEO ..." -> "OLEO ...")
+function descSemCod(nome, cod){
+  var n = String(nome||''), c = String(cod||'');
+  if(c && n.indexOf(c)===0){ var r = n.slice(c.length).replace(/^\s*[-–·]\s*/, ''); if(r) return r; }
+  return n;
+}
+// lojas do recorte com estoque do produto: o nome se for uma, "N lojas" se forem várias
+function lojasEst(pid){
+  var lset = estLset(), nomes = [];
+  (EST_POR_PROD[pid]||[]).forEach(function(i){ var lj = dimNome('loja', EST.loja[i]); if(n0(EST.est[i])>0 && (!lset || lset[lj]) && nomes.indexOf(lj)<0) nomes.push(lj); });
+  nomes.sort();
+  return {txt: nomes.length===1 ? nomes[0] : (nomes.length ? nomes.length+' lojas' : '—'), tit: nomes.join(', ')};
+}
 function tableRows(){
   var prods = estoqueProducts();
   if(TAB_LOJA.on){
@@ -8005,15 +8042,16 @@ function tableRows(){
   var rows = prods.map(function(p){
     var qtdPeriodo = p.qtdP, fatPeriodo = p.fatP;
     return {
-      id:p.id, codigo:p.codigo, nome:p.nome, marca:p.marca, categoria:p.categoria,
+      id:p.id, codigo:p.codigo, nome:descSemCod(p.nome, p.codigo), marca:p.marca, categoria:p.categoria,
       modelo: p.modelo+(p.modelo2?' / '+p.modelo2:''), estoqueAtual:p.estoqueAtual, estoqueMin:p.estoqueMin,
-      qtdPeriodo:qtdPeriodo, fatPeriodo:fatPeriodo, giro:p.giro, status:stockStatus(p), abc:abcMap[p.id], loja:p.loja||''
+      qtdPeriodo:qtdPeriodo, fatPeriodo:fatPeriodo, giro:p.giro, status:stockStatus(p), abc:abcMap[p.id], loja:p.loja||'', lojaTit:''
     };
   });
+  if(!TAB_LOJA.on) rows.forEach(function(r){ var o = lojasEst(+r.id); r.loja = o.txt; r.lojaTit = o.tit; });
   if(state.abcFilter){ rows = rows.filter(function(r){ return r.abc===state.abcFilter; }); }
   if(state.search){
     var q = state.search.toLowerCase();
-    rows = rows.filter(function(r){ return r.nome.toLowerCase().indexOf(q)!==-1 || r.codigo.toLowerCase().indexOf(q)!==-1; });
+    rows = rows.filter(function(r){ return r.nome.toLowerCase().indexOf(q)!==-1 || r.codigo.toLowerCase().indexOf(q)!==-1 || r.loja.toLowerCase().indexOf(q)!==-1 || r.lojaTit.toLowerCase().indexOf(q)!==-1; });
   }
   rows.sort(function(a,b){
     var av=a[state.sortKey], bv=b[state.sortKey];
@@ -8044,7 +8082,7 @@ function renderTable(){
       return '<tr data-id="'+r.id+'">' +
         '<td class="mono">'+r.codigo+'</td>' +
         '<td class="prodcell">'+r.nome+'</td>' +
-        '<td class="col-loja">'+escapeHtml(r.loja)+'</td>' +
+        '<td class="col-loja"'+(r.lojaTit && r.lojaTit!==r.loja ? ' title="'+escapeHtml(r.lojaTit)+'"' : '')+'>'+escapeHtml(r.loja)+'</td>' +
         '<td>'+r.marca+'</td>' +
         '<td>'+r.categoria+'</td>' +
         '<td>'+r.modelo+'</td>' +
@@ -12639,12 +12677,14 @@ function bindEvents(){
   document.getElementById('drawerClose').addEventListener('click', closeDrawer);
 
   // export
+  document.getElementById('esGuias').addEventListener('click', function(ev){ var b = ev.target.closest('[data-es]'); if(!b) return; esAba(b.getAttribute('data-es')); });
+  (function(){ var k = null; try{ k = localStorage.getItem('nc_es_aba'); }catch(e){} if(k && document.querySelector('#esGuias [data-es="'+k+'"]')) esAba(k, true); })();
   document.getElementById('tabPorLoja').addEventListener('click', function(){ TAB_LOJA.on = !TAB_LOJA.on; state.page = 1; renderTable(); });
   document.getElementById('exportXlsx').addEventListener('click', function(){
     var rows = tableRows();
-    var header = ['Código','Produto'].concat(TAB_LOJA.on ? ['Loja'] : []).concat(['Marca','Categoria','Aplicação','Estoque Atual','Estoque Mínimo','Vendas','Faturamento','Giro (dias)','Status']);
+    var header = ['Código','Produto','Loja'].concat(['Marca','Categoria','Aplicação','Estoque Atual','Estoque Mínimo','Vendas','Faturamento','Giro (dias)','Status']);
     var lines = [header.join(';')].concat(rows.map(function(r){
-      return [r.codigo,r.nome].concat(TAB_LOJA.on ? [r.loja] : []).concat([r.marca,r.categoria,r.modelo,r.estoqueAtual,r.estoqueMin,Math.round(r.qtdPeriodo),Math.round(r.fatPeriodo),giroTxt(r.giro),STATUS_LABEL[r.status]]).join(';');
+      return [r.codigo,r.nome,TAB_LOJA.on ? r.loja : (r.lojaTit||r.loja)].concat([r.marca,r.categoria,r.modelo,r.estoqueAtual,r.estoqueMin,Math.round(r.qtdPeriodo),Math.round(r.fatPeriodo),giroTxt(r.giro),STATUS_LABEL[r.status]]).join(';');
     }));
     var csv = lines.join('\n');
     function done(){ toast('CSV copiado (' + rows.length + ' linhas) — cole em uma planilha do Excel.'); }
@@ -12984,9 +13024,10 @@ var SUBABAS = {
   vendedores: [{k:'consult', t:'Consultoria'}, {k:'planos', t:'Planos em andamento'}, {k:'maratona', t:'Maratona de Pontos'}],
   clientes: [{k:'analise', t:'Análise de clientes'}, {k:'disp', t:'Clientes Disponíveis'}, {k:'cidades', t:'Cidades que mais compram'}, {k:'cidmov', t:'Cidades que mais mudaram'}],
   concorrencia: [{k:'conc', t:'Concorrência'}, {k:'cad', t:'Sugestão Cadastro'}],
-  gm: [{k:'campanhas', t:'Campanhas GM'}, {k:'nova', t:'Campanhas Nova'}]
+  gm: [{k:'campanhas', t:'Campanhas GM'}, {k:'nova', t:'Campanhas Nova'}],
+  estoque: [{k:'geral', t:'Visão geral'}, {k:'mov', t:'Movimentação'}, {k:'parado', t:'Estoque parado'}, {k:'produtos', t:'Produtos'}]
 };
-var SUBABAS_UI = {vendas:{box:'#vxAbas', at:'data-vxaba'}, vendedores:{box:'#vdGuias', at:'data-vd'}, clientes:{box:'#cliAbas', at:'data-cliaba'}, concorrencia:{box:'#ecGuias', at:'data-ec'}, gm:{box:'#gmGuias', at:'data-gm'}};
+var SUBABAS_UI = {vendas:{box:'#vxAbas', at:'data-vxaba'}, vendedores:{box:'#vdGuias', at:'data-vd'}, clientes:{box:'#cliAbas', at:'data-cliaba'}, concorrencia:{box:'#ecGuias', at:'data-ec'}, gm:{box:'#gmGuias', at:'data-gm'}, estoque:{box:'#esGuias', at:'data-es'}};
 function subsDoPerfil(p, g){
   var todos = SUBABAS[g].map(function(a){ return a.k; });
   if(!p || p.role==='bi' || !Array.isArray(p.abas)) return todos;
