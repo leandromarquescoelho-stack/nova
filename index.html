@@ -607,6 +607,11 @@ body.vp-full-on{overflow:hidden;}
 @keyframes bf2p{from{transform:scaleX(0);} to{transform:scaleX(1);}}
 .bf2-sl{display:grid;} .bf2-s{grid-area:1/1; opacity:0; visibility:hidden; transform:translateX(40px); transition:opacity .6s ease, transform .6s ease, visibility 0s .6s;}
 .bf2-s.on{opacity:1; visibility:visible; transform:none; transition:opacity .6s ease, transform .6s ease;}
+.sb-box{display:flex; flex-direction:column; gap:12px; font-size:12.5px;} .sb-k{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px;}
+.sb-k>div{border:1px solid var(--border); border-radius:10px; padding:10px 12px;} .sb-k .l{color:var(--text-muted); font-size:11.5px;} .sb-k .v{font-family:'Sora',sans-serif; font-size:22px; font-weight:700; margin:2px 0;} .sb-k .s{color:var(--text-muted); font-size:11px;}
+.sb-bar{height:6px; border-radius:4px; background:var(--border); overflow:hidden; margin-top:6px;} .sb-bar i{display:block; height:100%; border-radius:4px;}
+.sb-t{width:100%; border-collapse:collapse;} .sb-t td,.sb-t th{padding:4px 6px; border-bottom:1px solid var(--border); text-align:left;} .sb-t td.n,.sb-t th.n{text-align:right; font-variant-numeric:tabular-nums;}
+.sb-g{display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px;} .sb-g h4{margin:0 0 4px; font-size:12.5px;}
 .bf2f-op{display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; font-size:13px; margin-bottom:8px;} .bf2f-op label{display:flex; align-items:center; gap:6px;}
 .bf2f-l{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:10px;} .bf2f-i{border:1px solid var(--border); border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:5px; font-size:12px;}
 .bf2f-i img{width:100%; height:100px; object-fit:contain; background:#111; border-radius:6px;} .bf2f-i.off img{opacity:.35;} .bf2f-i input[type=text]{width:100%; font-size:12px;} .bf2f-i div{display:flex; justify-content:space-between; align-items:center; gap:6px;}
@@ -3442,6 +3447,13 @@ table.data-table.vp-tbl{min-width:720px;}
           <label>Atualização do Dashboard<select id="atuDash"><option value="1">a cada 1 minuto</option><option value="2">a cada 2 minutos</option><option value="3">a cada 3 minutos</option><option value="5">a cada 5 minutos</option><option value="10">a cada 10 minutos</option></select></label>
         </div>
         <div class="ra-acts"><button type="button" class="tbtn" id="atuSalvar">Salvar</button><span id="atuMsg" class="ra-msg"></span></div>
+      </div>
+      <div class="panel" style="margin-bottom:14px;" id="sbPanel">
+        <div class="panel-head">
+          <div><h2>Saúde do banco</h2><div class="psub">Indicadores que o próprio banco informa, lidos só quando esta tela está aberta (a cada 5 minutos). Egress e Disk IO Budget oficiais ficam no painel do Supabase.</div></div>
+          <div class="ra-acts" style="margin:0;"><button type="button" class="btn-sm" id="sbAtu">Atualizar</button><a class="btn-sm" id="sbLink" target="_blank" rel="noopener">Abrir Supabase</a></div>
+        </div>
+        <div id="sbBox" class="sb-box"><span class="note-muted">Carregando…</span></div>
       </div>
       <div class="panel" style="margin-bottom:14px;" id="bf2fPanel">
         <div class="panel-head">
@@ -13979,6 +13991,43 @@ function tkRenderCfg(){
     });
   }
 }
+/* Saúde do banco (Configurações, só BI): tamanho, tabelas, cache e linhas lidas. As leituras ficam guardadas no navegador para ver a evolução. */
+var SB = {t:null};
+function sbMb(b){ return (b >= 1024*1024*1024 ? (b/1024/1024/1024).toFixed(2)+' GB' : (b >= 1024*1024 ? (b/1024/1024).toFixed(1)+' MB' : Math.round(b/1024)+' KB')).replace('.', ','); }
+function sbHist(novo){
+  var H = []; try{ H = JSON.parse(localStorage.getItem('nc_saude_hist') || '[]'); } catch(e){}
+  if(novo){ H.push(novo); H = H.slice(-60); try{ localStorage.setItem('nc_saude_hist', JSON.stringify(H)); } catch(e){} }
+  return H;
+}
+async function sbCarregar(){
+  var box = document.getElementById('sbBox'); if(!box) return;
+  if(!(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi')){ document.getElementById('sbPanel').style.display = 'none'; return; }
+  var ln = document.getElementById('sbLink'), ref = (String(SUPABASE_URL).match(/https:\/\/([^.]+)\./) || [])[1];
+  if(ln && ref) ln.href = 'https://supabase.com/dashboard/project/'+ref;
+  if(!sbCarregar.ligado){ sbCarregar.ligado = 1; document.getElementById('sbAtu').addEventListener('click', sbCarregar); }
+  clearTimeout(SB.t); SB.t = setTimeout(function(){ if(document.getElementById('sbBox') && document.getElementById('sbBox').offsetParent) sbCarregar(); }, 5*60*1000);
+  var r;
+  try{ r = await window.__NC_rpc('bi_saude_banco', {}); }
+  catch(e){ var t = String((e && (e.message||e)) || ''); box.innerHTML = '<p class="note-muted">'+(/bi_saude_banco|schema cache|does not exist/i.test(t) ? 'Falta rodar o SQL saude_banco.sql no banco.' : escapeHtml(t))+'</p>'; return; }
+  var H = sbHist({t:Date.now(), db:r.db_bytes, ll:r.linhas_lidas, br:r.blks_read}), ant = H.length > 1 ? H[H.length-2] : null;
+  var pct = r.db_bytes/r.limite_bytes*100, cor = pct >= 85 ? 'var(--critical)' : (pct >= 70 ? 'var(--warning, #f5b400)' : 'var(--good)');
+  var ch = r.cache_hit, chc = ch===null ? 'var(--text-muted)' : (ch >= 99 ? 'var(--good)' : (ch >= 95 ? 'var(--warning, #f5b400)' : 'var(--critical)'));
+  var dt = function(ms){ var m = Math.round(ms/60000); return m < 60 ? m+' min' : (m/60).toFixed(1)+' h'; };
+  var k = function(l, v, sub, barra){ return '<div><div class="l">'+l+'</div><div class="v">'+v+'</div>'+(barra || '')+'<div class="s">'+sub+'</div></div>'; };
+  var fmtN = function(n){ return Number(n || 0).toLocaleString('pt-BR'); };
+  var html = '<div class="sb-k">' +
+    k('Tamanho do banco', sbMb(r.db_bytes), Math.round(pct)+'% de '+sbMb(r.limite_bytes)+(ant ? ' · '+(r.db_bytes < ant.db ? '−' : '+')+sbMb(Math.abs(r.db_bytes-ant.db))+' desde a leitura anterior' : ''), '<div class="sb-bar"><i style="width:'+Math.min(100,pct).toFixed(1)+'%; background:'+cor+'"></i></div>') +
+    k('Leitura direto da memória', ch===null ? '—' : String(ch).replace('.', ',')+'%', 'O resto vai ao disco e gasta o Disk IO. Acima de 99% é o ideal.', '<div class="sb-bar"><i style="width:'+(ch||0)+'%; background:'+chc+'"></i></div>') +
+    k('Linhas lidas pelo banco', ant ? fmtN(Math.max(0, r.linhas_lidas-ant.ll)) : fmtN(r.linhas_lidas), ant ? 'nos últimos '+dt(H[H.length-1].t-ant.t)+' · total '+fmtN(r.linhas_lidas) : 'desde o último reinício do banco') +
+    k('Conexões abertas', fmtN(r.conexoes), 'Fotos do BF2: '+r.fotos_bf2.n+' ('+sbMb(r.fotos_bf2.bytes*0.75)+')') +
+    '</div><div class="sb-g"><div><h4>Maiores tabelas</h4><table class="sb-t"><tr><th>Tabela</th><th class="n">Linhas</th><th class="n">Tamanho</th></tr>' +
+    (r.tabelas||[]).map(function(t){ return '<tr><td>'+escapeHtml(t.nome)+'</td><td class="n">'+fmtN(t.linhas)+'</td><td class="n">'+sbMb(t.b)+'</td></tr>'; }).join('')+'</table></div>' +
+    '<div><h4>Evolução (leituras deste navegador)</h4><table class="sb-t"><tr><th>Hora</th><th class="n">Banco</th><th class="n">Linhas lidas no intervalo</th></tr>' +
+    H.slice(-8).reverse().map(function(h, i, A){ var p = A[i+1], d = new Date(h.t); return '<tr><td>'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'</td><td class="n">'+sbMb(h.db)+'</td><td class="n">'+(p && h.ll >= p.ll ? fmtN(h.ll-p.ll) : '—')+'</td></tr>'; }).join('')+'</table></div></div>' +
+    (r.top && r.top.length ? '<div><h4>Consultas que mais devolvem linhas (é o que mais pesa no Egress)</h4><table class="sb-t"><tr><th>Consulta</th><th class="n">Vezes</th><th class="n">Linhas</th></tr>'+r.top.map(function(t){ return '<tr><td title="'+escapeHtml(t.q)+'">'+escapeHtml(t.q)+'</td><td class="n">'+fmtN(t.calls)+'</td><td class="n">'+fmtN(t.rows)+'</td></tr>'; }).join('')+'</table></div>' : '') +
+    '<div class="note-muted" style="font-size:11px;">Lido às '+vpHora(new Date(r.agora))+'. Cada leitura deste painel é uma consulta pequena (poucos KB).</div>';
+  box.innerHTML = html;
+}
 function bf2fErro(e){ var t = String((e && (e.message || e)) || 'erro'); return /bi_bf2_foto|bi_config_bf2|schema cache|does not exist/i.test(t) ? 'Falta rodar o SQL bf2_fotos.sql no banco.' : 'Não foi possível salvar: '+t; }
 function bf2fMsg(t, cor){ var m = document.getElementById('bf2fMsg'); if(m){ m.textContent = t; m.style.color = cor || ''; } }
 function bf2fReduzir(arq){   // reduz no navegador (lado maior 1600 px, JPEG) para a foto ficar leve
@@ -14056,7 +14105,7 @@ function atuRenderCfg(){
   });
 }
 async function renderFontesAdmin(){
-  raCarregar(); tkRenderCfg(); atuRenderCfg(); bf2fRenderCfg();
+  raCarregar(); tkRenderCfg(); atuRenderCfg(); bf2fRenderCfg(); sbCarregar();
   var wrap = document.getElementById('fontesWrap');
   var cw = document.getElementById('cargasWrap');
   if(!wrap) return;
