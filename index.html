@@ -1175,6 +1175,11 @@ button.stock-stat{font:inherit; color:inherit; text-align:left; cursor:pointer; 
 .rp-in:focus{outline:none; border-style:solid; border-color:var(--accent);}
 td.rp.ed .rp-in{border-style:solid; border-color:rgba(242,200,17,.6);}
 .rp-cob{display:block; font-size:9.5px; line-height:1.15; color:var(--text-muted); margin-top:1px; white-space:nowrap;}
+#tabPanel.tab-full{position:fixed; inset:0; z-index:950; margin:0 !important; border-radius:0; display:flex; flex-direction:column; overflow:hidden; background:var(--surface); padding:16px 20px;}
+#tabPanel:fullscreen{background:var(--surface);}
+#tabPanel.tab-full .table-scroll{flex:1 1 auto; max-height:none; min-height:0;}
+#tabPanel.tab-full .pagination{flex:0 0 auto;}
+body.tab-full-on{overflow:hidden;}
 .tc-pick{position:relative;} .tc-pick > summary{list-style:none;} .tc-pick > summary::-webkit-details-marker{display:none;}
 .tc-menu{position:absolute; right:0; top:calc(100% + 6px); z-index:30; min-width:210px; max-height:340px; overflow:auto; padding:8px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); box-shadow:0 10px 30px rgba(0,0,0,.35);}
 .tc-menu label{display:flex; align-items:center; gap:8px; padding:5px 6px; border-radius:6px; font-size:12.5px; cursor:pointer; white-space:nowrap;} .tc-menu label:hover{background:var(--surface-2);} .tc-menu label.obr{opacity:.55; cursor:default;}
@@ -2928,9 +2933,10 @@ table.data-table.vp-tbl{min-width:720px;}
       <div class="es-aba" data-esaba="produtos" hidden>
       <div class="stock-stats stock-stats-sm" id="stockStats2"></div>
       <!-- ---- detailed table ---- -->
-      <div class="panel" style="margin-bottom:14px;">
+      <div class="panel" style="margin-bottom:14px;" id="tabPanel">
         <div class="panel-head">
           <div><h2>Detalhamento de Produtos</h2><div class="psub">Catálogo completo &middot; filtros aplicados refletem aqui</div></div>
+          <button type="button" class="tbtn" id="tabFull" title="Mostrar só este quadro em tela cheia (Esc sai)">&#x26F6; Tela cheia</button>
         </div>
         <div class="table-toolbar">
           <div class="search-box">
@@ -8034,6 +8040,17 @@ function tmLista(){
 }
 function tmSalvar(){ try{ localStorage.setItem('nc_tab_marcas_off', JSON.stringify(TM_OFF)); }catch(e){} state.page = 1; renderTable(); }
 
+/* tela cheia só do quadro Detalhamento de Produtos: tela cheia do navegador quando houver; senão o quadro cobre a janela */
+function tabFull(on){
+  var pn = document.getElementById('tabPanel'), bt = document.getElementById('tabFull');
+  if(on===undefined) on = !pn.classList.contains('tab-full');
+  pn.classList.toggle('tab-full', on); document.body.classList.toggle('tab-full-on', on);
+  bt.innerHTML = on ? '&#x2715; Sair da tela cheia' : '&#x26F6; Tela cheia';
+  var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+  if(on && !fsEl){ var rq = pn.requestFullscreen || pn.webkitRequestFullscreen; if(rq){ try{ var r = rq.call(pn); if(r && r.catch) r.catch(function(){}); }catch(e){} } }
+  if(!on && fsEl===pn){ var ex = document.exitFullscreen || document.webkitExitFullscreen; if(ex){ try{ var r2 = ex.call(document); if(r2 && r2.catch) r2.catch(function(){}); }catch(e){} } }
+}
+
 /* sugestão de reposição: quanto comprar para o estoque cobrir N dias de venda (venda média do mês ÷ 30 × N − estoque); editável, guardada neste navegador */
 var RP_DIAS = (function(){ try{ var v = +localStorage.getItem('nc_rep_dias'); return v>0 && v<=365 ? v : 45; }catch(e){ return 45; } })();
 var RP_ED = (function(){ try{ return JSON.parse(localStorage.getItem('nc_rep_ed')||'{}')||{}; }catch(e){ return {}; } })();
@@ -12826,7 +12843,9 @@ function bindEvents(){
   // row / alert / rank click -> drawer  (event delegation)
   document.getElementById('productsTbody').addEventListener('click', function(ev){
     if(ev.target.closest('td.rp')) return;
-    var tr = ev.target.closest('tr[data-id]'); if(tr) openDrawer(tr.getAttribute('data-id'));
+    var tr = ev.target.closest('tr[data-id]'); if(!tr) return;
+    if(document.getElementById('tabPanel').classList.contains('tab-full')) tabFull(false);   // a ficha do produto abre fora do quadro
+    openDrawer(tr.getAttribute('data-id'));
   });
   document.getElementById('alertsList').addEventListener('click', function(ev){
     var it = ev.target.closest('.alert-item[data-id]'); if(it) openDrawer(it.getAttribute('data-id'));
@@ -12838,6 +12857,9 @@ function bindEvents(){
   document.getElementById('esGuias').addEventListener('click', function(ev){ var b = ev.target.closest('[data-es]'); if(!b) return; esAba(b.getAttribute('data-es')); });
   (function(){ var k = null; try{ k = localStorage.getItem('nc_es_aba'); }catch(e){} if(k && document.querySelector('#esGuias [data-es="'+k+'"]')) esAba(k, true); })();
   tcAplicar(); rpHd(); rpLigar();
+  document.getElementById('tabFull').addEventListener('click', function(){ tabFull(); });
+  ['fullscreenchange', 'webkitfullscreenchange'].forEach(function(ev){ document.addEventListener(ev, function(){ var pn = document.getElementById('tabPanel'); if(!(document.fullscreenElement || document.webkitFullscreenElement) && pn.classList.contains('tab-full')) tabFull(false); }); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && document.getElementById('tabPanel').classList.contains('tab-full') && !document.getElementById('tcPick').open && !document.getElementById('tmPick').open) tabFull(false); });
   document.getElementById('tcMenu').addEventListener('change', function(e){ var k = e.target.getAttribute('data-tc'); if(!k) return; TC_OFF = TC_OFF.filter(function(x){ return x!==k; }); if(!e.target.checked) TC_OFF.push(k); tcSalvar(); });
   document.getElementById('tcMenu').addEventListener('click', function(e){ e.stopPropagation(); var b = e.target.closest('[data-tca]'); if(!b) return; TC_OFF = b.getAttribute('data-tca')==='min' ? TC_COLS.filter(function(c){ return !c.obr; }).map(function(c){ return c.k; }) : []; tcSalvar(); });
   document.addEventListener('click', function(e){ ['tcPick', 'tmPick'].forEach(function(id){ var d = document.getElementById(id); if(d && d.open && !d.contains(e.target)) d.open = false; }); });
