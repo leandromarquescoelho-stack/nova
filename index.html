@@ -1178,6 +1178,7 @@ td.rp.ed .rp-in{border-style:solid; border-color:rgba(242,200,17,.6);}
 .tc-pick{position:relative;} .tc-pick > summary{list-style:none;} .tc-pick > summary::-webkit-details-marker{display:none;}
 .tc-menu{position:absolute; right:0; top:calc(100% + 6px); z-index:30; min-width:210px; max-height:340px; overflow:auto; padding:8px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); box-shadow:0 10px 30px rgba(0,0,0,.35);}
 .tc-menu label{display:flex; align-items:center; gap:8px; padding:5px 6px; border-radius:6px; font-size:12.5px; cursor:pointer; white-space:nowrap;} .tc-menu label:hover{background:var(--surface-2);} .tc-menu label.obr{opacity:.55; cursor:default;}
+.tc-menu .tm-busca{width:100%; box-sizing:border-box; font:inherit; font-size:12px; padding:5px 8px; margin-bottom:6px; border-radius:7px; border:1px solid var(--border); background:var(--surface-2); color:var(--text);} .tc-menu .tm-lista{max-height:260px; overflow:auto;} .tc-menu .tm-n{margin-left:auto; color:var(--text-muted); font-size:11px;}
 .tc-menu .tc-acoes{display:flex; gap:6px; border-top:1px solid var(--border); margin-top:6px; padding-top:6px;} .tc-menu .tc-acoes button{flex:1; font:inherit; font-size:11.5px; padding:4px; border-radius:6px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); cursor:pointer;}
 .abc-chip .ac-fat{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; margin-top:2px; color:var(--text);}
 .abc-chip .ac-sub{font-size:10.5px; color:var(--text-muted);}
@@ -2938,7 +2939,7 @@ table.data-table.vp-tbl{min-width:720px;}
           </div>
           <div class="spacer"></div>
           <div class="export-btns">
-            <details class="tc-pick" id="tcPick"><summary class="tbtn" title="Escolha as colunas que aparecem na tabela e no Excel (Código e Produto são obrigatórias)">Colunas &#9662;</summary><div class="tc-menu" id="tcMenu"></div></details><div class="seg" id="tabModo" title="Por produto: uma linha por produto, com a quantidade de lojas · Por loja: o produto repetido em cada loja, com o nome da loja"><button type="button" data-tm="prod" aria-pressed="true">Por produto</button><button type="button" data-tm="loja" aria-pressed="false">Por loja</button></div>
+            <details class="tc-pick" id="tmPick"><summary class="tbtn" title="Escolha as marcas que aparecem na tabela, no Excel e no CSV de compra">Marcas &#9662;</summary><div class="tc-menu" id="tmMenu"></div></details><details class="tc-pick" id="tcPick"><summary class="tbtn" title="Escolha as colunas que aparecem na tabela e no Excel (Código e Produto são obrigatórias)">Colunas &#9662;</summary><div class="tc-menu" id="tcMenu"></div></details><div class="seg" id="tabModo" title="Por produto: uma linha por produto, com a quantidade de lojas · Por loja: o produto repetido em cada loja, com o nome da loja"><button type="button" data-tm="prod" aria-pressed="true">Por produto</button><button type="button" data-tm="loja" aria-pressed="false">Por loja</button></div>
             <button class="tbtn" id="exportXlsx">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Exportar Excel
@@ -8009,6 +8010,30 @@ function tcAplicar(){
 }
 function tcSalvar(){ try{ localStorage.setItem('nc_tab_cols_off', JSON.stringify(TC_OFF)); }catch(e){} tcAplicar(); }
 
+/* marcas da tabela de produtos: o usuário desmarca as que não quer ver (guardado neste navegador); vale para o Excel e o CSV de compra */
+var TM_OFF = (function(){ try{ var v = JSON.parse(localStorage.getItem('nc_tab_marcas_off')||'[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } })();
+var TM_TODAS = {};
+function tmAplicar(){
+  var m = document.getElementById('tmMenu'); if(!m) return;
+  var nomes = Object.keys(TM_TODAS).sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); }), off = toSet(TM_OFF);
+  var on = nomes.filter(function(n){ return !off[n]; }).length;
+  document.querySelector('#tmPick summary').innerHTML = 'Marcas ('+(TM_OFF.length ? on+'/'+nomes.length : 'todas')+') &#9662;';
+  if(!document.getElementById('tmPick').open) return;
+  var busca = document.getElementById('tmBusca'), q = busca ? busca.value : '', foco = document.activeElement===busca;
+  var lst = document.getElementById('tmLista'), topo = lst ? lst.scrollTop : 0;
+  m.innerHTML = '<input type="search" class="tm-busca" id="tmBusca" placeholder="Buscar marca…" value="'+escapeHtml(q)+'"><div class="tm-lista" id="tmLista"></div>' +
+    '<div class="tc-acoes"><button type="button" data-tma="todas">Todas</button><button type="button" data-tma="nenhuma">Nenhuma</button></div>';
+  tmLista(); document.getElementById('tmLista').scrollTop = topo;
+  if(foco){ var b = document.getElementById('tmBusca'); b.focus(); b.setSelectionRange(b.value.length, b.value.length); }
+}
+function tmLista(){
+  var box = document.getElementById('tmLista'); if(!box) return;
+  var q = (document.getElementById('tmBusca').value||'').trim().toLowerCase(), off = toSet(TM_OFF);
+  var nomes = Object.keys(TM_TODAS).sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); }).filter(function(n){ return !q || n.toLowerCase().indexOf(q)!==-1; });
+  box.innerHTML = nomes.length ? nomes.map(function(n){ return '<label><input type="checkbox" data-tm="'+escapeHtml(n)+'"'+(off[n]?'':' checked')+'>'+escapeHtml(n)+'<span class="tm-n">'+fmtUn(TM_TODAS[n])+'</span></label>'; }).join('') : '<div class="note-muted" style="padding:6px;">Nenhuma marca encontrada.</div>';
+}
+function tmSalvar(){ try{ localStorage.setItem('nc_tab_marcas_off', JSON.stringify(TM_OFF)); }catch(e){} state.page = 1; renderTable(); }
+
 /* sugestão de reposição: quanto comprar para o estoque cobrir N dias de venda (venda média do mês ÷ 30 × N − estoque); editável, guardada neste navegador */
 var RP_DIAS = (function(){ try{ var v = +localStorage.getItem('nc_rep_dias'); return v>0 && v<=365 ? v : 45; }catch(e){ return 45; } })();
 var RP_ED = (function(){ try{ return JSON.parse(localStorage.getItem('nc_rep_ed')||'{}')||{}; }catch(e){ return {}; } })();
@@ -8176,6 +8201,8 @@ function tableRows(){
   });
   if(!TAB_LOJA.on) rows.forEach(function(r){ var o = lojasEst(+r.id); r.loja = o.txt; r.lojaTit = o.tit; });
   rows.forEach(function(r){ r.repo = rpValor(r); });
+  TM_TODAS = {}; rows.forEach(function(r){ TM_TODAS[r.marca] = (TM_TODAS[r.marca]||0) + 1; });
+  if(TM_OFF.length){ var tmOff = toSet(TM_OFF); rows = rows.filter(function(r){ return !tmOff[r.marca]; }); }
   if(state.abcFilter){ rows = rows.filter(function(r){ return r.abc===state.abcFilter; }); }
   if(state.search){
     var q = state.search.toLowerCase();
@@ -8197,6 +8224,7 @@ function renderTable(){
   var pageRows = rows.slice(startI, startI+state.pageSize);
 
   var tbody = document.getElementById('productsTbody');
+  tmAplicar();
   document.getElementById('productsTable').classList.toggle('por-loja', TAB_LOJA.on);
   Array.prototype.forEach.call(document.querySelectorAll('#tabModo [data-tm]'), function(b){ b.setAttribute('aria-pressed', String((b.getAttribute('data-tm')==='loja')===TAB_LOJA.on)); });
   if(TAB_LOJA.on && !TAB_LOJA.rows){
@@ -12812,7 +12840,15 @@ function bindEvents(){
   tcAplicar(); rpHd(); rpLigar();
   document.getElementById('tcMenu').addEventListener('change', function(e){ var k = e.target.getAttribute('data-tc'); if(!k) return; TC_OFF = TC_OFF.filter(function(x){ return x!==k; }); if(!e.target.checked) TC_OFF.push(k); tcSalvar(); });
   document.getElementById('tcMenu').addEventListener('click', function(e){ e.stopPropagation(); var b = e.target.closest('[data-tca]'); if(!b) return; TC_OFF = b.getAttribute('data-tca')==='min' ? TC_COLS.filter(function(c){ return !c.obr; }).map(function(c){ return c.k; }) : []; tcSalvar(); });
-  document.addEventListener('click', function(e){ var d = document.getElementById('tcPick'); if(d && d.open && !d.contains(e.target)) d.open = false; });
+  document.addEventListener('click', function(e){ ['tcPick', 'tmPick'].forEach(function(id){ var d = document.getElementById(id); if(d && d.open && !d.contains(e.target)) d.open = false; }); });
+  document.getElementById('tmPick').addEventListener('toggle', function(){ if(this.open){ tmAplicar(); var b = document.getElementById('tmBusca'); if(b) b.focus(); } });
+  document.getElementById('tmMenu').addEventListener('input', function(e){ if(e.target.id==='tmBusca') tmLista(); });
+  document.getElementById('tmMenu').addEventListener('change', function(e){ var k = e.target.getAttribute('data-tm'); if(k==null) return; TM_OFF = TM_OFF.filter(function(x){ return x!==k; }); if(!e.target.checked) TM_OFF.push(k); tmSalvar(); });
+  document.getElementById('tmMenu').addEventListener('click', function(e){ e.stopPropagation(); var b = e.target.closest('[data-tma]'); if(!b) return;
+    var q = (document.getElementById('tmBusca').value||'').trim().toLowerCase(), vis = Object.keys(TM_TODAS).filter(function(n){ return !q || n.toLowerCase().indexOf(q)!==-1; });
+    if(b.getAttribute('data-tma')==='todas') TM_OFF = TM_OFF.filter(function(x){ return vis.indexOf(x)===-1; });
+    else { var off = toSet(TM_OFF); vis.forEach(function(n){ if(!off[n]) TM_OFF.push(n); }); }
+    tmSalvar(); });
   document.getElementById('tabModo').addEventListener('click', function(ev){ var b = ev.target.closest('[data-tm]'); if(!b) return; var on = b.getAttribute('data-tm')==='loja'; if(on===TAB_LOJA.on) return; TAB_LOJA.on = on; state.page = 1; renderTable(); });
   document.getElementById('exportCompra').addEventListener('click', csvCompra);
   document.getElementById('exportXlsx').addEventListener('click', function(){
