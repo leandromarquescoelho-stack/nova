@@ -1181,6 +1181,14 @@ td.rp.ed .rp-in{border-style:solid; border-color:rgba(242,200,17,.6);}
 #tabPanel.tab-full .pagination{flex:0 0 auto;}
 body.tab-full-on{overflow:hidden;}
 #tabPanel > .panel-head{gap:10px;} #tabPanel > .panel-head > div:first-child{flex:1; min-width:0;}
+#productsTable .tc-codigo, #productsTable .tc-nome{position:sticky; z-index:1; background:var(--surface);}
+#productsTable .tc-codigo{left:0;} #productsTable .tc-nome{left:var(--tc2l, 92px); box-shadow:inset -1px 0 0 var(--border);}
+#productsTable thead th.tc-codigo, #productsTable thead th.tc-nome{z-index:3; background:var(--surface-2);}
+#productsTbody tr:hover td.tc-codigo, #productsTbody tr:hover td.tc-nome{background:var(--surface-2);}
+#productsTbody tr:focus-within td.tc-codigo, #productsTbody tr:focus-within td.tc-nome{background:color-mix(in srgb, var(--surface) 87%, #f2c811);}
+#productsTbody tr:focus-within{background:rgba(242,200,17,.13) !important; box-shadow:inset 3px 0 0 var(--accent-2, #f2c811);}
+#productsTbody tr:focus-within td{color:var(--text);}
+#productsTbody tr:focus-within td.prodcell{color:#f2c811;}
 .rp-tot{display:flex; flex-direction:column; align-items:flex-end; line-height:1.15; padding:4px 10px; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); white-space:nowrap;}
 .rp-tot b{font-family:'Sora',sans-serif; font-size:16px; color:var(--accent);} .rp-tot span{font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em;} .rp-tot small{font-size:10px; color:var(--text-muted);}
 .tc-pick{position:relative;} .tc-pick > summary{list-style:none;} .tc-pick > summary::-webkit-details-marker{display:none;}
@@ -2940,7 +2948,6 @@ table.data-table.vp-tbl{min-width:720px;}
       <div class="panel" style="margin-bottom:14px;" id="tabPanel">
         <div class="panel-head">
           <div><h2>Detalhamento de Produtos</h2><div class="psub">Catálogo completo &middot; filtros aplicados refletem aqui</div></div>
-          <button type="button" class="tbtn" id="tabFull" title="Mostrar só este quadro em tela cheia (Esc sai)">&#x26F6; Tela cheia</button>
           <div class="rp-tot" id="rpTot" title="Valor da reposição: soma de quantidade sugerida × custo médio da peça (custo do estoque ÷ quantidade em estoque, somando todas as lojas), em todas as linhas da tabela com os filtros, marcas e busca atuais"></div>
         </div>
         <div class="table-toolbar">
@@ -2963,6 +2970,7 @@ table.data-table.vp-tbl{min-width:720px;}
               <svg viewBox="0 0 24 24" fill="none"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
               Exportar PDF
             </button>
+            <button type="button" class="tbtn" id="tabFull" title="Mostrar só este quadro em tela cheia (Esc sai)">&#x26F6; Tela cheia</button>
           </div>
         </div>
         <div class="table-scroll rp-scroll" id="tabScroll">
@@ -8062,6 +8070,9 @@ function rpTotal(rows){
   box.innerHTML = '<span>Reposição a custo · '+RP_DIAS+' dias</span><b>'+fmtMoney(tot)+'</b><small>'+fmtUn(un)+' un'+(sem ? ' · '+fmtUn(sem)+' sem custo' : '')+'</small>';
 }
 
+// Código e Produto ficam parados ao rolar para o lado: o Produto começa onde termina o Código
+function tcFixa(){ var th = document.querySelector('#productsTable thead th.tc-codigo'), t = document.getElementById('productsTable'); if(th && t && th.offsetWidth) t.style.setProperty('--tc2l', th.offsetWidth+'px'); }
+
 /* tela cheia só do quadro Detalhamento de Produtos: tela cheia do navegador quando houver; senão o quadro cobre a janela */
 function tabFull(on){
   var pn = document.getElementById('tabPanel'), bt = document.getElementById('tabFull');
@@ -8263,7 +8274,7 @@ function renderTable(){
   var pageRows = rows.slice(startI, startI+state.pageSize);
 
   var tbody = document.getElementById('productsTbody');
-  tmAplicar(); rpTotal(rows);
+  tmAplicar(); rpTotal(rows); setTimeout(tcFixa, 0);
   document.getElementById('productsTable').classList.toggle('por-loja', TAB_LOJA.on);
   Array.prototype.forEach.call(document.querySelectorAll('#tabModo [data-tm]'), function(b){ b.setAttribute('aria-pressed', String((b.getAttribute('data-tm')==='loja')===TAB_LOJA.on)); });
   if(TAB_LOJA.on && !TAB_LOJA.rows){
