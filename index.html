@@ -2836,6 +2836,17 @@ table.data-table.vp-tbl{min-width:720px;}
         </div>
         <div class="est-dest" id="estDestaque"></div>
       </div>
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <div><h2>Curva ABC</h2><div class="psub">Concentração de faturamento entre os produtos detalhados (cauda longa fora)</div></div>
+        </div>
+        <div class="abc-chips" id="abcChips"></div>
+        <div class="chart-scroll"><div class="chart-wrap">
+          <div id="abcChart"></div>
+          <div class="chart-tip" id="abcTip"></div>
+        </div></div>
+      </div>
+
       <div class="grid-2" style="margin-bottom:14px;">
         <div class="panel">
           <div class="panel-head">
@@ -2902,18 +2913,6 @@ table.data-table.vp-tbl{min-width:720px;}
       </div>
       <div class="es-aba" data-esaba="produtos" hidden>
       <div class="stock-stats stock-stats-sm" id="stockStats2"></div>
-      <!-- ---- produtos (antiga aba Produtos) ---- -->
-      <div class="panel" style="margin-bottom:14px;">
-        <div class="panel-head">
-          <div><h2>Curva ABC</h2><div class="psub">Concentração de faturamento entre os produtos detalhados (cauda longa fora)</div></div>
-        </div>
-        <div class="abc-chips" id="abcChips"></div>
-        <div class="chart-scroll"><div class="chart-wrap">
-          <div id="abcChart"></div>
-          <div class="chart-tip" id="abcTip"></div>
-        </div></div>
-      </div>
-
       <!-- ---- detailed table ---- -->
       <div class="panel" style="margin-bottom:14px;">
         <div class="panel-head">
@@ -7985,10 +7984,10 @@ function esAba(k, semRender){
   Array.prototype.forEach.call(document.querySelectorAll('[data-esaba]'), function(d){ d.hidden = d.getAttribute('data-esaba')!==k; });
   // gráficos desenhados com a aba escondida ficam sem largura: redesenha os da aba aberta
   if(semRender || !PRODUTOS_NO_PAINEL || painelChave===null) return;
-  if(k==='geral'){ renderEstoqueDestaque(); renderStockHealth(); renderAlerts(); renderGiroList(); }
+  if(k==='geral'){ renderEstoqueDestaque(); renderABC(); renderStockHealth(); renderAlerts(); renderGiroList(); }
   else if(k==='mov') renderEstoqueNovTrf();
   else if(k==='parado') renderSimulador();
-  else if(k==='produtos'){ renderABC(); renderTable(); }
+  else if(k==='produtos') renderTable();
 }
 
 /* ============================================================
