@@ -607,6 +607,13 @@ body.vp-full-on{overflow:hidden;}
 @keyframes bf2p{from{transform:scaleX(0);} to{transform:scaleX(1);}}
 .bf2-sl{display:grid;} .bf2-s{grid-area:1/1; opacity:0; visibility:hidden; transform:translateX(40px); transition:opacity .6s ease, transform .6s ease, visibility 0s .6s;}
 .bf2-s.on{opacity:1; visibility:visible; transform:none; transition:opacity .6s ease, transform .6s ease;}
+.bf2f-op{display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; font-size:13px; margin-bottom:8px;} .bf2f-op label{display:flex; align-items:center; gap:6px;}
+.bf2f-l{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:10px;} .bf2f-i{border:1px solid var(--border); border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:5px; font-size:12px;}
+.bf2f-i img{width:100%; height:100px; object-fit:contain; background:#111; border-radius:6px;} .bf2f-i.off img{opacity:.35;} .bf2f-i input[type=text]{width:100%; font-size:12px;} .bf2f-i div{display:flex; justify-content:space-between; align-items:center; gap:6px;}
+.bf2-ft{text-align:center;} .bf2-ft-f{margin:0; display:flex; align-items:center; justify-content:center; min-height:0;} .bf2-ft-f img{max-width:100%; max-height:62vh; object-fit:contain; border-radius:12px; animation:bf2zoom 10s ease both;}
+@keyframes bf2zoom{from{transform:scale(.96); opacity:.2;} 12%{opacity:1;} to{transform:scale(1.03);}}
+.bf2-ft-l{margin:10px 0 0; font-family:'Sora',sans-serif; font-size:22px; font-weight:700; color:#f5b400;}
+.vp.vp-fill .bf2-ft{min-height:0; overflow:hidden;} .vp.vp-fill .bf2-ft-f{flex:1 1 0; position:relative;} .vp.vp-fill .bf2-ft-f img{position:absolute; inset:0; width:100%; height:100%; max-height:none;} .vp.vp-fill .bf2-ft-l{font-size:clamp(14px,4.4cqh,44px); margin-top:1cqh;}
 .bf2-s h3{margin:4px 0 8px; font-family:'Sora',sans-serif; font-size:22px; font-weight:700; color:#e8e8e8;} .bf2-s h3 b{color:#f5b400;} .bf2-s h3 small{font-size:13px; color:#9b9b9b; font-weight:500; margin-left:10px;}
 .bf2-l{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(5, auto); column-gap:28px; row-gap:6px;}
 .bf2-l li{display:grid; grid-template-columns:36px minmax(0,1.3fr) minmax(60px,1fr) 6.7em 0; grid-template-rows:auto auto; column-gap:12px; align-items:center; padding:7px 0; border-bottom:1px solid #222; font-family:'Sora',sans-serif; font-size:19px;}
@@ -3435,6 +3442,18 @@ table.data-table.vp-tbl{min-width:720px;}
           <label>Atualização do Dashboard<select id="atuDash"><option value="1">a cada 1 minuto</option><option value="2">a cada 2 minutos</option><option value="3">a cada 3 minutos</option><option value="5">a cada 5 minutos</option><option value="10">a cada 10 minutos</option></select></label>
         </div>
         <div class="ra-acts"><button type="button" class="tbtn" id="atuSalvar">Salvar</button><span id="atuMsg" class="ra-msg"></span></div>
+      </div>
+      <div class="panel" style="margin-bottom:14px;" id="bf2fPanel">
+        <div class="panel-head">
+          <div><h2>Fotos dos prêmios no BF2</h2><div class="psub">Fotos intercaladas entre os quadros do Visual BF2, uma depois de cada top 10 e das metas. Só o perfil BI inclui e exclui. Sem foto cadastrada, entra o logo como teste. Depois do evento, exclua as fotos para liberar espaço.</div></div>
+        </div>
+        <div class="bf2f-op">
+          <label><input type="checkbox" id="bf2fAtivo"> Mostrar no painel BF2 para todos</label>
+          <label><input type="checkbox" id="bf2fTeste"> Testar só no meu navegador</label>
+          <label>Cada foto fica<select id="bf2fSeg"><option value="5">5 s</option><option value="8">8 s</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option></select></label>
+        </div>
+        <div class="ra-acts"><button type="button" class="tbtn" id="bf2fSalvar">Salvar</button><input type="text" id="bf2fLeg" maxlength="120" placeholder="Legenda (ex.: Prêmio 1 · Jogo de ferramentas)" style="min-width:240px;"><button type="button" class="btn-sm" id="bf2fAdd">+ Adicionar fotos</button><input type="file" id="bf2fArq" accept="image/*" multiple hidden><span id="bf2fMsg" class="ra-msg"></span></div>
+        <div id="bf2fLista" class="bf2f-l"></div>
       </div>
       <div class="panel" style="margin-bottom:14px;" id="tkPanel">
         <div class="panel-head">
@@ -10575,13 +10594,47 @@ function bfPainel(S, RR, dest, partes){
 }
 /* ---------- Visual BF2: cabeçalho da Black Friday + top 10 que alterna (lojas, vendedores, clientes, produtos: 10 s cada) e as metas por unidade como no Visual BF (20 s) ---------- */
 var BF2_SEG = 10, BF2_METAS_SEG = 20;   // cada top 10 fica 10 s; as metas (último quadro) 20 s
-function bf2Dur(i){ var n = document.querySelectorAll('#vpBody .bf2-s').length; return (n && i===n-1 ? BF2_METAS_SEG : BF2_SEG)*1000; }
+function bf2Dur(i){ var s = document.querySelector('#vpBody .bf2-s[data-i="'+i+'"]'); return (s && +s.getAttribute('data-seg') || BF2_SEG)*1000; }
+/* fotos dos prêmios sorteados: intercaladas entre os quadros do BF2. Só o perfil BI inclui (Configurações). Ligado/desligado em bi_config 'bf2_fotos' (começa desligado);
+   o BI pode testar só no próprio navegador. Sem foto no banco, entra o logo como imagem de teste. */
+var BF2F = {cfg:null, fotos:null, t:0, ok:true}, BF2F_LOGO = {id:'logo', legenda:'Imagem de teste (logo)', img:'icons/black-friday.png'};
+function bf2fTeste(){ try{ return localStorage.getItem('nc_bf2f_teste')==='1'; } catch(e){ return false; } }
+function bf2fCarregar(forcar){
+  if(!forcar && BF2F.t && Date.now() - BF2F.t < 5*60*1000) return;
+  BF2F.t = Date.now();
+  var db = window.__NC_supa || supa;
+  Promise.all([
+    db.from('bi_config').select('valor').eq('chave', 'bf2_fotos').maybeSingle().then(function(r){ return r.data ? r.data.valor : null; }, function(){ return null; }),
+    db.from('bi_bf2_foto').select('id,legenda,ativa').order('id').then(function(r){
+      if(r.error){ BF2F.ok = false; return []; } BF2F.ok = true;
+      var L = r.data || [], tem = {}; (BF2F.fotos || []).forEach(function(f){ tem[f.id] = f.img; });
+      var falta = L.filter(function(f){ return !tem[f.id]; }).map(function(f){ return f.id; });   // só baixa a imagem das fotos novas
+      var junta = function(){ L.forEach(function(f){ f.img = tem[f.id]; }); return L.filter(function(f){ return f.img; }); };
+      if(!falta.length) return junta();
+      return Promise.all(falta.map(function(id){ return db.from('bi_bf2_foto').select('id,img').eq('id', id).maybeSingle().then(function(r2){ if(r2.data) tem[r2.data.id] = r2.data.img; }); })).then(junta);
+    }).then(null, function(){ BF2F.ok = false; return []; })
+  ]).then(function(R){
+    var antes = JSON.stringify([BF2F.cfg, (BF2F.fotos||[]).map(function(f){ return [f.id, f.legenda, f.ativa]; })]);
+    BF2F.cfg = R[0] || {ativo:false, seg:8}; BF2F.fotos = R[1];
+    if(antes !== JSON.stringify([BF2F.cfg, BF2F.fotos.map(function(f){ return [f.id, f.legenda, f.ativa]; })])){
+      if(vpVis()===4 && typeof vhPainel==='function') vhPainel();
+      bf2fRenderCfg();
+    }
+  });
+}
+function bf2fLista(){ var L = (BF2F.fotos || []).filter(function(f){ return f.ativa; }); return L.length ? L : [BF2F_LOGO]; }
+function bf2fLigado(){ bf2fCarregar(); return !!(BF2F.cfg && (BF2F.cfg.ativo || (bf2fTeste() && CURRENT_PROFILE && CURRENT_PROFILE.role==='bi'))); }
+function bf2fFoto(k){ var L = bf2fLista(); return L[((VH.bf2fc || 0) * BF2F_SLOTS + k) % L.length]; }
+var BF2F_SLOTS = 1;
+function bf2fHtml(f){ return '<figure class="bf2-ft-f"><img src="'+escapeHtml(f.img)+'" alt=""></figure>'+(f.legenda ? '<p class="bf2-ft-l">'+escapeHtml(f.legenda)+'</p>' : ''); }
 function bf2Painel(S, RR, grupos){
   var P = bfPainel(S, RR, '', true);
   if(typeof P==='string') return P;
-  var n = grupos.length + 1, i0 = (VH.bf2i || 0) % n;
+  var foto = bf2fLigado(), passo = foto ? 2 : 1, n = (grupos.length + 1) * passo, i0 = (VH.bf2i || 0) % n;
+  BF2F_SLOTS = grupos.length + 1;
   if(!VH.bf2t) VH.bf2t = Date.now();
-  var dots = '<div class="bf2-dots">'+grupos.map(function(g){ return g[0]; }).concat(['Metas']).map(function(t, i){ return '<button type="button" data-bf2="'+i+'" class="'+(i===i0 ? 'on' : '')+'">'+t+'</button>'; }).join('')+'</div>';
+  var fsl = function(k){ var i = k*2 + 1; return '<section class="bf2-s bf2-ft'+(i===i0 ? ' on' : '')+'" data-i="'+i+'" data-seg="'+((BF2F.cfg && BF2F.cfg.seg) || 8)+'" data-fk="'+k+'"><h3>Prêmio <b>sorteado</b><small>Black Friday</small></h3>'+bf2fHtml(bf2fFoto(k))+'</section>'; };
+  var dots = '<div class="bf2-dots">'+grupos.map(function(g){ return g[0]; }).concat(['Metas']).map(function(t, i){ var j = i*passo; return '<button type="button" data-bf2="'+j+'" class="'+(j===i0 || j+1===i0 && foto ? 'on' : '')+'">'+t+'</button>'; }).join('')+'</div>';
   var sl = grupos.map(function(g, i){
     var L = g[1], mx = L && L.length ? Math.max(1, L[0].v) : 1;
     var corpo = L===false ? '<p class="note-muted">Falta rodar o SQL das categorias no banco.</p>' : !L ? '<p class="note-muted">Carregando…</p>' : (!L.length ? '<p class="note-muted">Sem vendas ainda.</p>' : '<ol class="bf2-l'+(L.some(function(o){ return o.q!==null && o.q!==undefined; }) ? ' tem-q' : '')+'">'+L.map(function(o, j){
@@ -10590,9 +10643,11 @@ function bf2Painel(S, RR, grupos){
         '<span class="bf2-bar'+(pm!==null && pm >= 100 ? ' ok' : '')+'"><i style="width:'+Math.max(1.5, o.v/mx*100).toFixed(1)+'%"></i></span><b>'+fmtMoney(o.v)+'</b><span class="bf2-q">'+(o.q!==null && o.q!==undefined ? fmtUn(o.q)+' un' : '')+'</span>' +
         (pm!==null ? '<em style="color:'+bfCor(pm)+'">'+Math.round(pm)+'% da meta</em>' : '<em></em>')+'</li>';
     }).join('')+'</ol>');
-    return '<section class="bf2-s'+(i===i0 ? ' on' : '')+'" data-i="'+i+'"><h3>Top 10 <b>'+g[0]+'</b><small>'+(S.ehHoje ? 'venda de hoje' : 'venda do dia')+'</small></h3>'+corpo+'</section>';
-  }).join('') + '<section class="bf2-s bf2-metas'+(i0===n-1 ? ' on' : '')+'" data-i="'+(n-1)+'"><h3>Metas da <b>Black Friday</b><small>venda do dia × meta de cada unidade</small></h3>'+P.cards+'</section>';
-  var dur = i0===n-1 ? BF2_METAS_SEG : BF2_SEG, pass = Math.min(dur, (Date.now() - VH.bf2t)/1000);
+    var j = i*passo;
+    return '<section class="bf2-s'+(j===i0 ? ' on' : '')+'" data-i="'+j+'" data-seg="'+BF2_SEG+'"><h3>Top 10 <b>'+g[0]+'</b><small>'+(S.ehHoje ? 'venda de hoje' : 'venda do dia')+'</small></h3>'+corpo+'</section>' + (foto ? fsl(i) : '');
+  }).join('') + '<section class="bf2-s bf2-metas'+(i0===grupos.length*passo ? ' on' : '')+'" data-i="'+(grupos.length*passo)+'" data-seg="'+BF2_METAS_SEG+'"><h3>Metas da <b>Black Friday</b><small>venda do dia × meta de cada unidade</small></h3>'+P.cards+'</section>' + (foto ? fsl(grupos.length) : '');
+  var s0 = foto && i0 % 2 ? +((BF2F.cfg && BF2F.cfg.seg) || 8) : (i0===grupos.length*passo ? BF2_METAS_SEG : BF2_SEG);
+  var dur = s0, pass = Math.min(dur, (Date.now() - VH.bf2t)/1000);
   return P.hero + '<div class="bf2">'+dots+'<div class="bf2-prog"><i style="animation-duration:'+dur+'s; animation-delay:-'+pass.toFixed(1)+'s"></i></div><div class="bf2-sl">'+sl+'</div></div>' + vpTickerAE(S, RR);
 }
 function vpDestPag(p){
@@ -10607,9 +10662,15 @@ setInterval(function(){
 function bf2Mostrar(i){
   var box = document.querySelector('#vpBody .bf2'); if(!box) return;
   var n = box.querySelectorAll('.bf2-s').length; if(!n) return;
-  VH.bf2i = ((i % n) + n) % n; VH.bf2t = Date.now();
+  var novo = ((i % n) + n) % n;
+  if(novo < (VH.bf2i || 0) && box.querySelector('.bf2-ft')){
+    VH.bf2fc = (VH.bf2fc || 0) + 1;   // volta completa: as próximas fotos da lista
+    box.querySelectorAll('.bf2-ft').forEach(function(s){ var f = bf2fFoto(+s.getAttribute('data-fk')), h = s.querySelector('h3'); s.innerHTML = h.outerHTML + bf2fHtml(f); });
+  }
+  VH.bf2i = novo; VH.bf2t = Date.now();
   box.querySelectorAll('.bf2-s').forEach(function(s){ s.classList.toggle('on', +s.getAttribute('data-i')===VH.bf2i); });
-  box.querySelectorAll('.bf2-dots button').forEach(function(b){ b.classList.toggle('on', +b.getAttribute('data-bf2')===VH.bf2i); });
+  var cur = box.querySelector('.bf2-s[data-i="'+VH.bf2i+'"]'), dv = cur && cur.classList.contains('bf2-ft') ? VH.bf2i - 1 : VH.bf2i;
+  box.querySelectorAll('.bf2-dots button').forEach(function(b){ b.classList.toggle('on', +b.getAttribute('data-bf2')===dv); });
   var pr = box.querySelector('.bf2-prog i'); if(pr){ pr.style.animation = 'none'; void pr.offsetWidth; pr.style.animation = ''; pr.style.animationDuration = (bf2Dur(VH.bf2i)/1000)+'s'; pr.style.animationDelay = '0s'; }
 }
 setInterval(function(){
@@ -13918,6 +13979,66 @@ function tkRenderCfg(){
     });
   }
 }
+function bf2fErro(e){ var t = String((e && (e.message || e)) || 'erro'); return /bi_bf2_foto|bi_config_bf2|schema cache|does not exist/i.test(t) ? 'Falta rodar o SQL bf2_fotos.sql no banco.' : 'Não foi possível salvar: '+t; }
+function bf2fMsg(t, cor){ var m = document.getElementById('bf2fMsg'); if(m){ m.textContent = t; m.style.color = cor || ''; } }
+function bf2fReduzir(arq){   // reduz no navegador (lado maior 1600 px, JPEG) para a foto ficar leve
+  return new Promise(function(ok, falha){
+    var u = URL.createObjectURL(arq), im = new Image();
+    im.onload = function(){
+      var k = Math.min(1, 1600 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+      c.width = Math.round(im.width*k); c.height = Math.round(im.height*k);
+      var x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(u);
+      var q = 0.82, d = c.toDataURL('image/jpeg', q); while(d.length > 600000 && q > 0.4){ q -= 0.12; d = c.toDataURL('image/jpeg', q); }
+      ok(d);
+    };
+    im.onerror = function(){ URL.revokeObjectURL(u); falha(new Error('arquivo não é uma imagem')); };
+    im.src = u;
+  });
+}
+function bf2fRenderCfg(){
+  var box = document.getElementById('bf2fLista'); if(!box) return;
+  if(!(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi')){ var pn = document.getElementById('bf2fPanel'); if(pn) pn.style.display = 'none'; return; }
+  if(BF2F.cfg === null){ box.innerHTML = '<span class="note-muted">Carregando…</span>'; bf2fCarregar(true); return; }
+  document.getElementById('bf2fAtivo').checked = !!BF2F.cfg.ativo;
+  document.getElementById('bf2fTeste').checked = bf2fTeste();
+  document.getElementById('bf2fSeg').value = String(BF2F.cfg.seg || 8);
+  var L = BF2F.fotos || [], kb = L.reduce(function(a, f){ return a + (f.img ? f.img.length*0.75/1024 : 0); }, 0);
+  box.innerHTML = (!BF2F.ok ? '<p class="note-muted">Falta rodar o SQL bf2_fotos.sql no banco. Por enquanto só o logo de teste aparece.</p>' : '') +
+    (L.length ? '' : '<div class="bf2f-i"><img src="'+BF2F_LOGO.img+'" alt=""><span>Logo (teste). Some quando houver foto cadastrada.</span></div>') +
+    L.map(function(f){
+      return '<div class="bf2f-i'+(f.ativa ? '' : ' off')+'" data-id="'+f.id+'"><img src="'+escapeHtml(f.img)+'" alt=""><input type="text" maxlength="120" value="'+escapeHtml(f.legenda||'')+'" placeholder="Legenda" data-bf2f="leg">' +
+        '<div><label><input type="checkbox" data-bf2f="at"'+(f.ativa ? ' checked' : '')+'> mostrar</label><button type="button" class="btn-sm" data-bf2f="del">Excluir</button></div></div>';
+    }).join('') + (L.length ? '<p class="note-muted" style="grid-column:1/-1; font-size:11px;">'+L.length+' foto'+(L.length>1 ? 's' : '')+' · '+(kb >= 1024 ? (kb/1024).toFixed(1)+' MB' : Math.round(kb)+' KB')+' no banco</p>' : '');
+  if(bf2fRenderCfg.ligado) return; bf2fRenderCfg.ligado = 1;
+  document.getElementById('bf2fTeste').addEventListener('change', function(){ try{ localStorage.setItem('nc_bf2f_teste', this.checked ? '1' : '0'); } catch(e){} if(vpVis()===4) vhPainel(); });
+  document.getElementById('bf2fSalvar').addEventListener('click', function(){
+    var p = {ativo: document.getElementById('bf2fAtivo').checked, seg: +document.getElementById('bf2fSeg').value};
+    bf2fMsg('Salvando…');
+    window.__NC_rpc('bi_config_bf2_fotos_gravar', {p:p}).then(function(){ BF2F.cfg = p; bf2fMsg(p.ativo ? 'Salvo. As fotos já entram no BF2 de todos.' : 'Salvo. As fotos não aparecem para os outros usuários.', 'var(--good)'); }, function(e){ bf2fMsg(bf2fErro(e), 'var(--critical)'); });
+  });
+  document.getElementById('bf2fAdd').addEventListener('click', function(){ document.getElementById('bf2fArq').click(); });
+  document.getElementById('bf2fArq').addEventListener('change', async function(){
+    var arqs = Array.prototype.slice.call(this.files || []), leg = document.getElementById('bf2fLeg').value.trim(); this.value = '';
+    for(var i = 0; i < arqs.length; i++){
+      bf2fMsg('Enviando '+(i+1)+' de '+arqs.length+'…');
+      try{ var d = await bf2fReduzir(arqs[i]); await window.__NC_rpc('bi_bf2_foto_gravar', {p:{img:d, legenda:leg}}); }
+      catch(e){ bf2fMsg(bf2fErro(e), 'var(--critical)'); return; }
+    }
+    document.getElementById('bf2fLeg').value = ''; bf2fMsg(arqs.length ? 'Foto'+(arqs.length>1 ? 's adicionadas.' : ' adicionada.') : '', 'var(--good)'); bf2fCarregar(true);
+  });
+  box.addEventListener('change', function(e){
+    var el = e.target, it = el.closest('.bf2f-i'), id = it && it.getAttribute('data-id'), k = el.getAttribute('data-bf2f'); if(!id || !k) return;
+    var p = {id:id}; if(k==='leg') p.legenda = el.value.trim(); else p.ativa = el.checked;
+    window.__NC_rpc('bi_bf2_foto_gravar', {p:p}).then(function(){ bf2fMsg('Salvo.', 'var(--good)'); bf2fCarregar(true); }, function(er){ bf2fMsg(bf2fErro(er), 'var(--critical)'); });
+  });
+  box.addEventListener('click', function(e){
+    var b = e.target.closest('[data-bf2f="del"]'); if(!b) return;
+    var it = b.closest('.bf2f-i'), id = +it.getAttribute('data-id');
+    if(b.getAttribute('data-ok')!=='1'){ b.setAttribute('data-ok', '1'); b.textContent = 'Confirmar'; setTimeout(function(){ b.removeAttribute('data-ok'); b.textContent = 'Excluir'; }, 4000); return; }
+    window.__NC_rpc('bi_bf2_foto_excluir', {p_id:id}).then(function(){ bf2fMsg('Foto excluída.', 'var(--good)'); bf2fCarregar(true); }, function(er){ bf2fMsg(bf2fErro(er), 'var(--critical)'); });
+  });
+}
 function atuRenderCfg(){
   var g = document.getElementById('atuGeral'), d = document.getElementById('atuDash'); if(!g) return;
   g.value = String(ATU.geral); d.value = String(ATU.dashboard);
@@ -13935,7 +14056,7 @@ function atuRenderCfg(){
   });
 }
 async function renderFontesAdmin(){
-  raCarregar(); tkRenderCfg(); atuRenderCfg();
+  raCarregar(); tkRenderCfg(); atuRenderCfg(); bf2fRenderCfg();
   var wrap = document.getElementById('fontesWrap');
   var cw = document.getElementById('cargasWrap');
   if(!wrap) return;
