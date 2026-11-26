@@ -512,6 +512,9 @@ tbody.vd-fech tr.vd-det{display:none;}
 .vp.vp-full{position:fixed; inset:0; z-index:9000; margin:0; border-radius:0; background:var(--bg); padding:18px 22px; overflow:auto; overflow-x:hidden;}
 body.vp-full-on{overflow:hidden;}
 .vp.vp-fill{display:flex; flex-direction:column;}
+.vp.vp-semdest #vpBody > .vp-dest{display:none;}
+.vp.vp-fill.vp-fill-dest #vpBody > *{flex:0 0 auto;} .vp.vp-fill.vp-fill-dest #vpBody > .vp-dest{flex:1 1 0; min-height:0; overflow:hidden;}
+.vp.vp-fill.vp-fill-dest .vp-dest > .vp-d{overflow:hidden; min-height:0; justify-content:flex-start;}
 .vp.vp-fill > .vp-zbox{display:flex; flex-direction:column; flex:1 1 auto; min-height:0;}
 .vp.vp-fill #vpBody{flex:1 1 auto; display:flex; flex-direction:column; min-height:0;}
 .vp.vp-fill #vpBody > *{flex:1 1 auto;} .vp.vp-fill #vpBody > .vp-tk, .vp.vp-fill #vpBody > .bf-hero, .vp.vp-fill #vpBody > p{flex:0 0 auto;}
@@ -10125,7 +10128,7 @@ function vpNovidades(E){
     VH_NOV_SEC.forEach(function(sec){ if(tot < 10 && qt[sec[0]] < N[sec[0]].length){ qt[sec[0]]++; tot++; mudou = true; } }); }
   VH_NOV_SEC.forEach(function(sec){
     var L = N[sec[0]].slice(0, qt[sec[0]]); if(!L.length) return;
-    h += '<div style="font-size:11px; color:var(--text-muted); margin:8px 0 2px; font-weight:700;">'+sec[1].toUpperCase()+'</div>' + L.map(function(o){ i++;
+    h += '<div class="vp-dsec" style="font-size:11px; color:var(--text-muted); margin:8px 0 2px; font-weight:700;">'+sec[1].toUpperCase()+'</div>' + L.map(function(o){ i++;
       return '<div class="vp-dl"><span class="n">'+i+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.loja)+' · '+escapeHtml(o.nome)+'<small>'+o.txt+'</small></span><b>'+o.v+'</b></div>'; }).join('');
   });
   return '<div class="vp-d"><h4>Novidades em Estoque</h4>'+(h || '<p class="note-muted" style="font-size:12px;">'+(E ? (E.foto ? 'Nenhum produto novo, custo melhor ou entrada grande desde a foto anterior.' : 'Ainda sem foto anterior do estoque para comparar.') : 'Carregando…')+'</p>')+'</div>';
@@ -10352,20 +10355,31 @@ function vpTelaCheia(){
 function vpAjustar(){
   var el = document.getElementById('vhModoPainel'); if(!el) return;
   var w = el.querySelector(':scope > .vp-zbox');
-  el.classList.remove('vp-fill'); if(w){ w.style.height = ''; w.style.flex = ''; }
+  el.classList.remove('vp-fill', 'vp-fill-dest', 'vp-semdest'); if(w){ w.style.height = ''; w.style.flex = ''; }
   if(w && w.dataset.mb) { w.style.marginBottom = w.dataset.mb; delete w.dataset.mb; }
-  vpAjustar0(el);
   var cheia = vpFsEl()===el || el.classList.contains('vp-full');
+  // Visual 2 e BF em tela cheia: o tamanho da letra é calculado sem as listas de destaques (senão as listas longas encolhem tudo);
+  // as listas ficam com a altura que sobra e mostram as linhas que couberem
+  var dest = cheia && window.innerWidth >= 1001 && vpVisivel() && !!el.querySelector('#vpBody > .vp-dest');
+  if(dest) el.classList.add('vp-semdest');
+  vpAjustar0(el, dest ? 0.64 : 1);
+  el.classList.remove('vp-semdest');
+  el.querySelectorAll('.vp-dest .vp-dl, .vp-dest .vp-dsec').forEach(function(x){ x.style.display = ''; });
   if(!cheia || window.innerWidth < 1001 || !vpVisivel()) return;
-  el.classList.add('vp-fill');
+  el.classList.add('vp-fill'); el.classList.toggle('vp-fill-dest', dest);
   w = el.querySelector(':scope > .vp-zbox');
   if(w && w.style.transform){   // navegador sem zoom: a caixa com escala precisa da altura certa
     var z = vpZGet(el), cs = getComputedStyle(el), H = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
     w.dataset.mb = w.style.marginBottom; w.style.flex = '0 0 auto'; w.style.height = (H/z)+'px'; w.style.marginBottom = z < 1 ? (-(H/z - H))+'px' : '';
   }
   vpCaber(el);
+  if(dest) el.querySelectorAll('.vp-dest .vp-d').forEach(function(d){   // esconde as linhas que não couberem (sem cortar no meio)
+    var fim = d.getBoundingClientRect().bottom - 6;
+    Array.prototype.slice.call(d.querySelectorAll('.vp-dl, .vp-dsec')).reverse().forEach(function(x){ if(x.getBoundingClientRect().bottom > fim) x.style.display = 'none'; });
+    d.querySelectorAll('.vp-dsec').forEach(function(h){ var nx = h.nextElementSibling; if(!nx || nx.style.display==='none' || nx.classList.contains('vp-dsec')) h.style.display = 'none'; });
+  });
 }
-function vpAjustar0(el){
+function vpAjustar0(el, fator){
   if(vpVisivel()) vpCaber(el);
   if(window.innerWidth < 1001){ vpZSet(el, ''); return; }
   if(!vpVisivel()) return;
@@ -10373,8 +10387,8 @@ function vpAjustar0(el){
   // altura do conteúdo (em tela cheia do painel a caixa ocupa a tela toda; vale o fim do último bloco)
   var altura = function(){ var k = document.getElementById('vpBody'), r0 = el.getBoundingClientRect().top; return k ? k.getBoundingClientRect().bottom - r0 : el.getBoundingClientRect().height; };
   var mn = el.closest('.main'), abaixo = cheia || !mn ? 0 : parseFloat(getComputedStyle(mn).paddingBottom) || 0;
-  var disp = window.innerHeight - topo - abaixo - (cheia ? 20 : 6);
-  if(disp < 200) return;
+  var disp = (window.innerHeight - topo - abaixo - (cheia ? 20 : 6)) * (fator || 1);
+  if(disp < 120) return;
   // tela cheia (do painel ou do navegador): também aumenta para ocupar a tela toda; fora dela, só reduz
   var tela = vpTelaCheia(), zMax = tela ? 4 : 1;   // TV 4K sem ampliação do Windows: até 4x
   // atualização discreta: se o tamanho atual ainda serve (cabe e não sobra muito), não mexe (evita a fonte crescer e diminuir)
