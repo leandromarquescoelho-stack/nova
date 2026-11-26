@@ -1189,6 +1189,9 @@ body.tab-full-on{overflow:hidden;}
 #productsTbody tr:focus-within{background:rgba(242,200,17,.13) !important; box-shadow:inset 3px 0 0 var(--accent-2, #f2c811);}
 #productsTbody tr:focus-within td{color:var(--text);}
 #productsTbody tr:focus-within td.prodcell{color:#f2c811;}
+.fz-btn.on{border-color:#7cc4ff; background:rgba(124,196,255,.14); color:#cfe8ff;}
+#tabModo.trava{opacity:.5; pointer-events:none;}
+.fz-aviso{color:#7cc4ff; font-weight:700;}
 .rp-tot{display:flex; flex-direction:column; align-items:flex-end; line-height:1.15; padding:4px 10px; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); white-space:nowrap;}
 .rp-tot b{font-family:'Sora',sans-serif; font-size:16px; color:var(--accent);} .rp-tot span{font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em;} .rp-tot small{font-size:10px; color:var(--text-muted);}
 .tc-pick{position:relative;} .tc-pick > summary{list-style:none;} .tc-pick > summary::-webkit-details-marker{display:none;}
@@ -2958,7 +2961,7 @@ table.data-table.vp-tbl{min-width:720px;}
           </div>
           <div class="spacer"></div>
           <div class="export-btns">
-            <details class="tc-pick" id="tmPick"><summary class="tbtn" title="Escolha as marcas que aparecem na tabela, no Excel e no CSV de compra">Marcas &#9662;</summary><div class="tc-menu" id="tmMenu"></div></details><details class="tc-pick" id="tcPick"><summary class="tbtn" title="Escolha as colunas que aparecem na tabela e no Excel (Código e Produto são obrigatórias)">Colunas &#9662;</summary><div class="tc-menu" id="tcMenu"></div></details><div class="seg" id="tabModo" title="Por produto: uma linha por produto, com a quantidade de lojas · Por loja: o produto repetido em cada loja, com o nome da loja"><button type="button" data-tm="prod" aria-pressed="true">Por produto</button><button type="button" data-tm="loja" aria-pressed="false">Por loja</button></div>
+            <button type="button" class="tbtn fz-btn" id="fzBtn" title="Congela a tabela como está agora (números, estoque e sugestões): as atualizações do painel e o recarregar da página não mudam nada até você descongelar. Busca, marcas, colunas, ordem e edições continuam funcionando.">&#10052; Congelar</button><details class="tc-pick" id="tmPick"><summary class="tbtn" title="Escolha as marcas que aparecem na tabela, no Excel e no CSV de compra">Marcas &#9662;</summary><div class="tc-menu" id="tmMenu"></div></details><details class="tc-pick" id="tcPick"><summary class="tbtn" title="Escolha as colunas que aparecem na tabela e no Excel (Código e Produto são obrigatórias)">Colunas &#9662;</summary><div class="tc-menu" id="tcMenu"></div></details><div class="seg" id="tabModo" title="Por produto: uma linha por produto, com a quantidade de lojas · Por loja: o produto repetido em cada loja, com o nome da loja"><button type="button" data-tm="prod" aria-pressed="true">Por produto</button><button type="button" data-tm="loja" aria-pressed="false">Por loja</button></div>
             <button class="tbtn" id="exportXlsx">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Exportar Excel
@@ -8067,12 +8070,43 @@ function rpCustoMedio(pid){
 function rpTotal(rows){
   var box = document.getElementById('rpTot'); if(!box) return;
   var tot = 0, un = 0, sem = 0;
-  rows.forEach(function(r){ if(!(r.repo>0)) return; var cm = rpCustoMedio(+r.id); if(cm==null){ sem++; return; } tot += r.repo*cm; un += r.repo; });
+  rows.forEach(function(r){ if(!(r.repo>0)) return; var cm = r.cm!==undefined ? r.cm : rpCustoMedio(+r.id); if(cm==null){ sem++; return; } tot += r.repo*cm; un += r.repo; });
   box.innerHTML = '<span>Reposição a custo · '+RP_DIAS+' dias</span><b>'+fmtMoney(tot)+'</b><small>'+fmtUn(un)+' un'+(sem ? ' · '+fmtUn(sem)+' sem custo' : '')+'</small>';
 }
 
 // Código e Produto ficam parados ao rolar para o lado: o Produto começa onde termina o Código
 function tcFixa(){ var th = document.querySelector('#productsTable thead th.tc-codigo'), t = document.getElementById('productsTable'); if(th && t && th.offsetWidth) t.style.setProperty('--tc2l', th.offsetWidth+'px'); }
+
+/* congelar a tabela: guarda as linhas do momento (no navegador, IndexedDB) e a tabela passa a usar só elas até descongelar */
+var FZ = null;
+function fzQuando(){ var d = new Date(FZ.em); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' às '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function fzDb(fn){
+  try{
+    var rq = indexedDB.open('nc_reposicao', 1);
+    rq.onupgradeneeded = function(){ rq.result.createObjectStore('fz'); };
+    rq.onsuccess = function(){ var db = rq.result; try{ fn(db.transaction('fz', 'readwrite').objectStore('fz')); }catch(e){} };
+  }catch(e){}
+}
+function fzUi(){
+  var b = document.getElementById('fzBtn'); if(!b) return;
+  b.classList.toggle('on', !!FZ);
+  b.innerHTML = FZ ? '&#10052; Congelado · Descongelar' : '&#10052; Congelar';
+  document.getElementById('tabModo').classList.toggle('trava', !!FZ);
+  document.getElementById('tabModo').title = FZ ? 'Descongele para trocar entre Por produto e Por loja' : 'Por produto: uma linha por produto, com a quantidade de lojas · Por loja: o produto repetido em cada loja, com o nome da loja';
+}
+function fzAlternar(){
+  if(FZ){
+    FZ = null; fzDb(function(st){ st.delete('atual'); });
+    fzUi(); renderTable(); toast('Tabela descongelada: voltou para os números atuais do painel.'); return;
+  }
+  if(TAB_LOJA.on && !TAB_LOJA.rows){ toast('Espere os números de cada loja carregarem para congelar.'); return; }
+  FZ = {em: Date.now(), loja: TAB_LOJA.on, rows: tabBase(true)};
+  var copia = FZ; fzDb(function(st){ st.put(copia, 'atual'); });
+  fzUi(); renderTable(); toast('Tabela congelada com '+fmtUn(FZ.rows.length)+' linha(s). Ela não muda até você descongelar, mesmo recarregando a página.');
+}
+function fzCarregar(){
+  fzDb(function(st){ var g = st.get('atual'); g.onsuccess = function(){ var v = g.result; if(v && Array.isArray(v.rows)){ FZ = v; TAB_LOJA.on = !!v.loja; fzUi(); renderTable(); } }; });
+}
 
 /* tela cheia só do quadro Detalhamento de Produtos: tela cheia do navegador quando houver; senão o quadro cobre a janela */
 function tabFull(on){
@@ -8166,7 +8200,8 @@ function csvCompra(){
       toast(fmtUn(lines.length)+' linha(s) no CSV de compra'+(semFn ? ' · o banco ainda não tem os códigos das lojas (falta rodar o SQL): saiu o nome da loja' : (falta.length ? ' · sem código de loja, saiu o nome: '+falta.join(', ') : '')));
     });
   }
-  if(TAB_LOJA.on && TAB_LOJA.rows){ gerar(); return; }
+  if(TAB_LOJA.on && (TAB_LOJA.rows || FZ)){ gerar(); return; }
+  if(FZ){ toast('A tabela está congelada em Por produto. O CSV de compra é por loja: descongele, passe para Por loja e congele de novo.'); return; }
   // a compra é por loja: muda a tabela para Por loja e gera quando os números de cada loja chegarem
   if(!TAB_LOJA.on){ TAB_LOJA.on = true; state.page = 1; renderTable(); }
   btn.disabled = true; toast('A compra é por loja: a tabela passou para Por loja. O arquivo sai assim que os números de cada loja carregarem.');
@@ -8234,14 +8269,15 @@ function lojasEst(pid){
   nomes.sort();
   return {txt: nomes.length===1 ? nomes[0] : (nomes.length ? nomes.length+' lojas' : '—'), tit: nomes.join(', ')};
 }
-function tableRows(){
+// linhas da tabela a partir dos números atuais do painel (todas: true calcula a curva ABC de todas, para congelar)
+function tabBase(todas){
   var prods = estoqueProducts();
   if(TAB_LOJA.on){
     tabLojaCarregar();
     var ok = estLocalOk(); prods = (TAB_LOJA.rows||[]).filter(matchesFilters); if(ok) prods = prods.filter(ok);
   }
   var abcMap = {};
-  if(state.abcFilter){ computeABC().forEach(function(r){ abcMap[r.p.id]=r.cls; }); }
+  if(state.abcFilter || todas){ computeABC().forEach(function(r){ abcMap[r.p.id]=r.cls; }); }
   var rows = prods.map(function(p){
     var qtdPeriodo = p.qtdP, fatPeriodo = p.fatP;
     return {
@@ -8251,6 +8287,11 @@ function tableRows(){
     };
   });
   if(!TAB_LOJA.on) rows.forEach(function(r){ var o = lojasEst(+r.id); r.loja = o.txt; r.lojaTit = o.tit; });
+  rows.forEach(function(r){ r.cm = rpCustoMedio(+r.id); });
+  return rows;
+}
+function tableRows(){
+  var rows = FZ ? FZ.rows.map(function(r){ return Object.assign({}, r); }) : tabBase(false);
   rows.forEach(function(r){ r.repo = rpValor(r); });
   TM_TODAS = {}; rows.forEach(function(r){ TM_TODAS[r.marca] = (TM_TODAS[r.marca]||0) + 1; });
   if(TM_OFF.length){ var tmOff = toSet(TM_OFF); rows = rows.filter(function(r){ return !tmOff[r.marca]; }); }
@@ -8278,7 +8319,7 @@ function renderTable(){
   tmAplicar(); rpTotal(rows); setTimeout(tcFixa, 0);
   document.getElementById('productsTable').classList.toggle('por-loja', TAB_LOJA.on);
   Array.prototype.forEach.call(document.querySelectorAll('#tabModo [data-tm]'), function(b){ b.setAttribute('aria-pressed', String((b.getAttribute('data-tm')==='loja')===TAB_LOJA.on)); });
-  if(TAB_LOJA.on && !TAB_LOJA.rows){
+  if(TAB_LOJA.on && !TAB_LOJA.rows && !FZ){
     tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; color:var(--text-muted); padding:26px;">'+(TAB_LOJA.erro ? 'Não foi possível carregar os números por loja. Tente de novo.' : 'Carregando os números de cada loja…')+'</td></tr>';
     document.getElementById('pagination').innerHTML = ''; return;
   }
@@ -8311,7 +8352,7 @@ function renderTable(){
   startP = Math.max(1, endP-maxBtns+1);
   for(var i=startP;i<=endP;i++){ pageBtns += '<button data-pg="'+i+'" aria-current="'+(i===state.page)+'">'+i+'</button>'; }
   pag.innerHTML =
-    '<div class="pg-info">'+rows.length+(TAB_LOJA.on ? ' linha(s) produto × loja' : ' produto(s)')+' · página '+state.page+' de '+totalPages+'</div>' +
+    '<div class="pg-info">'+(FZ ? '<span class="fz-aviso">&#10052; Congelado em '+fzQuando()+'</span> · ' : '')+rows.length+(TAB_LOJA.on ? ' linha(s) produto × loja' : ' produto(s)')+' · página '+state.page+' de '+totalPages+'</div>' +
     '<div class="pg-btns">' +
     '<button data-pg="prev" '+(state.page<=1?'disabled':'')+'>‹</button>' +
     pageBtns +
@@ -12890,7 +12931,8 @@ function bindEvents(){
   // export
   document.getElementById('esGuias').addEventListener('click', function(ev){ var b = ev.target.closest('[data-es]'); if(!b) return; esAba(b.getAttribute('data-es')); });
   (function(){ var k = null; try{ k = localStorage.getItem('nc_es_aba'); }catch(e){} if(k && document.querySelector('#esGuias [data-es="'+k+'"]')) esAba(k, true); })();
-  tcAplicar(); rpHd(); rpLigar();
+  tcAplicar(); rpHd(); rpLigar(); fzCarregar();
+  document.getElementById('fzBtn').addEventListener('click', fzAlternar);
   document.getElementById('tabFull').addEventListener('click', function(){ tabFull(); });
   ['fullscreenchange', 'webkitfullscreenchange'].forEach(function(ev){ document.addEventListener(ev, function(){ var pn = document.getElementById('tabPanel'); if(!(document.fullscreenElement || document.webkitFullscreenElement) && pn.classList.contains('tab-full')) tabFull(false); }); });
   document.addEventListener('keydown', function(e){ if(e.key==='Escape' && document.getElementById('tabPanel').classList.contains('tab-full') && !document.getElementById('tcPick').open && !document.getElementById('tmPick').open) tabFull(false); });
@@ -12917,7 +12959,7 @@ function bindEvents(){
     if(b.getAttribute('data-tma')==='todas') TM_OFF = TM_OFF.filter(function(x){ return vis.indexOf(x)===-1; });
     else { var off = toSet(TM_OFF); vis.forEach(function(n){ if(!off[n]) TM_OFF.push(n); }); }
     tmSalvar(); });
-  document.getElementById('tabModo').addEventListener('click', function(ev){ var b = ev.target.closest('[data-tm]'); if(!b) return; var on = b.getAttribute('data-tm')==='loja'; if(on===TAB_LOJA.on) return; TAB_LOJA.on = on; state.page = 1; renderTable(); });
+  document.getElementById('tabModo').addEventListener('click', function(ev){ var b = ev.target.closest('[data-tm]'); if(!b || FZ) return; var on = b.getAttribute('data-tm')==='loja'; if(on===TAB_LOJA.on) return; TAB_LOJA.on = on; state.page = 1; renderTable(); });
   document.getElementById('exportCompra').addEventListener('click', csvCompra);
   document.getElementById('exportXlsx').addEventListener('click', function(){
     var rows = tableRows();
