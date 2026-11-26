@@ -62,6 +62,7 @@ jobs:
         run: pip install -r etl/requirements.txt
 
       - name: Carregar planilhas
+        id: carga
         if: steps.cfg.outputs.ok == 'true'
         env:
           GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
@@ -74,8 +75,9 @@ jobs:
         run: python etl/carga_drive.py ${{ inputs.forcar && '--forcar' || '' }}
 
       # deixa prontas as respostas da abertura do painel de cada usuário (a carga limpa a memória do banco)
+      # só quando entrou carga nova: sem planilha nova o cache do banco continua valendo (e evita Egress à toa)
       - name: Aquecer o painel
-        if: steps.cfg.outputs.ok == 'true'
+        if: steps.cfg.outputs.ok == 'true' && steps.carga.outputs.carregou == 'true'
         continue-on-error: true
         timeout-minutes: 8
         env:

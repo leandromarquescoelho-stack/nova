@@ -38,6 +38,12 @@ def conectar(url, uid):
     return conn, cur
 
 
+def miudo(sql):
+    """Roda a consulta no banco (a resposta fica guardada no bi_cache) mas devolve só 1 número, não a resposta inteira:
+    sem isto cada aquecimento trazia megabytes do banco para o GitHub (Egress do Shared Pooler)."""
+    return 'select octet_length((' + sql + ')::text)'   # subconsulta escalar: o banco é obrigado a calcular
+
+
 def entrada_sql(hoje, canais):
     """O que o site pede logo depois do login (mesmos parâmetros, para usar a mesma resposta guardada)."""
     f, d = '{}', hoje.isoformat()
@@ -67,7 +73,7 @@ def aquecer_escopo(url, uid, hoje, canais, limite, com_produtos, fase):
         if fase == 1:
             for sql, par in entrada_sql(hoje, canais):
                 try:
-                    cur.execute(sql, par)
+                    cur.execute(miudo(sql), par)
                 except psycopg.Error:   # função ausente ou sem permissão ainda: segue com as outras
                     pass
             return True
@@ -80,9 +86,9 @@ def aquecer_escopo(url, uid, hoje, canais, limite, com_produtos, fase):
                          ('select public.bi_vendedores(%s::jsonb, %s::jsonb)', (f, json.dumps(curto)))):
             if time.time() > limite:
                 return True
-            cur.execute(sql, par)
+            cur.execute(miudo(sql), par)
         if com_produtos and time.time() <= limite:
-            cur.execute('select public.bi_produtos()')
+            cur.execute(miudo('select public.bi_produtos()'))
         return True
     finally:
         conn.close()

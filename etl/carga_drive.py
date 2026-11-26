@@ -224,6 +224,14 @@ class FonteLocal:
 
 
 # ---------------------------------------------------------------- leitura das planilhas
+
+def marcar_carga():
+    """Avisa o GitHub Actions que entrou carga nova (o aquecimento do painel só roda nesse caso)."""
+    saida = os.environ.get('GITHUB_OUTPUT')
+    if saida:
+        with open(saida, 'a', encoding='utf-8') as f:
+            f.write('carregou=true\n')
+
 def ler_planilha(nome, buf, aba=None, cabecalho=0):
     n = nome.lower()
     if n.endswith('.csv'):
@@ -789,6 +797,7 @@ def main():
             return
         gravar(conn, res, usados)
         log('carga concluída')
+        marcar_carga()
     except Exception as ex:  # noqa: BLE001
         msg = f'{type(ex).__name__}: {ex}'
         if conn is not None and not a.simular:
@@ -820,6 +829,7 @@ def main_infobi(a, conn, db_url, fonte, arquivos, mapa, loja_info):
             return
         gravar_infobi(conn, dfs, regras, loja_info, arq)
         log('carga concluída')
+        marcar_carga()
     except Exception as ex:  # noqa: BLE001
         if conn is not None and not a.simular:
             registrar_erro(db_url, {'infobi': arq}, f'{type(ex).__name__}: {ex}')
