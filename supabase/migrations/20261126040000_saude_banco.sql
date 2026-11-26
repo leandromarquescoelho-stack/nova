@@ -3,7 +3,7 @@
 create or replace function public.bi_saude_banco()
  returns jsonb language plpgsql stable security definer set search_path to ''
 as $function$
-declare r jsonb; v_top jsonb := '[]'::jsonb;
+declare r jsonb; v_top jsonb := '[]'::jsonb; v_fotos jsonb;
 begin
   if not private.bi_eh_bi() then raise exception 'só o perfil BI vê a saúde do banco'; end if;
   select jsonb_build_object(
@@ -19,7 +19,7 @@ begin
     'linhas_lidas', (select tup_returned + tup_fetched from pg_stat_database where datname = current_database()),
     'stats_desde', (select stats_reset from pg_stat_database where datname = current_database()),
     'conexoes', (select count(*) from pg_stat_activity where datname = current_database()),
-    'fotos_bf2', (select jsonb_build_object('n', count(*), 'bytes', coalesce(sum(length(img)),0)) from public.bi_bf2_foto),
+    'fotos_bf2', jsonb_build_object('n', 0, 'bytes', 0),
     'agora', now()
   ) into r;
   -- consultas que mais devolvem linhas (indicador de Egress), se pg_stat_statements estiver ligado
@@ -31,6 +31,11 @@ begin
       order by rows desc limit 6) x$q$ into v_top;
   exception when others then v_top := null;
   end;
+  -- fotos do BF2 só se a tabela existir (o SQL das fotos é opcional)
+  if to_regclass('public.bi_bf2_foto') is not null then
+    execute 'select jsonb_build_object(''n'', count(*), ''bytes'', coalesce(sum(length(img)),0)) from public.bi_bf2_foto' into v_fotos;
+    r := r || jsonb_build_object('fotos_bf2', v_fotos);
+  end if;
   return r || jsonb_build_object('top', v_top);
 end $function$;
 revoke all on function public.bi_saude_banco() from public, anon;
