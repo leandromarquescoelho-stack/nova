@@ -2993,7 +2993,7 @@ table.data-table.vp-tbl{min-width:720px;}
                 <th data-k="fatPeriodo" class="tc-fatPeriodo">Faturamento <span class="sort-ico">&#9650;</span></th>
                 <th data-k="giro" class="tc-giro" title="Giro em dias: (estoque a custo ÷ CMV do mês) × 30">Giro (dias) <span class="sort-ico">&#9650;</span></th>
                 <th data-k="status" class="tc-status">Status <span class="sort-ico">&#9650;</span></th>
-                <th data-k="repo" class="tc-repo num rp-th" title="Quanto comprar para o estoque cobrir os dias escolhidos: venda média do mês ÷ 30 × dias − estoque atual (arredondado para cima; sem venda, nada). − e + mudam 5 dias (o número também pode ser digitado). Clique no valor de cada item para editar; Enter vai para o próximo. Embaixo, quantos dias o estoque atual cobre.">Reposição <span class="cc-pct-w rp-hd" id="rpHd"></span><span class="sort-ico">&#9650;</span></th>
+                <th data-k="repo" class="tc-repo num rp-th" title="Quanto comprar para o estoque cobrir os dias escolhidos: venda média do mês ÷ 30 × dias − estoque atual (arredondado para cima; sem venda, nada). − e + mudam 5 dias (o número também pode ser digitado). Clique no valor de cada item para editar; Enter vai para o próximo; F4 abre e fecha a ficha do produto. Embaixo, quantos dias o estoque atual cobre.">Reposição <span class="cc-pct-w rp-hd" id="rpHd"></span><span class="sort-ico">&#9650;</span></th>
               </tr>
             </thead>
             <tbody id="productsTbody"></tbody>
@@ -8151,6 +8151,20 @@ function rpLigar(){
     if(v==null || v===rpBase(r)) delete RP_ED[k]; else RP_ED[k] = v;
     rpSalvar(); r.repo = rpValor(r); td.outerHTML = rpTd(r); rpTotal(tableRows());
   });
+  // F4 na quantidade: abre a ficha do produto (a mesma do clique na linha); F4 de novo fecha e o cursor volta para a quantidade
+  tb.addEventListener('keydown', function(e){
+    if(e.key!=='F4' || !e.target.classList.contains('rp-in')) return;
+    e.preventDefault(); e.stopPropagation();
+    var tr = e.target.closest('tr[data-id]'), td = e.target.closest('td'); if(!tr) return;
+    RP_VOLTA = td.getAttribute('data-rp');
+    e.target.blur();
+    if(document.getElementById('tabPanel').classList.contains('tab-full')) tabFull(false);
+    openDrawer(tr.getAttribute('data-id'));
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key!=='F4' || !document.getElementById('drawer').classList.contains('open')) return;
+    e.preventDefault(); closeDrawer();
+  });
   tb.addEventListener('keydown', function(e){
     if(e.key!=='Enter' || !e.target.classList.contains('rp-in')) return;
     e.preventDefault();
@@ -8439,7 +8453,13 @@ function closeDrawer(){
   drawerAtual = null;
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
+  if(RP_VOLTA!=null){   // ficha aberta pelo F4 na reposição: volta para a quantidade do item
+    var k = RP_VOLTA; RP_VOLTA = null;
+    var alvo = Array.prototype.filter.call(document.querySelectorAll('#productsTbody td.rp'), function(td){ return td.getAttribute('data-rp')===k; })[0];
+    var inp = alvo && alvo.querySelector('.rp-in'); if(inp){ inp.focus({preventScroll:true}); inp.select(); }
+  }
 }
+var RP_VOLTA = null;
 
 /* ============================================================
    FILTROS — popular selects + tags ativas
