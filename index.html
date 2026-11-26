@@ -10514,6 +10514,33 @@ function bfGauge(p, tit){
     '<text x="50" y="48" text-anchor="middle" font-size="19" font-weight="800" fill="'+cor+'" font-family="Sora,sans-serif">'+(ok ? Math.round(p) : Math.min(99, Math.round(p||0)))+'%</text>' +
     (ok ? '<text x="50" y="66" text-anchor="middle" font-size="8.5" font-weight="800" fill="#4ade80" letter-spacing=".04em">META BATIDA</text>' : '<text x="50" y="66" text-anchor="middle" font-size="9" fill="#9b9b9b">da meta</text>')+'</svg>';
 }
+// "7 unidades Atacado + Ecommerce": lojas (atacado) contadas como unidades, mais o e-commerce
+function bfUnidadesTxt(U, ecm){
+  var nL = U.filter(function(u){ return u.nome!=='E-commerce'; }).length, temE = U.length > nL;
+  if(!nL) return 'Ecommerce';
+  return nL+' unidade'+(nL>1?'s':'')+' Atacado'+(temE ? ' + Ecommerce' : '');
+}
+// filtros do painel só com os canais Atacado e E-commerce (para o ticker dos visuais BF e BF2); null = nenhum dos dois no filtro
+function vpFiltroAE(){
+  var f = JSON.parse(JSON.stringify(painelFiltros(null))), nomes = Object.assign({}, DIMT.canal || {}, DIMN.canal || {});
+  var ae = Object.keys(nomes).filter(function(id){ var n = String(nomes[id]||'').toUpperCase().replace(/[^A-Z]/g, ''); return n==='ATACADO' || n==='ECOMMERCE'; }).map(Number);
+  if(!ae.length) return f;
+  var cur = Array.isArray(f.canal) && f.canal.length ? f.canal.map(Number) : null;
+  f.canal = cur ? ae.filter(function(id){ return cur.indexOf(id)!==-1; }) : ae;
+  return f.canal.length ? f : null;
+}
+// ticker dos visuais BF e BF2: destaques, estoque e "em alta" só com as vendas de Atacado e E-commerce
+VH.aeUlt = {};
+function vpTickerAE(S, RR0){
+  var f = vpFiltroAE(); if(!f) return '';
+  var redraw = function(){ if(vpVisivel()) vhPainel(); }, k = JSON.stringify(f)+'|'+S.dia, U = VH.aeUlt[k] || {};
+  var R = VH.res[vhResChave(f, S.dia, false)]; if(!R) vhResBuscar(f, S.dia, false, redraw); else if(!R.erro) U.R = R;
+  var E = vhEst(f, S.dia, redraw); if(E && !E.erro) U.E = E;
+  var T = vhTk(f, S.dia, redraw); if(T) U.T = T;
+  VH.aeUlt = {}; VH.aeUlt[k] = U;
+  if(!U.R && !U.E && !U.T) return '';
+  return vpTicker(U.R || null, U.E || null, U.T || null);
+}
 function bfPainel(S, RR, dest, partes){
   var lj = {}; S.lojas.forEach(function(o){ lj[o.nome] = o; });
   var ecm = null; S.canais.forEach(function(x){ if(x.k==='ECOMMERCE') ecm = x; });
@@ -10529,7 +10556,7 @@ function bfPainel(S, RR, dest, partes){
   U.forEach(function(u){ tv += u.v; tm += u.meta; if(u.md > 0) tmd += u.md; else mdOk = false; if(u.p >= 100) nOk++; });
   var tp = tm > 0 ? tv/tm*100 : 0, xN = function(x){ return (x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×'; };
   var hero = '<div class="bf-hero"><img class="bf-logo" src="icons/black-friday.png" alt="Black Friday Nova">' +
-    '<div class="bf-hm"><div class="l">'+(S.ehHoje ? 'Vendido hoje' : 'Vendido no dia')+' · '+U.length+' unidade'+(U.length>1?'s':'')+'</div>' +
+    '<div class="bf-hm"><div class="l">'+(S.ehHoje ? 'Vendido hoje' : 'Vendido no dia')+' · '+bfUnidadesTxt(U, ecm)+'</div>' +
     '<div class="v">'+fmtMoney(tv)+'<small>de '+fmtMoney(tm)+'</small></div>' +
     '<div class="bf-bar'+(tp >= 100 ? ' ok' : '')+'"><i style="width:'+Math.min(100, tp).toFixed(1)+'%"></i></div>' +
     '<div class="bf-hs"><span>Falta <b>'+(tv >= tm ? 'meta batida' : fmtMoney(tm - tv))+'</b></span><span>Metas batidas <b>'+nOk+' de '+U.length+'</b></span>' +
@@ -10544,7 +10571,7 @@ function bfPainel(S, RR, dest, partes){
       (u.md > 0 ? '<span title="Venda do dia ÷ média diária do mês">'+xN(u.v/u.md)+' dia normal</span>' : '')+'</div></div>';
   }).join('')+'</div>';
   if(partes) return {hero:hero, cards:cards};
-  return hero + cards + dest + vpTicker(RR, S.E);
+  return hero + cards + dest + vpTickerAE(S, RR);
 }
 /* ---------- Visual BF2: cabeçalho da Black Friday + top 10 que alterna (lojas, vendedores, clientes, produtos: 10 s cada) e as metas por unidade como no Visual BF (20 s) ---------- */
 var BF2_SEG = 10, BF2_METAS_SEG = 20;   // cada top 10 fica 10 s; as metas (último quadro) 20 s
@@ -10566,7 +10593,7 @@ function bf2Painel(S, RR, grupos){
     return '<section class="bf2-s'+(i===i0 ? ' on' : '')+'" data-i="'+i+'"><h3>Top 10 <b>'+g[0]+'</b><small>'+(S.ehHoje ? 'venda de hoje' : 'venda do dia')+'</small></h3>'+corpo+'</section>';
   }).join('') + '<section class="bf2-s bf2-metas'+(i0===n-1 ? ' on' : '')+'" data-i="'+(n-1)+'"><h3>Metas da <b>Black Friday</b><small>venda do dia × meta de cada unidade</small></h3>'+P.cards+'</section>';
   var dur = i0===n-1 ? BF2_METAS_SEG : BF2_SEG, pass = Math.min(dur, (Date.now() - VH.bf2t)/1000);
-  return P.hero + '<div class="bf2">'+dots+'<div class="bf2-prog"><i style="animation-duration:'+dur+'s; animation-delay:-'+pass.toFixed(1)+'s"></i></div><div class="bf2-sl">'+sl+'</div></div>' + vpTicker(RR, S.E);
+  return P.hero + '<div class="bf2">'+dots+'<div class="bf2-prog"><i style="animation-duration:'+dur+'s; animation-delay:-'+pass.toFixed(1)+'s"></i></div><div class="bf2-sl">'+sl+'</div></div>' + vpTickerAE(S, RR);
 }
 function vpDestPag(p){
   var box = document.querySelector('#vpBody .vp-dest2'); if(!box) return;
@@ -10835,7 +10862,7 @@ function vpTickerExtra(T){
     g.push({t:'TOP CLIENTE DO DIA', c:azul, n:(i+1)+'º '+tkNome(r[0]), d:fmtMoney(c2(r[1]))+' · '+fmtUn(r[2])+' nota'+(r[2]>1?'s':'')}); });
   return g;
 }
-function vpTicker(RR, E){
+function vpTicker(RR, E, TK){
   var it = [], alta = [], vistos = {};
   var nome = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
   // 1) vendeu bem e o estoque zerou ou está acabando
@@ -10856,7 +10883,7 @@ function vpTicker(RR, E){
   var mix = []; it = it.slice(0, 8); alta = alta.slice(0, 8);
   for(var i = 0; i < Math.max(it.length, alta.length); i++){ if(alta[i]) mix.push(alta[i]); if(it[i]) mix.push(it[i]); }
   // destaques (vendedores, clientes, vendas altas, mais vendidos) intercalados com os de produto
-  var ex = vpTickerExtra(VH.tkAtual), fin = [];
+  var ex = vpTickerExtra(TK!==undefined ? TK : VH.tkAtual), fin = [];
   for(var j = 0; j < Math.max(ex.length, mix.length); j++){ if(ex[j]) fin.push(ex[j]); if(mix[j]) fin.push(mix[j]); }
   it = fin;
   if(!it.length) return '';
