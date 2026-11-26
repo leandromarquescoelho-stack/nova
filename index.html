@@ -10851,8 +10851,8 @@ function vpTickerExtra(T, soDia){
   if(tkLigado('cres_mix') && C.mix) g.push({t:'MAIS CRESCEU EM MIX', c:'var(--good)', n:tkVend(C.mix[0]), d:fmtUn(C.mix[2])+' → '+fmtUn(C.mix[1])+' produtos diferentes no mês'});
   if(tkLigado('cres_part') && C.part) g.push({t:'MAIS GANHOU PARTICIPAÇÃO', c:'var(--good)', n:tkVend(C.part[0]), d:tkPct(+C.part[2])+' → '+tkPct(+C.part[1])+' do faturamento no mês'});
   if(tkLigado('cres_mg') && C.mg) g.push({t:'MAIS CRESCEU EM MARGEM', c:'var(--good)', n:tkVend(C.mg[0]), d:'margem '+tkPct(+C.mg[2])+' → '+tkPct(+C.mg[1])+' no mês'});
-  if(tkLigado('mais_vendidos')) (T.prod || []).slice(0, 3).forEach(function(r, i){
-    g.push({t:'MAIS VENDIDO HOJE', c:azul, n:(i+1)+'º '+String(r[1]||'#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), d:fmtMoney(c2(r[3]))+' · '+fmtUn(r[2])+' un'}); });
+  if(tkLigado('mais_vendidos')) (soDia ? (T.prod || []).slice().sort(function(a, b){ return (+b[2]||0) - (+a[2]||0); }) : (T.prod || [])).slice(0, 3).forEach(function(r, i){
+    g.push({t:'MAIS VENDIDO HOJE', c:azul, n:(i+1)+'º '+String(r[1]||'#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), d: soDia ? fmtUn(r[2])+' un · '+fmtMoney(c2(r[3])) : fmtMoney(c2(r[3]))+' · '+fmtUn(r[2])+' un'}); });
   if(tkLigado('notas')) (T.notas || []).slice(0, 3).forEach(function(r){
     g.push({t:'VENDA ALTA', c:prata, n:tkNome(r[1]), d:fmtMoney(c2(r[4]))+' · '+(dimNome('loja', r[2])||'')+' · '+tkVend(r[3])+' · '+fmtUn(r[5])+' ite'+(r[5]>1?'ns':'m')}); });
   var N = T.novos || {};
@@ -10873,11 +10873,19 @@ function vpTicker(RR, E, TK, soDia){
       d: 'vendeu '+fmtUn(o.qd)+' un hoje · '+(o.zerou ? 'sem estoque' : 'restam '+fmtUn(Math.round(o.est))+' un'+(o.dias!==null ? ' (≈'+Math.max(1, Math.round(o.dias))+' dia'+(Math.round(o.dias)>1?'s':'')+')' : ''))}); });
   // 2) vendendo bem acima da própria média dos 60 dias anteriores
   var nd = (RR && RR.nd) || 1;
-  if(tkLigado('alta')) ((RR && RR.produtos) || []).concat((RR && RR.produtos_q) || []).forEach(function(r){
+  var fonteAlta = soDia ? ((RR && RR.produtos_q) || []).concat((RR && RR.produtos) || []) : ((RR && RR.produtos) || []).concat((RR && RR.produtos_q) || []);
+  if(tkLigado('alta')) fonteAlta.forEach(function(r){
     var id = r[0]; if(vistos[id]) return;
     // em alta por valor OU por quantidade (1,8× a média diária dos 60 dias anteriores); mostra os dois
     var h = c2(r[1]), m = c2(r[4])/nd, q = +r[3] || 0, qm = (+r[5] || 0)/nd, x = m > 0.5 ? h/m : null, xq = qm > 0 ? q/qm : null;
     var nov = x===null && xq===null;
+    if(soDia){   // visuais BF e BF2: produto em alta só pela quantidade
+      if(!nov && !(xq!==null && xq >= 1.8)) return;
+      vistos[id] = 1;
+      alta.push({t: nov ? 'NOVIDADE' : 'EM ALTA · QTD', c: nov ? 'var(--vx-pu)' : 'var(--good)', n: nome(r),
+        d: fmtUn(q)+' un hoje'+(nov ? ' · sem venda nos 60 dias anteriores' : ' · '+(xq >= 10 ? fmtUn(Math.round(xq)) : xq.toFixed(1).replace('.',','))+'× a média de '+(qm < 10 ? qm.toFixed(1).replace('.',',') : fmtUn(Math.round(qm)))+' un/dia')});
+      return;
+    }
     if(!nov && !((x!==null && x >= 1.8) || (xq!==null && xq >= 1.8))) return;
     vistos[id] = 1;
     var xf = function(v){ return (v >= 10 ? fmtUn(Math.round(v)) : v.toFixed(1).replace('.',','))+'×'; };
