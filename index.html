@@ -614,6 +614,7 @@ body.vp-full-on{overflow:hidden;}
 .bf2-rk.t1{background:#f5b400; color:#111;} .bf2-rk.t2{background:#c9c9c9; color:#111;} .bf2-rk.t3{background:#b8743a; color:#111;}
 .bf2-nm{font-size:17px; font-weight:700; color:#f1f1f1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .bf2-bar{height:10px; background:#262626; border-radius:6px; overflow:hidden;} .bf2-bar i{display:block; height:100%; background:linear-gradient(90deg,#c98a00,#f5b400); border-radius:6px;}
+.bf2-nm small{display:block; font-size:.58em; font-weight:600; color:#9b9b9b; letter-spacing:.02em; margin-top:.1em; overflow:hidden; text-overflow:ellipsis;}
 .bf2-bar.ok i{background:linear-gradient(90deg,#16a34a,#4ade80);}
 .bf2-l b{font-family:'Sora',sans-serif; font-size:19px; font-weight:800; color:#fff; white-space:nowrap; text-align:right;}
 .bf2-l em{grid-column:2/5; font-style:normal; font-size:12px; font-weight:700;} .bf2-l em:empty{display:none;}
@@ -10229,7 +10230,7 @@ function bf2Painel(S, RR, grupos){
     var L = g[1], mx = L && L.length ? Math.max(1, L[0].v) : 1;
     var corpo = !L ? '<p class="note-muted">Carregando…</p>' : (!L.length ? '<p class="note-muted">Sem vendas ainda.</p>' : '<ol class="bf2-l">'+L.map(function(o, j){
       var pm = o.meta ? o.v/o.meta*100 : null;
-      return '<li style="--d:'+(j*60)+'ms"><span class="bf2-rk'+(j<3 ? ' t'+(j+1) : '')+'">'+(j+1)+'</span><span class="bf2-nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'</span>' +
+      return '<li style="--d:'+(j*60)+'ms"><span class="bf2-rk'+(j<3 ? ' t'+(j+1) : '')+'">'+(j+1)+'</span><span class="bf2-nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+(o.cod ? '<small>'+escapeHtml(o.cod)+'</small>' : '')+'</span>' +
         '<span class="bf2-bar'+(pm!==null && pm >= 100 ? ' ok' : '')+'"><i style="width:'+Math.max(1.5, o.v/mx*100).toFixed(1)+'%"></i></span><b>'+fmtMoney(o.v)+'</b>' +
         (pm!==null ? '<em style="color:'+bfCor(pm)+'">'+Math.round(pm)+'% da meta</em>' : '<em></em>')+'</li>';
     }).join('')+'</ol>');
@@ -10332,13 +10333,16 @@ function vhPainel(){
       lista('Top 5 clientes', 'compras do dia', RR.clientes, nm7, null, 5) + '</div><div class="vp-dpg'+(pg0===1 ? ' on' : '')+'" data-p="1">' + lista('Top 5 produtos', 'faturamento do dia', RR.produtos, nm7, null, 5) + vpNovidades(S.E, 5) + '</div></div>'
     : (R && R.erro ? '' : '<p class="note-muted status-txt">Carregando os destaques do dia…</p>');
   if(VV===4){
-    var top = function(rows, nome){ return (rows||[]).map(function(r){ return {nome:nome(r), v:c2(r[1])}; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 10); };
+    var top = function(rows, nome){ return (rows||[]).map(function(r){ var o = {nome:nome(r), v:c2(r[1])}; if(nome.sep) nome.sep(o, r); return o; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 10); };
+    // produtos e clientes: nome em cima e o código pequeno embaixo
+    var nmP = function(r){ return nm7(r); }; nmP.sep = function(o){ var m = /^(\S+) · (.+)$/.exec(o.nome); if(m){ o.cod = m[1]; o.nome = m[2]; } };
+    var nmC = function(r){ return nm7(r); }; nmC.sep = function(o, r){ var m = /^(.+?)\s+([A-Z]{1,2}\d{3,})$/.exec(o.nome); if(m){ o.nome = m[1]; o.cod = m[2]; } else o.cod = String(r[0]); };
     var nmB = {}; BF_METAS.forEach(function(m){ nmB[m[0]] = m; });
     var tL = S.lojas.map(function(o){ var m = nmB[o.nome]; return {nome: m ? m[1] : o.nome, v:o.r.t.h.f, meta: m ? m[2] : 0}; });
     S.canais.forEach(function(x){ if(x.k==='ECOMMERCE') tL.push({nome:'E-commerce', v:x.t.h.f, meta:(nmB.ECOMMERCE||[])[2]||0}); });
     tL = tL.sort(function(a, b){ return b.v - a.v; }).slice(0, 10);
     box.innerHTML = bf2Painel(S, RR, [['Lojas', tL], ['Vendedores', RR ? top(RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) : null],
-      ['Clientes', RR ? top(RR.clientes, nm7) : null], ['Produtos', RR ? top(RR.produtos, nm7) : null]]);
+      ['Clientes', RR ? top(RR.clientes, nmC) : null], ['Produtos', RR ? top(RR.produtos, nmP) : null]]);
   } else if(V2){
     var dsB = RR ? '<div class="vp-dest">' + lista('Top 5 vendedores', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }, null, 5) +
       lista('Top 5 clientes', 'compras do dia', RR.clientes, nm7, null, 5) + lista('Top 5 produtos', 'faturamento do dia', RR.produtos, nm7, null, 5) + '</div>' : '';
