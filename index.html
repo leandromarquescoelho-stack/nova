@@ -1284,31 +1284,36 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 
 /* drill-down side panel */
 .drawer{
-  position:fixed; top:0; right:0; bottom:0; width:min(420px,100%); z-index:90;
+  position:fixed; top:0; right:0; bottom:0; width:min(560px,100%); z-index:90;
   background:var(--plane); border-left:1px solid var(--border-strong);
   transform:translateX(100%); transition:transform .28s cubic-bezier(.4,0,.2,1);
   padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));
-  overflow-y:auto;
+  overflow-y:auto; scrollbar-width:none;
   box-shadow:-30px 0 60px -20px rgba(0,0,0,.6);
 }
+.drawer::-webkit-scrollbar{display:none;}
+.dtab-row{display:grid; grid-template-columns:1fr .7fr 1.2fr 1fr; gap:8px; font-size:12px; padding:5px 0; border-bottom:1px solid var(--border); color:var(--text-2);}
+.dtab-row:last-child{border-bottom:none;} .dtab-row b{color:var(--text); font-family:'JetBrains Mono',monospace; font-weight:600; text-align:right;}
+.dtab-row.dtab-h{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); padding-top:0;} .dtab-row.dtab-h span:not(:first-child){text-align:right;}
 .drawer.open{transform:translateX(0);}
 .drawer-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:6px;}
 .drawer-close{width:32px; height:32px; border-radius:9px; border:1px solid var(--border); background:var(--surface-2); cursor:pointer; flex:none; display:flex; align-items:center; justify-content:center; color:var(--text-2);}
 .drawer-photo{
-  margin-top:14px; height:120px; border-radius:12px; background:
+  margin-top:10px; height:84px; border-radius:12px; background:
     repeating-linear-gradient(135deg, var(--surface-2) 0 10px, var(--surface-3) 10px 20px);
   display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:11px; font-weight:700;
   border:1px solid var(--border);
 }
-.drawer-photo{text-decoration:none; overflow:hidden; padding:0 12px; text-align:center;} .drawer-photo.ok{background:#fff; height:180px; padding:6px;} .drawer-photo.ok:hover{border-color:var(--accent);}
+.drawer-photo{text-decoration:none; overflow:hidden; padding:0 12px; text-align:center;} .drawer-photo.ok{background:#fff; height:130px; padding:6px;} .drawer-photo.ok:hover{border-color:var(--accent);}
 .drawer-photo img{max-width:100%; max-height:100%; object-fit:contain;}
-.drawer-tags{display:flex; gap:6px; flex-wrap:wrap; margin-top:12px;}
+.drawer-tags{display:flex; gap:5px; flex-wrap:wrap; margin-top:9px;}
 .dtag{font-size:10.5px; font-weight:700; padding:4px 9px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); color:var(--text-2);}
-.drawer-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;}
-.dstat{padding:10px 11px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border);}
+.drawer-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:11px;}
+@media (max-width:520px){ .drawer-grid{grid-template-columns:1fr 1fr;} }
+.dstat{padding:7px 10px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border);}
 .dstat .dl{font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
 .dstat .dv{font-family:'Sora',sans-serif; font-size:15px; font-weight:700; margin-top:4px;}
-.drawer h3.dh{font-size:12.5px; font-weight:700; margin-top:20px; margin-bottom:8px; color:var(--text-2);}
+.drawer h3.dh{font-size:12.5px; font-weight:700; margin-top:13px; margin-bottom:6px; color:var(--text-2);}
 .dspark{height:56px; margin-top:4px;}
 .dlist-row{display:flex; justify-content:space-between; font-size:12px; padding:7px 0; border-bottom:1px solid var(--border); color:var(--text-2);}
 .dlist-row:last-child{border-bottom:none;}
@@ -3472,10 +3477,9 @@ table.data-table.vp-tbl{min-width:720px;}
     <div class="drawer-grid" id="drawerStats"></div>
     <h3 class="dh">Histórico de vendas (12 períodos)</h3>
     <div class="dspark" id="drawerSpark"></div>
-    <h3 class="dh">Vendas por mês</h3>
+    <h3 class="dh">Vendas e preço médio por mês</h3>
     <div id="drawerSales"></div>
-    <h3 class="dh">Preço médio por mês</h3>
-    <div id="drawerPrices"></div>
+    <div id="drawerPrices" hidden></div>
   </aside>
 
   <div class="toast-stack" id="toastStack"></div>
@@ -8427,12 +8431,11 @@ function openDrawer(productId){
     (serie||[]).forEach(function(r){ var i = DIA_IDX[r[0]]; if(i===undefined) return; df[i] += c2(r[1]); mf[monthIndexOfDay[i]] += c2(r[1]); mq[monthIndexOfDay[i]] += n0(r[2]); });
     var weekly = [];
     for(var w=11;w>=0;w--){ var e = TODAY_IDX-w*7, s = e-6; weekly.push(sumRange(df, Math.max(0,s), Math.max(0,e))); }
-    document.getElementById('drawerSpark').innerHTML = sparklineSVG(weekly, 380, 56, 'var(--accent)', true);
-    var salesRows='', priceRows='', nM = REAL.months.length;
+    document.getElementById('drawerSpark').innerHTML = sparklineSVG(weekly, 520, 56, 'var(--accent)', true);
+    var salesRows='<div class="dtab-row dtab-h"><span>Mês</span><span>Un.</span><span>Faturamento</span><span>Preço médio</span></div>', priceRows='', nM = REAL.months.length;
     for(var mi=nM-1; mi>=Math.max(0,nM-6); mi--){
       var rotulo = (REAL.monthLabels && REAL.monthLabels[mi]) || REAL.months[mi];
-      salesRows += '<div class="dlist-row"><span>'+rotulo+' · '+fmtUn(mq[mi])+' un.</span><b>'+fmtMoney(mf[mi])+'</b></div>';
-      priceRows += '<div class="dlist-row"><span>'+rotulo+'</span><b>'+(mq[mi]>0 ? fmtMoney2(mf[mi]/mq[mi]) : '—')+'</b></div>';
+      salesRows += '<div class="dtab-row"><span>'+rotulo+'</span><b>'+fmtUn(mq[mi])+'</b><b>'+fmtMoney(mf[mi])+'</b><b>'+(mq[mi]>0 ? fmtMoney2(mf[mi]/mq[mi]) : '—')+'</b></div>';
     }
     document.getElementById('drawerSales').innerHTML = salesRows;
     document.getElementById('drawerPrices').innerHTML = priceRows;
