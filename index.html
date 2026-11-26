@@ -519,6 +519,19 @@ body.vp-full-on{overflow:hidden;}
 .vp.vp-fill .vp-dest .vp-d{display:flex; flex-direction:column; justify-content:space-around;}
 .vp.vp-fill .bf2{display:flex; flex-direction:column;} .vp.vp-fill .bf2-sl{flex:1 1 auto;} .vp.vp-fill .bf2-s{display:flex; flex-direction:column;}
 .vp.vp-fill .bf2-l{flex:1 1 auto; grid-template-rows:repeat(5, 1fr);} .vp.vp-fill .bf2-l li{align-content:center;}
+/* BF2 em tela cheia: letra proporcional à altura do quadro (cqh), para preencher qualquer TV */
+.vp.vp-fill .bf2-sl{container-type:size; min-height:0;}
+.vp.vp-fill .bf2-s h3{font-size:clamp(18px,6.2cqh,64px); margin:0.4cqh 0 1.6cqh;} .vp.vp-fill .bf2-s h3 small{font-size:clamp(12px,3cqh,30px);}
+.vp.vp-fill .bf2-l{column-gap:clamp(40px,6cqw,140px); row-gap:0;}
+.vp.vp-fill .bf2-l li{grid-template-columns:auto minmax(0,1.25fr) minmax(40px,1fr) auto; column-gap:clamp(10px,1.6cqw,34px); padding:0;}
+.vp.vp-fill .bf2-rk{width:clamp(28px,8cqh,84px); height:clamp(28px,8cqh,84px); font-size:clamp(13px,4cqh,40px);}
+.vp.vp-fill .bf2-nm{font-size:clamp(16px,5.4cqh,56px);} .vp.vp-fill .bf2-l b{font-size:clamp(17px,6cqh,62px);}
+.vp.vp-fill .bf2-bar{height:clamp(8px,2.2cqh,24px);} .vp.vp-fill .bf2-l em{font-size:clamp(11px,3cqh,30px);}
+.vp.vp-fill .bf2-metas .bf-u{display:flex; flex-direction:column; justify-content:space-evenly; padding:1.4cqh 1.4cqw;}
+.vp.vp-fill .bf2-metas .bf-uh b{font-size:clamp(15px,4.6cqh,46px);} .vp.vp-fill .bf2-metas .bf-rk{font-size:clamp(11px,3cqh,30px);}
+.vp.vp-fill .bf2-metas .bf-ub{gap:1.4cqw;} .vp.vp-fill .bf2-metas .bf-ub .bf-gz{width:clamp(78px,19cqh,220px); height:clamp(56px,13.7cqh,158px);}
+.vp.vp-fill .bf2-metas .bf-uv .v{font-size:min(14cqi, clamp(20px,8cqh,84px));} .vp.vp-fill .bf2-metas .bf-uv .m{font-size:clamp(12px,3.4cqh,34px);}
+.vp.vp-fill .bf2-metas .bf-bar{height:clamp(8px,2cqh,22px);} .vp.vp-fill .bf2-metas .bf-uf{font-size:clamp(12px,3.4cqh,34px);}
 .bf2-metas .bf-uns{margin:0;} .vp.vp-fill .bf2-metas .bf-uns{flex:1 1 auto; grid-auto-rows:1fr;}
 .vp-top{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:var(--vp-gap);}
 .vp-tt{flex:1 1 280px; min-width:0;} .vp-tit{font-family:'Sora',sans-serif; font-size:22px; font-weight:800;} .vp-sub{font-size:12px; color:var(--text-muted); margin-top:2px;}
