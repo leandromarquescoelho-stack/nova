@@ -1165,7 +1165,20 @@ button.stock-stat{font:inherit; color:inherit; text-align:left; cursor:pointer; 
 .abc-chip .ac-top{display:flex; align-items:center; gap:6px; font-size:11px; font-weight:800; letter-spacing:.03em;}
 .abc-chip .ac-dot{width:8px; height:8px; border-radius:50%;}
 .abc-chip .ac-n{font-family:'Sora',sans-serif; font-size:15px; font-weight:700; margin-top:4px;}
-#productsTable .col-loja{white-space:nowrap;}
+#productsTable .tc-loja{white-space:nowrap;}
+#productsTable .table-scroll, .table-scroll.rp-scroll{overflow:auto; max-height:calc(100vh - 300px); min-height:260px;}
+#productsTable thead th{z-index:2;}
+.rp-th{color:var(--accent) !important; text-align:right !important;}
+#productsTable td.rp{min-width:96px; text-align:right; cursor:default; padding-top:4px; padding-bottom:4px;}
+.rp-w{display:flex; align-items:center; justify-content:flex-end; gap:4px;}
+.rp-in{width:62px; text-align:right; font:inherit; font-family:"JetBrains Mono",monospace; font-size:12px; padding:3px 6px; border-radius:7px; border:1px dashed var(--border-strong); background:var(--surface-2); color:var(--text);}
+.rp-in:focus{outline:none; border-style:solid; border-color:var(--accent);}
+td.rp.ed .rp-in{border-style:solid; border-color:rgba(242,200,17,.6);}
+.rp-cob{display:block; font-size:9.5px; line-height:1.15; color:var(--text-muted); margin-top:1px; white-space:nowrap;}
+.tc-pick{position:relative;} .tc-pick > summary{list-style:none;} .tc-pick > summary::-webkit-details-marker{display:none;}
+.tc-menu{position:absolute; right:0; top:calc(100% + 6px); z-index:30; min-width:210px; max-height:340px; overflow:auto; padding:8px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); box-shadow:0 10px 30px rgba(0,0,0,.35);}
+.tc-menu label{display:flex; align-items:center; gap:8px; padding:5px 6px; border-radius:6px; font-size:12.5px; cursor:pointer; white-space:nowrap;} .tc-menu label:hover{background:var(--surface-2);} .tc-menu label.obr{opacity:.55; cursor:default;}
+.tc-menu .tc-acoes{display:flex; gap:6px; border-top:1px solid var(--border); margin-top:6px; padding-top:6px;} .tc-menu .tc-acoes button{flex:1; font:inherit; font-size:11.5px; padding:4px; border-radius:6px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); cursor:pointer;}
 .abc-chip .ac-fat{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; margin-top:2px; color:var(--text);}
 .abc-chip .ac-sub{font-size:10.5px; color:var(--text-muted);}
 
@@ -2925,10 +2938,14 @@ table.data-table.vp-tbl{min-width:720px;}
           </div>
           <div class="spacer"></div>
           <div class="export-btns">
-            <div class="seg" id="tabModo" title="Por produto: uma linha por produto, com a quantidade de lojas · Por loja: o produto repetido em cada loja, com o nome da loja"><button type="button" data-tm="prod" aria-pressed="true">Por produto</button><button type="button" data-tm="loja" aria-pressed="false">Por loja</button></div>
+            <details class="tc-pick" id="tcPick"><summary class="tbtn" title="Escolha as colunas que aparecem na tabela e no Excel (Código e Produto são obrigatórias)">Colunas &#9662;</summary><div class="tc-menu" id="tcMenu"></div></details><div class="seg" id="tabModo" title="Por produto: uma linha por produto, com a quantidade de lojas · Por loja: o produto repetido em cada loja, com o nome da loja"><button type="button" data-tm="prod" aria-pressed="true">Por produto</button><button type="button" data-tm="loja" aria-pressed="false">Por loja</button></div>
             <button class="tbtn" id="exportXlsx">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Exportar Excel
+            </button>
+            <button class="tbtn" id="exportCompra" title="Arquivo CSV para compra, sem cabeçalho: código do produto; quantidade a comprar (coluna Reposição); código da loja. Só os itens com reposição acima de zero, por loja, com os filtros e a busca atuais.">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              CSV de compra
             </button>
             <button class="tbtn" id="exportPdf">
               <svg viewBox="0 0 24 24" fill="none"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
@@ -2936,22 +2953,23 @@ table.data-table.vp-tbl{min-width:720px;}
             </button>
           </div>
         </div>
-        <div class="table-scroll">
+        <div class="table-scroll rp-scroll" id="tabScroll">
           <table class="data-table" id="productsTable">
             <thead>
               <tr>
-                <th data-k="codigo">Código <span class="sort-ico">&#9650;</span></th>
-                <th data-k="nome">Produto <span class="sort-ico">&#9650;</span></th>
-                <th data-k="loja" class="col-loja">Loja <span class="sort-ico">&#9650;</span></th>
-                <th data-k="marca">Marca <span class="sort-ico">&#9650;</span></th>
-                <th data-k="categoria">Categoria <span class="sort-ico">&#9650;</span></th>
-                <th data-k="modelo">Aplicação <span class="sort-ico">&#9650;</span></th>
-                <th data-k="estoqueAtual">Estoque <span class="sort-ico">&#9650;</span></th>
-                <th data-k="estoqueMin">Mínimo <span class="sort-ico">&#9650;</span></th>
-                <th data-k="qtdPeriodo">Vendas <span class="sort-ico">&#9650;</span></th>
-                <th data-k="fatPeriodo">Faturamento <span class="sort-ico">&#9650;</span></th>
-                <th data-k="giro" title="Giro em dias: (estoque a custo ÷ CMV do mês) × 30">Giro (dias) <span class="sort-ico">&#9650;</span></th>
-                <th data-k="status">Status <span class="sort-ico">&#9650;</span></th>
+                <th data-k="codigo" class="tc-codigo">Código <span class="sort-ico">&#9650;</span></th>
+                <th data-k="nome" class="tc-nome">Produto <span class="sort-ico">&#9650;</span></th>
+                <th data-k="loja" class="tc-loja">Loja <span class="sort-ico">&#9650;</span></th>
+                <th data-k="marca" class="tc-marca">Marca <span class="sort-ico">&#9650;</span></th>
+                <th data-k="categoria" class="tc-categoria">Categoria <span class="sort-ico">&#9650;</span></th>
+                <th data-k="modelo" class="tc-modelo">Aplicação <span class="sort-ico">&#9650;</span></th>
+                <th data-k="estoqueAtual" class="tc-estoqueAtual">Estoque <span class="sort-ico">&#9650;</span></th>
+                <th data-k="estoqueMin" class="tc-estoqueMin">Mínimo <span class="sort-ico">&#9650;</span></th>
+                <th data-k="qtdPeriodo" class="tc-qtdPeriodo">Vendas <span class="sort-ico">&#9650;</span></th>
+                <th data-k="fatPeriodo" class="tc-fatPeriodo">Faturamento <span class="sort-ico">&#9650;</span></th>
+                <th data-k="giro" class="tc-giro" title="Giro em dias: (estoque a custo ÷ CMV do mês) × 30">Giro (dias) <span class="sort-ico">&#9650;</span></th>
+                <th data-k="status" class="tc-status">Status <span class="sort-ico">&#9650;</span></th>
+                <th data-k="repo" class="tc-repo num rp-th" title="Quanto comprar para o estoque cobrir os dias escolhidos: venda média do mês ÷ 30 × dias − estoque atual (arredondado para cima; sem venda, nada). − e + mudam 5 dias (o número também pode ser digitado). Clique no valor de cada item para editar; Enter vai para o próximo. Embaixo, quantos dias o estoque atual cobre.">Reposição <span class="cc-pct-w rp-hd" id="rpHd"></span><span class="sort-ico">&#9650;</span></th>
               </tr>
             </thead>
             <tbody id="productsTbody"></tbody>
@@ -3880,7 +3898,7 @@ var state = {
   abcFilter:null, estStatus:null,
   search:'',
   sortKey:'fatPeriodo', sortDir:'desc',
-  page:1, pageSize:8,
+  page:1, pageSize:100,
   currentView:'dashboard',
   vendConsultSel:'',
   paresModo:'grupo', paresEquipes:[], // comparativo dos pares: todo o grupo ou só as equipes escolhidas
@@ -7975,6 +7993,107 @@ function renderSellers(){
   }
 }
 
+/* colunas da tabela de produtos: o usuário escolhe quais aparecem (Código e Produto sempre); vale também para o Excel */
+var TC_COLS = [{k:'codigo', t:'Código', obr:1}, {k:'nome', t:'Produto', obr:1}, {k:'loja', t:'Loja'}, {k:'marca', t:'Marca'}, {k:'categoria', t:'Categoria'}, {k:'modelo', t:'Aplicação'},
+  {k:'estoqueAtual', t:'Estoque'}, {k:'estoqueMin', t:'Mínimo'}, {k:'qtdPeriodo', t:'Vendas'}, {k:'fatPeriodo', t:'Faturamento'}, {k:'giro', t:'Giro (dias)'}, {k:'status', t:'Status'}, {k:'repo', t:'Reposição'}];
+var TC_OFF = (function(){ try{ var v = JSON.parse(localStorage.getItem('nc_tab_cols_off')||'[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } })();
+function tcOn(k){ return TC_OFF.indexOf(k)===-1 || TC_COLS.some(function(c){ return c.k===k && c.obr; }); }
+function tcAplicar(){
+  var st = document.getElementById('tcCss'); if(!st){ st = document.createElement('style'); st.id = 'tcCss'; document.head.appendChild(st); }
+  st.textContent = TC_COLS.filter(function(c){ return !tcOn(c.k); }).map(function(c){ return '#productsTable .tc-'+c.k+'{display:none;}'; }).join('\n');
+  var m = document.getElementById('tcMenu'); if(!m) return;
+  var n = TC_COLS.filter(function(c){ return tcOn(c.k); }).length;
+  document.querySelector('#tcPick summary').innerHTML = 'Colunas ('+n+'/'+TC_COLS.length+') &#9662;';
+  m.innerHTML = TC_COLS.map(function(c){ return '<label'+(c.obr?' class="obr" title="Coluna obrigatória"':'')+'><input type="checkbox" data-tc="'+c.k+'"'+(tcOn(c.k)?' checked':'')+(c.obr?' disabled':'')+'>'+c.t+'</label>'; }).join('') +
+    '<div class="tc-acoes"><button type="button" data-tca="todas">Todas</button><button type="button" data-tca="min">Só obrigatórias</button></div>';
+}
+function tcSalvar(){ try{ localStorage.setItem('nc_tab_cols_off', JSON.stringify(TC_OFF)); }catch(e){} tcAplicar(); }
+
+/* sugestão de reposição: quanto comprar para o estoque cobrir N dias de venda (venda média do mês ÷ 30 × N − estoque); editável, guardada neste navegador */
+var RP_DIAS = (function(){ try{ var v = +localStorage.getItem('nc_rep_dias'); return v>0 && v<=365 ? v : 45; }catch(e){ return 45; } })();
+var RP_ED = (function(){ try{ return JSON.parse(localStorage.getItem('nc_rep_ed')||'{}')||{}; }catch(e){ return {}; } })();
+function rpChave(r){ return r.codigo+'|'+(TAB_LOJA.on ? r.loja : ''); }
+function rpBase(r){ var m = r.mediaMes||0; if(m<=0) return 0; return Math.max(0, Math.ceil(m/30*RP_DIAS - Math.max(0, r.estoqueAtual||0))); }
+function rpValor(r){ var e = RP_ED[rpChave(r)]; return e!=null ? e : rpBase(r); }
+function rpSalvar(){ try{ localStorage.setItem('nc_rep_ed', JSON.stringify(RP_ED)); localStorage.setItem('nc_rep_dias', String(RP_DIAS)); }catch(e){} }
+function rpCob(r){ var m = r.mediaMes||0; if(m<=0) return 'sem venda'; var d = Math.max(0, r.estoqueAtual||0)/(m/30); return 'cobre '+(d>=999 ? '999+' : Math.round(d))+' d'; }
+function rpTd(r){
+  var ed = RP_ED[rpChave(r)]!=null, v = rpValor(r);
+  return '<td class="mono tc-repo rp'+(ed?' ed':'')+'" data-rp="'+escapeHtml(rpChave(r))+'"><div class="rp-w"><input type="text" inputmode="numeric" class="rp-in" value="'+fmtUn(v)+'" aria-label="Reposição sugerida para '+escapeHtml(r.codigo)+'">' +
+    (ed ? '<button type="button" class="cc-sug-rst rp-rst" title="Voltar para a sugestão de '+RP_DIAS+' dias ('+fmtUn(rpBase(r))+')">↺</button>' : '')+'</div><span class="rp-cob">'+rpCob(r)+' · média '+fmtUn(Math.round((r.mediaMes||0)*10)/10)+'/mês</span></td>';
+}
+function rpHd(){ var h = document.getElementById('rpHd'); if(h) h.innerHTML = '<button type="button" class="cc-pct-sinal" data-rpp="-5" title="Diminuir 5 dias">−</button><input type="text" inputmode="numeric" class="cc-pct-in" id="rpDias" value="'+RP_DIAS+'" aria-label="Dias de cobertura da reposição">d<button type="button" class="cc-pct-sinal" data-rpp="5" title="Aumentar 5 dias">+</button>'; }
+function rpDiasAplicar(passo){
+  var inp = document.getElementById('rpDias'), v = parseInt(String(inp ? inp.value : '').replace(/\D/g, ''), 10);
+  if(!isFinite(v) || v<=0) v = RP_DIAS;
+  if(passo) v += passo;
+  v = Math.max(1, Math.min(365, v));
+  if(v===RP_DIAS){ if(inp) inp.value = RP_DIAS; return; }
+  RP_DIAS = v; RP_ED = {}; rpSalvar(); rpHd(); renderTable();   // ao mudar os dias, as edições à mão voltam para a regra
+}
+function rpLigar(){
+  var tb = document.getElementById('productsTbody'), th = document.getElementById('rpHd');
+  function linha(td){ var k = td && td.getAttribute('data-rp'); return k ? tableRows().filter(function(r){ return rpChave(r)===k; })[0] : null; }
+  tb.addEventListener('change', function(e){
+    if(!e.target.classList.contains('rp-in')) return;
+    var td = e.target.closest('td'), r = linha(td); if(!r) return;
+    var t = String(e.target.value).replace(/\D/g, ''), v = t==='' ? null : parseInt(t, 10), k = rpChave(r);
+    if(v==null || v===rpBase(r)) delete RP_ED[k]; else RP_ED[k] = v;
+    rpSalvar(); r.repo = rpValor(r); td.outerHTML = rpTd(r);
+  });
+  tb.addEventListener('keydown', function(e){
+    if(e.key!=='Enter' || !e.target.classList.contains('rp-in')) return;
+    e.preventDefault();
+    var todos = Array.prototype.slice.call(tb.querySelectorAll('.rp-in')), i = todos.indexOf(e.target);
+    e.target.blur();
+    var prox = tb.querySelectorAll('.rp-in')[i + (e.shiftKey ? -1 : 1)];
+    if(prox){ prox.focus({preventScroll:true}); prox.select(); }
+  });
+  tb.addEventListener('focusin', function(e){ if(e.target.classList.contains('rp-in')){ e.target.select(); var tr = e.target.closest('tr'); if(tr) tr.scrollIntoView({block:'center', behavior:'smooth'}); } });
+  tb.addEventListener('click', function(e){
+    var b = e.target.closest('.rp-rst'); if(!b) return;
+    var td = b.closest('td'), r = linha(td); if(!r) return;
+    delete RP_ED[rpChave(r)]; rpSalvar(); r.repo = rpValor(r); td.outerHTML = rpTd(r);
+  });
+  th.addEventListener('mousedown', function(e){ var b = e.target.closest('[data-rpp]'); if(b){ e.preventDefault(); rpDiasAplicar(+b.getAttribute('data-rpp')); } });
+  th.addEventListener('click', function(e){ e.stopPropagation(); var b = e.target.closest('[data-rpp]'); if(b && e.detail===0) rpDiasAplicar(+b.getAttribute('data-rpp')); });
+  th.addEventListener('change', function(e){ if(e.target.id==='rpDias') rpDiasAplicar(0); });
+  th.addEventListener('keydown', function(e){ if(e.key==='Enter' && e.target.id==='rpDias'){ e.preventDefault(); e.target.blur(); } });
+  th.addEventListener('focusin', function(e){ if(e.target.id==='rpDias') e.target.select(); });
+}
+
+/* CSV de compra: sem cabeçalho · código do produto ; quantidade (Reposição) ; código da loja — sempre por loja */
+function csvCompra(){
+  var btn = document.getElementById('exportCompra');
+  if(btn.disabled) return;
+  function gerar(){
+    btn.disabled = false;
+    rpcMemo('bi_loja_codigos', {}).catch(function(){ return null; }).then(function(cods){
+      var mapa = {}, semFn = !Array.isArray(cods);
+      (cods||[]).forEach(function(c){ mapa[String(c[0]).trim().toUpperCase()] = c[1]; });
+      var rows = tableRows().filter(function(r){ return r.repo > 0; }), semCod = {};
+      if(!rows.length){ toast('Nenhum item com reposição acima de zero nos filtros atuais.'); return; }
+      var lines = rows.map(function(r){
+        var c = mapa[String(r.loja).trim().toUpperCase()];
+        if(!c){ semCod[r.loja] = 1; c = r.loja; }
+        return [r.codigo, r.repo, c].join(';');
+      });
+      var d = new Date(), dt = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      baixarBlob(new Blob([lines.join('\r\n')+'\r\n'], {type:'text/csv;charset=utf-8'}), 'compra_reposicao_'+dt+'.csv');
+      var falta = Object.keys(semCod);
+      toast(fmtUn(lines.length)+' linha(s) no CSV de compra'+(semFn ? ' · o banco ainda não tem os códigos das lojas (falta rodar o SQL): saiu o nome da loja' : (falta.length ? ' · sem código de loja, saiu o nome: '+falta.join(', ') : '')));
+    });
+  }
+  if(TAB_LOJA.on && TAB_LOJA.rows){ gerar(); return; }
+  // a compra é por loja: muda a tabela para Por loja e gera quando os números de cada loja chegarem
+  if(!TAB_LOJA.on){ TAB_LOJA.on = true; state.page = 1; renderTable(); }
+  btn.disabled = true; toast('A compra é por loja: a tabela passou para Por loja. O arquivo sai assim que os números de cada loja carregarem.');
+  var t0 = Date.now(), iv = setInterval(function(){
+    if(TAB_LOJA.rows){ clearInterval(iv); gerar(); }
+    else if(TAB_LOJA.erro || Date.now()-t0 > 120000){ clearInterval(iv); btn.disabled = false; toast('Não foi possível carregar os números por loja para o CSV de compra.'); }
+  }, 400);
+}
+
 /* abas da guia Estoque: Visão geral · Movimentação · Estoque parado · Produtos */
 var ES_ABA = 'geral';
 function esAba(k, semRender){
@@ -8046,10 +8165,11 @@ function tableRows(){
     return {
       id:p.id, codigo:p.codigo, nome:descSemCod(p.nome, p.codigo), marca:p.marca, categoria:p.categoria,
       modelo: p.modelo+(p.modelo2?' / '+p.modelo2:''), estoqueAtual:p.estoqueAtual, estoqueMin:p.estoqueMin,
-      qtdPeriodo:qtdPeriodo, fatPeriodo:fatPeriodo, giro:p.giro, status:stockStatus(p), abc:abcMap[p.id], loja:p.loja||'', lojaTit:''
+      qtdPeriodo:qtdPeriodo, fatPeriodo:fatPeriodo, giro:p.giro, status:stockStatus(p), abc:abcMap[p.id], loja:p.loja||'', lojaTit:'', mediaMes:(p.qtd||0)/MESES_EFETIVOS
     };
   });
   if(!TAB_LOJA.on) rows.forEach(function(r){ var o = lojasEst(+r.id); r.loja = o.txt; r.lojaTit = o.tit; });
+  rows.forEach(function(r){ r.repo = rpValor(r); });
   if(state.abcFilter){ rows = rows.filter(function(r){ return r.abc===state.abcFilter; }); }
   if(state.search){
     var q = state.search.toLowerCase();
@@ -8074,26 +8194,27 @@ function renderTable(){
   document.getElementById('productsTable').classList.toggle('por-loja', TAB_LOJA.on);
   Array.prototype.forEach.call(document.querySelectorAll('#tabModo [data-tm]'), function(b){ b.setAttribute('aria-pressed', String((b.getAttribute('data-tm')==='loja')===TAB_LOJA.on)); });
   if(TAB_LOJA.on && !TAB_LOJA.rows){
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:var(--text-muted); padding:26px;">'+(TAB_LOJA.erro ? 'Não foi possível carregar os números por loja. Tente de novo.' : 'Carregando os números de cada loja…')+'</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; color:var(--text-muted); padding:26px;">'+(TAB_LOJA.erro ? 'Não foi possível carregar os números por loja. Tente de novo.' : 'Carregando os números de cada loja…')+'</td></tr>';
     document.getElementById('pagination').innerHTML = ''; return;
   }
   if(!pageRows.length){
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:var(--text-muted); padding:26px;">Nenhum produto encontrado para os filtros e busca atuais.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; color:var(--text-muted); padding:26px;">Nenhum produto encontrado para os filtros e busca atuais.</td></tr>';
   } else {
     tbody.innerHTML = pageRows.map(function(r){
       return '<tr data-id="'+r.id+'">' +
-        '<td class="mono">'+r.codigo+'</td>' +
-        '<td class="prodcell">'+r.nome+'</td>' +
-        '<td class="col-loja"'+(r.lojaTit && r.lojaTit!==r.loja ? ' title="'+escapeHtml(r.lojaTit)+'"' : '')+'>'+escapeHtml(r.loja)+'</td>' +
-        '<td>'+r.marca+'</td>' +
-        '<td>'+r.categoria+'</td>' +
-        '<td>'+r.modelo+'</td>' +
-        '<td class="mono">'+r.estoqueAtual+'</td>' +
-        '<td class="mono">'+r.estoqueMin+'</td>' +
-        '<td class="mono">'+fmtUn(r.qtdPeriodo)+'</td>' +
-        '<td class="mono">'+fmtMoney(r.fatPeriodo)+'</td>' +
-        '<td class="mono">'+giroTxt(r.giro)+'</td>' +
-        '<td><span class="status-pill"><i style="background:'+STATUS_COLOR[r.status]+'"></i>'+STATUS_LABEL[r.status]+'</span></td>' +
+        '<td class="mono tc-codigo">'+r.codigo+'</td>' +
+        '<td class="prodcell tc-nome">'+r.nome+'</td>' +
+        '<td class="tc-loja"'+(r.lojaTit && r.lojaTit!==r.loja ? ' title="'+escapeHtml(r.lojaTit)+'"' : '')+'>'+escapeHtml(r.loja)+'</td>' +
+        '<td class="tc-marca">'+r.marca+'</td>' +
+        '<td class="tc-categoria">'+r.categoria+'</td>' +
+        '<td class="tc-modelo">'+r.modelo+'</td>' +
+        '<td class="mono tc-estoqueAtual">'+r.estoqueAtual+'</td>' +
+        '<td class="mono tc-estoqueMin">'+r.estoqueMin+'</td>' +
+        '<td class="mono tc-qtdPeriodo">'+fmtUn(r.qtdPeriodo)+'</td>' +
+        '<td class="mono tc-fatPeriodo">'+fmtMoney(r.fatPeriodo)+'</td>' +
+        '<td class="mono tc-giro">'+giroTxt(r.giro)+'</td>' +
+        '<td class="tc-status"><span class="status-pill"><i style="background:'+STATUS_COLOR[r.status]+'"></i>'+STATUS_LABEL[r.status]+'</span></td>' +
+        rpTd(r) +
       '</tr>';
     }).join('');
   }
@@ -12670,6 +12791,7 @@ function bindEvents(){
 
   // row / alert / rank click -> drawer  (event delegation)
   document.getElementById('productsTbody').addEventListener('click', function(ev){
+    if(ev.target.closest('td.rp')) return;
     var tr = ev.target.closest('tr[data-id]'); if(tr) openDrawer(tr.getAttribute('data-id'));
   });
   document.getElementById('alertsList').addEventListener('click', function(ev){
@@ -12681,12 +12803,22 @@ function bindEvents(){
   // export
   document.getElementById('esGuias').addEventListener('click', function(ev){ var b = ev.target.closest('[data-es]'); if(!b) return; esAba(b.getAttribute('data-es')); });
   (function(){ var k = null; try{ k = localStorage.getItem('nc_es_aba'); }catch(e){} if(k && document.querySelector('#esGuias [data-es="'+k+'"]')) esAba(k, true); })();
+  tcAplicar(); rpHd(); rpLigar();
+  document.getElementById('tcMenu').addEventListener('change', function(e){ var k = e.target.getAttribute('data-tc'); if(!k) return; TC_OFF = TC_OFF.filter(function(x){ return x!==k; }); if(!e.target.checked) TC_OFF.push(k); tcSalvar(); });
+  document.getElementById('tcMenu').addEventListener('click', function(e){ e.stopPropagation(); var b = e.target.closest('[data-tca]'); if(!b) return; TC_OFF = b.getAttribute('data-tca')==='min' ? TC_COLS.filter(function(c){ return !c.obr; }).map(function(c){ return c.k; }) : []; tcSalvar(); });
+  document.addEventListener('click', function(e){ var d = document.getElementById('tcPick'); if(d && d.open && !d.contains(e.target)) d.open = false; });
   document.getElementById('tabModo').addEventListener('click', function(ev){ var b = ev.target.closest('[data-tm]'); if(!b) return; var on = b.getAttribute('data-tm')==='loja'; if(on===TAB_LOJA.on) return; TAB_LOJA.on = on; state.page = 1; renderTable(); });
+  document.getElementById('exportCompra').addEventListener('click', csvCompra);
   document.getElementById('exportXlsx').addEventListener('click', function(){
     var rows = tableRows();
-    var header = ['Código','Produto','Loja'].concat(['Marca','Categoria','Aplicação','Estoque Atual','Estoque Mínimo','Vendas','Faturamento','Giro (dias)','Status']);
-    var lines = [header.join(';')].concat(rows.map(function(r){
-      return [r.codigo,r.nome,TAB_LOJA.on ? r.loja : (r.lojaTit||r.loja)].concat([r.marca,r.categoria,r.modelo,r.estoqueAtual,r.estoqueMin,Math.round(r.qtdPeriodo),Math.round(r.fatPeriodo),giroTxt(r.giro),STATUS_LABEL[r.status]]).join(';');
+    var EXP = {codigo:['Código', function(r){ return r.codigo; }], nome:['Produto', function(r){ return r.nome; }], loja:['Loja', function(r){ return TAB_LOJA.on ? r.loja : (r.lojaTit||r.loja); }],
+      marca:['Marca', function(r){ return r.marca; }], categoria:['Categoria', function(r){ return r.categoria; }], modelo:['Aplicação', function(r){ return r.modelo; }],
+      estoqueAtual:['Estoque Atual', function(r){ return r.estoqueAtual; }], estoqueMin:['Estoque Mínimo', function(r){ return r.estoqueMin; }], qtdPeriodo:['Vendas', function(r){ return Math.round(r.qtdPeriodo); }],
+      fatPeriodo:['Faturamento', function(r){ return Math.round(r.fatPeriodo); }], giro:['Giro (dias)', function(r){ return giroTxt(r.giro); }], status:['Status', function(r){ return STATUS_LABEL[r.status]; }],
+      repo:['Reposição ('+RP_DIAS+' dias)', function(r){ return r.repo; }]};
+    var cols = TC_COLS.filter(function(c){ return tcOn(c.k); }).map(function(c){ return EXP[c.k]; });
+    var lines = [cols.map(function(c){ return c[0]; }).join(';')].concat(rows.map(function(r){
+      return cols.map(function(c){ return String(c[1](r)==null ? '' : c[1](r)).replace(/;/g, ','); }).join(';');
     }));
     var csv = lines.join('\n');
     function done(){ toast('CSV copiado (' + rows.length + ' linhas) — cole em uma planilha do Excel.'); }
