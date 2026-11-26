@@ -10672,9 +10672,11 @@ function vhPainel(){
   if(!R) vhResBuscar(f, S.dia, false, function(){ if(vpVisivel()) vhPainel(); });
   else if(!R.erro) VH.vpUlt = R;
   var RR = R && !R.erro ? R : VH.vpUlt;
+  // top vendedores dos painéis: sem os vendedores do e-commerce
+  var vendSE = RR ? (RR.vendedores || []).filter(function(r){ return !/E-?COMMERCE/i.test(dimNome('vendedor', r[0]) || ''); }) : null;
   function lista(tit, sub, rows, nome, dim, nMax){
     var cv = rows===RR.clientes ? (RR.cli_vend || {}) : null;   // clientes: vendedor que mais vendeu para ele no dia
-    var ehVend = rows===RR.vendedores;
+    var ehVend = rows===RR.vendedores || rows===vendSE;
     var it = (rows||[]).map(function(r){ var vd = cv && cv[r[0]]!=null ? dimNome('vendedor', cv[r[0]]) : '', nm = nome(r);
       return {nome:nm, h:c2(r[1]), m:c2(r[4])/(RR.nd||1), vd: vd ? nomeCurtoVend(vd) : '', md: ehVend ? vpMetaDiaVend(nm, S.dD) : null, sg: ehVend ? c2((RR.vend_seg||{})[r[0]]||0) : 0}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, nMax || 10);
     return '<div class="vp-d"><h4>'+tit+'<small>'+sub+'</small></h4>'+(it.length ? it.map(function(o, i){
@@ -10685,7 +10687,7 @@ function vhPainel(){
   var nm7 = function(r){ return String(r[7] || '#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '); };
   // Visual 2: top 5 de cada lista, dois quadros largos por vez, trocando a cada 10 s
   var pg0 = (VH.dpg || 0) % 2; if(!VH.dpgT) VH.dpgT = Date.now();
-  var ds = RR ? '<div class="vp-dest vp-dest2"><div class="vp-dpg'+(pg0===0 ? ' on' : '')+'" data-p="0">' + lista('Top 5 vendedores', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }, null, 5) +
+  var ds = RR ? '<div class="vp-dest vp-dest2"><div class="vp-dpg'+(pg0===0 ? ' on' : '')+'" data-p="0">' + lista('Top 5 vendedores', 'acima da própria média', vendSE, function(r){ return dimNome('vendedor', r[0]) || '—'; }, null, 5) +
       lista('Top 5 clientes', 'compras do dia', RR.clientes, nm7, null, 5) + '</div><div class="vp-dpg'+(pg0===1 ? ' on' : '')+'" data-p="1">' + lista('Top 5 produtos', 'faturamento do dia', RR.produtos, nm7, null, 5) + vpNovidades(S.E, 5) + '</div></div>'
     : (R && R.erro ? '' : '<p class="note-muted status-txt">Carregando os destaques do dia…</p>');
   if(VV===4){
@@ -10698,12 +10700,12 @@ function vhPainel(){
     var tL = S.lojas.map(function(o){ var m = nmB[o.nome]; return {nome: m ? m[1] : o.nome, v:o.r.t.h.f, meta: m ? m[2] : 0}; });
     S.canais.forEach(function(x){ if(x.k==='ECOMMERCE') tL.push({nome:'E-commerce', v:x.t.h.f, meta:(nmB.ECOMMERCE||[])[2]||0}); });
     tL = tL.sort(function(a, b){ return b.v - a.v; }).slice(0, 10);
-    box.innerHTML = bf2Painel(S, RR, [['Lojas', tL], ['Vendedores', RR ? top(RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }) : null],
+    box.innerHTML = bf2Painel(S, RR, [['Lojas', tL], ['Vendedores', RR ? top(vendSE, function(r){ return dimNome('vendedor', r[0]) || '—'; }) : null],
       ['Clientes', RR ? top(RR.clientes, nmC) : null],
       ['Categorias', !RR ? null : !RR.subcat_top ? false : RR.subcat_top.map(function(r){ var n = dimNome('subcategoria', r[0]); return {nome: n==='N/D' ? '#'+r[0] : n, v:c2(r[1]), q:+r[2] || 0}; })],
       ['Produtos', RR ? top(RR.produtos, nmP) : null]]);
   } else if(V2){
-    var dsB = RR ? '<div class="vp-dest">' + lista('Top 5 vendedores', 'acima da própria média', RR.vendedores, function(r){ return dimNome('vendedor', r[0]) || '—'; }, null, 5) +
+    var dsB = RR ? '<div class="vp-dest">' + lista('Top 5 vendedores', 'acima da própria média', vendSE, function(r){ return dimNome('vendedor', r[0]) || '—'; }, null, 5) +
       lista('Top 5 clientes', 'compras do dia', RR.clientes, nm7, null, 5) + lista('Top 5 produtos', 'faturamento do dia', RR.produtos, nm7, null, 5) + '</div>' : '';
     box.innerHTML = bfPainel(S, RR, dsB);
   } else box.innerHTML = kp + cn + lj + (vpVis()===3 ? '' : ds) + vpTicker(RR, S.E);   // Visual 3: sem os destaques, cards maiores
