@@ -10612,7 +10612,7 @@ function bf2Dur(i){ var s = document.querySelector('#vpBody .bf2-s[data-i="'+i+'
 var BF2F = {cfg:null, fotos:null, t:0, ok:true}, BF2F_LOGO = {id:'logo', legenda:'Imagem de teste (logo)', img:'icons/black-friday.png'};
 function bf2fTeste(){ try{ return localStorage.getItem('nc_bf2f_teste')==='1'; } catch(e){ return false; } }
 function bf2fCarregar(forcar){
-  if(!forcar && BF2F.t && Date.now() - BF2F.t < 5*60*1000) return;
+  if(!forcar && BF2F.t && (!BF2F.ok || Date.now() - BF2F.t < 5*60*1000)) return;   // sem a tabela de fotos no banco: não fica perguntando
   BF2F.t = Date.now();
   var db = window.__NC_supa || supa;
   Promise.all([
@@ -13388,6 +13388,7 @@ function autoOcupado(){
 function autoCargaTentar(){
   if(!novaCargaPendente || typeof state==='undefined') return;
   if(state.currentView==='dashboard') return;
+  if(document.hidden) return;   // aba em segundo plano não recarrega (economiza Egress); atualiza quando a pessoa voltar (visibilitychange)
   if(autoOcupado()){ if(!AUTO_ESPERA) AUTO_ESPERA = setTimeout(function(){ AUTO_ESPERA = null; autoCargaTentar(); }, 15000); return; }
   try{
     sessionStorage.setItem('nc_recarga', JSON.stringify({v:state.currentView, aba:(typeof VX!=='undefined' ? VX.aba : null), fs:FS.ativo||null, f:fsCapturar(), y:window.scrollY||0, t:Date.now()}));
