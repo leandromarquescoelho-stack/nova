@@ -10875,11 +10875,16 @@ function vpTicker(RR, E, TK, soDia){
   var nd = (RR && RR.nd) || 1;
   if(tkLigado('alta')) ((RR && RR.produtos) || []).concat((RR && RR.produtos_q) || []).forEach(function(r){
     var id = r[0]; if(vistos[id]) return;
-    var h = c2(r[1]), m = c2(r[4])/nd, q = +r[3] || 0, qm = (+r[5] || 0)/nd, x = m > 0.5 ? h/m : null;
-    if(x!==null && x < 1.8) return;
+    // em alta por valor OU por quantidade (1,8× a média diária dos 60 dias anteriores); mostra os dois
+    var h = c2(r[1]), m = c2(r[4])/nd, q = +r[3] || 0, qm = (+r[5] || 0)/nd, x = m > 0.5 ? h/m : null, xq = qm > 0 ? q/qm : null;
+    var nov = x===null && xq===null;
+    if(!nov && !((x!==null && x >= 1.8) || (xq!==null && xq >= 1.8))) return;
     vistos[id] = 1;
-    alta.push({t: x===null ? 'NOVIDADE' : 'EM ALTA', c: x===null ? 'var(--vx-pu)' : 'var(--good)', n: nome(r),
-      d: fmtMoney(h)+' hoje · '+fmtUn(q)+' un'+(x===null ? ' · sem venda nos 60 dias anteriores' : ' · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'× a média ('+(qm < 10 ? qm.toFixed(1).replace('.',',') : fmtUn(Math.round(qm)))+' un/dia)')});
+    var xf = function(v){ return (v >= 10 ? fmtUn(Math.round(v)) : v.toFixed(1).replace('.',','))+'×'; };
+    var tipo = nov ? '' : ((x!==null && x >= 1.8) && (xq!==null && xq >= 1.8) ? ' · VALOR E QTD' : ((x!==null && x >= 1.8) ? ' · VALOR' : ' · QTD'));
+    alta.push({t: nov ? 'NOVIDADE' : 'EM ALTA'+tipo, c: nov ? 'var(--vx-pu)' : 'var(--good)', n: nome(r),
+      d: nov ? fmtMoney(h)+' hoje · '+fmtUn(q)+' un · sem venda nos 60 dias anteriores'
+        : 'valor '+fmtMoney(h)+(x!==null ? ' ('+xf(x)+' a média de '+fmtMoney(m)+'/dia)' : ' (sem média)')+' · qtd '+fmtUn(q)+' un'+(xq!==null ? ' ('+xf(xq)+' a média de '+(qm < 10 ? qm.toFixed(1).replace('.',',') : fmtUn(Math.round(qm)))+' un/dia)' : ' (sem média)')});
   });
   // intercala estoque e em alta, até 8 de cada
   var mix = []; it = it.slice(0, 8); alta = alta.slice(0, 8);
