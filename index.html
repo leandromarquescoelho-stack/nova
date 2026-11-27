@@ -3464,7 +3464,7 @@ table.data-table.vp-tbl{min-width:720px;}
           <label><input type="checkbox" id="bf2fTeste"> Testar só no meu navegador</label>
           <label>Cada foto fica<select id="bf2fSeg"><option value="5">5 s</option><option value="8">8 s</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option></select></label>
         </div>
-        <div class="ra-acts"><button type="button" class="tbtn" id="bf2fSalvar">Salvar</button><input type="text" id="bf2fLeg" maxlength="120" placeholder="Legenda (ex.: Prêmio 1 · Jogo de ferramentas)" style="min-width:240px;"><button type="button" class="btn-sm" id="bf2fAdd">+ Adicionar fotos</button><input type="file" id="bf2fArq" accept="image/*" multiple hidden><span id="bf2fMsg" class="ra-msg"></span></div>
+        <div class="ra-acts"><button type="button" class="tbtn" id="bf2fSalvar">Salvar</button><input type="text" id="bf2fLeg" maxlength="120" placeholder="Legenda (ex.: Prêmio 1 · Jogo de ferramentas)" style="min-width:240px;"><button type="button" class="btn-sm" id="bf2fAdd">+ Adicionar fotos</button><button type="button" class="btn-sm" id="bf2fGrade" title="Junta as fotos lado a lado, 3 ou 4 por quadro, numa imagem só. As TVs mostram sem precisar recarregar.">Lado a lado (3 a 4 por quadro)</button><input type="file" id="bf2fArq" accept="image/*" multiple hidden><span id="bf2fMsg" class="ra-msg"></span></div>
         <div id="bf2fLista" class="bf2f-l"></div>
       </div>
       <div class="panel" style="margin-bottom:14px;" id="tkPanel">
@@ -14049,6 +14049,51 @@ function bf2fReduzir(arq){   // reduz no navegador (lado maior 1280 px, JPEG ~10
     im.src = u;
   });
 }
+/* "Lado a lado": junta as fotos (3 ou 4 por quadro) numa imagem só de 2400×800 e cadastra como foto; as originais ficam guardadas
+   (não mostradas). Funciona nas TVs com a versão do site que já está aberta, porque para elas é só mais uma foto. */
+var BF2F_GW = 2400, BF2F_GH = 800;
+function bf2fImg(src){ return new Promise(function(ok){ var im = new Image(); im.onload = function(){ ok(im); }; im.onerror = function(){ ok(null); }; im.src = src; }); }
+function bf2fGrupos(n){ if(!n) return []; var g = Math.ceil(n/4), por = Math.ceil(n/g), out = []; for(var i = 0; i < n; i += por) out.push([i, Math.min(n, i+por)]); return out; }
+function bf2fDesenhar(itens){
+  var c = document.createElement('canvas'); c.width = BF2F_GW; c.height = BF2F_GH;
+  var x = c.getContext('2d'), n = itens.length, gap = 24, w = (BF2F_GW - gap*(n-1)) / n, faixa = itens.some(function(t){ return t.leg; }) ? 78 : 0, h = BF2F_GH - faixa;
+  x.fillStyle = '#000'; x.fillRect(0, 0, BF2F_GW, BF2F_GH);
+  itens.forEach(function(t, i){
+    var x0 = i*(w+gap), k = Math.min(w / t.im.width, h / t.im.height), dw = t.im.width*k, dh = t.im.height*k;
+    x.drawImage(t.im, x0 + (w-dw)/2, (h-dh)/2, dw, dh);
+    if(t.leg){
+      x.fillStyle = '#f5b400'; x.font = '700 40px Sora, Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      var txt = t.leg; while(x.measureText(txt).width > w - 16 && txt.length > 3) txt = txt.slice(0, -2);
+      if(txt !== t.leg) txt = txt.replace(/.$/, '…');
+      x.fillText(txt, x0 + w/2, h + faixa/2);
+    }
+  });
+  var q = 0.8, d = c.toDataURL('image/jpeg', q); while(d.length > 700000 && q > 0.4){ q -= 0.1; d = c.toDataURL('image/jpeg', q); }
+  return d;
+}
+async function bf2fMontar(){
+  var db = window.__NC_supa || supa;
+  bf2fMsg('Montando os quadros lado a lado…');
+  var r = await db.from('bi_bf2_foto').select('id,legenda,img,ativa').order('id');
+  if(r.error) throw r.error;
+  var orig = [], grades = [];
+  for(var i = 0; i < (r.data||[]).length; i++){
+    var f = r.data[i], im = await bf2fImg(f.img); if(!im) continue;
+    if(im.width === BF2F_GW && im.height === BF2F_GH) grades.push(f); else orig.push({f:f, im:im, leg:(f.legenda||'').trim()});
+  }
+  if(!orig.length){ bf2fMsg('Nenhuma foto para juntar.', 'var(--text-muted)'); return; }
+  var G = bf2fGrupos(orig.length);
+  for(var g = 0; g < G.length; g++){
+    bf2fMsg('Montando quadro '+(g+1)+' de '+G.length+'…');
+    await window.__NC_rpc('bi_bf2_foto_gravar', {p:{img: bf2fDesenhar(orig.slice(G[g][0], G[g][1])), legenda:''}});
+  }
+  for(var a = 0; a < grades.length; a++) await window.__NC_rpc('bi_bf2_foto_excluir', {p_id: grades[a].id});   // quadros antigos saem
+  for(var o = 0; o < orig.length; o++) if(orig[o].f.ativa) await window.__NC_rpc('bi_bf2_foto_gravar', {p:{id: orig[o].f.id, ativa:false}});   // originais guardadas, sem mostrar
+  try{ localStorage.setItem('nc_bf2f_grade', '1'); } catch(e){}
+  bf2fMsg(orig.length+' fotos em '+G.length+' quadro'+(G.length>1 ? 's' : '')+' lado a lado. As TVs passam a mostrar em até 5 minutos.', 'var(--good)');
+  bf2fCarregar(true);
+}
+function bf2fGradeLigada(){ try{ return localStorage.getItem('nc_bf2f_grade')==='1'; } catch(e){ return false; } }
 function bf2fRenderCfg(){
   var box = document.getElementById('bf2fLista'); if(!box) return;
   if(!(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi')){ var pn = document.getElementById('bf2fPanel'); if(pn) pn.style.display = 'none'; return; }
@@ -14078,7 +14123,14 @@ function bf2fRenderCfg(){
       try{ var d = await bf2fReduzir(arqs[i]); await window.__NC_rpc('bi_bf2_foto_gravar', {p:{img:d, legenda:leg}}); }
       catch(e){ bf2fMsg(bf2fErro(e), 'var(--critical)'); return; }
     }
-    document.getElementById('bf2fLeg').value = ''; bf2fMsg(arqs.length ? 'Foto'+(arqs.length>1 ? 's adicionadas.' : ' adicionada.') : '', 'var(--good)'); bf2fCarregar(true);
+    document.getElementById('bf2fLeg').value = ''; bf2fMsg(arqs.length ? 'Foto'+(arqs.length>1 ? 's adicionadas.' : ' adicionada.') : '', 'var(--good)');
+    if(arqs.length && bf2fGradeLigada()){ try{ await bf2fMontar(); } catch(e){ bf2fMsg(bf2fErro(e), 'var(--critical)'); } }   // já está lado a lado: refaz os quadros com a foto nova
+    else bf2fCarregar(true);
+  });
+  document.getElementById('bf2fGrade').addEventListener('click', async function(){
+    this.disabled = true;
+    try{ await bf2fMontar(); } catch(e){ bf2fMsg(bf2fErro(e), 'var(--critical)'); }
+    this.disabled = false;
   });
   box.addEventListener('change', function(e){
     var el = e.target, it = el.closest('.bf2f-i'), id = it && it.getAttribute('data-id'), k = el.getAttribute('data-bf2f'); if(!id || !k) return;
