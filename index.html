@@ -10773,10 +10773,12 @@ function vhPainel(){
     var tL = S.lojas.map(function(o){ var m = nmB[o.nome]; return {nome: m ? m[1] : o.nome, v:o.r.t.h.f, meta: m ? m[2] : 0}; });
     S.canais.forEach(function(x){ if(x.k==='ECOMMERCE') tL.push({nome:'E-commerce', v:x.t.h.f, meta:(nmB.ECOMMERCE||[])[2]||0}); });
     tL = tL.sort(function(a, b){ return b.v - a.v; }).slice(0, 10);
-    box.innerHTML = bf2Painel(S, RR, [['Lojas', tL], ['Vendedores', RR ? top(vendSE, function(r){ return dimNome('vendedor', r[0]) || '—'; }) : null],
-      ['Clientes', RR ? top(RR.clientes, nmC) : null],
+    // top 10 pelo faturamento do dia (vendedores_t etc.); banco sem o SQL novo: usa as listas de destaque
+    var semEcm = function(L){ return (L || []).filter(function(r){ return !/E-?COMMERCE/i.test(dimNome('vendedor', r[0]) || ''); }); };
+    box.innerHTML = bf2Painel(S, RR, [['Lojas', tL], ['Vendedores', RR ? top(RR.vendedores_t ? semEcm(RR.vendedores_t) : vendSE, function(r){ return dimNome('vendedor', r[0]) || '—'; }) : null],
+      ['Clientes', RR ? top(RR.clientes_t || RR.clientes, nmC) : null],
       ['Categorias', !RR ? null : !RR.subcat_top ? false : RR.subcat_top.map(function(r){ var n = dimNome('subcategoria', r[0]); return {nome: n==='N/D' ? '#'+r[0] : n, v:c2(r[1]), q:+r[2] || 0}; })],
-      ['Produtos', RR ? top(RR.produtos, nmP) : null]]);
+      ['Produtos', RR ? top(RR.produtos_t || RR.produtos, nmP) : null]]);
   } else if(V2){
     var dsB = RR ? '<div class="vp-dest">' + lista('Top 5 vendedores', 'acima da própria média', vendSE, function(r){ return dimNome('vendedor', r[0]) || '—'; }, null, 5) +
       lista('Top 5 clientes', 'compras do dia', RR.clientes, nm7, null, 5) + lista('Top 5 produtos', 'faturamento do dia', RR.produtos, nm7, null, 5) + '</div>' : '';
