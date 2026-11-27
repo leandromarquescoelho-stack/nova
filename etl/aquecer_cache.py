@@ -44,10 +44,17 @@ def miudo(sql):
     return 'select octet_length((' + sql + ')::text)'   # subconsulta escalar: o banco é obrigado a calcular
 
 
-def entrada_sql(hoje, canais):
-    """O que o site pede logo depois do login (mesmos parâmetros, para usar a mesma resposta guardada)."""
+def entrada_sql(hoje, canais, ae=None):
+    """O que o site pede logo depois do login (mesmos parâmetros, para usar a mesma resposta guardada).
+    Primeiro o ticker dos visuais BF/BF2 (filtro Atacado + E-commerce): são as TVs, que pedem tudo ao mesmo tempo logo após a carga."""
     f, d = '{}', hoje.isoformat()
-    entrada = [('select public.bi_metas_vend()', ()),
+    entrada = []
+    if ae:
+        fae = json.dumps({'canal': ae})
+        entrada += [('select public.bi_ticker(%s::jsonb, %s::date)', (fae, d)),
+                    ('select public.bi_vendas_hoje_estoque(%s::jsonb, %s::date)', (fae, d)),
+                    ('select public.bi_vendas_destaques(%s::jsonb, %s::date)', (fae, d))]
+    entrada += [('select public.bi_metas_vend()', ()),
                ('select public.bi_vendas_hoje(%s::jsonb, %s::date)', (f, d)),
                ('select public.bi_vendas_hoje_estoque(%s::jsonb, %s::date)', (f, d)),
                ('select public.bi_ticker(%s::jsonb, %s::date)', (f, d)),
@@ -60,7 +67,7 @@ def entrada_sql(hoje, canais):
     return entrada
 
 
-def aquecer_escopo(url, uid, hoje, canais, limite, com_produtos, fase):
+def aquecer_escopo(url, uid, hoje, canais, limite, com_produtos, fase, ae=None):
     """Uma conexão por escopo. Fase 1: tela de entrada (Vendas de hoje, ticker, destaques, metas).
     Fase 2: painel geral e aba Vendedores, enquanto houver tempo."""
     conn, cur = conectar(url, uid)
@@ -71,7 +78,7 @@ def aquecer_escopo(url, uid, hoje, canais, limite, com_produtos, fase):
         if not fim:
             return False
         if fase == 1:
-            for sql, par in entrada_sql(hoje, canais):
+            for sql, par in entrada_sql(hoje, canais, ae):
                 try:
                     cur.execute(miudo(sql), par)
                 except psycopg.Error:   # função ausente ou sem permissão ainda: segue com as outras
@@ -112,12 +119,13 @@ def main():
         dims = cur.fetchall()
         on = [i for i, v in dims if v == 'ECOMMERCE']
         canais = ([i for i, v in dims if v != 'ECOMMERCE'], on)
+        ae = sorted(i for i, v in dims if ''.join(ch for ch in str(v).upper() if ch.isalpha()) in ('ATACADO', 'ECOMMERCE'))   # mesmo filtro do ticker BF/BF2
         # usuários com o mesmo acesso usam as mesmas respostas guardadas: aquece um só por acesso
         escolhidos, vistos = [], set()
         for uid in usuarios:
             cur.execute("select set_config('request.jwt.claims', %s, false)", (json.dumps({'sub': uid, 'role': 'authenticated', 'aal': 'aal2'}),))
             try:
-                cur.execute("select private.bi_where('{}'::jsonb) || '|' || coalesce((select role from public.profiles where id = %s), '')", (uid,))
+                cur.execute("select private.bi_where('{}'::jsonb) || '|' || coalesce((select role::text from public.profiles where id = %s), '')", (uid,))
                 escopo = cur.fetchone()[0]
             except Exception:  # noqa: BLE001  (sem acesso ou sem a função)
                 escopo = uid
@@ -130,7 +138,7 @@ def main():
     # primeiro a tela de entrada de todos os acessos, depois o resto enquanto houver tempo
     for fase in (1, 2):
         with ThreadPoolExecutor(max_workers=max(1, paralelo)) as ex:
-            tarefas = [ex.submit(aquecer_escopo, url, uid, hoje, canais, limite, i == 0, fase) for i, uid in enumerate(escolhidos)]
+            tarefas = [ex.submit(aquecer_escopo, url, uid, hoje, canais, limite, i == 0, fase, ae) for i, uid in enumerate(escolhidos)]
             for t in tarefas:
                 try:
                     ok += 1 if (t.result() and fase == 1) else 0
