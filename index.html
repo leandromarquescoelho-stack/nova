@@ -3443,8 +3443,8 @@ table.data-table.vp-tbl{min-width:720px;}
           <div><h2>Tempos de atualização</h2><div class="psub">Geral: de quanto em quanto tempo o banco procura planilha nova e as guias do site conferem se chegou carga nova. Dashboard: de quanto em quanto tempo o painel confere. Sem planilha nova, nada é recarregado.</div></div>
         </div>
         <div class="atu-g">
-          <label>Atualização geral<select id="atuGeral"><option value="5">a cada 5 minutos</option><option value="10">a cada 10 minutos</option><option value="15">a cada 15 minutos</option><option value="20">a cada 20 minutos</option><option value="30">a cada 30 minutos</option><option value="60">a cada 1 hora</option></select></label>
-          <label>Atualização do Dashboard<select id="atuDash"><option value="1">a cada 1 minuto</option><option value="2">a cada 2 minutos</option><option value="3">a cada 3 minutos</option><option value="5">a cada 5 minutos</option><option value="10">a cada 10 minutos</option></select></label>
+          <label>Atualização geral<select id="atuGeral"><option value="5">a cada 5 minutos</option><option value="10">a cada 10 minutos</option><option value="15">a cada 15 minutos</option><option value="20">a cada 20 minutos</option><option value="30">a cada 30 minutos</option><option value="60">a cada 1 hora</option><option value="120">a cada 2 horas</option><option value="180">a cada 3 horas</option><option value="240">a cada 4 horas</option><option value="300">a cada 5 horas</option></select></label>
+          <label>Atualização do Dashboard<select id="atuDash"><option value="1">a cada 1 minuto</option><option value="2">a cada 2 minutos</option><option value="3">a cada 3 minutos</option><option value="5">a cada 5 minutos</option><option value="10">a cada 10 minutos</option><option value="60">a cada 1 hora</option><option value="120">a cada 2 horas</option><option value="180">a cada 3 horas</option><option value="240">a cada 4 horas</option><option value="300">a cada 5 horas</option></select></label>
         </div>
         <div class="ra-acts"><button type="button" class="tbtn" id="atuSalvar">Salvar</button><span id="atuMsg" class="ra-msg"></span></div>
       </div>
@@ -10431,7 +10431,7 @@ setInterval(function(){
   if(px){
     var novo = VH.novaEm && (Date.now() - VH.novaEm) < 10*60*1000;
     px.className = novo ? 'novo' : '';
-    px.textContent = (novo ? 'carga nova recebida às '+vpHora(VH.novaEm)+' · ' : 'atualiza sozinho · ')+'próxima busca em '+Math.floor(falta/60)+':'+String(falta%60).padStart(2,'0');
+    px.textContent = (novo ? 'carga nova recebida às '+vpHora(VH.novaEm)+' · ' : 'atualiza sozinho · ')+'próxima busca em '+(falta >= 3600 ? Math.floor(falta/3600)+'h'+String(Math.floor(falta%3600/60)).padStart(2,'0') : Math.floor(falta/60)+':'+String(falta%60).padStart(2,'0'));
   }
   if(falta<=0) vpChecar(false);
   // passou da meia-noite com a tela aberta: busca o novo dia
