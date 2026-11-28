@@ -13689,6 +13689,7 @@ function userCard(p){
       (USERS_TEM_IA ? '<label class="u-switch" title="'+(p.role==='bi' ? 'O perfil BI sempre tem acesso à IA' : 'Libera o botão Pergunte aos dados para este usuário')+'"><input type="checkbox" class="u-ia" '+(iaDoPerfil(p)?'checked':'')+(p.role==='bi'?' disabled':'')+'><i></i>IA</label>' : '') +
       (st.c==='pend' ? '<button class="tbtn primary u-liberar" type="button">Liberar acesso</button>' : '') +
       '<button class="tbtn u-save" type="button">Salvar</button>' +
+      (ehEu ? '' : '<button class="tbtn u-del" type="button" title="Apaga o login e o cadastro. Para só bloquear, desmarque Acesso e salve." style="color:var(--critical)">Excluir usuário</button>') +
       '<span class="u-msg"></span></div>' +
   '</div>';
 }
@@ -13729,6 +13730,15 @@ function abrirUserPop(id){
   card.querySelector('.u-role').addEventListener('change', function(){ ajustaEscopo(card); });
   card.querySelector('.u-save').addEventListener('click', function(){ salvarCard(card, false); });
   var lib = card.querySelector('.u-liberar'); if(lib) lib.addEventListener('click', function(){ salvarCard(card, true); });
+  var del = card.querySelector('.u-del'); if(del) del.addEventListener('click', function(){
+    var msg = card.querySelector('.u-msg');
+    if(del.getAttribute('data-ok')!=='1'){ del.setAttribute('data-ok', '1'); del.textContent = 'Confirmar exclusão'; setTimeout(function(){ del.removeAttribute('data-ok'); del.textContent = 'Excluir usuário'; }, 5000); return; }
+    del.disabled = true; msg.style.color = 'var(--status-txt)'; msg.textContent = 'Excluindo…';
+    supa.rpc('bi_usuario_excluir', {p_id: card.getAttribute('data-id')}).then(function(r){
+      if(r.error){ del.disabled = false; msg.style.color = 'var(--critical)'; msg.textContent = /Could not find|does not exist/.test(r.error.message||'') ? 'Falta rodar o SQL usuario_excluir no banco.' : 'Erro ao excluir: '+r.error.message; return; }
+      toast('Usuário excluído.'); fecharUserPop(); renderUsersAdmin();
+    });
+  });
   var nm = card.querySelector('.u-nome'); if(nm) nm.focus();
 }
 function ajustaEscopo(card){
