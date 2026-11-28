@@ -526,8 +526,8 @@ body.vp-full-on{overflow:hidden;}
 .vp.vp-fill .bf2-sl{container-type:size; min-height:0;}
 .vp.vp-fill .bf2-s h3{font-size:clamp(18px,6.2cqh,64px); margin:0.4cqh 0 1.6cqh;} .vp.vp-fill .bf2-s h3 small{font-size:clamp(12px,3cqh,30px);}
 .vp.vp-fill .bf2-l{column-gap:clamp(40px,6cqw,140px); row-gap:0;}
-.vp.vp-fill .bf2-l li{grid-template-columns:auto minmax(0,1.25fr) minmax(40px,1fr) 6.7em 0; column-gap:clamp(10px,1.6cqw,34px); padding:0; font-size:clamp(15px,4.8cqh,50px);}
-.vp.vp-fill .bf2-l.tem-q li{grid-template-columns:auto minmax(0,1.25fr) minmax(40px,1fr) 6.7em 5.2em;}
+.vp.vp-fill .bf2-l li{grid-template-columns:auto minmax(0,1fr) 6.7em 0; column-gap:clamp(10px,1.6cqw,34px); padding:0; font-size:clamp(15px,4.8cqh,50px);}
+.vp.vp-fill .bf2-l.tem-q li{grid-template-columns:auto minmax(0,1fr) 6.7em 5.2em;}
 .vp.vp-fill .bf2-rk{width:clamp(26px,6.8cqh,72px); height:clamp(26px,6.8cqh,72px); font-size:clamp(12px,3.4cqh,34px);}
 .vp.vp-fill .bf2-nm{font-size:clamp(14px,4.3cqh,46px);}
 .vp.vp-fill .bf2-bar{height:clamp(8px,2.2cqh,24px);} .vp.vp-fill .bf2-l em{font-size:clamp(11px,3cqh,30px);}
@@ -624,18 +624,20 @@ body.vp-full-on{overflow:hidden;}
 .vp.vp-fill .bf2-ft{min-height:0; overflow:hidden;} .vp.vp-fill .bf2-ft-f{flex:1 1 0; position:relative;} .vp.vp-fill .bf2-ft-f img{position:absolute; inset:0; width:100%; height:100%; max-height:none;} .vp.vp-fill .bf2-ft-l{font-size:clamp(14px,4.4cqh,44px); margin-top:1cqh;}
 .bf2-s h3{margin:4px 0 8px; font-family:'Sora',sans-serif; font-size:22px; font-weight:700; color:#e8e8e8;} .bf2-s h3 b{color:#f5b400;} .bf2-s h3 small{font-size:13px; color:#9b9b9b; font-weight:500; margin-left:10px;}
 .bf2-l{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; grid-auto-flow:column; grid-template-rows:repeat(5, auto); column-gap:28px; row-gap:6px;}
-.bf2-l li{display:grid; grid-template-columns:36px minmax(0,1.3fr) minmax(60px,1fr) 6.7em 0; grid-template-rows:auto auto; column-gap:12px; align-items:center; padding:7px 0; border-bottom:1px solid #222; font-family:'Sora',sans-serif; font-size:19px;}
-.bf2-l.tem-q li{grid-template-columns:36px minmax(0,1.3fr) minmax(60px,1fr) 6.7em 5.2em;}
+.bf2-l li{display:grid; grid-template-columns:36px minmax(0,1fr) 6.7em 0; grid-template-rows:auto auto; column-gap:12px; align-items:center; padding:7px 0; border-bottom:1px solid #222; font-family:'Sora',sans-serif; font-size:19px;}
+.bf2-l.tem-q li{grid-template-columns:36px minmax(0,1fr) 6.7em 5.2em;}
+/* valor com a barra logo abaixo (a barra deixou de ter coluna própria): o nome ganha a largura e quebra linha em vez de cortar */
+.bf2-v{display:flex; flex-direction:column; align-items:stretch; gap:.22em; min-width:0;}
 .bf2-q{font-size:.78em; font-weight:700; color:#bdbdbd; white-space:nowrap; text-align:right; font-variant-numeric:tabular-nums;} .bf2-l:not(.tem-q) .bf2-q{display:none;}
 .bf2-s.on .bf2-l li{animation:bf2in .5s ease both; animation-delay:var(--d);} @keyframes bf2in{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
 .bf2-rk{grid-row:1/3; width:32px; height:32px; border-radius:50%; background:#262626; color:#cfcfcf; display:flex; align-items:center; justify-content:center; font-weight:800; font-family:'Sora',sans-serif;}
 .bf2-rk.t1{background:#f5b400; color:#111;} .bf2-rk.t2{background:#c9c9c9; color:#111;} .bf2-rk.t3{background:#b8743a; color:#111;}
-.bf2-nm{font-size:17px; font-weight:700; color:#f1f1f1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.bf2-nm{font-size:17px; font-weight:700; color:#f1f1f1; white-space:normal; overflow-wrap:anywhere; line-height:1.12;}
 .bf2-bar{height:10px; background:#262626; border-radius:6px; overflow:hidden;} .bf2-bar i{display:block; height:100%; background:linear-gradient(90deg,#c98a00,#f5b400); border-radius:6px;}
-.bf2-nm small{display:block; font-size:.58em; font-weight:600; color:#9b9b9b; letter-spacing:.02em; margin-top:.1em; overflow:hidden; text-overflow:ellipsis;}
+.bf2-nm small{display:block; font-size:.58em; font-weight:600; color:#9b9b9b; letter-spacing:.02em; margin-top:.1em;}
 .bf2-bar.ok i{background:linear-gradient(90deg,#16a34a,#4ade80);}
 .bf2-l b{font-size:1em; font-weight:800; color:#fff; white-space:nowrap; text-align:right; font-variant-numeric:tabular-nums;}
-.bf2-l em{grid-column:2/6; font-style:normal; font-size:12px; font-weight:700;} .bf2-l em:empty{display:none;}
+.bf2-l em{grid-column:2/5; font-style:normal; font-size:12px; font-weight:700;} .bf2-l em:empty{display:none;}
 @media(max-width:1000px){ .bf2-l{grid-template-columns:1fr; grid-auto-flow:row; grid-template-rows:none;} }
 @media(prefers-reduced-motion:reduce){ .bf2-s, .bf2-s.on, .bf2-s.on .bf2-l li{transition:none; animation:none;} }
 .vp.bf.vp-full, .vp.bf:fullscreen{background:radial-gradient(1400px 420px at 50% -140px, rgba(245,180,0,.18), transparent 70%), #0b0b0b; border:0; border-radius:0;}
@@ -10014,7 +10016,9 @@ function vhMgB(o){ var m = vhMg(o); return m===null ? '' : '<span class="vh-mg" 
 function vhPodeObj(){ return !!(CURRENT_PROFILE && ['bi','diretoria'].indexOf(CURRENT_PROFILE.role)>=0); }
 function vhCorTend(p){ return p===null ? 'var(--vx-cy)' : (p>=100 ? 'var(--good)' : (p>=85 ? '#22d3ee' : (p>=70 ? '#f59e0b' : 'var(--critical)'))); }
 function vxHoje(){
-  var f = painelFiltros(null), dia = isoDia(new Date()), key = JSON.stringify([f, dia]);   // sempre o dia de hoje, mesmo sem carga do dia
+  var f = painelFiltros(null), dia = isoDia(new Date()), key;   // sempre o dia de hoje, mesmo sem carga do dia
+  if(dia > BF_FIM && vpVisivel() && (vpVis()===2 || vpVis()===4)) dia = BF_FIM;   // visuais BF e BF2: travados em 27 + 28/11
+  key = JSON.stringify([f, dia]);
   vhModoAplicar();
   if(VH.key!==key){
     if(VH.pend===key) return;
@@ -10552,6 +10556,27 @@ function vpNovidades(E, nMax){
 }
 /* ---------- Visual 2: Black Friday (venda do dia × meta de cada unidade) ---------- */
 var BF_DIA = '2026-11-27';
+// Visuais BF e BF2 travados na soma de 27 e 28/11 (sexta e sábado da Black Friday): o dia 28 traz o 27 como "ontem" (h + o).
+// Depois do dia 28, o Dashboard nesses visuais continua mostrando o dia 28 (com o 27 somado).
+var BF_FIM = '2026-11-28';
+function bfDois(S){ return !!S && S.dia===BF_FIM; }
+function bfV(S, t){ return t.h.f + (bfDois(S) ? t.o.f : 0); }
+// junta as listas de destaque de dois dias (mesmo id: soma valor, lucro e quantidade)
+function bfJuntaR(A, B){
+  if(!A || !B) return A;
+  var R = Object.assign({}, A);
+  ['vendedores_t','vendedores','clientes_t','clientes','produtos_t','produtos','subcat_top'].forEach(function(k){
+    if(!Array.isArray(A[k]) && !Array.isArray(B[k])) return;
+    var m = {}, out = [];
+    (A[k]||[]).concat(B[k]||[]).forEach(function(r){
+      var x = m[r[0]]; if(!x){ x = m[r[0]] = r.slice(); out.push(x); return; }
+      [1,2,3].forEach(function(i){ if(typeof r[i]==='number' || (r[i]!==null && r[i]!=='' && !isNaN(+r[i]) && typeof r[i]!=='object')) x[i] = (+x[i]||0) + (+r[i]||0); });
+    });
+    R[k] = out;
+  });
+  if(A.cli_vend || B.cli_vend) R.cli_vend = Object.assign({}, B.cli_vend||{}, A.cli_vend||{});
+  return R;
+}
 var BF_METAS = [['IPIRANGA','Ipiranga',700000],['JOAO DIAS','João Dias',150000],['TATUAPE','Tatuapé',100000],['SBC','S.B.Campo',100000],
   ['CAMPINAS','Campinas',700000],['RIBEIRAO','Ribeirão Preto',350000],['RIO PRETO','S.J.Rio Preto',400000],['ECOMMERCE','E-commerce',100000]];
 // visual escolhido: fica guardado no navegador (padrão: o de cards maiores); no dia da Black Friday abre no Visual BF até a pessoa trocar nesse dia
@@ -10566,7 +10591,7 @@ function vpVis(){
 }
 function vpVisTrocar(v){
   VH.vis = v; try{ localStorage.setItem('nc_vp_vis', JSON.stringify({v:v, d:isoDia(new Date())})); }catch(e){}
-  vpVisMarcar(); if(VH.sum) vhPainel();
+  vpVisMarcar(); if(vpVisivel()) vxHoje(); else if(VH.sum) vhPainel();
 }
 function vpVisMarcar(){
   var v = vpVis(), el = document.getElementById('vhModoPainel');
@@ -10618,21 +10643,22 @@ function bfPainel(S, RR, dest, partes){
   var ecm = null; S.canais.forEach(function(x){ if(x.k==='ECOMMERCE') ecm = x; });
   var U = [];
   BF_METAS.forEach(function(m){
-    if(m[0]==='ECOMMERCE'){ if(ecm) U.push({nome:m[1], meta:m[2], v:ecm.t.h.f, md:ecm.md}); return; }
-    var o = lj[m[0]]; if(o) U.push({nome:m[1], meta:m[2], v:o.r.t.h.f, md:o.r.md});
+    if(m[0]==='ECOMMERCE'){ if(ecm) U.push({nome:m[1], meta:m[2], v:bfV(S, ecm.t), md:ecm.md}); return; }
+    var o = lj[m[0]]; if(o) U.push({nome:m[1], meta:m[2], v:bfV(S, o.r.t), md:o.r.md});
   });
   if(!U.length) return '<p class="note-muted">Nenhuma das unidades da Black Friday está no seu acesso ou nos filtros do painel.</p>';
   U.forEach(function(u){ u.p = u.v/u.meta*100; });
   var ord = U.slice().sort(function(a, b){ return b.p - a.p; }); ord.forEach(function(u, i){ u.rk = i+1; });
   var tv = 0, tm = 0, tmd = 0, mdOk = true, nOk = 0;
   U.forEach(function(u){ tv += u.v; tm += u.meta; if(u.md > 0) tmd += u.md; else mdOk = false; if(u.p >= 100) nOk++; });
+  var nd = bfDois(S) ? 2 : 1;   // dias somados: a comparação com um dia normal usa a média por dia
   var tp = tm > 0 ? tv/tm*100 : 0, xN = function(x){ return (x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×'; };
   var hero = '<div class="bf-hero"><img class="bf-logo" src="icons/black-friday.png" alt="Black Friday Nova">' +
-    '<div class="bf-hm"><div class="l">'+(S.ehHoje ? 'Vendido hoje' : 'Vendido no dia')+' · '+bfUnidadesTxt(U, ecm)+'</div>' +
+    '<div class="bf-hm"><div class="l">'+(bfDois(S) ? 'Vendido em 27 e 28/11' : (S.ehHoje ? 'Vendido hoje' : 'Vendido no dia'))+' · '+bfUnidadesTxt(U, ecm)+'</div>' +
     '<div class="v">'+fmtMoney(tv)+'<small>de '+fmtMoney(tm)+'</small></div>' +
     '<div class="bf-bar'+(tp >= 100 ? ' ok' : '')+'"><i style="width:'+Math.min(100, tp).toFixed(1)+'%"></i></div>' +
     '<div class="bf-hs"><span>Falta <b>'+(tv >= tm ? 'meta batida' : fmtMoney(tm - tv))+'</b></span><span>Metas batidas <b>'+nOk+' de '+U.length+'</b></span>' +
-      (mdOk && tmd > 0 ? '<span title="Venda do dia ÷ média diária do mês (atacado das lojas e e-commerce)">Hoje <b>'+xN(tv/tmd)+'</b> um dia normal</span><span title="Meta do dia ÷ média diária do mês">A meta pede <b>'+xN(tm/tmd)+'</b></span>' : '') + '</div></div>' +
+      (mdOk && tmd > 0 ? '<span title="Venda do dia ÷ média diária do mês (atacado das lojas e e-commerce)">'+(nd > 1 ? 'Por dia' : 'Hoje')+' <b>'+xN(tv/nd/tmd)+'</b> um dia normal</span><span title="Meta do dia ÷ média diária do mês">A meta pede <b>'+xN(tm/tmd)+'</b></span>' : '') + '</div></div>' +
     bfGauge(tp, 'Venda do dia ÷ meta da Black Friday') + '</div>';
   var cards = '<div class="bf-uns">'+U.map(function(u){
     var ok = u.p >= 100;
@@ -10640,7 +10666,7 @@ function bfPainel(S, RR, dest, partes){
       '<div class="bf-ub">'+bfGauge(u.p, escapeHtml(u.nome)+': '+vhP(u.p)+' da meta')+'<div class="bf-uv"><div class="v">'+fmtMoney(u.v)+'</div><div class="m">meta <b>'+fmtMoney(u.meta)+'</b></div></div></div>' +
       '<div class="bf-bar'+(ok ? ' ok' : '')+'"><i style="width:'+Math.min(100, u.p).toFixed(1)+'%"></i></div>' +
       '<div class="bf-uf"><span>'+(ok ? 'Passou <b>'+fmtMoney(u.v - u.meta)+'</b>' : 'Falta <b>'+fmtMoney(u.meta - u.v)+'</b>')+'</span>' +
-      (u.md > 0 ? '<span title="Venda do dia ÷ média diária do mês">'+xN(u.v/u.md)+' dia normal</span>' : '')+'</div></div>';
+      (u.md > 0 ? '<span title="Venda do dia ÷ média diária do mês">'+xN(u.v/nd/u.md)+' dia normal'+(nd > 1 ? ' por dia' : '')+'</span>' : '')+'</div></div>';
   }).join('')+'</div>';
   if(partes) return {hero:hero, cards:cards};
   return hero + cards + dest + vpTickerAE(S, RR);
@@ -10719,12 +10745,12 @@ function bf2Painel(S, RR, grupos){
     var corpo = L===false ? '<p class="note-muted">Falta rodar o SQL das categorias no banco.</p>' : !L ? '<p class="note-muted">Carregando…</p>' : (!L.length ? '<p class="note-muted">Sem vendas ainda.</p>' : '<ol class="bf2-l'+(L.some(function(o){ return o.q!==null && o.q!==undefined; }) ? ' tem-q' : '')+'">'+L.map(function(o, j){
       var pm = o.meta ? o.v/o.meta*100 : null;
       return '<li style="--d:'+(j*60)+'ms"><span class="bf2-rk'+(j<3 ? ' t'+(j+1) : '')+'">'+(j+1)+'</span><span class="bf2-nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+(o.cod ? '<small>'+escapeHtml(o.cod)+'</small>' : '')+'</span>' +
-        '<span class="bf2-bar'+(pm!==null && pm >= 100 ? ' ok' : '')+'"><i style="width:'+Math.max(1.5, o.v/mx*100).toFixed(1)+'%"></i></span><b>'+fmtMoney(o.v)+'</b><span class="bf2-q">'+(o.q!==null && o.q!==undefined ? fmtUn(o.q)+' un' : '')+'</span>' +
+        '<span class="bf2-v"><b>'+fmtMoney(o.v)+'</b><span class="bf2-bar'+(pm!==null && pm >= 100 ? ' ok' : '')+'"><i style="width:'+Math.max(1.5, o.v/mx*100).toFixed(1)+'%"></i></span></span><span class="bf2-q">'+(o.q!==null && o.q!==undefined ? fmtUn(o.q)+' un' : '')+'</span>' +
         (pm!==null ? '<em style="color:'+bfCor(pm)+'">'+Math.round(pm)+'% da meta</em>' : '<em></em>')+'</li>';
     }).join('')+'</ol>');
     var j = i*passo;
-    return '<section class="bf2-s'+(j===i0 ? ' on' : '')+'" data-i="'+j+'" data-seg="'+BF2_SEG+'"><h3>Top 10 <b>'+g[0]+'</b><small>'+(S.ehHoje ? 'venda de hoje' : 'venda do dia')+'</small></h3>'+corpo+'</section>' + (foto ? fsl(i) : '');
-  }).join('') + '<section class="bf2-s bf2-metas'+(i0===grupos.length*passo ? ' on' : '')+'" data-i="'+(grupos.length*passo)+'" data-seg="'+BF2_METAS_SEG+'"><h3>Metas da <b>Black Friday</b><small>venda do dia × meta de cada unidade</small></h3>'+P.cards+'</section>' + (foto ? fsl(grupos.length) : '');
+    return '<section class="bf2-s'+(j===i0 ? ' on' : '')+'" data-i="'+j+'" data-seg="'+BF2_SEG+'"><h3>Top 10 <b>'+g[0]+'</b><small>'+(bfDois(S) ? 'vendas de 27 e 28/11' : (S.ehHoje ? 'venda de hoje' : 'venda do dia'))+'</small></h3>'+corpo+'</section>' + (foto ? fsl(i) : '');
+  }).join('') + '<section class="bf2-s bf2-metas'+(i0===grupos.length*passo ? ' on' : '')+'" data-i="'+(grupos.length*passo)+'" data-seg="'+BF2_METAS_SEG+'"><h3>Metas da <b>Black Friday</b><small>'+(bfDois(S) ? 'vendas de 27 e 28/11' : 'venda do dia')+' × meta de cada unidade</small></h3>'+P.cards+'</section>' + (foto ? fsl(grupos.length) : '');
   var s0 = foto && i0 % 2 ? +((BF2F.cfg && BF2F.cfg.seg) || 8) : (i0===grupos.length*passo ? BF2_METAS_SEG : BF2_SEG);
   var dur = s0, pass = Math.min(dur, (Date.now() - VH.bf2t)/1000);
   return P.hero + '<div class="bf2">'+dots+'<div class="bf2-prog"><i style="animation-duration:'+dur+'s; animation-delay:-'+pass.toFixed(1)+'s"></i></div><div class="bf2-sl">'+sl+'</div></div>' + vpTickerAE(S, RR);
@@ -10837,14 +10863,20 @@ function vhPainel(){
     nmP.qtd = true;
     var nmC = function(r){ return nm7(r); }; nmC.sep = function(o, r){ var m = /^(.+?)\s+([A-Z]{1,2}\d{3,})$/.exec(o.nome); if(m){ o.nome = m[1]; o.cod = m[2]; } else o.cod = String(r[0]); };
     var nmB = {}; BF_METAS.forEach(function(m){ nmB[m[0]] = m; });
-    var tL = S.lojas.map(function(o){ var m = nmB[o.nome]; return {nome: m ? m[1] : o.nome, v:o.r.t.h.f, meta: m ? m[2] : 0}; });
-    S.canais.forEach(function(x){ if(x.k==='ECOMMERCE') tL.push({nome:'E-commerce', v:x.t.h.f, meta:(nmB.ECOMMERCE||[])[2]||0}); });
+    var tL = S.lojas.map(function(o){ var m = nmB[o.nome]; return {nome: m ? m[1] : o.nome, v:bfV(S, o.r.t), meta: m ? m[2] : 0}; });
+    S.canais.forEach(function(x){ if(x.k==='ECOMMERCE') tL.push({nome:'E-commerce', v:bfV(S, x.t), meta:(nmB.ECOMMERCE||[])[2]||0}); });
+    if(bfDois(S) && RR){   // top 10 com as vendas de 27 e 28 somadas
+      var k27 = vhResChave(f, BF_DIA, false), R27 = VH.res[k27];
+      if(!R27) vhResBuscar(f, BF_DIA, false, function(){ if(vpVisivel()) vhPainel(); });
+      RR = R27 && !R27.erro ? bfJuntaR(RR, R27) : null;
+      if(RR) vendSE = (RR.vendedores || []).filter(function(r){ return !/E-?COMMERCE/i.test(dimNome('vendedor', r[0]) || ''); });
+    }
     tL = tL.sort(function(a, b){ return b.v - a.v; }).slice(0, 10);
     // top 10 pelo faturamento do dia (vendedores_t etc.); banco sem o SQL novo: usa as listas de destaque
     var semEcm = function(L){ return (L || []).filter(function(r){ return !/E-?COMMERCE/i.test(dimNome('vendedor', r[0]) || ''); }); };
     box.innerHTML = bf2Painel(S, RR, [['Lojas', tL], ['Vendedores', RR ? top(RR.vendedores_t ? semEcm(RR.vendedores_t) : vendSE, function(r){ return dimNome('vendedor', r[0]) || '—'; }) : null],
       ['Clientes', RR ? top(RR.clientes_t || RR.clientes, nmC) : null],
-      ['Categorias', !RR ? null : !RR.subcat_top ? false : RR.subcat_top.map(function(r){ var n = dimNome('subcategoria', r[0]); return {nome: n==='N/D' ? '#'+r[0] : n, v:c2(r[1]), q:+r[2] || 0}; })],
+      ['Categorias', !RR ? null : !RR.subcat_top ? false : RR.subcat_top.map(function(r){ var n = dimNome('subcategoria', r[0]); return {nome: n==='N/D' ? '#'+r[0] : n, v:c2(r[1]), q:+r[2] || 0}; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 10)],
       ['Produtos', RR ? top(RR.produtos_t || RR.produtos, nmP) : null]]);
   } else if(V2){
     var dsB = RR ? '<div class="vp-dest">' + lista('Top 5 vendedores', 'acima da própria média', vendSE, function(r){ return dimNome('vendedor', r[0]) || '—'; }, null, 5) +
