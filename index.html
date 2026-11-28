@@ -3595,7 +3595,7 @@ function precisaProdutos(){ return VIEWS_COM_PRODUTOS.indexOf(state.currentView)
 // só o cadastro de produtos (sem o estoque item a item): basta para a aba Vendedores
 var CAT_PR = null;
 function carregarCatalogo(){
-  if(!CAT_PR) CAT_PR = (META.produtos ? Promise.resolve(META.produtos) : window.__NC_rpc('bi_produtos')).then(function(lista){
+  if(!CAT_PR) CAT_PR = (META.produtos ? Promise.resolve(META.produtos) : rpcMemo('bi_produtos')).then(function(lista){
     (lista||[]).forEach(function(x){ PRODINFO[x[0]] = {pn:x[1], nome:x[2], cat:x[3], marca:x[4], mont:x[5], linha:x[6], classif:x[7], subcat:x[8], gpeca:x[9], aplic:x[10], curva:x[11]}; });
     PRODBUSCA = null;
   }).catch(function(ex){ CAT_PR = null; throw ex; });
@@ -3606,7 +3606,7 @@ function carregarProdutos(){
   if(PROD_PR) return PROD_PR;
   PROD_PR = Promise.all([
     carregarCatalogo(),
-    window.__NC_rpc('bi_estoque_itens')
+    rpcMemo('bi_estoque_itens', {})
   ]).then(function(r){
     var e = r[1] || {};
     ['loja','produto','est','custo','vend','comp','parado','custo_u','clsf'].forEach(function(k){ EST[k] = Array.isArray(e[k]) ? e[k] : []; });
@@ -3686,13 +3686,41 @@ function painelPeriodo(){
 
 /* ---------- consultas (memória curta por sessão: voltar a um filtro já visto é instantâneo) ---------- */
 var MEMO = {}, MEMO_ORDEM = [];
+/* guardadas também no navegador (IndexedDB) até a próxima carga: reabrir o site ou voltar a uma tela não baixa de novo (economiza Egress).
+   A chave leva a carga, o dia e o escopo do perfil; carga nova, outro dia ou perfil alterado = consulta o banco de novo. */
+var RC = {db:null, pref:null};
+function rcPrefixo(){
+  var c = vhCarga(), P = CURRENT_PROFILE; if(!c || !c.carregado_em || !P) return null;
+  var esc = JSON.stringify([P.id, P.role, P.vendedor_nome, P.loja, P.lojas, P.canais, P.equipes, P.pares_modo, P.pares_equipes]), h = 0;
+  for(var i = 0; i < esc.length; i++) h = (h*31 + esc.charCodeAt(i)) | 0;
+  var d = new Date(); return c.carregado_em+'|'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+'|'+h+'|';
+}
+function rcDb(){
+  if(RC.db) return RC.db;
+  RC.db = new Promise(function(ok){
+    try{ var q = indexedDB.open('nc_consultas', 1); q.onupgradeneeded = function(){ q.result.createObjectStore('r'); }; q.onsuccess = function(){ ok(q.result); }; q.onerror = function(){ ok(null); }; }catch(e){ ok(null); }
+  });
+  return RC.db;
+}
+function rcLimpar(pref){   // apaga o que é de outra carga, dia ou perfil
+  rcDb().then(function(d){ if(!d) return; try{ var st = d.transaction('r', 'readwrite').objectStore('r'), q = st.openKeyCursor();
+    q.onsuccess = function(){ var cur = q.result; if(!cur) return; if(String(cur.key).indexOf(pref) !== 0) st.delete(cur.key); cur.continue(); }; }catch(e){} });
+}
+function rcLer(key){
+  return rcDb().then(function(d){ return d ? new Promise(function(ok){ try{ var q = d.transaction('r').objectStore('r').get(key); q.onsuccess = function(){ ok(q.result); }; q.onerror = function(){ ok(undefined); }; }catch(e){ ok(undefined); } }) : undefined; });
+}
+function rcGravar(key, v){ rcDb().then(function(d){ if(d) try{ d.transaction('r', 'readwrite').objectStore('r').put(v, key); }catch(e){} }); }
 function rpcMemo(fn, args){
-  var k = fn+'|'+JSON.stringify(args);
-  if(MEMO[k]) return MEMO[k];
-  var pr = window.__NC_rpc(fn, args);
-  MEMO[k] = pr; MEMO_ORDEM.push(k);
+  var pref = rcPrefixo(), k = fn+'|'+JSON.stringify(args), mk = (pref || '')+k, pr;   // carga nova no Dashboard (sem recarregar) = outra chave
+  if(MEMO[mk]) return MEMO[mk];
+  if(pref && pref !== RC.pref){ RC.pref = pref; rcLimpar(pref); }
+  pr = !pref ? window.__NC_rpc(fn, args) : rcLer(pref+k).then(function(v){
+    if(v !== undefined) return v;
+    return window.__NC_rpc(fn, args).then(function(r){ if(r !== null && r !== undefined) rcGravar(pref+k, r); return r; });
+  });
+  MEMO[mk] = pr; MEMO_ORDEM.push(mk);
   if(MEMO_ORDEM.length > 40) delete MEMO[MEMO_ORDEM.shift()];
-  pr.catch(function(){ delete MEMO[k]; });
+  pr.catch(function(){ delete MEMO[mk]; });
   return pr;
 }
 function buscarPainel(f, comProdutos){
@@ -7843,9 +7871,9 @@ function renderEstoqueNovTrf(){
   var f = painelFiltros(null), dia = isoDia(new Date()), k = JSON.stringify([f, dia, (vhCarga()||{}).carregado_em||'']);
   if(EST_NT.k !== k){
     EST_NT.k = k; EST_NT.nov = EST_NT.trf = 'carregando';
-    window.__NC_rpc('bi_vendas_hoje_estoque', {f:f, dia:dia}).then(function(E){ if(EST_NT.k===k){ EST_NT.nov = E || {}; estNovDesenhar(); } })
+    rpcMemo('bi_vendas_hoje_estoque', {f:f, dia:dia}).then(function(E){ if(EST_NT.k===k){ EST_NT.nov = E || {}; estNovDesenhar(); } })
       .catch(function(){ if(EST_NT.k===k){ EST_NT.nov = 'erro'; estNovDesenhar(); } });
-    window.__NC_rpc('bi_estoque_transferencias', {f:f}).then(function(T){ if(EST_NT.k===k){ EST_NT.trf = T || {}; estTrfDesenhar(); } })
+    rpcMemo('bi_estoque_transferencias', {f:f}).then(function(T){ if(EST_NT.k===k){ EST_NT.trf = T || {}; estTrfDesenhar(); } })
       .catch(function(e){ if(EST_NT.k===k){ EST_NT.trf = /bi_estoque_transferencias|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'; estTrfDesenhar(); } });
   }
   estNovDesenhar(); estTrfDesenhar();
@@ -8662,7 +8690,7 @@ function vendSelectOpcoes(){
 function initFilterSelects(){
   FILTER_KEYS.forEach(rebuildCheckGroup);
   vendSelectOpcoes();
-  if(!VEND_RE_PR) VEND_RE_PR = window.__NC_rpc('bi_vendedor_re').then(function(r){ (r||[]).forEach(function(x){ VEND_RE[x[0]] = x[1]; }); vendSelectOpcoes(); }).catch(function(){}); // banco ainda sem a tabela: fica só o nome
+  if(!VEND_RE_PR) VEND_RE_PR = rpcMemo('bi_vendedor_re', {}).then(function(r){ (r||[]).forEach(function(x){ VEND_RE[x[0]] = x[1]; }); vendSelectOpcoes(); }).catch(function(){}); // banco ainda sem a tabela: fica só o nome
   if(VEND_PESSOAS.indexOf(state.vendConsultSel)===-1) state.vendConsultSel = VEND_PESSOAS[0]||'';
   document.getElementById('vendConsultSelect').value = state.vendConsultSel;
 }
@@ -9737,7 +9765,7 @@ function exportarDisponiveis(){
   var bt = document.getElementById('cliExport'); bt.disabled = true;
   toast('Preparando a planilha de clientes disponíveis…');
   var a = cliArgs({disp:true, ordem:'f12', limite:50000}); delete a.o.termo;
-  Promise.all([window.__NC_rpc('bi_clientes', a), carregarXlsx().catch(function(){ return null; })]).then(function(r){
+  Promise.all([rpcMemo('bi_clientes', a), carregarXlsx().catch(function(){ return null; })]).then(function(r){
     var dl = ((r[0]||{}).linhas||[]).map(cliLinhaObj), X = r[1];
     var cab = ['Código','Razão social','Cidade','Tipo de cliente','Grupo','Pessoa','Último responsável','Equipe','Faturamento 12 meses','Média mensal','Margem %','Última compra','Dias sem compra','Dias com compra (12m)'];
     var dados = dl.map(function(c){ return [c.cod, c.razao, c.cidade, c.tipo, c.grupo, c.pessoa, c.resp, c.equipe, Math.round(c.f12*100)/100, Math.round(c.med*100)/100, c.mg, cliData(c.ult), c.dias, c.ncomp]; });
@@ -9986,7 +10014,7 @@ function vxHoje(){
     VH.pend = key;
     document.getElementById('vhKpis').innerHTML = '<p class="note-muted status-txt">Carregando as vendas do dia…</p>';
     document.getElementById('vhCards').innerHTML = ''; document.getElementById('vhMat').innerHTML = '';
-    window.__NC_rpc('bi_vendas_hoje', {f:f, dia:dia}).then(function(d){
+    rpcMemo('bi_vendas_hoje', {f:f, dia:dia}).then(function(d){
       if(VH.pend!==key) return; VH.key = key; VH.d = d || {}; VH.pend = null; VH.lido = Date.now();
       if(vhAtivo()) vxHoje();
     }).catch(function(e){
@@ -10364,7 +10392,7 @@ function vhEst(f, d, depois){
   var key = vhEstChave(f, d); if(VH.est[key]) return VH.est[key];
   if(!VH.estPend[key]){
     VH.estPend[key] = 1;
-    window.__NC_rpc('bi_vendas_hoje_estoque', {f:f, dia:d}).then(function(r){ VH.est[key] = r || {}; })
+    rpcMemo('bi_vendas_hoje_estoque', {f:f, dia:d}).then(function(r){ VH.est[key] = r || {}; })
       .catch(function(e){ VH.est[key] = {erro: /bi_vendas_hoje_estoque|schema cache|does not exist/i.test(String(e && (e.message||e))) ? 'falta' : 'erro'}; })
       .then(function(){ delete VH.estPend[key]; if(vhAtivo()) depois(); });
   }
@@ -10376,7 +10404,7 @@ function vhAbc(f, depois){
   var key = JSON.stringify(f); if(VH.abc[key]) return VH.abc[key];
   if(!VH.abcPend[key]){
     VH.abcPend[key] = 1;
-    window.__NC_rpc('bi_estoque_abc', {f:f}).then(function(r){ VH.abc[key] = r || {}; })
+    rpcMemo('bi_estoque_abc', {f:f}).then(function(r){ VH.abc[key] = r || {}; })
       .catch(function(){ VH.abc[key] = {erro:1}; })
       .then(function(){ delete VH.abcPend[key]; depois(); });
   }
@@ -10935,7 +10963,7 @@ function vhTk(f, d, depois){
   var key = JSON.stringify([f, d]); if(VH.tk[key]) return VH.tk[key];
   if(!VH.tkPend[key]){
     VH.tkPend[key] = 1;
-    window.__NC_rpc('bi_ticker', {f:f, dia:d}).then(function(r){ VH.tk[key] = r || {}; }, function(){ VH.tk[key] = {erro:1}; })
+    rpcMemo('bi_ticker', {f:f, dia:d}).then(function(r){ VH.tk[key] = r || {}; }, function(){ VH.tk[key] = {erro:1}; })
       .then(function(){ delete VH.tkPend[key]; if(vpVisivel()) depois(); });
   }
   return null;
@@ -11018,7 +11046,7 @@ function vhResChave(f, d, mes){ return JSON.stringify([f, d, mes ? 1 : 0]); }
 function vhResBuscar(f, d, mes, depois){
   var key = vhResChave(f, d, mes); if(VH.res[key] || VH.resPend[key]) return; VH.resPend[key] = 1;
   var fn = mes ? 'bi_vendas_destaques_mes' : 'bi_vendas_destaques';
-  window.__NC_rpc(fn, {f:f, dia:d}).then(function(r){ VH.res[key] = r || {}; })
+  rpcMemo(fn, {f:f, dia:d}).then(function(r){ VH.res[key] = r || {}; })
     .catch(function(e){ VH.res[key] = {erro: new RegExp(fn+'|schema cache|does not exist', 'i').test(String(e && (e.message||e))) ? (mes ? 'falta_mes' : 'falta') : 'erro'}; })
     .then(function(){ delete VH.resPend[key]; depois(); });
 }
@@ -11895,7 +11923,7 @@ function vxExportarBairro(bt, o, todos){
   var per = painelPeriodo(), txt0 = bt.textContent;
   var args = {f: todos ? {} : vxFiltrosLoja(), per:{ini:per.ini, fim:per.fim}, o:{cidade:bq.ids, bairro:o.k, ordem: todos ? 'f12' : 'fat', limite:50000}};
   bt.disabled = true; bt.textContent = 'Preparando a planilha…';
-  Promise.all([window.__NC_rpc('bi_clientes', args), carregarXlsx().catch(function(){ return null; })]).then(function(r){
+  Promise.all([rpcMemo('bi_clientes', args), carregarXlsx().catch(function(){ return null; })]).then(function(r){
     var dl = ((r[0]||{}).linhas||[]).map(cliLinhaObj), X = r[1];
     var cab = ['Código','Razão social','Bairro','Cidade','Tipo de cliente','Grupo','Pessoa','Último responsável','Equipe',
       'Faturamento no período','Lucro bruto no período','Margem no período %','Faturamento 12 meses','Média mensal (12m)','Margem 12m %',
@@ -12034,7 +12062,7 @@ function vxProspectar(bt){
     if(!res || !res.ref){ bt.disabled = false; bt.textContent = txt0; return vxProspectarOSM(bt); }
     var nomes = q.o ? q.o.nomes : vxNomesDoMun(pr.uf, pr.id);
     var ids = nomes.map(function(n){ return (DIMI.cidade||{})[n]; }).filter(function(x){ return x!==undefined; });
-    var cliP = ids.length ? window.__NC_rpc('bi_clientes', {f:{}, per:{ini:painelPeriodo().ini, fim:painelPeriodo().fim}, o:{cidade:ids, ordem:'f12', limite:50000}}).catch(function(){ return null; }) : Promise.resolve(null);
+    var cliP = ids.length ? rpcMemo('bi_clientes', {f:{}, per:{ini:painelPeriodo().ini, fim:painelPeriodo().fim}, o:{cidade:ids, ordem:'f12', limite:50000}}).catch(function(){ return null; }) : Promise.resolve(null);
     var empP = res.gz ? Promise.all(res.gz.map(prospDescompactar)).then(function(a){ return [].concat.apply([], a); }) : Promise.resolve(res.linhas||[]);
     return Promise.all([cliP, carregarXlsx().catch(function(){ return null; }), empP]).then(function(r){
       var cli = ((r[0]||{}).linhas||[]).map(cliLinhaObj), X = r[1], emp = r[2]||[];
@@ -12075,7 +12103,7 @@ function vxProspectarOSM(bt){
     'nwr["name"~"funilaria|lanternagem|martelinho|auto ?pe[cç]as",i](area.a););out center tags;';
   var nomes = q.o ? q.o.nomes : vxNomesDoMun(pr.uf, pr.id);
   var ids = nomes.map(function(n){ return (DIMI.cidade||{})[n]; }).filter(function(x){ return x!==undefined; });
-  var cliP = ids.length ? window.__NC_rpc('bi_clientes', {f:{}, per:{ini:painelPeriodo().ini, fim:painelPeriodo().fim}, o:{cidade:ids, ordem:'f12', limite:50000}}).catch(function(){ return null; }) : Promise.resolve(null);
+  var cliP = ids.length ? rpcMemo('bi_clientes', {f:{}, per:{ini:painelPeriodo().ini, fim:painelPeriodo().fim}, o:{cidade:ids, ordem:'f12', limite:50000}}).catch(function(){ return null; }) : Promise.resolve(null);
   bt.disabled = true; bt.textContent = 'Buscando empresas no mapa…';
   return Promise.all([vxOverpass(ql), cliP, carregarXlsx().catch(function(){ return null; })]).then(function(r){
     var els = (r[0]||{}).elements||[], cli = ((r[1]||{}).linhas||[]).map(cliLinhaObj), X = r[2];
@@ -12121,7 +12149,7 @@ function vxExportarMun(bt, todos){
   var per = painelPeriodo(), f = VX.geo[q.props.uf].lista.filter(function(x){ return x[2]===q.props.id; })[0];
   var args = {f: todos ? {} : vxFiltrosLoja(), per:{ini:per.ini, fim:per.fim}, o:{cidade:ids, ordem: todos ? 'f12' : 'fat', limite:50000}};
   bt.disabled = true; bt.textContent = 'Preparando a planilha…';
-  Promise.all([window.__NC_rpc('bi_clientes', args), carregarXlsx().catch(function(){ return null; })]).then(function(r){
+  Promise.all([rpcMemo('bi_clientes', args), carregarXlsx().catch(function(){ return null; })]).then(function(r){
     var dl = ((r[0]||{}).linhas||[]).map(cliLinhaObj), X = r[1];
     var cab = ['Código','Razão social','Cidade','Tipo de cliente','Grupo','Pessoa','Último responsável','Equipe',
       'Faturamento no período','Lucro bruto no período','Margem no período %','Faturamento 12 meses','Média mensal (12m)','Margem 12m %',
