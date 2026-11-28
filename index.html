@@ -3464,7 +3464,7 @@ table.data-table.vp-tbl{min-width:720px;}
           <label><input type="checkbox" id="bf2fTeste"> Testar só no meu navegador</label>
           <label>Cada foto fica<select id="bf2fSeg"><option value="5">5 s</option><option value="8">8 s</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option></select></label>
         </div>
-        <div class="ra-acts"><button type="button" class="tbtn" id="bf2fSalvar">Salvar</button><input type="text" id="bf2fLeg" maxlength="120" placeholder="Legenda (ex.: Prêmio 1 · Jogo de ferramentas)" style="min-width:240px;"><button type="button" class="btn-sm" id="bf2fAdd">+ Adicionar fotos</button><button type="button" class="btn-sm" id="bf2fGrade" title="Junta as fotos lado a lado, 3 ou 4 por quadro, numa imagem só. As TVs mostram sem precisar recarregar.">Lado a lado (3 a 4 por quadro)</button><input type="file" id="bf2fArq" accept="image/*" multiple hidden><span id="bf2fMsg" class="ra-msg"></span></div>
+        <div class="ra-acts"><button type="button" class="tbtn" id="bf2fSalvar">Salvar</button><input type="text" id="bf2fLeg" maxlength="120" placeholder="Legenda (ex.: Prêmio 1 · Jogo de ferramentas)" style="min-width:240px;"><button type="button" class="btn-sm" id="bf2fAdd">+ Adicionar fotos</button><button type="button" class="btn-sm" id="bf2fGrade" title="Junta as fotos lado a lado, 3 ou 4 por quadro, numa imagem só. As TVs mostram sem precisar recarregar.">Lado a lado (3 a 4 por quadro)</button><button type="button" class="btn-sm" id="bf2fDelTodas" title="Exclui todas as fotos e quadros do banco. Pede confirmação.">Excluir todas</button><input type="file" id="bf2fArq" accept="image/*" multiple hidden><span id="bf2fMsg" class="ra-msg"></span></div>
         <div id="bf2fLista" class="bf2f-l"></div>
       </div>
       <div class="panel" style="margin-bottom:14px;" id="tkPanel">
@@ -14152,6 +14152,20 @@ function bf2fRenderCfg(){
     document.getElementById('bf2fLeg').value = ''; bf2fMsg(arqs.length ? 'Foto'+(arqs.length>1 ? 's adicionadas.' : ' adicionada.') : '', 'var(--good)');
     if(arqs.length && bf2fGradeLigada()){ try{ await bf2fMontar(); } catch(e){ bf2fMsg(bf2fErro(e), 'var(--critical)'); } }   // já está lado a lado: refaz os quadros com a foto nova
     else bf2fCarregar(true);
+  });
+  document.getElementById('bf2fDelTodas').addEventListener('click', async function(){
+    var bt = this;
+    if(bt.getAttribute('data-ok')!=='1'){ bt.setAttribute('data-ok', '1'); bt.textContent = 'Confirmar: excluir todas'; setTimeout(function(){ bt.removeAttribute('data-ok'); bt.textContent = 'Excluir todas'; }, 5000); return; }
+    bt.removeAttribute('data-ok'); bt.textContent = 'Excluir todas'; bt.disabled = true;
+    try{
+      var db = window.__NC_supa || supa, r = await db.from('bi_bf2_foto').select('id').order('id');
+      if(r.error) throw r.error;
+      var L = r.data || [];
+      for(var i = 0; i < L.length; i++){ bf2fMsg('Excluindo '+(i+1)+' de '+L.length+'…'); await window.__NC_rpc('bi_bf2_foto_excluir', {p_id: L[i].id}); }
+      try{ localStorage.removeItem('nc_bf2f_grade'); } catch(e){}
+      bf2fMsg(L.length ? L.length+' foto'+(L.length>1 ? 's excluídas.' : ' excluída.') : 'Não havia fotos.', 'var(--good)');
+    } catch(e){ bf2fMsg(bf2fErro(e), 'var(--critical)'); }
+    bt.disabled = false; bf2fCarregar(true);
   });
   document.getElementById('bf2fGrade').addEventListener('click', async function(){
     this.disabled = true;
