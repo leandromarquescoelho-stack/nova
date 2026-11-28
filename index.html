@@ -10611,6 +10611,29 @@ function bf2Dur(i){ var s = document.querySelector('#vpBody .bf2-s[data-i="'+i+'
    o BI pode testar só no próprio navegador. Sem foto no banco, entra o logo como imagem de teste. */
 var BF2F = {cfg:null, fotos:null, t:0, ok:true}, BF2F_LOGO = {id:'logo', legenda:'Imagem de teste (logo)', img:'icons/black-friday.png'};
 function bf2fTeste(){ try{ return localStorage.getItem('nc_bf2f_teste')==='1'; } catch(e){ return false; } }
+/* cache das imagens no navegador (IndexedDB): a imagem de um id nunca muda; ids que saíram da lista são apagados. Sem IndexedDB, segue baixando como antes. */
+function bf2fCacheDb(){
+  if(bf2fCacheDb.p) return bf2fCacheDb.p;
+  bf2fCacheDb.p = new Promise(function(ok){
+    try{ var rq = indexedDB.open('nc_bf2_fotos', 1); rq.onupgradeneeded = function(){ rq.result.createObjectStore('img'); }; rq.onsuccess = function(){ ok(rq.result); }; rq.onerror = function(){ ok(null); }; }
+    catch(e){ ok(null); }
+  });
+  return bf2fCacheDb.p;
+}
+function bf2fCacheLer(ids){
+  return bf2fCacheDb().then(function(d){
+    if(!d) return {};
+    return new Promise(function(ok){
+      var C = {}, quer = {}; ids.forEach(function(i){ quer[i] = 1; });
+      try{
+        var st = d.transaction('img', 'readwrite').objectStore('img'), cr = st.openCursor();
+        cr.onsuccess = function(){ var c = cr.result; if(!c) return ok(C); if(quer[c.key]) C[c.key] = c.value; else c.delete(); c.continue(); };
+        cr.onerror = function(){ ok(C); };
+      }catch(e){ ok(C); }
+    });
+  }).then(null, function(){ return {}; });
+}
+function bf2fCacheGravar(id, img){ bf2fCacheDb().then(function(d){ if(d) try{ d.transaction('img', 'readwrite').objectStore('img').put(img, id); }catch(e){} }); }
 function bf2fCarregar(forcar){
   if(!forcar && BF2F.t && (!BF2F.ok || Date.now() - BF2F.t < 5*60*1000)) return;   // sem a tabela de fotos no banco: não fica perguntando
   BF2F.t = Date.now();
@@ -10619,11 +10642,14 @@ function bf2fCarregar(forcar){
     db.from('bi_config').select('valor').eq('chave', 'bf2_fotos').maybeSingle().then(function(r){ return r.data ? r.data.valor : null; }, function(){ return null; }),
     db.from('bi_bf2_foto').select('id,legenda,ativa').order('id').then(function(r){
       if(r.error){ BF2F.ok = false; return []; } BF2F.ok = true;
-      var L = r.data || [], tem = {}; (BF2F.fotos || []).forEach(function(f){ tem[f.id] = f.img; });
-      var falta = L.filter(function(f){ return !tem[f.id]; }).map(function(f){ return f.id; });   // só baixa a imagem das fotos novas
+      var bi = CURRENT_PROFILE && CURRENT_PROFILE.role==='bi', L = (r.data || []).filter(function(f){ return f.ativa || bi; }), tem = {}; (BF2F.fotos || []).forEach(function(f){ tem[f.id] = f.img; });   // TVs só baixam as que aparecem; o perfil BI vê também as guardadas (Configurações)
       var junta = function(){ L.forEach(function(f){ f.img = tem[f.id]; }); return L.filter(function(f){ return f.img; }); };
-      if(!falta.length) return junta();
-      return Promise.all(falta.map(function(id){ return db.from('bi_bf2_foto').select('id,img').eq('id', id).maybeSingle().then(function(r2){ if(r2.data) tem[r2.data.id] = r2.data.img; }); })).then(junta);
+      return bf2fCacheLer(L.map(function(f){ return f.id; })).then(function(C){
+        Object.keys(C).forEach(function(k){ if(!tem[k]) tem[k] = C[k]; });   // guardadas no navegador: o recarregamento após cada carga não baixa tudo de novo
+        var falta = L.filter(function(f){ return !tem[f.id]; }).map(function(f){ return f.id; });   // só baixa a imagem das fotos novas
+        if(!falta.length) return junta();
+        return Promise.all(falta.map(function(id){ return db.from('bi_bf2_foto').select('id,img').eq('id', id).maybeSingle().then(function(r2){ if(r2.data){ tem[r2.data.id] = r2.data.img; bf2fCacheGravar(r2.data.id, r2.data.img); } }); })).then(junta);
+      });
     }).then(null, function(){ BF2F.ok = false; return []; })
   ]).then(function(R){
     var antes = JSON.stringify([BF2F.cfg, (BF2F.fotos||[]).map(function(f){ return [f.id, f.legenda, f.ativa]; })]);
