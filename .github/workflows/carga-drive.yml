@@ -1,10 +1,10 @@
 name: Carga planilhas -> Supabase
 
-# Confere a pasta do OneDrive corporativo (ou Google Drive) a cada 30 minutos e só recarrega o banco quando
-# alguma planilha tiver data de modificação nova. Também pode ser disparado à mão.
+# Quem manda o ritmo é o banco (Configurações > Atualização geral, via pg_cron). Este agendamento do GitHub é só reserva,
+# a cada 6 horas, caso o disparo do banco falhe. Só recarrega quando alguma planilha tiver data nova. Também pode ser disparado à mão.
 on:
   schedule:
-    - cron: '7,37 * * * *'  # fora da virada da hora, quando o GitHub mais atrasa os agendamentos
+    - cron: '7 */6 * * *'  # reserva; fora da virada da hora, quando o GitHub mais atrasa os agendamentos
   workflow_dispatch:
     inputs:
       forcar:
