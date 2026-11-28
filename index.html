@@ -12186,12 +12186,14 @@ function vxCidCliPronto(){
   if(VX.aba==='regioes' && ms && ms.value==='cli' && !VX.cliRedesenho){ VX.cliRedesenho = true; try{ vxRegioes(); } finally { VX.cliRedesenho = false; } return; }
   if(VX.quadro && VX.popup && VX.map && VX.map.hasLayer(VX.popup)){ VX.popup.setContent(vxQuadroHtml(VX.quadro)); vxQuadroLigar(); }
 }
+// navegador de TV (Samsung Tizen, LG webOS…): a tela cheia nativa desalinha o mapa de fundo; usa a tela cheia do próprio site (a TV já está em tela cheia)
+var VX_TV = /Tizen|SMART-TV|SmartTV|Web0S|webOS|NetCast|BRAVIA|HbbTV|CrKey|AFT[A-Z]/i.test(navigator.userAgent || '');
 function vxTelaCheia(){
   var card = document.getElementById('vxMapCard'), btn = document.getElementById('vxMapFull');
   var cheia = document.fullscreenElement===card || card.classList.contains('vx-full');
   if(cheia){
     if(document.fullscreenElement) document.exitFullscreen(); else { card.classList.remove('vx-full'); vxAoTrocarTela(); }
-  } else if(card.requestFullscreen){
+  } else if(card.requestFullscreen && !VX_TV){
     card.requestFullscreen().catch(function(){ card.classList.add('vx-full'); vxAoTrocarTela(); });
   } else { card.classList.add('vx-full'); vxAoTrocarTela(); }
 }
