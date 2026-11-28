@@ -1480,6 +1480,9 @@ table.data-table td.prodcell{color:var(--text); font-weight:600;}
 .atu-g label{display:flex; flex-direction:column; gap:4px; font-size:12.5px; font-weight:600;}
 .atu-g select{min-width:200px;}
 .atu-g select[data-atuh]{min-width:100px;}
+.sb-aviso{position:fixed; left:50%; top:12px; transform:translateX(-50%); z-index:9000; max-width:min(760px, calc(100vw - 32px)); display:flex; align-items:center; gap:12px; padding:10px 12px 10px 16px; border-radius:10px; background:var(--panel, #1b1f27); color:var(--text, #fff); border:1px solid var(--warning, #f5b400); box-shadow:0 8px 24px rgba(0,0,0,.35); font-size:13px;}
+.sb-aviso span{flex:1;}
+.sb-aviso .sb-x{background:none; border:0; color:inherit; font-size:18px; cursor:pointer; padding:0 4px;}
 .tk-op{display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:4px 18px; margin:6px 0 4px;}
 .tk-op h5{grid-column:1/-1; margin:10px 0 2px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted);}
 .tk-op label{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:4px 0; cursor:pointer;}
@@ -14072,6 +14075,24 @@ function sbHist(novo){
   if(novo){ H.push(novo); H = H.slice(-60); try{ localStorage.setItem('nc_saude_hist', JSON.stringify(H)); } catch(e){} }
   return H;
 }
+/* aviso de uso (perfil BI): uma vez por dia, 30 s depois do login, confere o tamanho do banco e as agendas com falha.
+   Passou de 70% do limite do Free ou alguma agenda falhou nos últimos 7 dias: faixa no topo com o motivo. Egress não é medido pelo banco. */
+function sbAlerta(){
+  if(!(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi')) return;
+  var hoje = isoDia(new Date()); try{ if(localStorage.getItem('nc_sb_alerta')===hoje) return; }catch(e){}
+  window.__NC_rpc('bi_saude_banco', {}).then(function(r){
+    try{ localStorage.setItem('nc_sb_alerta', hoje); }catch(e){}
+    var pct = r.db_bytes/r.limite_bytes*100, F = r.falhas_cron || [], m = [];
+    if(pct >= 70) m.push('o banco está com '+Math.round(pct)+'% do limite do plano Free ('+sbMb(r.db_bytes)+' de '+sbMb(r.limite_bytes)+')');
+    if(F.length) m.push(F.map(function(f){ return 'a agenda "'+escapeHtml(f.job)+'" falhou '+f.n+(f.n>1 ? ' vezes' : ' vez'); }).join(', ')+' nos últimos 7 dias');
+    if(!m.length) return;
+    var el = document.createElement('div'); el.className = 'sb-aviso'; el.setAttribute('role', 'status');
+    el.innerHTML = '<span>Atenção: '+m.join('; ')+'.</span><button type="button" class="btn-sm" data-sbv>Ver saúde do banco</button><button type="button" class="sb-x" aria-label="Fechar aviso">×</button>';
+    el.querySelector('[data-sbv]').addEventListener('click', function(){ el.remove(); window.__NC_switchView('fontes'); setTimeout(function(){ var p = document.getElementById('sbPanel'); if(p) p.scrollIntoView({block:'start', behavior:'smooth'}); }, 600); });
+    el.querySelector('.sb-x').addEventListener('click', function(){ el.remove(); });
+    document.body.appendChild(el);
+  }, function(){});
+}
 async function sbCarregar(){
   var box = document.getElementById('sbBox'); if(!box) return;
   if(!(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi')){ document.getElementById('sbPanel').style.display = 'none'; return; }
@@ -14093,6 +14114,7 @@ async function sbCarregar(){
     k('Leitura direto da memória', ch===null ? '—' : String(ch).replace('.', ',')+'%', 'O resto vai ao disco e gasta o Disk IO. Acima de 99% é o ideal.', '<div class="sb-bar"><i style="width:'+(ch||0)+'%; background:'+chc+'"></i></div>') +
     k('Linhas lidas pelo banco', ant ? fmtN(Math.max(0, r.linhas_lidas-ant.ll)) : fmtN(r.linhas_lidas), ant ? 'nos últimos '+dt(H[H.length-1].t-ant.t)+' · total '+fmtN(r.linhas_lidas) : 'desde o último reinício do banco') +
     k('Conexões abertas', fmtN(r.conexoes), 'Fotos do BF2: '+r.fotos_bf2.n+' ('+sbMb(r.fotos_bf2.bytes*0.75)+')') +
+    (r.falhas_cron ? k('Agendas com falha (7 dias)', r.falhas_cron.length ? '<span style="color:var(--critical)">'+r.falhas_cron.reduce(function(a, f){ return a + f.n; }, 0)+'</span>' : '0', r.falhas_cron.length ? r.falhas_cron.map(function(f){ return escapeHtml(f.job)+': '+f.n; }).join(' · ') : 'Cargas, arquivamento e relatórios rodando sem erro.') : '') +
     '</div><div class="sb-g"><div><h4>Maiores tabelas</h4><table class="sb-t"><tr><th>Tabela</th><th class="n">Linhas</th><th class="n">Tamanho</th></tr>' +
     (r.tabelas||[]).map(function(t){ return '<tr><td>'+escapeHtml(t.nome)+'</td><td class="n">'+fmtN(t.linhas)+'</td><td class="n">'+sbMb(t.b)+'</td></tr>'; }).join('')+'</table></div>' +
     '<div><h4>Evolução (leituras deste navegador)</h4><table class="sb-t"><tr><th>Hora</th><th class="n">Banco</th><th class="n">Linhas lidas no intervalo</th></tr>' +
@@ -14659,7 +14681,7 @@ async function renderIAAdmin(){
 window.__NC_enter = function(profile){
   CURRENT_PROFILE = profile;
   document.getElementById('loginError').textContent = '';
-  iniciarIA();
+  iniciarIA(); setTimeout(sbAlerta, 30000);
   return doLogin(profileToUser(profile));
 };
 
