@@ -7510,7 +7510,7 @@ function renderVendMapa(){
 function vendMapaDesenhar(lista, vid, f, per){
   var claro = vxClaro(), lado = document.getElementById('vendMapaLado');
   if(!VM.map){
-    VM.map = L.map('vendMapa', {preferCanvas:true, zoomControl:true, attributionControl:true, minZoom:3, scrollWheelZoom:false});
+    VM.map = L.map('vendMapa', {preferCanvas:true, zoomControl:true, attributionControl:true, minZoom:3, scrollWheelZoom:false, fadeAnimation:!VX_TV, zoomAnimation:!VX_TV, markerZoomAnimation:!VX_TV});
     VM.map.attributionControl.setPrefix(false);
     VM.map.on('focus', function(){ VM.map.scrollWheelZoom.enable(); }); VM.map.on('blur', function(){ VM.map.scrollWheelZoom.disable(); });
   }
@@ -11568,7 +11568,7 @@ function vxTabelaCidades(cids, info){
 function vxDesenharMapa(cids, total, ufs, fora){
   var claro = vxClaro();
   if(!VX.map){
-    VX.map = L.map('vxMap', {preferCanvas:true, zoomControl:true, attributionControl:true, minZoom:3});
+    VX.map = L.map('vxMap', {preferCanvas:true, zoomControl:true, attributionControl:true, minZoom:3, fadeAnimation:!VX_TV, zoomAnimation:!VX_TV, markerZoomAnimation:!VX_TV});
     VX.map.attributionControl.setPrefix(false);
   }
   // fundo do mapa: Esri (cinza escuro ou claro), livre e sem chave de acesso
@@ -12186,14 +12186,15 @@ function vxCidCliPronto(){
   if(VX.aba==='regioes' && ms && ms.value==='cli' && !VX.cliRedesenho){ VX.cliRedesenho = true; try{ vxRegioes(); } finally { VX.cliRedesenho = false; } return; }
   if(VX.quadro && VX.popup && VX.map && VX.map.hasLayer(VX.popup)){ VX.popup.setContent(vxQuadroHtml(VX.quadro)); vxQuadroLigar(); }
 }
-// navegador de TV (Samsung Tizen, LG webOS…): a tela cheia nativa desalinha o mapa de fundo; usa a tela cheia do próprio site (a TV já está em tela cheia)
+// navegador de TV (Samsung Tizen, LG webOS…): não termina a animação dos quadros do mapa de fundo e deixa a camada antiga por cima ao mudar o zoom
+// (a tela cheia muda o zoom); nas TVs o mapa troca de zoom sem animação e redesenha o fundo ao entrar e sair da tela cheia
 var VX_TV = /Tizen|SMART-TV|SmartTV|Web0S|webOS|NetCast|BRAVIA|HbbTV|CrKey|AFT[A-Z]/i.test(navigator.userAgent || '');
 function vxTelaCheia(){
   var card = document.getElementById('vxMapCard'), btn = document.getElementById('vxMapFull');
   var cheia = document.fullscreenElement===card || card.classList.contains('vx-full');
   if(cheia){
     if(document.fullscreenElement) document.exitFullscreen(); else { card.classList.remove('vx-full'); vxAoTrocarTela(); }
-  } else if(card.requestFullscreen && !VX_TV){
+  } else if(card.requestFullscreen){
     card.requestFullscreen().catch(function(){ card.classList.add('vx-full'); vxAoTrocarTela(); });
   } else { card.classList.add('vx-full'); vxAoTrocarTela(); }
 }
@@ -12213,7 +12214,8 @@ function vxAoTrocarTela(){
     if(cheia && el.parentNode!==card) card.appendChild(el);
     else if(!cheia && el.parentNode===card){ el.classList.remove('pinned'); VX.casas[id].pai.insertBefore(el, VX.casas[id].prox); }
   });
-  setTimeout(function(){ if(VX.map) VX.map.invalidateSize(); }, 150);
+  setTimeout(function(){ if(VX.map) VX.map.invalidateSize(); if(VX_TV && VX.tiles) VX.tiles.redraw(); }, 150);
+  if(VX_TV) setTimeout(function(){ if(VX.tiles) VX.tiles.redraw(); }, 1200);   // a TV termina de mudar de tamanho depois
 }
 function vxLigar(){
   document.getElementById('vxLEmodo').addEventListener('click', function(ev){ var b = ev.target.closest('[data-v]'); if(!b) return; VX.le = VX.le || {}; VX.le.modo = b.getAttribute('data-v');
