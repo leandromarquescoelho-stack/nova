@@ -598,6 +598,8 @@ body.vp-full-on{overflow:hidden;}
 .vp-ti em{font-style:normal; font-size:11.5px; font-weight:800; letter-spacing:.06em; color:#fff; padding:2px 7px; border-radius:99px;}
 .vp-ti span{color:var(--text-2); font-size:14px;}
 /* Visual 2 (Black Friday) */
+.vp-loja{font:inherit; font-size:12px; font-weight:700; padding:6px 8px; border-radius:9px; border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); max-width:170px;}
+.vp-loja.on{border-color:#f5b400; color:#f5b400;}
 .vp-vis{display:inline-flex; border:1px solid var(--border-strong); border-radius:9px; overflow:hidden;} .vp-vis button{white-space:nowrap; border:0; background:transparent; color:var(--text-2); font:inherit; font-size:12px; font-weight:700; padding:5px 11px; cursor:pointer;}
 .vp-vis button[aria-pressed="true"]{background:var(--accent); color:#06121a;}
 .vp.bf{--surface:#141414; --surface-2:#1c1c1c; --surface-3:#2b2b2b; --border:rgba(245,180,0,.26); --border-strong:rgba(245,180,0,.45); --text:#fff; --text-2:#d6d6d6; --text-muted:#9b9b9b; --bf:#f5b400; --bf2:#ffd75a;
@@ -606,6 +608,9 @@ body.vp-full-on{overflow:hidden;}
 .bf2{margin-top:var(--vp-gap); background:#121212; border:1px solid #2a2a2a; border-radius:14px; padding:14px 18px 16px; position:relative; overflow:hidden;}
 .bf2-dots{display:flex; gap:8px; flex-wrap:wrap;} .bf2-dots button{background:#1d1d1d; color:#bdbdbd; border:1px solid #333; border-radius:999px; padding:5px 14px; font-size:13px; font-weight:700; cursor:pointer;}
 .bf2-dots button.on{background:#f5b400; color:#111; border-color:#f5b400;}
+.bf2-dots .bf2-pin{margin-left:auto; padding:5px 10px; display:inline-flex; align-items:center; gap:6px;} .bf2-dots .bf2-pin svg{width:15px; height:15px;}
+.bf2-dots .bf2-pin.fixo{background:#f5b400; color:#111; border-color:#f5b400;}
+.bf2.fixo .bf2-prog i{animation-play-state:paused;}
 .bf2-prog{height:3px; background:#262626; border-radius:3px; margin:10px 0 6px; overflow:hidden;} .bf2-prog i{display:block; height:100%; width:100%; background:#f5b400; transform-origin:0 50%; animation:bf2p 10s linear forwards;}
 @keyframes bf2p{from{transform:scaleX(0);} to{transform:scaleX(1);}}
 .bf2-sl{display:grid;} .bf2-s{grid-area:1/1; opacity:0; visibility:hidden; transform:translateX(40px); transition:opacity .6s ease, transform .6s ease, visibility 0s .6s;}
@@ -632,9 +637,9 @@ body.vp-full-on{overflow:hidden;}
 .bf2-s.on .bf2-l li{animation:bf2in .5s ease both; animation-delay:var(--d);} @keyframes bf2in{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
 .bf2-rk{grid-row:1/3; width:32px; height:32px; border-radius:50%; background:#262626; color:#cfcfcf; display:flex; align-items:center; justify-content:center; font-weight:800; font-family:'Sora',sans-serif;}
 .bf2-rk.t1{background:#f5b400; color:#111;} .bf2-rk.t2{background:#c9c9c9; color:#111;} .bf2-rk.t3{background:#b8743a; color:#111;}
-.bf2-nm{font-size:17px; font-weight:700; color:#f1f1f1; white-space:normal; overflow-wrap:anywhere; line-height:1.12;}
+.bf2-nm{font-size:17px; font-weight:700; color:#f1f1f1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .bf2-bar{height:10px; background:#262626; border-radius:6px; overflow:hidden;} .bf2-bar i{display:block; height:100%; background:linear-gradient(90deg,#c98a00,#f5b400); border-radius:6px;}
-.bf2-nm small{display:block; font-size:.58em; font-weight:600; color:#9b9b9b; letter-spacing:.02em; margin-top:.1em;}
+.bf2-nm small{display:block; font-size:.58em; font-weight:600; color:#9b9b9b; letter-spacing:.02em; margin-top:.1em; overflow:hidden; text-overflow:ellipsis;}
 .bf2-bar.ok i{background:linear-gradient(90deg,#16a34a,#4ade80);}
 .bf2-l b{font-size:1em; font-weight:800; color:#fff; white-space:nowrap; text-align:right; font-variant-numeric:tabular-nums;}
 .bf2-l em{grid-column:2/5; font-style:normal; font-size:12px; font-weight:700;} .bf2-l em:empty{display:none;}
@@ -2686,7 +2691,7 @@ table.data-table.vp-tbl{min-width:720px;}
         <div id="vhModoPainel" class="vp">
           <div class="vp-top"><div class="vp-tt"><div class="vp-tr"><span class="vp-logo" aria-hidden="true"></span><div class="vp-tit" id="vpTit">Vendas de hoje</div></div><div class="vp-sub" id="vpSub"></div></div>
             <div class="vp-rel"><b id="vpHora">--:--</b><span id="vpProx">atualiza sozinho</span></div>
-            <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="3" aria-pressed="false" title="Painel do dia com os cards maiores, sem os destaques (para TV)">Visual 1</button><button type="button" data-vis="1" aria-pressed="false" title="Painel geral do dia, com os destaques">Visual 2</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual BF</button><button type="button" data-vis="4" aria-pressed="false" title="Black Friday com o top 10 de lojas, vendedores, clientes e produtos, 10 segundos cada, e as metas por unidade por 20 segundos">Visual BF2</button></div><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
+            <div class="vp-bts"><div class="vp-vis" id="vpVis" role="group" aria-label="Escolher o visual do painel"><button type="button" data-vis="3" aria-pressed="false" title="Painel do dia com os cards maiores, sem os destaques (para TV)">Visual 1</button><button type="button" data-vis="1" aria-pressed="false" title="Painel geral do dia, com os destaques">Visual 2</button><button type="button" data-vis="2" aria-pressed="false" title="Painel da Black Friday: venda do dia × meta de cada loja">Visual BF</button><button type="button" data-vis="4" aria-pressed="false" title="Black Friday com o top 10 de lojas, vendedores, clientes e produtos, 10 segundos cada, e as metas por unidade por 20 segundos">Visual BF2</button></div><select id="vpLoja" class="vp-loja" hidden aria-label="Visual de uma loja" title="Visual 1 ou Visual 2 de uma loja só (ou do e-commerce)"></select><button type="button" class="tbtn" id="vpAgora" title="Procurar uma nova carga agora">Atualizar</button><button type="button" class="tbtn" id="vpTela" title="Abrir o painel em tela cheia (Esc para sair)">Tela cheia</button></div></div>
           <div id="vpBody"><p class="note-muted status-txt">Carregando o painel…</p></div>
         </div>
       </section>
@@ -3671,6 +3676,8 @@ function painelFiltros(restrito){
     if(f.produto){ var r = toSet(f.produto); ids = ids.filter(function(id){ return r[id]; }); }
     f.produto = ids.length ? ids.sort(function(a,b){ return a-b; }) : [-1];
   }
+  var lv = typeof vpLojaAtual==='function' ? vpLojaAtual() : null;   // Dashboard no visual de uma loja (ou do e-commerce): só ela
+  if(lv) Object.keys(lv.f).forEach(function(k){ f[k] = lv.f[k].slice(); });
   return f;
 }
 var DIA_SEMANA_ROT = {util:'Seg-Sex', fds:'Final de Semana', feriado:'Feriados'};
@@ -10565,7 +10572,7 @@ function bfV(S, t){ return t.h.f + (bfDois(S) ? t.o.f : 0); }
 function bfJuntaR(A, B){
   if(!A || !B) return A;
   var R = Object.assign({}, A);
-  ['vendedores_t','vendedores','clientes_t','clientes','produtos_t','produtos','subcat_top'].forEach(function(k){
+  ['vendedores_t','vendedores','clientes_t','clientes','produtos_t','produtos','produtos_q','subcat_top'].forEach(function(k){
     if(!Array.isArray(A[k]) && !Array.isArray(B[k])) return;
     var m = {}, out = [];
     (A[k]||[]).concat(B[k]||[]).forEach(function(r){
@@ -10576,6 +10583,20 @@ function bfJuntaR(A, B){
   });
   if(A.cli_vend || B.cli_vend) R.cli_vend = Object.assign({}, B.cli_vend||{}, A.cli_vend||{});
   return R;
+}
+/* ticker (bi_ticker) de dois dias somado: vendedores, mais vendidos, top clientes e clientes novos por id/nome; vendas altas juntam as duas listas */
+function bfJuntaT(A, B){
+  var soma = function(LA, LB, ch, cols, ord){ var m = {}, out = [];
+    (LA||[]).concat(LB||[]).forEach(function(r){ var x = m[r[ch]]; if(!x){ x = m[r[ch]] = r.slice(); out.push(x); return; } cols.forEach(function(i){ x[i] = (+x[i]||0) + (+r[i]||0); }); });
+    return out.sort(function(a, b){ return (+b[ord]||0) - (+a[ord]||0); }).slice(0, Math.max((LA||[]).length, (LB||[]).length)); };
+  var T = Object.assign({}, A), VA = A.vend || {}, VB = B.vend || {};
+  T.vend = Object.assign({}, VA, {d: soma(VA.d, VB.d, 0, [1,2], 1)});
+  T.prod = soma(A.prod, B.prod, 0, [2,3], 3);
+  T.cli = soma(A.cli, B.cli, 0, [1,2], 1);
+  T.notas = (A.notas||[]).concat(B.notas||[]).sort(function(a, b){ return (+b[4]||0) - (+a[4]||0); }).slice(0, Math.max((A.notas||[]).length, (B.notas||[]).length));
+  var NA = A.novos || {}, NB = B.novos || {};
+  T.novos = {n:(+NA.n||0) + (+NB.n||0), fat:(+NA.fat||0) + (+NB.fat||0), top:(NA.top||[]).concat(NB.top||[]).sort(function(a, b){ return (+b[2]||0) - (+a[2]||0); })};
+  return T;
 }
 var BF_METAS = [['IPIRANGA','Ipiranga',700000],['JOAO DIAS','João Dias',150000],['TATUAPE','Tatuapé',100000],['SBC','S.B.Campo',100000],
   ['CAMPINAS','Campinas',700000],['RIBEIRAO','Ribeirão Preto',350000],['RIO PRETO','S.J.Rio Preto',400000],['ECOMMERCE','E-commerce',100000]];
@@ -10589,9 +10610,45 @@ function vpVis(){
   VH.vis = ok.indexOf(pref) >= 0 ? pref : (ok.indexOf(3) >= 0 ? 3 : (ok[0] || 0));
   return VH.vis;
 }
+/* visuais por loja: o Visual 1 ou o Visual 2 com uma loja do atacado só (ou só o e-commerce). Só o perfil BI vê (não entram em nenhum cadastro). */
+function vpLojasLista(){
+  var out = [], ml = DIMI.loja || {}, mc = DIMI.canal || {};
+  BF_METAS.forEach(function(m){
+    if(m[0]==='ECOMMERCE'){ if(mc[CANAL_ONLINE]!==undefined) out.push({k:'ECOMMERCE', nome:'E-commerce', f:{canal:[mc[CANAL_ONLINE]]}}); return; }
+    if(ml[m[0]]!==undefined) out.push({k:m[0], nome:m[1], f:{loja:[ml[m[0]]]}});
+  });
+  return out;
+}
+function vpLojaSel(){
+  if(VH.loja===undefined){ try{ VH.loja = localStorage.getItem('nc_vp_loja') || null; }catch(e){ VH.loja = null; } }
+  if(!(CURRENT_PROFILE && CURRENT_PROFILE.role==='bi') || !VH.loja) return null;
+  var L = vpLojasLista(); for(var i = 0; i < L.length; i++) if(L[i].k===VH.loja) return L[i];
+  return null;
+}
+function vpLojaAtual(){
+  if(typeof state==='undefined' || state.currentView!=='dashboard') return null;
+  var v = vpVis(); if(v!==1 && v!==3) return null;
+  return vpLojaSel();
+}
+function vpLojaTrocar(k){
+  VH.loja = k || null; try{ if(k) localStorage.setItem('nc_vp_loja', k); else localStorage.removeItem('nc_vp_loja'); }catch(e){}
+  if(k && VH.vis!==1 && VH.vis!==3) VH.vis = 1;   // nos visuais BF: vai para o Visual 2 da loja
+  vpVisMarcar(); if(vpVisivel()) vxHoje();
+}
 function vpVisTrocar(v){
+  if(v===2 || v===4){ VH.loja = null; try{ localStorage.removeItem('nc_vp_loja'); }catch(e){} }
   VH.vis = v; try{ localStorage.setItem('nc_vp_vis', JSON.stringify({v:v, d:isoDia(new Date())})); }catch(e){}
   vpVisMarcar(); if(vpVisivel()) vxHoje(); else if(VH.sum) vhPainel();
+}
+function vpLojaMarcar(){
+  var sel = document.getElementById('vpLoja'); if(!sel) return;
+  var bi = CURRENT_PROFILE && CURRENT_PROFILE.role==='bi', L = bi ? vpLojasLista() : [];
+  sel.hidden = !L.length; if(!L.length) return;
+  var a = vpLojaSel(), atual = a && (VH.vis===1 || VH.vis===3) ? a.k : '';
+  var html = '<option value="">Todas as lojas</option>' + L.map(function(o){ return '<option value="'+o.k+'">'+escapeHtml(o.nome)+'</option>'; }).join('');
+  if(sel.getAttribute('data-h')!==html){ sel.innerHTML = html; sel.setAttribute('data-h', html); }
+  sel.value = atual; sel.classList.toggle('on', !!atual);
+  if(!sel.dataset.lig){ sel.dataset.lig = 1; sel.addEventListener('change', function(){ vpLojaTrocar(this.value); }); }
 }
 function vpVisMarcar(){
   var v = vpVis(), el = document.getElementById('vhModoPainel');
@@ -10599,6 +10656,7 @@ function vpVisMarcar(){
   var ok = visNums(), vb = document.getElementById('vpVis');
   document.querySelectorAll('#vpVis [data-vis]').forEach(function(b){ var n = +b.getAttribute('data-vis'); b.style.display = ok.indexOf(n) < 0 ? 'none' : ''; b.setAttribute('aria-pressed', String(n===v)); });
   if(vb) vb.style.display = ok.length < 2 ? 'none' : '';
+  vpLojaMarcar();
 }
 function bfCor(p){ return p >= 100 ? '#4ade80' : (p >= 50 ? '#f5b400' : '#c98a00'); }
 // velocímetro dourado: 0 a 100% (passou da meta, fica verde e mostra o percentual real)
@@ -10634,9 +10692,18 @@ function vpTickerAE(S, RR0){
   var R = VH.res[vhResChave(f, S.dia, false)]; if(!R) vhResBuscar(f, S.dia, false, redraw); else if(!R.erro) U.R = R;
   var E = vhEst(f, S.dia, redraw); if(E && !E.erro) U.E = E;
   var T = vhTk(f, S.dia, redraw); if(T) U.T = T;
+  if(bfDois(S)){   // BF e BF2 travados: o ticker soma as vendas de 27 e 28 (o estoque é o atual)
+    var R27 = VH.res[vhResChave(f, BF_DIA, false)]; if(!R27) vhResBuscar(f, BF_DIA, false, redraw);
+    var T27 = vhTk(f, BF_DIA, redraw);
+    if(U.R && R27 && !R27.erro){ U.R = bfJuntaR(U.R, R27); U.R.bfd = 2; }
+    if(U.T && !U.T.erro && T27 && !T27.erro) U.T = bfJuntaT(U.T, T27);
+  }
   VH.aeUlt = {}; VH.aeUlt[k] = U;
   if(!U.R && !U.E && !U.T) return '';
-  return vpTicker(U.R || null, U.E || null, U.T || null, true);
+  VH.tkQ = bfDois(S) ? 'em 27 e 28/11' : null;
+  var h = vpTicker(U.R || null, U.E || null, U.T || null, true);
+  VH.tkQ = null;
+  return h;
 }
 function bfPainel(S, RR, dest, partes){
   var lj = {}; S.lojas.forEach(function(o){ lj[o.nome] = o; });
@@ -10739,7 +10806,7 @@ function bf2Painel(S, RR, grupos){
   BF2F_SLOTS = grupos.length + 1;
   if(!VH.bf2t) VH.bf2t = Date.now();
   var fsl = function(k){ var i = k*2 + 1; return '<section class="bf2-s bf2-ft'+(i===i0 ? ' on' : '')+'" data-i="'+i+'" data-seg="'+((BF2F.cfg && BF2F.cfg.seg) || 8)+'" data-fk="'+k+'"><h3>Prêmio <b>sorteado</b><small>Black Friday</small></h3>'+bf2fHtml(bf2fFoto(k))+'</section>'; };
-  var dots = '<div class="bf2-dots">'+grupos.map(function(g){ return g[0]; }).concat(['Metas']).map(function(t, i){ var j = i*passo; return '<button type="button" data-bf2="'+j+'" class="'+(j===i0 || j+1===i0 && foto ? 'on' : '')+'">'+t+'</button>'; }).join('')+'</div>';
+  var dots = '<div class="bf2-dots">'+grupos.map(function(g){ return g[0]; }).concat(['Metas']).map(function(t, i){ var j = i*passo; return '<button type="button" data-bf2="'+j+'" class="'+(j===i0 || j+1===i0 && foto ? 'on' : '')+'">'+t+'</button>'; }).join('')+bf2PinBt()+'</div>';
   var sl = grupos.map(function(g, i){
     var L = g[1], mx = L && L.length ? Math.max(1, L[0].v) : 1;
     var corpo = L===false ? '<p class="note-muted">Falta rodar o SQL das categorias no banco.</p>' : !L ? '<p class="note-muted">Carregando…</p>' : (!L.length ? '<p class="note-muted">Sem vendas ainda.</p>' : '<ol class="bf2-l'+(L.some(function(o){ return o.q!==null && o.q!==undefined; }) ? ' tem-q' : '')+'">'+L.map(function(o, j){
@@ -10753,7 +10820,7 @@ function bf2Painel(S, RR, grupos){
   }).join('') + '<section class="bf2-s bf2-metas'+(i0===grupos.length*passo ? ' on' : '')+'" data-i="'+(grupos.length*passo)+'" data-seg="'+BF2_METAS_SEG+'"><h3>Metas da <b>Black Friday</b><small>'+(bfDois(S) ? 'vendas de 27 e 28/11' : 'venda do dia')+' × meta de cada unidade</small></h3>'+P.cards+'</section>' + (foto ? fsl(grupos.length) : '');
   var s0 = foto && i0 % 2 ? +((BF2F.cfg && BF2F.cfg.seg) || 8) : (i0===grupos.length*passo ? BF2_METAS_SEG : BF2_SEG);
   var dur = s0, pass = Math.min(dur, (Date.now() - VH.bf2t)/1000);
-  return P.hero + '<div class="bf2">'+dots+'<div class="bf2-prog"><i style="animation-duration:'+dur+'s; animation-delay:-'+pass.toFixed(1)+'s"></i></div><div class="bf2-sl">'+sl+'</div></div>' + vpTickerAE(S, RR);
+  return P.hero + '<div class="bf2'+(bf2Fixo() ? ' fixo' : '')+'">'+dots+'<div class="bf2-prog"><i style="animation-duration:'+dur+'s; animation-delay:-'+pass.toFixed(1)+'s"></i></div><div class="bf2-sl">'+sl+'</div></div>' + vpTickerAE(S, RR);
 }
 function vpDestPag(p){
   var box = document.querySelector('#vpBody .vp-dest2'); if(!box) return;
@@ -10778,17 +10845,28 @@ function bf2Mostrar(i){
   box.querySelectorAll('.bf2-dots button').forEach(function(b){ b.classList.toggle('on', +b.getAttribute('data-bf2')===dv); });
   var pr = box.querySelector('.bf2-prog i'); if(pr){ pr.style.animation = 'none'; void pr.offsetWidth; pr.style.animation = ''; pr.style.animationDuration = (bf2Dur(VH.bf2i)/1000)+'s'; pr.style.animationDelay = '0s'; }
 }
+/* fixar: para a troca automática no quadro atual até desafixar (vale para este navegador) */
+function bf2Fixo(){ try{ return localStorage.getItem('nc_bf2_fixo')==='1'; } catch(e){ return false; } }
+function bf2PinBt(){ var f = bf2Fixo(); return '<button type="button" class="bf2-pin'+(f ? ' fixo' : '')+'" data-bf2pin="1" title="'+(f ? 'Desafixar: volta a trocar sozinho' : 'Fixar este quadro')+'"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 3l5 5-2 .8-3.6 3.6.6 4.6-1.4 1.4-4.2-4.2L5 19.6 4.4 19l5.4-5.4-4.2-4.2L7 8l4.6.6L15.2 5z"/></svg>'+(f ? 'Fixado' : 'Fixar')+'</button>'; }
+function bf2FixoTrocar(){
+  var f = !bf2Fixo(); try{ localStorage.setItem('nc_bf2_fixo', f ? '1' : '0'); } catch(e){}
+  var box = document.querySelector('#vpBody .bf2'); if(!box) return;
+  box.classList.toggle('fixo', f);
+  var b = box.querySelector('.bf2-pin'); if(b) b.outerHTML = bf2PinBt();
+  if(!f) bf2Mostrar(VH.bf2i || 0);   // ao desafixar, o quadro atual recomeça a contagem
+}
 setInterval(function(){
-  if(vpVis()!==4 || !vpVisivel() || document.hidden) return;
+  if(vpVis()!==4 || !vpVisivel() || document.hidden || bf2Fixo()) return;
   if(Date.now() - (VH.bf2t || 0) >= bf2Dur(VH.bf2i || 0) - 300) bf2Mostrar((VH.bf2i || 0) + 1);
 }, 500);
-document.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('[data-bf2]'); if(b) bf2Mostrar(+b.getAttribute('data-bf2')); });
+document.addEventListener('click', function(e){ if(e.target.closest && e.target.closest('[data-bf2pin]')){ bf2FixoTrocar(); return; } var b = e.target.closest && e.target.closest('[data-bf2]'); if(b) bf2Mostrar(+b.getAttribute('data-bf2')); });
 function vhPainel(){
   var S = VH.sum, box = document.getElementById('vpBody'); if(!S || !box) return;
   var c = vhCarga();
   var VV = vpVis(), V2 = VV===2 || VV===4; vpVisMarcar();
   if(!VV){ box.innerHTML = '<p class="note-muted">Nenhum visual do painel está liberado para o seu usuário. Peça ao BI para liberar no cadastro de usuários.</p>'; return; }
-  document.getElementById('vpTit').textContent = (V2 ? 'Black Friday' : 'Vendas do dia')+' · '+S.semana+', '+fmtDateFull(S.dD).slice(0,5);
+  var lvT = vpLojaAtual();
+  document.getElementById('vpTit').textContent = (V2 ? 'Black Friday' : (lvT ? lvT.nome : 'Vendas do dia'))+' · '+S.semana+', '+fmtDateFull(S.dD).slice(0,5);
   document.getElementById('vpSub').textContent = (S.gTot.h.f > 0.5 ? '' : 'Ainda sem vendas de hoje na carga · ')+(cargaLabel(c) || 'Sem informação de carga')+(VH.lido ? ' · lido às '+vpHora(new Date(VH.lido)) : '')+' · filtros do painel aplicados';
   function k(cor, l, v, sub, cls){ return '<div class="vp-k'+(cls?' '+cls:'')+'" style="--vh-c:'+cor+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div></div>'; }
   var g = S.gTot, rG = S.rG, rAE = S.rAE, rotAE = S.rotAE || 'atacado + e-com';
@@ -10798,7 +10876,7 @@ function vhPainel(){
   if(M.ae){ metaAc = []; var acm = 0; for(var di = 1; di <= fimM; di++){ acm += vpMetaDia(M, isoDia(new Date(S.dD.getFullYear(), S.dD.getMonth(), di, 12))); metaAc.push(acm); } }
   var idealHoje = metaAc ? metaAc[nD-1] : null;
   var kp = '<div class="vp-kpis">' +
-    k('var(--vx-cy)', S.ehHoje ? 'Hoje · grupo' : 'No dia · grupo', fmtMoney(g.h.f), vhMgB(g.h)+' '+vhVs(rG.vsH)+' vs. média diária ('+(rG.md!==null ? fmtMoney(rG.md) : '—')+')' +
+    k('var(--vx-cy)', (S.ehHoje ? 'Hoje · ' : 'No dia · ')+(vpLojaAtual() ? vpLojaAtual().nome : 'grupo'), fmtMoney(g.h.f), vhMgB(g.h)+' '+vhVs(rG.vsH)+' vs. média diária ('+(rG.md!==null ? fmtMoney(rG.md) : '—')+')' +
       vpMetaInd(rAE.t.h.f, mdH, 'Meta do dia', 'Meta e venda de '+rotAE)+vpSpark(SE.g), 'g') +
     k('#64748b', 'Ontem · '+fmtDateFull(vhDt(S.ontem)).slice(0,5), fmtMoney(g.o.f), vhMgB(g.o)+' '+vhVs(rG.vsO) +
       vpMetaInd(rAE.t.o.f, mdO, 'Meta do dia', 'Meta e venda de '+rotAE)+(iO >= 0 ? '<div class="vp-so">'+vpSpark(SE.g, {dest:iO, cor:'#94a3b8'})+'</div>' : '')) +
@@ -10812,7 +10890,9 @@ function vhPainel(){
       vpAbcPizza(vhAbc(painelFiltros(null), function(){ if(vpVisivel()) vhPainel(); }))) + '</div>';
   var NOME_C = {ATACADO:'Atacado', ECOMMERCE:'E-commerce', OFICINA:'Oficina', ACESSORIOS:'Acessórios'}, CORES = ['var(--vx-cy)','var(--vx-pu)','var(--vx-am)','var(--vx-gr)'];
   var umaLoja = S.lojas.length===1 && S.canais.some(function(x){ return x.k==='ATACADO'; });
-  var nC = S.canais.length, cn = '<div class="vp-canais" style="--vp-n:'+Math.max(1, nC)+'; --vp-nm:'+Math.max(1, Math.min(2, nC))+'">'+S.canais.map(function(x, i){
+  // visual de uma loja: só os canais que ela vende no mês (no e-commerce, só ele)
+  var CS = vpLojaAtual() ? S.canais.filter(function(x){ return x.t.m.f > 0.5 || x.t.h.f > 0.5; }) : S.canais;
+  var nC = CS.length, cn = '<div class="vp-canais" style="--vp-n:'+Math.max(1, nC)+'; --vp-nm:'+Math.max(1, Math.min(2, nC))+'">'+CS.map(function(x, i){
     var sh = g.h.f > 0 ? x.t.h.f/g.h.f*100 : 0, rr = x.k==='ATACADO' ? S.rAtc : (x.k==='ECOMMERCE' ? S.rEcm : null);
     var tp = rr && rr.tp!==null && rr.tp!==undefined ? ' · <b style="color:'+vhCorTend(rr.tp)+'">'+vhP(rr.tp)+'</b> da meta' : '';
     var uma = umaLoja && x.k==='ATACADO';   // uma loja só: o card do atacado é o da loja (sem o quadro da loja repetido)
@@ -10839,6 +10919,12 @@ function vhPainel(){
   else if(!R.erro) VH.vpUlt = R;
   var RR = R && !R.erro ? R : VH.vpUlt;
   // top vendedores dos painéis: sem os vendedores do e-commerce
+  var ndL = 1, quando = 'do dia';
+  if((VV===4 || V2) && bfDois(S) && RR){   // BF e BF2: tops com as vendas de 27 e 28 somadas
+    var R27 = VH.res[vhResChave(f, BF_DIA, false)];
+    if(!R27) vhResBuscar(f, BF_DIA, false, function(){ if(vpVisivel()) vhPainel(); });
+    RR = R27 && !R27.erro ? bfJuntaR(RR, R27) : null; ndL = 2; quando = 'de 27 e 28/11';
+  }
   var vendSE = RR ? (RR.vendedores || []).filter(function(r){ return !/E-?COMMERCE/i.test(dimNome('vendedor', r[0]) || ''); }) : null;
   function lista(tit, sub, rows, nome, dim, nMax){
     var cv = rows===RR.clientes ? (RR.cli_vend || {}) : null;   // clientes: vendedor que mais vendeu para ele no dia
@@ -10846,7 +10932,7 @@ function vhPainel(){
     var it = (rows||[]).map(function(r){ var vd = cv && cv[r[0]]!=null ? dimNome('vendedor', cv[r[0]]) : '', nm = nome(r);
       return {nome:nm, h:c2(r[1]), m:c2(r[4])/(RR.nd||1), vd: vd ? nomeCurtoVend(vd) : '', md: ehVend ? vpMetaDiaVend(nm, S.dD) : null, sg: ehVend ? c2((RR.vend_seg||{})[r[0]]||0) : 0}; }).sort(function(a, b){ return b.h - a.h; }).slice(0, nMax || 10);
     return '<div class="vp-d"><h4>'+tit+'<small>'+sub+'</small></h4>'+(it.length ? it.map(function(o, i){
-      var x = o.m > 0.5 ? o.h/o.m : null;
+      var x = o.m > 0.5 ? o.h/ndL/o.m : null;   // dois dias somados: compara a média por dia
       return '<div class="vp-dl"><span class="n">'+(i+1)+'</span><span class="nm" title="'+escapeHtml(o.nome)+'">'+escapeHtml(o.nome)+'<small>'+(x===null ? 'sem compras nos 60 dias anteriores' : 'média '+fmtMoney(o.m)+'/dia · '+(x >= 10 ? Math.round(x) : x.toFixed(1).replace('.',','))+'×')+(o.vd ? ' · <i>'+escapeHtml(o.vd)+'</i>' : '')+'</small></span><b>'+fmtMoney(o.h)+vpMetaDiaHtml(o.h, o.md, o.sg)+'</b></div>';
     }).join('') : '<p class="note-muted" style="font-size:12px;">Sem vendas ainda.</p>')+'</div>';
   }
@@ -10865,12 +10951,6 @@ function vhPainel(){
     var nmB = {}; BF_METAS.forEach(function(m){ nmB[m[0]] = m; });
     var tL = S.lojas.map(function(o){ var m = nmB[o.nome]; return {nome: m ? m[1] : o.nome, v:bfV(S, o.r.t), meta: m ? m[2] : 0}; });
     S.canais.forEach(function(x){ if(x.k==='ECOMMERCE') tL.push({nome:'E-commerce', v:bfV(S, x.t), meta:(nmB.ECOMMERCE||[])[2]||0}); });
-    if(bfDois(S) && RR){   // top 10 com as vendas de 27 e 28 somadas
-      var k27 = vhResChave(f, BF_DIA, false), R27 = VH.res[k27];
-      if(!R27) vhResBuscar(f, BF_DIA, false, function(){ if(vpVisivel()) vhPainel(); });
-      RR = R27 && !R27.erro ? bfJuntaR(RR, R27) : null;
-      if(RR) vendSE = (RR.vendedores || []).filter(function(r){ return !/E-?COMMERCE/i.test(dimNome('vendedor', r[0]) || ''); });
-    }
     tL = tL.sort(function(a, b){ return b.v - a.v; }).slice(0, 10);
     // top 10 pelo faturamento do dia (vendedores_t etc.); banco sem o SQL novo: usa as listas de destaque
     var semEcm = function(L){ return (L || []).filter(function(r){ return !/E-?COMMERCE/i.test(dimNome('vendedor', r[0]) || ''); }); };
@@ -10879,8 +10959,8 @@ function vhPainel(){
       ['Categorias', !RR ? null : !RR.subcat_top ? false : RR.subcat_top.map(function(r){ var n = dimNome('subcategoria', r[0]); return {nome: n==='N/D' ? '#'+r[0] : n, v:c2(r[1]), q:+r[2] || 0}; }).sort(function(a, b){ return b.v - a.v; }).slice(0, 10)],
       ['Produtos', RR ? top(RR.produtos_t || RR.produtos, nmP) : null]]);
   } else if(V2){
-    var dsB = RR ? '<div class="vp-dest">' + lista('Top 5 vendedores', 'acima da própria média', vendSE, function(r){ return dimNome('vendedor', r[0]) || '—'; }, null, 5) +
-      lista('Top 5 clientes', 'compras do dia', RR.clientes, nm7, null, 5) + lista('Top 5 produtos', 'faturamento do dia', RR.produtos, nm7, null, 5) + '</div>' : '';
+    var dsB = RR ? '<div class="vp-dest">' + lista('Top 5 vendedores', ndL > 1 ? 'vendas '+quando : 'acima da própria média', vendSE, function(r){ return dimNome('vendedor', r[0]) || '—'; }, null, 5) +
+      lista('Top 5 clientes', 'compras '+quando, RR.clientes, nm7, null, 5) + lista('Top 5 produtos', 'faturamento '+quando, RR.produtos, nm7, null, 5) + '</div>' : '<p class="note-muted status-txt">Carregando os destaques…</p>';
     box.innerHTML = bfPainel(S, RR, dsB);
   } else box.innerHTML = kp + cn + lj + (vpVis()===3 ? '' : ds) + vpTicker(RR, S.E);   // Visual 3: sem os destaques, cards maiores
   vpAjustar(); vpCaber(box); clearTimeout(vhPainel.t); vhPainel.t = setTimeout(function(){ vpAjustar(); vpCaber(box); }, 500);
@@ -11013,9 +11093,9 @@ function tkPct(x){ return (Math.round(x*10)/10).toFixed(1).replace('.',',')+'%';
 /* destaques: vendedores, clientes, vendas altas e mais vendidos */
 function vpTickerExtra(T, soDia){
   if(!T || T.erro) return [];
-  var g = [], ouro = '#d4a017', prata = 'var(--vx-pu)', azul = 'var(--accent, #3b82f6)';
+  var g = [], ouro = '#d4a017', prata = 'var(--vx-pu)', azul = 'var(--accent, #3b82f6)', Q = VH.tkQ;
   var V = T.vend || {};
-  [['vend_dia', 'd', 'MELHOR DO DIA'], ['vend_mes', 'm', 'MELHOR DO MÊS'], ['vend_ano', 'a', 'MELHOR DO ANO']].filter(function(x){ return !soDia || x[1]==='d'; }).forEach(function(x){
+  [['vend_dia', 'd', Q ? 'MELHOR DE 27 E 28/11' : 'MELHOR DO DIA'], ['vend_mes', 'm', 'MELHOR DO MÊS'], ['vend_ano', 'a', 'MELHOR DO ANO']].filter(function(x){ return !soDia || x[1]==='d'; }).forEach(function(x){
     var L = V[x[1]] || []; if(!tkLigado(x[0]) || !L.length) return;
     var r = L[0], mg = r[1] > 0 ? r[2]/r[1]*100 : 0;
     g.push({t:x[2], c:ouro, n:'🥇 '+tkVend(r[0]), d:fmtMoney(c2(r[1]))+' · margem '+tkPct(mg)+L.slice(1).map(function(o, i){ return ' · '+(i+2)+'º '+tkVend(o[0])+' '+fmtMoney(c2(o[1])); }).join('')});
@@ -11026,16 +11106,16 @@ function vpTickerExtra(T, soDia){
   if(tkLigado('cres_part') && C.part) g.push({t:'MAIS GANHOU PARTICIPAÇÃO', c:'var(--good)', n:tkVend(C.part[0]), d:tkPct(+C.part[2])+' → '+tkPct(+C.part[1])+' do faturamento no mês'});
   if(tkLigado('cres_mg') && C.mg) g.push({t:'MAIS CRESCEU EM MARGEM', c:'var(--good)', n:tkVend(C.mg[0]), d:'margem '+tkPct(+C.mg[2])+' → '+tkPct(+C.mg[1])+' no mês'});
   if(tkLigado('mais_vendidos')) (soDia ? (T.prod || []).slice().sort(function(a, b){ return (+b[2]||0) - (+a[2]||0); }) : (T.prod || [])).slice(0, 3).forEach(function(r, i){
-    g.push({t:'MAIS VENDIDO HOJE', c:azul, n:(i+1)+'º '+String(r[1]||'#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), d: soDia ? fmtUn(r[2])+' un · '+fmtMoney(c2(r[3])) : fmtMoney(c2(r[3]))+' · '+fmtUn(r[2])+' un'}); });
+    g.push({t:Q ? 'MAIS VENDIDO '+Q.toUpperCase() : 'MAIS VENDIDO HOJE', c:azul, n:(i+1)+'º '+String(r[1]||'#'+r[0]).replace(/^(\S+) · \1\s*-?\s*/, '$1 · '), d: soDia ? fmtUn(r[2])+' un · '+fmtMoney(c2(r[3])) : fmtMoney(c2(r[3]))+' · '+fmtUn(r[2])+' un'}); });
   if(tkLigado('notas')) (T.notas || []).slice(0, 3).forEach(function(r){
     g.push({t:'VENDA ALTA', c:prata, n:tkNome(r[1]), d:fmtMoney(c2(r[4]))+' · '+(dimNome('loja', r[2])||'')+' · '+tkVend(r[3])+' · '+fmtUn(r[5])+' ite'+(r[5]>1?'ns':'m')}); });
   var N = T.novos || {};
   if(tkLigado('cli_novos') && N.n > 0){
-    g.push({t:'CLIENTES NOVOS', c:'var(--good)', n:fmtUn(N.n)+' cliente'+(N.n>1?'s':'')+' novo'+(N.n>1?'s':'')+' hoje', d:fmtMoney(c2(N.fat))+' · sem compra nos 365 dias anteriores'});
+    g.push({t:'CLIENTES NOVOS', c:'var(--good)', n:fmtUn(N.n)+' cliente'+(N.n>1?'s':'')+' novo'+(N.n>1?'s':'')+' '+(Q || 'hoje'), d:fmtMoney(c2(N.fat))+' · sem compra nos 365 dias anteriores'});
     (N.top || []).slice(0, 2).forEach(function(r){ g.push({t:'CLIENTE NOVO', c:'var(--good)', n:tkNome(r[0]), d:fmtMoney(c2(r[2]))+' · '+(dimNome('loja', r[1])||'')}); });
   }
   if(tkLigado('cli_top')) (T.cli || []).forEach(function(r, i){
-    g.push({t:'TOP CLIENTE DO DIA', c:azul, n:(i+1)+'º '+tkNome(r[0]), d:fmtMoney(c2(r[1]))+' · '+fmtUn(r[2])+' nota'+(r[2]>1?'s':'')}); });
+    g.push({t:Q ? 'TOP CLIENTE DE 27 E 28/11' : 'TOP CLIENTE DO DIA', c:azul, n:(i+1)+'º '+tkNome(r[0]), d:fmtMoney(c2(r[1]))+' · '+fmtUn(r[2])+' nota'+(r[2]>1?'s':'')}); });
   return g;
 }
 function vpTicker(RR, E, TK, soDia){
@@ -11046,18 +11126,18 @@ function vpTicker(RR, E, TK, soDia){
     it.push({t: o.zerou ? 'ZEROU' : 'ESTOQUE BAIXO', c: o.zerou ? 'var(--critical)' : 'var(--warning)', n: o.loja+' · '+o.nome,
       d: 'vendeu '+fmtUn(o.qd)+' un hoje · '+(o.zerou ? 'sem estoque' : 'restam '+fmtUn(Math.round(o.est))+' un'+(o.dias!==null ? ' (≈'+Math.max(1, Math.round(o.dias))+' dia'+(Math.round(o.dias)>1?'s':'')+')' : ''))}); });
   // 2) vendendo bem acima da própria média dos 60 dias anteriores
-  var nd = (RR && RR.nd) || 1;
+  var nd = (RR && RR.nd) || 1, dd = (RR && RR.bfd) || 1, hj = VH.tkQ || 'hoje';   // dd: dias somados (BF), a média diária vale por dd dias
   var fonteAlta = soDia ? ((RR && RR.produtos_q) || []).concat((RR && RR.produtos) || []) : ((RR && RR.produtos) || []).concat((RR && RR.produtos_q) || []);
   if(tkLigado('alta')) fonteAlta.forEach(function(r){
     var id = r[0]; if(vistos[id]) return;
     // em alta por valor OU por quantidade (1,8× a média diária dos 60 dias anteriores); mostra os dois
-    var h = c2(r[1]), m = c2(r[4])/nd, q = +r[3] || 0, qm = (+r[5] || 0)/nd, x = m > 0.5 ? h/m : null, xq = qm > 0 ? q/qm : null;
+    var h = c2(r[1]), m = c2(r[4])/nd, q = +r[3] || 0, qm = (+r[5] || 0)/nd, x = m > 0.5 ? h/dd/m : null, xq = qm > 0 ? q/dd/qm : null;
     var nov = x===null && xq===null;
     if(soDia){   // visuais BF e BF2: produto em alta só pela quantidade
       if(!nov && !(xq!==null && xq >= 1.8)) return;
       vistos[id] = 1;
       alta.push({t: nov ? 'NOVIDADE' : 'EM ALTA · QTD', c: nov ? 'var(--vx-pu)' : 'var(--good)', n: nome(r),
-        d: fmtUn(q)+' un hoje'+(nov ? ' · sem venda nos 60 dias anteriores' : ' · '+(xq >= 10 ? fmtUn(Math.round(xq)) : xq.toFixed(1).replace('.',','))+'× a média de '+(qm < 10 ? qm.toFixed(1).replace('.',',') : fmtUn(Math.round(qm)))+' un/dia')});
+        d: fmtUn(q)+' un '+hj+(nov ? ' · sem venda nos 60 dias anteriores' : ' · '+(xq >= 10 ? fmtUn(Math.round(xq)) : xq.toFixed(1).replace('.',','))+'× a média de '+(qm < 10 ? qm.toFixed(1).replace('.',',') : fmtUn(Math.round(qm)))+' un/dia')});
       return;
     }
     if(!nov && !((x!==null && x >= 1.8) || (xq!==null && xq >= 1.8))) return;
