@@ -890,6 +890,7 @@ table.vh-mat{width:100%; border-collapse:collapse; font-size:12px; min-width:880
 .vx-flut .vx-full-btn{box-shadow:0 4px 14px rgba(0,0,0,.25); background:var(--surface);}
 #vxMapCard:fullscreen .vx-flut, #vxMapCard.vx-full .vx-flut{display:flex;}
 #vxMapSair2{display:none;}
+#vxMapCard.vx-semfundo .leaflet-tile-pane{display:none;}
 #vxMapCard.vx-sem-faixa #vxMapSair2{display:inline-flex;}
 #vxMapCard.vx-sem-faixa .vx-map-top{display:none;}
 #vxMapCard.vx-sem-faixa #vxMapBarra svg{transform:rotate(180deg);}
@@ -12214,6 +12215,7 @@ function vxAoTrocarTela(){
     if(cheia && el.parentNode!==card) card.appendChild(el);
     else if(!cheia && el.parentNode===card){ el.classList.remove('pinned'); VX.casas[id].pai.insertBefore(el, VX.casas[id].prox); }
   });
+  card.classList.toggle('vx-semfundo', cheia && VX_TV);   // TV em tela cheia: sem o mapa de fundo (o navegador da Samsung desenha os quadros soltos); municípios sobre o fundo escuro
   setTimeout(function(){ if(VX.map) VX.map.invalidateSize(); if(VX_TV && VX.tiles) VX.tiles.redraw(); }, 150);
   if(VX_TV) setTimeout(function(){ if(VX.tiles) VX.tiles.redraw(); }, 1200);   // a TV termina de mudar de tamanho depois
 }
